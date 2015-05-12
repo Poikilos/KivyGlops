@@ -2,10 +2,10 @@
 Manage objects and camera in your 3D scene
 ![Screenshot](https://raw.githubusercontent.com/expertmm/KivyMesher/master/screenshot01.png)
 
-## Features
-* Loads OBJ files into an intermediate format (KivyMesherMesh)
-* pymesher module (does not require Kivy) loads obj files, and provides base classes for all classes in kivymesher module
-* pyrealtime module (does not require Kivy) keeps track of keyboard state, allowing getting keystate asynchronously
+## Key Features
+* 3D Objects can be moved and rotated separately (movement and rotation has been tested, and scaling is available)
+* Camera can be moved and rotated separately from objects
+* Loads each object (even if in same OBJ file) separately, in a format readily usable by Kivy (Loads OBJ files into an intermediate format: KivyMesherMesh)
 * KivyMesher tutorials are available for download at [expertmultimedia.com/usingpython](http://expertmultimedia.com/usingpython/py3tutorials.html) (Unit 4 OpenGL)
 
 ## Changes
@@ -22,7 +22,7 @@ Manage objects and camera in your 3D scene
 
 ## Known Issues
 * Triangulate objects (instead of leaving holes)
-* Implement lighting by improving shader
+* Implement lighting by improving shader (instead of only flat shading of textured objects being available)
 
 ## License
 Software is copyright Jake Gustafson and provided under GNU Lesser General Public License: https://www.gnu.org/licenses/lgpl.html
@@ -35,3 +35,9 @@ Resources are provided under Creative Commons Attribution Share-Alike (CC-BY-SA)
 
 #### With the following caveats:
 *testnurbs-all-textured.obj was derived from testnurbs by nskrypnik
+
+## Developer Notes
+* pymesher module which does not require Kivy loads obj files, and provides base classes for all classes in kivymesher module
+* pyrealtime module which does not require Kivy keeps track of keyboard state, allowing getting keystate asynchronously
+* update-kivymesher.bat will only work for students if teacher places KivyMesher in R:\Classes\ComputerProgramming\Examples\KivyMesher
+(which can be done using deploy.bat, if the folder already exists and the teacher has write permissions to the folder; the students should have read permissions to the folder)
