@@ -1,5 +1,5 @@
 # KivyMesher
-Manage 3D objects and camera in your Kivy app
+Control 3D objects and the camera in your 3D Kivy app!
 ![Screenshot](https://raw.githubusercontent.com/expertmm/KivyMesher/master/screenshot01.png)
 
 ## Key Features
@@ -23,6 +23,7 @@ Manage 3D objects and camera in your Kivy app
 ## Known Issues
 * Triangulate objects (instead of leaving holes)
 * Implement lighting by improving shader (instead of only flat shading of textured objects being available)
+* Calculate rotation on other axes before calling look_at (only does y rotation currently, using a&d keys)
 
 ## License
 Software is copyright Jake Gustafson and provided under GNU Lesser General Public License: https://www.gnu.org/licenses/lgpl.html
