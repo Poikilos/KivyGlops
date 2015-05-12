@@ -1,5 +1,6 @@
 # KivyMesher
 Manage objects and camera in your 3D scene
+![Screenshot](https://raw.githubusercontent.com/expertmm/KivyMesher/master/screenshot01.png)
 
 ## Features
 * Loads OBJ files into an intermediate format (KivyMesherMesh)
