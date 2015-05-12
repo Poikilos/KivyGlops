@@ -33,5 +33,4 @@ Software is copyright Jake Gustafson and provided under GNU Lesser General Publi
 Resources are provided under Creative Commons Attribution Share-Alike (CC-BY-SA) license: http://creativecommons.org/licenses/by-sa/4.0/
 
 #### With the following caveats:
-*testnurbs-all-textured.obj was derived from testnurbs by nskrypnik (however, texturing was added and geometry was improved)
-
+*testnurbs-all-textured.obj was derived from testnurbs by nskrypnik
