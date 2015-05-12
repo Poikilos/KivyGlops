@@ -5,6 +5,7 @@ Manage objects and camera in your 3D scene
 * Loads OBJ files into an intermediate format (KivyMesherMesh)
 * pymesher module (does not require Kivy) loads obj files, and provides base classes for all classes in kivymesher module
 * pyrealtime module (does not require Kivy) keeps track of keyboard state, allowing getting keystate asynchronously
+* KivyMesher tutorials are available for download at [expertmultimedia.com/usingpython](http://expertmultimedia.com/usingpython/py3tutorials.html) (Unit 4 OpenGL)
 
 ## Known Issues
 * Triangulate objects (instead of leaving holes)
