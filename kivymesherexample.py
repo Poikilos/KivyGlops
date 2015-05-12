@@ -471,10 +471,10 @@ class Renderer(Widget):
 #             self.update_glsl()
 
 
-class KivyMesherExample20150511App(App):
+class KivyMesherExampleApp(App):
     def build(self):
 
         return Renderer()
 
 if __name__ == "__main__":
-    KivyMesherExample20150511App().run()
+    KivyMesherExampleApp().run()
