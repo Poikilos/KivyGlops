@@ -1,5 +1,5 @@
 # KivyMesher
-Manage objects and camera in your 3D scene
+Manage 3D objects and camera in your Kivy app
 ![Screenshot](https://raw.githubusercontent.com/expertmm/KivyMesher/master/screenshot01.png)
 
 ## Key Features
