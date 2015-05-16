@@ -66,14 +66,20 @@ class Renderer(Widget):
 
         self.mesher = KivyMesher()
         self.canvas = RenderContext(compute_normal_mat=True)
+        #self.canvas["_world_light_dir"]
+        self.canvas["world_light_dir_eye_space"] = (0.0,.5,1.0);
+        self.canvas["camera_light_multiplier"] = (1.0, 1.0, 1.0, 1.0)
+        self.canvas.shader.source = resource_find('shade-kivymesher-standard.glsl')
         #self.canvas.shader.source = resource_find('shade-normal-only.glsl')
-        self.canvas.shader.source = resource_find('shade-texture-only.glsl')
-        #self.mesher.load_obj("barrels triangulated (Costinus at turbosquid).obj")
-        #self.mesher.load_obj("barrel.obj")
-        #self.mesher.load_obj("KivyMesherDemoScene.obj")
-        self.mesher.load_obj("testnurbs-all-textured.obj")
-        #self.mesher.load_obj("pyramid.obj")
-        #self.mesher.load_obj("orion.obj")
+        #self.canvas.shader.source = resource_find('shade-texture-only.glsl')
+
+        #self.mesher.load_obj(resource_find("barrels triangulated (Costinus at turbosquid).obj"))
+        #self.mesher.load_obj(resource_find("barrel.obj"))
+        #self.mesher.load_obj(resource_find("KivyMesherDemoScene.obj"))
+        self.mesher.load_obj(resource_find("testnurbs-all-textured.obj"))
+        #self.mesher.load_obj(resource_find("pyramid.obj"))
+        #self.mesher.load_obj(resource_find("orion.obj"))
+        print(self.canvas.shader)
         mesherYAMLLines = []
         self.mesher.dump(mesherYAMLLines)
         try:
