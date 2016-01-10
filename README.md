@@ -25,6 +25,18 @@ Control 3D objects and the camera in your 3D Kivy app!
 * Implement lighting by improving shader (instead of only flat shading of textured objects being available)
 * Calculate rotation on other axes before calling look_at (only does y rotation currently, using a&d keys)
 
+## Planned Features
+* Implement different shaders for different objects (such as by changing shader.vs and shader.fs to different vertex shader and fragment shader code after PopMatrix?)
+	(can be done by subclassing Widget and setting self.vs and self.fs such as in C:\Kivy-1.8.0-py3.3-win32\kivy\examples\shader\plasma.py)
+* Implement spherical background map
+* Implement Image-Based Lighting (simply blur global background for basic effect)
+* Implement fresnel_away_color fresnel_toward_color (can have alpha, and can be used for fake SSS)
+* Implement full-screen shaders
+* Add a plasma effect to example (such as using plasma shader from C:\Kivy-1.8.0-py3.3-win32\kivy\examples\shader\plasma.py)
+	(note that the following uniforms need to be added:
+        self.canvas['time'] = Clock.get_boottime()
+        self.canvas['resolution'] = list(map(float, self.size))
+	)
 ## License
 Software is copyright Jake Gustafson and provided under GNU Lesser General Public License: https://www.gnu.org/licenses/lgpl.html
 #### With the following caveats:
@@ -37,8 +49,18 @@ Resources are provided under Creative Commons Attribution Share-Alike (CC-BY-SA)
 #### With the following caveats:
 *testnurbs-all-textured.obj was derived from testnurbs by nskrypnik
 
+## Kivy Notes
+* Kivy has no default vertex format, so pymesher.py provides OpenGL with vertex format (& names the variables):
+vec3 v_pos
+vec3 v_normal
+vec2 v_tc0
+* Kivy has no default model view matrix, so main window provides:
+uniform mat4 modelview_mat;  //derived from self.canvas["modelview_mat"] = modelViewMatrix
+uniform mat4 projection_mat;  //derived from self.canvas["projection_mat"] = projectionMatrix
+
 ## Developer Notes
 * pymesher module which does not require Kivy loads obj files, and provides base classes for all classes in kivymesher module
 * pyrealtime module which does not require Kivy keeps track of keyboard state, allowing getting keystate asynchronously
 * update-kivymesher.bat will only work for students if teacher places KivyMesher in R:\Classes\ComputerProgramming\Examples\KivyMesher
 (which can be done using deploy.bat, if the folder already exists and the teacher has write permissions to the folder; the students should have read permissions to the folder)
+

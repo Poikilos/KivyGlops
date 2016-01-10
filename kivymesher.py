@@ -107,8 +107,16 @@ class KivyMesherMesh(PyMesherMesh):
     def _on_change_pivot(self):
         super(KivyMesherMesh, self)._on_change_pivot()
         self._on_change_scale_instruction()
-        
-        
+
+    def get_scale(self):
+        return (self._scale_instruction.x + self._scale_instruction.y + self._scale_instruction.z) / 3.0;
+
+    def set_scale(self, overall_scale):
+        self._scale_instruction.x = overall_scale
+        self._scale_instruction.y = overall_scale
+        self._scale_instruction.z = overall_scale
+        self._on_change_scale_instruction()
+
     def _on_change_scale_instruction(self):
         if self._pivot_point is not None:
             self._pivot_scaled_point = self._pivot_point[0]*self._scale_instruction.x+self._translate_instruction.x, self._pivot_point[1]*self._scale_instruction.y+self._translate_instruction.y, self._pivot_point[2]*self._scale_instruction.z+self._translate_instruction.z
@@ -127,10 +135,10 @@ class KivyMesherMesh(PyMesherMesh):
         meshName = ""
         if self.name is not None:
             meshName = self.name
-        print()
-        print("_on_change_scale_instruction for object named '"+meshName+"'")
-        print ("_pivot_point:"+str(self._pivot_point))
-        print ("_pivot_scaled_point:"+str(self._pivot_scaled_point))
+        #print()
+        #print("_on_change_scale_instruction for object named '"+meshName+"'")
+        #print ("_pivot_point:"+str(self._pivot_point))
+        #print ("_pivot_scaled_point:"+str(self._pivot_scaled_point))
 
 
 class KivyMesherMaterial(PyMesherMaterial):

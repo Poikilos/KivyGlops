@@ -45,15 +45,24 @@ class Renderer(Widget):
     # _turning_y = 0.0
     controllers = list()
     player1_controller = None
+    _previous_world_light_dir = None
+    _previous_camera_rotate_y_angle = None
+    _world_cube = None
+    projection_near = None
+    world_boundary_min = None
+    world_boundary_max = None
 
 
     def __init__(self, **kwargs):
+        self.world_boundary_min = [None,None,None]
+        self.world_boundary_max = [None,None,None]
         self.camera_walk_units_per_second = 12.0
         self.camera_turn_radians_per_second = math.radians(90.0)
         self.mode = self.MODE_EDIT
         self.player1_controller = PyRealTimeController()
         self.controllers.append(self.player1_controller)
         self.focal_distance = 2.0
+        self.projection_near = 0.1
         try:
             self._keyboard = Window.request_keyboard(
                 self._keyboard_closed, self)
@@ -66,8 +75,8 @@ class Renderer(Widget):
 
         self.mesher = KivyMesher()
         self.canvas = RenderContext(compute_normal_mat=True)
-        #self.canvas["_world_light_dir"]
-        self.canvas["world_light_dir_eye_space"] = (0.0,.5,1.0);
+        self.canvas["_world_light_dir"] = (0.0,.5,1.0);
+        self.canvas["_world_light_dir_eye_space"] = (0.0,.5,1.0); #rotated in update_glsl
         self.canvas["camera_light_multiplier"] = (1.0, 1.0, 1.0, 1.0)
         self.canvas.shader.source = resource_find('shade-kivymesher-standard.glsl')
         #self.canvas.shader.source = resource_find('shade-normal-only.glsl')
@@ -77,6 +86,8 @@ class Renderer(Widget):
         #self.mesher.load_obj(resource_find("barrel.obj"))
         #self.mesher.load_obj(resource_find("KivyMesherDemoScene.obj"))
         self.mesher.load_obj(resource_find("testnurbs-all-textured.obj"))
+
+
         #self.mesher.load_obj(resource_find("pyramid.obj"))
         #self.mesher.load_obj(resource_find("orion.obj"))
         print(self.canvas.shader)
@@ -93,7 +104,6 @@ class Renderer(Widget):
         super(Renderer, self).__init__(**kwargs)
         self.cb = Callback(self.setup_gl_context)
         self.canvas.add(self.cb)
-
 
         self.canvas.add(PushMatrix())
         #self.canvas.add(thisTexture)
@@ -158,6 +168,16 @@ class Renderer(Widget):
         self.canvas.add(self.resetCallback)
 
         self.camera_translate = [0, 1.7, -25] #x,y,z where y is up  #1.7 since 5'10" person is ~1.77m, and eye down a bit
+        #This is done axis by axis--the only reason is so that you can do OpenGL 6 (boundary detection) lesson from expertmultimedia.com starting with this file
+        if self.world_boundary_min[0] is not None:
+            if self.camera_translate[0] < self.world_boundary_min[0]:
+                self.camera_translate[0] = self.world_boundary_min[0]
+        if self.world_boundary_min[1] is not None:
+            if self.camera_translate[1] < self.world_boundary_min[1]: #this is done only for this axis, just so that you can do OpenGL 6 lesson using this file (boundary detection)
+                self.camera_translate[1] = self.world_boundary_min[1]
+        if self.world_boundary_min[2] is not None:
+            if self.camera_translate[2] < self.world_boundary_min[2]: #this is done only for this axis, just so that you can do OpenGL 6 lesson using this file (boundary detection)
+                self.camera_translate[2] = self.world_boundary_min[2]
         self.camera_rotate_x = [0.0, 1.0, 0.0, 0.0]
         self.camera_rotate_y = [math.radians(90.0), 0.0, 1.0, 0.0]
         self.camera_rotate_z = [0.0, 0.0, 0.0, 1.0]
@@ -170,6 +190,28 @@ class Renderer(Widget):
         self.camera_turn_radians_per_frame = self.camera_turn_radians_per_second / self.frames_per_second
 
         self._touches = []
+
+        #fix incorrect keycodes in kivy 1.8.0:
+        if (Keyboard.keycodes["-"]==41):
+            Keyboard.keycodes["-"]=45
+        if (Keyboard.keycodes["="]==43):
+            Keyboard.keycodes["="]=61
+
+    def set_world_boundary_by_object(self, thisMesherMesh, use_x, use_y, use_z):
+        self._world_cube = thisMesherMesh
+        if (self._world_cube is not None):
+            self.world_boundary_min = [self._world_cube.get_min_x(), None, self._world_cube.get_min_z()]
+            self.world_boundary_max = [self._world_cube.get_max_x(), None, self._world_cube.get_max_z()]
+
+            for axis_index in range(0,3):
+                if self.world_boundary_min[axis_index] is not None:
+                    self.world_boundary_min[axis_index] += self.projection_near + 0.1
+                if self.world_boundary_max[axis_index] is not None:
+                    self.world_boundary_max[axis_index] -= self.projection_near + 0.1
+        else:
+            self.world_boundary_min = [None,None,None]
+            self.world_boundary_max = [None,None,None]
+
 
     def setup_gl_context(self, *args):
         glEnable(GL_DEPTH_TEST)
@@ -201,14 +243,23 @@ class Renderer(Widget):
             # self.camera_translate[0] += origin_distance * math.cos(-1*angle)
             # self.camera_translate[1] += origin_distance * math.sin(-1*angle)
 
+    def axis_index_to_string(self,index):
+        result = "unknown axis"
+        if (index==0):
+            result = "x"
+        elif (index==1):
+            result = "y"
+        elif (index==2):
+            result = "z"
+        return result
 
     def update_glsl(self, *largs):
 
-        # NOTE: increased z moves object farther away
-
-        rotation_multiplier_y = 0.0  #1.0 is maximum speed
-        moving_x = 0.0  #1.0 is maximum speed
-        moving_z = 0.0  #1.0 is maximum speed
+        rotation_multiplier_y = 0.0  # 1.0 is maximum speed
+        moving_x = 0.0  # 1.0 is maximum speed
+        moving_z = 0.0  # 1.0 is maximum speed; NOTE: increased z moves object farther away
+        moving_theta = 0.0
+        position_change = [0.0, 0.0, 0.0]
         # for keycode strings, see  http://kivy.org/docs/_modules/kivy/core/window.html
         if self.player1_controller.get_pressed(Keyboard.keycodes["a"]):
             if self.player1_controller.get_pressed(Keyboard.keycodes["shift"]):
@@ -225,27 +276,46 @@ class Renderer(Widget):
         if self.player1_controller.get_pressed(Keyboard.keycodes["s"]):
             moving_z = -1.0
 
-
-
-
         if rotation_multiplier_y != 0.0:
-            angle_y = self.camera_turn_radians_per_frame * rotation_multiplier_y
-            self.camera_rotate_y[0] += angle_y
+            delta_y = self.camera_turn_radians_per_frame * rotation_multiplier_y
+            self.camera_rotate_y[0] += delta_y
             #origin_distance = math.sqrt(self.camera_translate[0]*self.camera_translate[0] + self.camera_translate[2]*self.camera_translate[2])
-            #self.camera_translate[0] -= origin_distance * math.cos(angle_y)
-            #self.camera_translate[2] -= origin_distance * math.sin(angle_y)
+            #self.camera_translate[0] -= origin_distance * math.cos(delta_y)
+            #self.camera_translate[2] -= origin_distance * math.sin(delta_y)
 
+        #xz coords of edges of 16x16 square are:
         # move in the direction you are facing
-        theta = 0.0
         if moving_x != 0.0 or moving_z != 0.0:
             #makes movement relative to rotation (which alaso limits speed when moving diagonally):
-            theta = KivyMesher.theta_radians_from_rectangular(moving_x, moving_z)
-            r_multiplier = math.sqrt((moving_x*moving_x)+(moving_z*moving_z))
-            if r_multiplier > 1.0:
-                r_multiplier = 1.0
-            #TODO: reprogram so adding math.radians(-90) is not needed
-            self.camera_translate[0] += self.camera_walk_units_per_frame*r_multiplier * math.cos(self.camera_rotate_y[0]+theta+math.radians(-90))
-            self.camera_translate[2] += self.camera_walk_units_per_frame*r_multiplier * math.sin(self.camera_rotate_y[0]+theta+math.radians(-90))
+            moving_theta = KivyMesher.theta_radians_from_rectangular(moving_x, moving_z)
+            moving_r_multiplier = math.sqrt((moving_x*moving_x)+(moving_z*moving_z))
+            if moving_r_multiplier > 1.0:
+                moving_r_multiplier = 1.0  # Limited so that you can't move faster when moving diagonally
+
+
+            #TODO: reprogram so adding math.radians(-90) is not needed (?)
+            position_change[0] = self.camera_walk_units_per_frame*moving_r_multiplier * math.cos(self.camera_rotate_y[0]+moving_theta+math.radians(-90))
+            position_change[2] = self.camera_walk_units_per_frame*moving_r_multiplier * math.sin(self.camera_rotate_y[0]+moving_theta+math.radians(-90))
+
+            # if (self.camera_translate[0] + move_by_x > self._world_cube.get_max_x()):
+            #     move_by_x = self._world_cube.get_max_x() - self.camera_translate[0]
+            #     print(str(self.camera_translate[0])+" of max_x:"+str(self._world_cube.get_max_x()))
+            # if (self.camera_translate[2] + move_by_z > self._world_cube.get_max_z()):
+            #     move_by_z = self._world_cube.get_max_z() - self.camera_translate[2]
+            #     print(str(self.camera_translate[2])+" of max_z:"+str(self._world_cube.get_max_z()))
+            # if (self.camera_translate[0] + move_by_x < self._world_cube.get_min_x()):
+            #     move_by_x = self._world_cube.get_min_x() - self.camera_translate[0]
+            #     print(str(self.camera_translate[0])+" of max_x:"+str(self._world_cube.get_max_x()))
+            # if (self.camera_translate[2] + move_by_z < self._world_cube.get_min_z()):
+            #     move_by_z = self._world_cube.get_min_z() - self.camera_translate[2]
+            #     print(str(self.camera_translate[2])+" of max_z:"+str(self._world_cube.get_max_z()))
+
+            #print(str(self.camera_translate[0])+","+str(self.camera_translate[2])+" each coordinate should be between matching one in "+str(self._world_cube.get_min_x())+","+str(self._world_cube.get_min_z())+" and "+str(self._world_cube.get_max_x())+","+str(self._world_cube.get_max_z()))
+            #print(str(self.camera_translate)+" each coordinate should be between matching one in "+str(self.world_boundary_min)+" and "+str(self.world_boundary_max))
+
+        for axis_index in range(0,3):
+            if position_change[axis_index] is not None:
+                self.camera_translate[axis_index] += position_change[axis_index]
         # else:
         #     self.camera_translate[0] += self.camera_walk_units_per_frame * moving_x
         #     self.camera_translate[2] += self.camera_walk_units_per_frame * moving_z
@@ -253,7 +323,7 @@ class Renderer(Widget):
         #if self.IsVerbose:
         #    print("update_glsl...")
         asp = float(self.width) / float(self.height)
-        field_of_view_factor = 0.3
+        field_of_view_factor = 0.03
         asp = asp*field_of_view_factor
         proj = Matrix()
         modelViewMatrix = Matrix()
@@ -278,18 +348,18 @@ class Renderer(Widget):
         #modelViewMatrix = modelViewMatrix.look_at(0,self.camera_translate[1],0, self.look_point[0], self.look_point[1], self.look_point[2], 0, 1, 0)
 
         #Since what you are looking at should be relative to yourself, add camera's position:
-        for axisIndex in range(3):
-            self.look_point[axisIndex] += self.camera_translate[axisIndex]
+        for axis_index in range(3):
+            self.look_point[axis_index] += self.camera_translate[axis_index]
 
         #must translate first, otherwise look_at will override position on rotation axis ('y' in this case)
         modelViewMatrix.translate(self.camera_translate[0], self.camera_translate[1], self.camera_translate[2])
-        #theta = KivyMesher.theta_radians_from_rectangular(moving_x, moving_z)
+        #moving_theta = KivyMesher.theta_radians_from_rectangular(moving_x, moving_z)
         modelViewMatrix = modelViewMatrix.look_at(self.camera_translate[0], self.camera_translate[1], self.camera_translate[2], self.look_point[0], self.look_point[1], self.look_point[2], 0, 1, 0)
 
 
 
         #proj.view_clip(left, right, bottom, top, near, far, perspective)
-        proj = proj.view_clip(-asp, asp, -1*field_of_view_factor, field_of_view_factor, 1, 100, 1)
+        proj = proj.view_clip(-asp, asp, -1*field_of_view_factor, field_of_view_factor, self.projection_near, 100, 1)
 
         self.canvas['projection_mat'] = proj
         self.canvas['modelview_mat'] = modelViewMatrix
@@ -298,8 +368,8 @@ class Renderer(Widget):
 
         is_look_point_changed = False
         if previous_look_point is not None:
-            for axisIndex in range(3):
-                if self.look_point[axisIndex] != previous_look_point[axisIndex]:
+            for axis_index in range(3):
+                if self.look_point[axis_index] != previous_look_point[axis_index]:
                     is_look_point_changed = True
                     #print(str(self.look_point)+" was "+str(previous_look_point))
                     break
@@ -309,8 +379,23 @@ class Renderer(Widget):
         if is_look_point_changed:
             pass
             #print("Now looking at "+str(self.look_point))
-            #print ("position: "+str(self.camera_translate)+"; self.camera_rotate_y[0]:"+str(self.camera_rotate_y[0]) +"("+str(math.degrees(self.camera_rotate_y[0]))+"degrees); theta:"+str(math.degrees(theta))+" degrees")
+            #print ("position: "+str(self.camera_translate)+"; self.camera_rotate_y[0]:"+str(self.camera_rotate_y[0]) +"("+str(math.degrees(self.camera_rotate_y[0]))+"degrees); moving_theta:"+str(math.degrees(moving_theta))+" degrees")
 
+        if (self._previous_world_light_dir is None
+            or self._previous_world_light_dir[0]!=self.canvas["_world_light_dir"][0]
+            or self._previous_world_light_dir[1]!=self.canvas["_world_light_dir"][1]
+            or self._previous_world_light_dir[2]!=self.canvas["_world_light_dir"][2]
+            or self._previous_camera_rotate_y_angle is None
+            or self._previous_camera_rotate_y_angle != self.camera_rotate_y[0]
+            ):
+            #self.canvas["_world_light_dir"] = (0.0,.5,1.0);
+            #self.canvas["_world_light_dir_eye_space"] = (0.0,.5,1.0);
+            world_light_theta = KivyMesher.theta_radians_from_rectangular(self.canvas["_world_light_dir"][0], self.canvas["_world_light_dir"][2])
+            light_theta = world_light_theta+self.camera_rotate_y[0]
+            light_r = math.sqrt((self.canvas["_world_light_dir"][0]*self.canvas["_world_light_dir"][0])+(self.canvas["_world_light_dir"][2]*self.canvas["_world_light_dir"][2]))
+            self.canvas["_world_light_dir_eye_space"] = light_r * math.cos(light_theta), self.canvas["_world_light_dir_eye_space"][1], light_r * math.sin(light_theta)
+            self._previous_camera_rotate_y_angle = self.camera_rotate_y[0]
+            self._previous_world_light_dir = self.canvas["_world_light_dir"][0], self.canvas["_world_light_dir"][1], self.canvas["_world_light_dir"][2]
 
 
     def define_rotate_angle(self, touch):
@@ -339,7 +424,7 @@ class Renderer(Widget):
         super(Renderer, self).on_touch_up(touch)
         #touch.ungrab(self)
         #self._touches.remove(touch)
-        self.player1_controller.dump()
+        #self.player1_controller.dump()
 
     def print_location(self):
         if self.IsVerbose:

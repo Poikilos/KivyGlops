@@ -48,5 +48,6 @@ void main (void){
 	float3 V = normalize( _WorldSpaceCameraPos.xyz - i.posWorld );
 	float3 N = normalize( i.normalDir );
 	float fresnel = pow( 1.0 - dot( N, V), _sharpness );
-    gl_FragColor = color;
+	vec4 fresnel_color = (fresnel, fresnel, fresnel, 1.0);
+    gl_FragColor = color * fresnel_color;
 }

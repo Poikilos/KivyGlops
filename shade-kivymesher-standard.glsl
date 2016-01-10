@@ -43,19 +43,19 @@
     precision highp float;
 #endif
 
-attribute vec3  v_pos;
-attribute vec3  v_normal;
-attribute vec4  v_color;
-attribute vec2  v_tc0;
+attribute vec3  v_pos; //set by Mesh (named by vertex_format)
+attribute vec3  v_normal; //set by Mesh (named by vertex_format)
+attribute vec4  v_color; //TODO: oops noone set this (neither kivy nor nskrypnik [C:\Kivy-1.8.0-py3.3-win32\kivy\examples\3Drendering\simple.glsl doesn't even mention the variable ])--vertex_format should name it. No wonder having no texture (or multiplying by v_color) makes object invisible. 
+attribute vec2  v_tc0; //set by Mesh (named by vertex_format)
 
-uniform mat4 modelview_mat;
-uniform mat4 projection_mat;
+uniform mat4 modelview_mat; 
+uniform mat4 projection_mat; 
 
-varying vec4 normal_vec;
-varying vec4 vertex_pos;
+varying vec4 normal_vec; //set by vertex shader below
+varying vec4 vertex_pos; 
 uniform mat4 normal_mat; //normal-only
-varying vec4 frag_color;
-varying vec2 uv_vec;
+varying vec4 frag_color; //set by vertex shader below (according to v_color)
+varying vec2 uv_vec; 
 
 
 varying vec2 uv; //http://www.kickjs.org/example/shader_editor/shader_editor.html
@@ -77,11 +77,9 @@ void main()
     frag_color = v_color;
     uv_vec = v_tc0;
 
-	uv = v_tc0; //uv = uv1; //http://www.kickjs.org/example/shader_editor/shader_editor.html
-	
-	
+	//uv = v_tc0; //uv = uv1; //http://www.kickjs.org/example/shader_editor/shader_editor.html
 	// compute light info
-	//n = normalize (normal_mat * normal_vec); //n = normalize(_norm * normal); //http://www.kickjs.org/example/shader_editor/shader_editor.html
+	//n = normalize (normal_mat * v_normal); //n = normalize(_norm * normal); //http://www.kickjs.org/example/shader_editor/shader_editor.html
 	
 }
 
@@ -114,7 +112,7 @@ varying vec2 uv_vec;
 
 uniform sampler2D tex;
 //#endregion texture-only
-uniform vec3 world_light_dir_eye_space;
+uniform vec3 _world_light_dir_eye_space;
 
 varying vec3 n; //http://www.kickjs.org/example/shader_editor/shader_editor.html
 varying vec2 uv; //http://www.kickjs.org/example/shader_editor/shader_editor.html
@@ -128,13 +126,13 @@ void main()
     vec4 v_normal = normalize( normal_mat * normal_vec ) ;
     vec4 v_light = normalize( vec4(0,0,0,1) - vertex_pos );
     //reflectance based on lamberts law of cosine
-    float theta = clamp(dot(v_normal, v_light), 0.0, 1.0);
+    float theta = clamp(dot(v_normal, v_light), 0.02, 1.0);
 	vec4 color = texture2D(tex, uv_vec);
     ///gl_FragColor = vec4(theta, theta, theta, 1.0); //normal-only
 	gl_FragColor = vec4(theta, theta, theta, 1.0) * camera_light_multiplier * color;
 	
 	//below is from http://www.kickjs.org/example/shader_editor/shader_editor.html
-	//float diffuse = max(0.0,dot(normalize(n),world_light_dir_eye_space));
+	//float diffuse = max(0.0,dot(normalize(n),_world_light_dir_eye_space));
 	//gl_FragColor = vec4(texture2D(tex,uv).xyz*diffuse,1.0);
 	
 }

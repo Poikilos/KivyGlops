@@ -64,6 +64,8 @@ class PyMesherMesh:
     _vertex_strings = None
     _obj_cache_vertices = None
     _pivot_point = None
+    _min_coords = None  #bounding cube minimums in local coordinates
+    _max_coords = None  #bounding cube maximums in local coordinates
     texcoords = None
     normals = None
     parameter_space_vertices = None  #only for curves--not really implemented, just loaded from obj
@@ -118,6 +120,70 @@ class PyMesherMesh:
         except:
             pass  #don't care
         return fileName
+
+    def get_min_x(self):
+        val = 0.0
+        try:
+            val = self._min_coords[0]
+        except:
+            pass
+        return val
+
+    def get_max_x(self):
+        val = 0.0
+        try:
+            val = self._max_coords[0]
+        except:
+            pass
+        return val
+
+    def get_min_y(self):
+        val = 0.0
+        try:
+            val = self._min_coords[1]
+        except:
+            pass
+        return val
+
+    def get_max_y(self):
+        val = 0.0
+        try:
+            val = self._max_coords[1]
+        except:
+            pass
+        return val
+
+    def get_min_z(self):
+        val = 0.0
+        try:
+            val = self._min_coords[2]
+        except:
+            pass
+        return val
+
+    def get_max_z(self):
+        val = 0.0
+        try:
+            val = self._max_coords[2]
+        except:
+            pass
+        return val
+
+    def recalculate_bounds(self):
+        self._min_coords = [None,None,None]
+        self._max_coords = [None,None,None]
+        participle = "initializing"
+        try:
+            if (self.vertices is not None):
+                participle = "accessing vertices"
+                for i in range(0,int(len(self.vertices)/self.vertex_depth)):
+                    for axisIndex in range(0,3):
+                        if self._min_coords[axisIndex] is None or self.vertices[i*self.vertex_depth+axisIndex] < self._min_coords[axisIndex]:
+                            self._min_coords[axisIndex] = self.vertices[i*self.vertex_depth+axisIndex]
+                        if self._max_coords[axisIndex] is None or self.vertices[i*self.vertex_depth+axisIndex] > self._max_coords[axisIndex]:
+                            self._max_coords[axisIndex] = self.vertices[i*self.vertex_depth+axisIndex]
+        except Exception as e:
+            print("Could not finish "+participle+" in recalculate_bounds: "+str(e))
 
     def get_center_average_of_vertices(self):
         #results = (0.0,0.0,0.0)
@@ -377,10 +443,11 @@ class PyMesher:
             for i in range(firstMeshIndex,len(self.meshes)):
                 participle = "finalizing object index "+str(i)+" (Count:"+str(len(self.meshes))+")"
                 self._finalize_obj_data(i)
+                self.meshes[i].recalculate_bounds()
         except Exception as e:
             print("Could not finish a mesh in load_obj while "+participle+" on line "+str(linePlus1)+": "+str(e))
-            
-    
+
+
     def _getMaterial(self, materialObjectName):
         result = None
         for i in range(0,len(self.materials)):
