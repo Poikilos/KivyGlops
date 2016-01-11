@@ -321,8 +321,7 @@ class PyMesher:
         thisList.append("Materials:")
         for i in range(0,len(self.materials)):
             self.materials[i].dump(thisList, tabString)
-            
-    
+
     def __init__(self):
         self.meshes = []
         self.materials = []
@@ -342,7 +341,7 @@ class PyMesher:
                         result=self.meshes[index]
         return result
         
-    def load_obj(self,objFileName, swapyz=False):
+    def load_obj(self, objFileName, swapyz=False):
         participle = "(before initializing)"
         linePlus1 = 1
         firstMeshIndex = len(self.meshes)
@@ -658,12 +657,4 @@ class PyMesher:
 
 
 
-ILLUMINATIONMODEL_DESCRIPTION_STRINGS = ["Color on and Ambient off","Color on and Ambient on","Highlight on","Reflection on and Ray trace on","Transparency: Glass on, Reflection: Ray trace on","Reflection: Fresnel on and Ray trace on","Transparency: Refraction on, Reflection: Fresnel off and Ray trace on","Transparency: Refraction on, Reflection: Fresnel on and Ray trace on","Reflection on and Ray trace off","Transparency: Glass on, Reflection: Ray trace off","Casts shadows onto invisible surfaces"]
-
-def getIlluminationModelDescription(self, illuminationModelIndex):
-    global ILLUMINATIONMODEL_DESCRIPTION_STRINGS
-    resultString = None
-    if (illuminationModelIndex>=0) and (illuminationModelIndex<len(ILLUMINATIONMODEL_DESCRIPTION_STRINGS)):
-        ILLUMINATIONMODEL_DESCRIPTION_STRINGS[illuminationModelIndex]
-    return resultString
 

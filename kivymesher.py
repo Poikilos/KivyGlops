@@ -28,10 +28,10 @@ class KivyMesher(PyMesher):
         else:
             angleAndMatrix[3] = .000001
         return angleAndMatrix
-        
+
     def __init__(self):
         super(KivyMesher, self).__init__()
-    
+
     def createMesh(self):
         #return PyMesher.createMesh(self)
         return KivyMesherMesh()

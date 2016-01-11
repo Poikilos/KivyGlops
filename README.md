@@ -9,7 +9,8 @@ Control 3D objects and the camera in your 3D Kivy app!
 * KivyMesher tutorials are available for download at [expertmultimedia.com/usingpython](http://expertmultimedia.com/usingpython/py3tutorials.html) (Unit 4 OpenGL)
 
 ## Changes
-* (2015-05-12) Included testnurbs file with added textures and improved geometry; removed orion
+* (2016-01-10) Created new classes to hold the data from newobj and newmtl files, in order to keep strict obj+mtl data, separately from opengl-style KivyMesherMesh
+* (2015-05-12) Included a modified testnurbs file (with added textures and improved geometry); removed orion
 * (2015-04-15) for clarity and less dependence on OBJ format, refactored object.vertices to object._vertex_strings, and refactored object.mesh.vertices to object.vertices
 * (2015-04-15) changed "Material_orion.png" to "Material_orion" in orion.obj and orion.mtl to avoid confusion (it is a material object name, not a filename)
 * (2015-04-15) added line to orion.obj: mtllib orion.mtl
