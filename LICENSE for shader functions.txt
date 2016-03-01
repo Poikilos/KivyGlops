@@ -1,0 +1,10 @@
+Shader code that is  not based on Kivy is from Blender, and released according to GPL 3.0:
+http://www.gnu.org/copyleft/gpl.html
+LICENSE for unmodified blender shader code is GPL 3.0:
+
+"The source code we develop at blender.org is default being licensed as GNU GPL Version 2 or later. Some modules we make are using more permissive licenses though, for example the Blender Cycles rendering engine is available as Apache 2.0.
+
+Blender also uses many modules or libraries from other projects. For example Python uses the Python License; Bullet uses the ZLib License; Libmv uses the MIT License; and OSL, a BSD License.
+
+All the components that together make Blender are compatible under the newer GNU GPL Version 3. That is also the license to use for any distribution of Blender binaries."
+-blender.org. <https://www.blender.org/about/license/>. 14 Jan 2016.

@@ -16,21 +16,21 @@ from kivy.core.window import Keyboard
 
 import os
 
-# from kivymesher import KivyMesher
-# from kivymesher import KivyMesherMesh
-from kivymesher import *
+# from kivyglops import KivyGlops
+# from kivyglops import KivyGlop
+from kivyglops import *
 from pyrealtime import *
 from kivy.input.providers.mouse import MouseMotionEvent
 
 class Renderer(Widget):
     IsVerbose = False
     IsVisualDebugMode = False
-    mesher = None
+    glops = None  # TODO: eliminate this by finishing KivyGlops as window (Widget), and making Renderer a subclass of KivyGlops
     frames_per_second = 60.0
     camera_walk_units_per_second = None
 
-    selectedMM = None
-    selectedMMIndex = None
+    selected_glop = None
+    selected_glopIndex = None
 
     focal_distance = None
 
@@ -73,30 +73,31 @@ class Renderer(Widget):
 
         #self.bind(on_touch_down=self.canvasTouchDown)
 
-        self.mesher = KivyMesher()
+        self.glops = KivyGlops()
         self.canvas = RenderContext(compute_normal_mat=True)
         self.canvas["_world_light_dir"] = (0.0,.5,1.0);
         self.canvas["_world_light_dir_eye_space"] = (0.0,.5,1.0); #rotated in update_glsl
         self.canvas["camera_light_multiplier"] = (1.0, 1.0, 1.0, 1.0)
-        self.canvas.shader.source = resource_find('shade-kivymesher-standard.glsl')
+        self.canvas.shader.source = resource_find('simple1b.glsl')
+        #self.canvas.shader.source = resource_find('shade-kivyglops-standard.glsl')
         #self.canvas.shader.source = resource_find('shade-normal-only.glsl')
         #self.canvas.shader.source = resource_find('shade-texture-only.glsl')
 
-        #self.mesher.load_obj(resource_find("barrels triangulated (Costinus at turbosquid).obj"))
-        #self.mesher.load_obj(resource_find("barrel.obj"))
-        #self.mesher.load_obj(resource_find("KivyMesherDemoScene.obj"))
-        self.mesher.load_obj(resource_find("testnurbs-all-textured.obj"))
+        #self.glops.load_obj(resource_find("barrels triangulated (Costinus at turbosquid).obj"))
+        #self.glops.load_obj(resource_find("barrel.obj"))
+        #self.glops.load_obj(resource_find("KivyGlopsDemoScene.obj"))
+        self.glops.load_obj(resource_find("testnurbs-all-textured.obj"))
 
 
-        #self.mesher.load_obj(resource_find("pyramid.obj"))
-        #self.mesher.load_obj(resource_find("orion.obj"))
+        #self.glops.load_obj(resource_find("pyramid.obj"))
+        #self.glops.load_obj(resource_find("orion.obj"))
         print(self.canvas.shader)
-        mesherYAMLLines = []
-        self.mesher.dump(mesherYAMLLines)
+        glopsYAMLLines = []
+        self.glops.append_dump(glopsYAMLLines)
         try:
-            thisFile = open('mesher-dump.yml', 'w')
-            for i in range(0,len(mesherYAMLLines)):
-                thisFile.write(mesherYAMLLines[i]+"\n")
+            thisFile = open('glops-dump.yml', 'w')
+            for i in range(0,len(glopsYAMLLines)):
+                thisFile.write(glopsYAMLLines[i]+"\n")
             thisFile.close()
         except:
             print("Could not finish writing dump.")
@@ -108,26 +109,26 @@ class Renderer(Widget):
         self.canvas.add(PushMatrix())
         #self.canvas.add(thisTexture)
         #self.canvas.add(Color(1, 1, 1, 1))
-        for thisMeshIndex in range(0,len(self.mesher.meshes)):
+        for thisMeshIndex in range(0,len(self.glops.glops)):
             thisMeshName = ""
-            #thisMesh = KivyMesherMesh()
-            thisMM = self.mesher.meshes[thisMeshIndex]
-            if self.selectedMMIndex is None:
-                self.selectedMMIndex = thisMeshIndex
-                self.selectedMM = thisMM
-            if thisMM.name is not None:
-                thisMeshName =  self.mesher.meshes[thisMeshIndex].name
+            #thisMesh = KivyGlop()
+            this_glop = self.glops.glops[thisMeshIndex]
+            if self.selected_glopIndex is None:
+                self.selected_glopIndex = thisMeshIndex
+                self.selected_glop = this_glop
+            if this_glop.name is not None:
+                thisMeshName =  self.glops.glops[thisMeshIndex].name
             self.canvas.add(PushMatrix())
-            self.canvas.add(thisMM._translate_instruction)
-            self.canvas.add(thisMM._rotate_instruction_x)
-            self.canvas.add(thisMM._rotate_instruction_y)
-            self.canvas.add(thisMM._scale_instruction)
+            self.canvas.add(this_glop._translate_instruction)
+            self.canvas.add(this_glop._rotate_instruction_x)
+            self.canvas.add(this_glop._rotate_instruction_y)
+            self.canvas.add(this_glop._scale_instruction)
             #self.scale = Scale(0.6)
-            #m = list(self.scene.meshes.values())[0]
+            #m = list(self.scene.glops.values())[0]
             #self.canvas.add(m)
             self.canvas.add(UpdateNormalMatrix())
 
-            self.lastLoadedFileName = thisMM.getTextureFileName()
+            self.lastLoadedFileName = this_glop.get_texture_diffuse_filename()
             thisTextureImage = None
             if self.lastLoadedFileName is not None:
                 try:
@@ -138,9 +139,9 @@ class Renderer(Widget):
                 if self.IsVerbose:
                     Logger.debug("Warning: no texture specified for mesh named '"+thisMeshName+"'")
                     materialName = ""
-                    if thisMM.material is not None:
-                        if thisMM.material.name is not None:
-                            materialName = thisMM.material.name
+                    if this_glop.material is not None:
+                        if this_glop.material.name is not None:
+                            materialName = this_glop.material.name
                             Logger.debug("(material named '"+materialName+"')")
                         else:
                             Logger.debug("(material with no name)")
@@ -151,13 +152,13 @@ class Renderer(Widget):
                 thisTexture = thisTextureImage.texture
 
             thisMesh = Mesh(
-                vertices=thisMM.vertices,
-                indices=thisMM.indices,
-                fmt=thisMM.vertex_format,
+                vertices=this_glop.vertices,
+                indices=this_glop.indices,
+                fmt=this_glop.vertex_format,
                 mode='triangles',
                 texture=thisTexture,
             )
-            self.canvas.add(thisMM._color_instruction)
+            self.canvas.add(this_glop._color_instruction)
             self.canvas.add(thisMesh)
             self.canvas.add(PopMatrix())
 
@@ -197,8 +198,8 @@ class Renderer(Widget):
         if (Keyboard.keycodes["="]==43):
             Keyboard.keycodes["="]=61
 
-    def set_world_boundary_by_object(self, thisMesherMesh, use_x, use_y, use_z):
-        self._world_cube = thisMesherMesh
+    def set_world_boundary_by_object(self, thisGlopsMesh, use_x, use_y, use_z):
+        self._world_cube = thisGlopsMesh
         if (self._world_cube is not None):
             self.world_boundary_min = [self._world_cube.get_min_x(), None, self._world_cube.get_min_z()]
             self.world_boundary_max = [self._world_cube.get_max_x(), None, self._world_cube.get_max_z()]
@@ -287,7 +288,7 @@ class Renderer(Widget):
         # move in the direction you are facing
         if moving_x != 0.0 or moving_z != 0.0:
             #makes movement relative to rotation (which alaso limits speed when moving diagonally):
-            moving_theta = KivyMesher.theta_radians_from_rectangular(moving_x, moving_z)
+            moving_theta = KivyGlops.theta_radians_from_rectangular(moving_x, moving_z)
             moving_r_multiplier = math.sqrt((moving_x*moving_x)+(moving_z*moving_z))
             if moving_r_multiplier > 1.0:
                 moving_r_multiplier = 1.0  # Limited so that you can't move faster when moving diagonally
@@ -353,7 +354,7 @@ class Renderer(Widget):
 
         #must translate first, otherwise look_at will override position on rotation axis ('y' in this case)
         modelViewMatrix.translate(self.camera_translate[0], self.camera_translate[1], self.camera_translate[2])
-        #moving_theta = KivyMesher.theta_radians_from_rectangular(moving_x, moving_z)
+        #moving_theta = KivyGlops.theta_radians_from_rectangular(moving_x, moving_z)
         modelViewMatrix = modelViewMatrix.look_at(self.camera_translate[0], self.camera_translate[1], self.camera_translate[2], self.look_point[0], self.look_point[1], self.look_point[2], 0, 1, 0)
 
 
@@ -390,7 +391,7 @@ class Renderer(Widget):
             ):
             #self.canvas["_world_light_dir"] = (0.0,.5,1.0);
             #self.canvas["_world_light_dir_eye_space"] = (0.0,.5,1.0);
-            world_light_theta = KivyMesher.theta_radians_from_rectangular(self.canvas["_world_light_dir"][0], self.canvas["_world_light_dir"][2])
+            world_light_theta = KivyGlops.theta_radians_from_rectangular(self.canvas["_world_light_dir"][0], self.canvas["_world_light_dir"][2])
             light_theta = world_light_theta+self.camera_rotate_y[0]
             light_r = math.sqrt((self.canvas["_world_light_dir"][0]*self.canvas["_world_light_dir"][0])+(self.canvas["_world_light_dir"][2]*self.canvas["_world_light_dir"][2]))
             self.canvas["_world_light_dir_eye_space"] = light_r * math.cos(light_theta), self.canvas["_world_light_dir_eye_space"][1], light_r * math.sin(light_theta)
@@ -462,17 +463,17 @@ class Renderer(Widget):
 #         elif keycode[1] == 'numpadsubtract' or keycode[1] == 'numpadsubstract':  #since is mispelled as numpadsubstract in kivy
 #             pass
         elif keycode[1] == "tab":
-            self.selectMeshByIndex(self.selectedMMIndex+1)
+            self.selectMeshByIndex(self.selected_glopIndex+1)
             if self.IsVerbose:
-                meshNameString = None
-                if self.selectedMMIndex is not None:
-                    meshNameString = "["+str(self.selectedMMIndex)+"]"
-                if self.selectedMM is not None and self.selectedMM.name is not None:
-                    meshNameString = self.selectedMM.name
-                if meshNameString is not None:
-                    Logger.debug('Selected mesh: '+meshNameString)
+                this_name = None
+                if self.selected_glopIndex is not None:
+                    this_name = "["+str(self.selected_glopIndex)+"]"
+                if self.selected_glop is not None and self.selected_glop.name is not None:
+                    this_name = self.selected_glop.name
+                if this_name is not None:
+                    Logger.debug('Selected glop: '+this_name)
                 else:
-                    Logger.debug('Select mesh failed (maybe there are no meshes loaded.')
+                    Logger.debug('Select glop failed (maybe there are no glops loaded.')
         # else:
         #     print('Pressed unused key: ' + str(keycode) + "; text:"+text)
 
@@ -491,17 +492,17 @@ class Renderer(Widget):
 
 
     def selectMeshByIndex(self, index):
-        meshCount = len(self.mesher.meshes)
-        if (index>=meshCount):
+        glop_count = len(self.glops.glops)
+        if (index>=glop_count):
             index=0
         if self.IsVerbose:
-            Logger.debug("trying to select index "+str(index)+" (count is "+str(meshCount)+")...")
-        if (meshCount > 0):
-            self.selectedMMIndex = index
-            self.selectedMM = self.mesher.meshes[index]
+            Logger.debug("trying to select index "+str(index)+" (count is "+str(glop_count)+")...")
+        if (glop_count > 0):
+            self.selected_glopIndex = index
+            self.selected_glop = self.glops.glops[index]
         else:
-            self.selectedMM = None
-            self.selectedMMIndex = None
+            self.selected_glop = None
+            self.selected_glopIndex = None
 
     def _keyboard_closed(self):
         print('Keyboard disconnected!')
@@ -562,10 +563,10 @@ class Renderer(Widget):
 #             self.update_glsl()
 
 
-class KivyMesherExampleApp(App):
+class KivyGlopsExampleApp(App):
     def build(self):
 
         return Renderer()
 
 if __name__ == "__main__":
-    KivyMesherExampleApp().run()
+    KivyGlopsExampleApp().run()

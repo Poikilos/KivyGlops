@@ -31,7 +31,7 @@ class PyGlopsMaterial:
     properties = None
     name = None
     mtlFileName = None  #required so that references to materials work properly
-
+    
     #region vars based on OpenGL ES 1.1
     ambient_color = None  # vec4
     diffuse_color = None  # vec4
@@ -39,10 +39,10 @@ class PyGlopsMaterial:
     emissive_color = None  # vec4
     specular_exponent = None  # float
     #endregion vars based on OpenGL ES 1.1
-
+    
     def __init__(self):
         self.properties = {}
-
+        
     def append_dump(self, thisList, tabStringMinimum):
         thisList.append(tabStringMinimum+"material:")
         tabString="  "
@@ -83,8 +83,8 @@ class PyGlop:
     _min_coords = None  #bounding cube minimums in local coordinates
     _max_coords = None  #bounding cube maximums in local coordinates
     _pivot_point = None  #TODO: eliminate this--instead always use 0,0,0 and move vertices to change pivot; currently calculated from average of vertices if was imported from obj
-
-
+    
+    
     vertex_format = None
     vertices = None
     indices = None
@@ -93,7 +93,7 @@ class PyGlop:
     specular_color = None
     specular_coefficent = None
     opacity = None
-
+        
     def __init__(self):
         self.properties = {}
         #formerly in MeshData:
@@ -106,7 +106,7 @@ class PyGlop:
         self.vertex_depth = 0
         for i in range(0,len(self.vertex_format)):
             self.vertex_depth += self.vertex_format[i][VFORMAT_VECTOR_LEN_INDEX]
-
+            
         self.indices = []  # list of tris (vertex index, vertex index, vertex index, etc)
 
         # Default basic material of this glop
@@ -122,12 +122,12 @@ class PyGlop:
 
     def _on_change_pivot(self):
         pass
-
+       
     def transform_pivot_to_geometry(self):
         self._pivot_point = self.get_center_average_of_vertices()
         self._on_change_pivot()
         pass
-
+    
     def get_texture_diffuse_filename(self):  #formerly getTextureFileName(self):
         result = None
         try:
@@ -243,12 +243,12 @@ class PyGlop:
         except Exception as e:
             print("Could not finish "+participle+" in get_center_average_of_vertices: "+str(e))
         return results[0], results[1], results[2]
-
+        
     def view_traceback():
         ex_type, ex, tb = sys.exc_info()
         traceback.print_tb(tb)
         del tb
-
+        
     def set_textures_from_mtl_dict(self, mtl_dict):
         try:
             self.diffuse_color = mtl_dict.get('Kd') or self.diffuse_color
@@ -258,16 +258,16 @@ class PyGlop:
             self.specular_color = mtl_dict.get('Ks') or self.specular_color
             self.specular_color = [float(v) for v in self.specular_color]
             self.specular_coefficent = float(mtl_dict.get('Ns', self.specular_coefficent))
-            self.opacity = mtl_dict.get('d')
-            if self.opacity is None:
-                self.opacity = 1.0 - float(mtl_dict.get('Tr', 0.0))
-
+            transparency = mtl_dict.get('d')
+            if not transparency:
+                transparency = 1.0 - float(mtl_dict.get('Tr', 0))
+            self.opacity = float(1.0 - transparency)
         except Exception:
             print("Could not finish set_textures_from_mtl_dict:")
             view_traceback()
 
     #def calculate_normals(self):
-        ##this does not work. The call to calculate_normals is even commented out at <https://github.com/kivy/kivy/blob/master/examples/3Drendering/objloader.py> 20 Mar 2014. 16 Apr 2015.
+        ##this does not work. The call to calculate_normals is even commented out at <https://github.com/kivy/kivy/blob/master/examples/3Drendering/objloader.py> 20 Mar 2014. 16 Apr 2015. 
         #for i in range(int(len(self.indices) / (self.vertex_depth))):
             #fi = i * self.vertex_depth
             #v1i = self.indices[fi]
@@ -292,8 +292,8 @@ class PyGlop:
             #for k in range(3):
                 #self.vertices[v1i + 3 + k] = n[k]
                 #self.vertices[v2i + 3 + k] = n[k]
-                #self.vertices[v3i + 3 + k] = n[k]
-
+                #self.vertices[v3i + 3 + k] = n[k]   
+    
     def append_dump(self, thisList, tabStringMinimum):
         thisList.append(tabStringMinimum+"object:")
         tabString="  "
@@ -301,7 +301,7 @@ class PyGlop:
             thisList.append(tabStringMinimum+tabString+"name: "+self.name)
         for k,v in sorted(self.properties.items()):
             thisList.append(tabStringMinimum+tabString+k+": "+v)
-
+            
         thisTextureFileName=self.get_texture_diffuse_filename()
         if thisTextureFileName is not None:
             thisList.append(tabStringMinimum+tabString+"get_texture_diffuse_filename(): "+thisTextureFileName)
@@ -314,7 +314,7 @@ class PyGlops:
     lastUntitledMeshNumber = -1
     lastCreatedMaterial = None
     lastCreatedMesh = None
-
+    
     def theta_radians_from_rectangular(x, y):
         theta = 0.0
         if (y != 0.0) or (x != 0.0):
@@ -332,7 +332,7 @@ class PyGlops:
             #     theta = math.atan(y/x)
             theta = math.atan2(y, x)
         return theta
-
+    
     def append_dump(self, thisList):
         tabString="  "
         thisList.append("Objects:")
@@ -345,13 +345,13 @@ class PyGlops:
     def __init__(self):
         self.glops = []
         self.materials = []
-
+        
     def createMesh(self):
         return PyGlop()
 
     def createMaterial(self):
         return PyGlopsMaterial()
-
+    
     def getMeshByName(self, name):
         result = None
         if name is not None:
@@ -360,7 +360,7 @@ class PyGlops:
                     if name==self.glops[index].name:
                         result=self.glops[index]
         return result
-
+        
     def load_obj(self, obj_path): #TODO: ? swapyz=False):
         participle = "(before initializing)"
         linePlus1 = 1
@@ -381,11 +381,11 @@ class PyGlops:
                 print("ERROR: file '"+str(obj_path)+"' not found")
         except Exception as e:
             print("Could not finish a wobject in load_obj while "+participle+" on line "+str(linePlus1)+": "+str(e))
-
+            
 
     def get_pyglop_from_wobject(self, this_wobject):  #formerly set_from_wobject formerly import_wobject; based on _finalize_obj_data
         this_pyglop = PyGlop()
-        #this_pyglop.vertex_format = [
+        #self.vertex_format = [
             #(b'a_position', 3, 'float'),
             #(b'vNormal', 3, 'float'),
             #(b'vTexCoord0', 2, 'float'),
@@ -395,11 +395,11 @@ class PyGlops:
         NORMAL_OFFSET = 0
         TEXCOORD0_OFFSET = 0
         COLOR_OFFSET = 0
-        #this_pyglop.vertex_depth = 0
+        #self.vertex_depth = 0
         offset = 0
         temp_vertex = list()
         for i in range(0,len(this_pyglop.vertex_format)):
-            vformat_name_lower = this_pyglop.vertex_format[i][VFORMAT_NAME_INDEX].lower()
+            vformat_name_lower = self.vertex_format[i][VFORMAT_NAME_INDEX].lower()
             if "pos" in vformat_name_lower:
                 POSITION_OFFSET = offset
             elif "normal" in vformat_name_lower:
@@ -408,7 +408,7 @@ class PyGlops:
                 TEXCOORD0_OFFSET = offset
             elif "color" in vformat_name_lower:
                 COLOR_OFFSET = color
-            offset += this_pyglop.vertex_format[i][VFORMAT_VECTOR_LEN_INDEX]
+            offset += self.vertex_format[i][VFORMAT_VECTOR_LEN_INDEX]
         elif offset > this_pyglop.vertex_depth:
             print("ERROR: The count of values in vertex format chunks (chunk_count:"+str(len(this_pyglop.vertex_format))+"; value_count:"+str(offset)+") is greater than the vertex depth "+str(this_pyglop.vertex_depth))
         elif offset != this_pyglop.vertex_depth:
@@ -419,43 +419,42 @@ class PyGlops:
         #texcoords_offset = None
         #vertex_depth = 8
         #based on finish_object
-#         if this_pyglop._current_object == None:
+#         if self._current_object == None:
 #             return
 #
         for index in range(0,this_pyglop.vertex_depth):
             zero_vertex.append(0.0)
         #this_offset = COLOR_OFFSET
-        channel_count = this_pyglop.vertex_format[COLOR_OFFSET][VFORMAT_VECTOR_LEN_INDEX]
+        channel_count = self.vertex_format[COLOR_OFFSET][VFORMAT_VECTOR_LEN_INDEX]
         print("Using "+str(channel_count)+"-bit vertex color")
         for channel_subindex in range(0,channel_count):
             zero_vertex[COLOR_OFFSET+channel_subindex] = -1.0  # -1.0 for None
-
-
+            
+        
         participle="accessing object from list"
-        #this_wobject = this_pyglop.glops[index]
-        this_pyglop.name = None
+        #this_wobject = self.glops[index]
+        self.name = None
         this_name = ""
         try:
             if this_wobject.name is not None:
-                this_pyglop.name = this_wobject.name
+                self.name = this_wobject.name
                 this_name = this_wobject.name
         except:
             pass  #don't care
-
+        
         try:
             #if this_wobject.material is None:
             participle="processing material"
             if this_wobject.properties["usemtl"] is not None:
-                #this_wobject.material=this_pyglop._getMaterial(this_wobject.properties["usemtl"])
+                #this_wobject.material=self._getMaterial(this_wobject.properties["usemtl"])
                 if this_wobject.wmaterial is not None:
-                    this_wobject.set_textures_from_mtl_dict(this_wobject.wmaterial._map_filename_dict)
-                    #TODO: so something with _map_params_dict (wobjfile.py makes each entry a list of params if OBJ had map params before map file name)
+                    this_wobject.set_textures_from_mtl_dict(this_wobject.wmaterial.properties)
         except Exception as e:
             print("Could not finish "+participle+" in import_wobject: "+str(e))
-
-
-        if this_pyglop.vertices is None:
-            this_pyglop.vertices = []
+            
+        
+        if self.vertices is None:
+            this_wobject.vertices = []
             index = 0
             this_vertex = zero_vertex[:]
             #obj format stores faces like (quads are allowed such as in following examples):
@@ -471,21 +470,21 @@ class PyGlops:
             #FACE_VERTEX_COMPONENT_TEXCOORDS_INDEX = 1
             #FACE_VERTEX_COMPONENT_NORMAL_INDEX = 2
             #NOTE: in obj format, TEXCOORDS_INDEX is optional unless NORMAL_INDEX is present
-asdf
+            
             FACE_VERTEX_COMPONENT_VERTEX_INDEX = 0
             FACE_VERTEX_COMPONENT_TEXCOORDS_INDEX = 1
             FACE_VERTEX_COMPONENT_NORMAL_INDEX = 2
-
+            
             #nskrypnik put them in a different order than obj format (0,1,2) for some reason so do this order instead ONLY if using his obj loader:
             #FACE_VERTEX_COMPONENT_VERTEX_INDEX = 0
             #FACE_VERTEX_COMPONENT_TEXCOORDS_INDEX = 2
             #FACE_VERTEX_COMPONENT_NORMAL_INDEX = 1
-
-
+            
+            
             try:
-                if (len(self.indices)<1):
+                if (len(this_wobject.indices)<1):
                     participle = "before detecting vertex component offsets"
-                    #detecting vertex component offsets is required since indices in an obj file are sometimes relative to the first index in the FILE not the object
+                    #detecting vertex component offsets is required since indices in an obj file are sometimes relative to the first index in the FILE not the object 
                     idx = 0
                     if this_wobject.faces is not None:
                         #get offset
@@ -510,16 +509,16 @@ asdf
                                         thisNormalIndex = this_wobject.faces[faceIndex][componentIndex][vertexIndex]
                                         if normals_offset is None or thisNormalIndex<normals_offset:
                                             normals_offset = thisNormalIndex
-
+                                    
                         #if vertices_offset is not None:
                             #print("detected vertices_offset:"+str(vertices_offset))
                         #if texcoords_offset is not None:
                             #print("detected texcoords_offset:"+str(texcoords_offset))
                         #if normals_offset is not None:
                             #print("detected normals_offset:"+str(normals_offset))
-
+                    
                     participle = "before processing faces"
-                    index = 0
+                    
                     for f in this_wobject.faces:
                         participle = "getting face components"
                         vertex_done_flags = list()
@@ -534,18 +533,18 @@ asdf
                         vertexinfo_index = 0
                         while vertexinfo_index<len(f):
                             vertex_info = f[vertexinfo_index]
-
+                            
                             vertex_index = vertex_info[0]
                             texcoord_index = vertex_info[1]
                             normal_index = vertex_info[2]
-
+                            
                             vertex = None
                             texcoord = None
                             normal = None
-
-
+                            
+                            
                             participle = "getting normal components"
-
+                                
                             #get normal components
                             normal = (0.0, 0.0, 0.0)
                             #if normals_offset is None:
@@ -559,7 +558,7 @@ asdf
                                     #normal = this_wobject.normals[norms[face_index]-normals_offset]
                             except Exception as e:
                                 print("Could not finish "+participle+" for wobject named '"+this_name+"'")
-
+                                
                             participle = "getting texture coordinate components"
                             participle = "getting texture coordinate components at "+str(face_index)
                             participle = "getting texture coordinate components using index "+str(tcs[face_index])
@@ -573,7 +572,7 @@ asdf
                                 if this_wobject.texcoords is not None:
                                     participle = "getting normal components at "+str(tcs[face_index]-texcoords_offset)
                                     if texcoord_index is not None:
-                                        texcoord
+                                        texcoord 
                                     #if tcs[face_index] != -1:
                                         #participle = "using texture coordinates at index "+str(tcs[face_index]-texcoords_offset)+" (after applying texcoords_offset:"+str(texcoords_offset)+"; Count:"+str(len(this_wobject.texcoords))+")"
                                         #texcoord = this_wobject.texcoords[tcs[face_index]-texcoords_offset]
@@ -581,7 +580,7 @@ asdf
                                     print("Warning: no texcoords found in wobject named '"+this_name+"'")
                             except Exception as e:
                                 print("Could not finish "+participle+" for wobject named '"+this_name+"'")
-
+            
                             participle = "getting vertex components"
                             #if vertices_offset is None:
                             #    vertices_offset = 1
@@ -591,7 +590,7 @@ asdf
                                 v = this_wobject.vertices[verts[face_index]-vertices_offset]
                             except Exception as e:
                                 print("Could not finish "+participle+" for wobject named '"+this_name+"'")
-
+            
                             participle = "combining components"
                             data = [v[0], v[1], v[2], normal[0], normal[1], normal[2], texcoord[0], 1 - texcoord[1]] #TODO: why does kivy-rotation3d version have texcoord[1] instead of 1 - texcoord[1] ????
                             this_pyglop.vertices.extend(data)
@@ -602,10 +601,10 @@ asdf
                         index += 1
                     participle = "generating pivot point"
                     this_wobject.transform_pivot_to_geometry()
-
+                    
             except Exception as e:
                 print("Could not finish "+participle+" at face index "+str(index)+" in import_wobject: "+str(e))
-
+            
                     #print("vertices after extending: "+str(this_wobject.vertices))
                     #print("indices after extending: "+str(this_wobject.indices))
         #         if this_wobject.mtl is not None:
@@ -615,10 +614,10 @@ asdf
                 #self.glops[self._current_object] = mesh
                 #mesh.calculate_normals()
                 #self.faces = []
-
+                
         #         if (len(this_wobject.normals)<1):
         #             this_wobject.calculate_normals()  #this does not work. The call to calculate_normals is even commented out at <https://github.com/kivy/kivy/blob/master/examples/3Drendering/objloader.py> 20 Mar 2014. 16 Apr 2015.
         else:
-            print("ERROR in import_wobject: existing vertices found {this_pyglop.name:'"+str(this_name)+"'}")
+            print("ERROR in import_wobject: existing vertices found {self.name:'"+str(self.name)+"'}")
     #end def set_from_wobject
-
+   
