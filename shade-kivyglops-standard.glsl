@@ -41,6 +41,7 @@
 // gl_FragDepth             float representing the depth which is written in the depth buffer.
                     // Only available in fragment shader.
 // The importance of built-in types is that they are mapped to the OpenGL states. For example if you call glLightfv(GL_LIGHT0, GL_POSITION, my_light_position) this value is available as a uniform using gl_LightSource[0].position in a vertex and/or fragment shader.
+// see also http://www.lighthouse3d.com/tutorials/glsl-tutorial/lighting/
 #ifdef GL_ES
     precision highp float;
 #endif

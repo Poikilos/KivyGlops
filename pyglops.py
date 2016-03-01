@@ -98,7 +98,7 @@ class PyGlop:
         self.properties = {}
         #formerly in MeshData:
         self.vertex_format = [
-            (b'a_posiiton', 3, 'float'),
+            (b'a_position', 3, 'float'),
             (b'vNormal', 3, 'float'),
             (b'vTexCoord0', 2, 'float'),
             (b'vColor', 4, 'float'), #diffuse color of vertex, else negative
