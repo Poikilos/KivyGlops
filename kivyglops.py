@@ -14,6 +14,7 @@ from pyglops import *
 from kivy.resources import resource_find
 from kivy.graphics import *
 from kivy.uix.widget import Widget
+from kivy.core.image import Image
 
 class KivyGlopsMaterial(PyGlopsMaterial):
     
@@ -148,6 +149,9 @@ class KivyGlops(PyGlops):
         super(KivyGlops, self).load_obj(obj_path)
         if self.glops is None:
             self.glops = list()
+            print("FAILED TO LOAD '"+obj_path+"'")
+        elif len(self.glops)<1:
+            print("NO VALID OBJECTS FOUND in '"+obj_path+"'")
         for index in range(0,len(self.glops)):
             this_glop = self.glops[index]
             #this_glop = KivyGlop(pyglop=self.glops[index])
@@ -158,14 +162,20 @@ class KivyGlops(PyGlops):
                 
             this_texture_image = Image(this_glop.get_texture_diffuse_filename())
             this_texture = None
-            if (this_texture_image is not None):
-                this_texture = this_texture_image.texture
-            self.glops[index]._mesh = Mesh(
-                    vertices=this_glop.vertices,
-                    indices=this_glop.indices,
-                    fmt=this_glop.vertex_format,
-                    mode='triangles',
-                    texture=this_texture,
-                )
+            if len(this_glop.vertices)>0:
+                if (this_texture_image is not None):
+                    this_texture = this_texture_image.texture
+                self.glops[index]._mesh = Mesh(
+                        vertices=this_glop.vertices,
+                        indices=this_glop.indices,
+                        fmt=this_glop.vertex_format,
+                        mode='triangles',
+                        texture=this_texture,
+                    )
+                print(str(len(this_glop.vertices))+" vert(ex/ices)")
+            else:
+                print("WARNING: 0 vertices in glop")
+                if this_glop.name is not None:
+                    print("  named "+this_glop.name)
                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
 

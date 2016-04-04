@@ -3,6 +3,6 @@ import traceback
 
 def view_traceback():
     ex_type, ex, tb = sys.exc_info()
-    print(str(ex)+"("+str(ex_type)+"): ")
+    print(str(ex_type)+" "+str(ex)+": ")
     traceback.print_tb(tb)
     del tb

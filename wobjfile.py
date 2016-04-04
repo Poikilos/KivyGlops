@@ -256,11 +256,12 @@ class WObject:
     normals = None  # vn
     faces = None  # f; vertex#/texcoord#/normal# were *# is a counting number starting at 0 (BUT saved as 1)-- only vertex# is required (but // is used if texcoord# is not present but normal# is).
     wmaterial = None
+    name = None
 
     _opening_comments = None
 
     def __init__(self, name=None):
-        self._name = name
+        self.name = name
 
     def append_opening_comment(self, text):
         if self._opening_comments is None:
@@ -422,8 +423,11 @@ def get_wmaterials_from_mtl(filename):
 
 class WObjFile:
     wobjects = None
+    
+    def load(self, filename):
+        self.wobjects = self.get_wobjects_list(filename)
 
-    def load(self, filename):  # formerly import_obj formerly get_wobjects_from_obj
+    def get_wobjects_list(self, filename):  # formerly import_obj formerly get_wobjects_from_obj
         results = None
         try:
             if os.path.exists(filename):
@@ -453,7 +457,9 @@ class WObjFile:
                                     this_mtl_filename = args_string
                                     materials = get_wmaterials_from_mtl(this_mtl_filename)
                                 elif command=="o":
-                                    #if this_object is not None:
+                                    if this_object is not None:
+                                        results.append(this_object)
+                                        this_object = None
                                         #v_offset += len(this_object.vertices)
                                         #vt_offset += len(this_object.texcoords)
                                         #vn_offset += len(this_object.normals)
@@ -466,7 +472,6 @@ class WObjFile:
                                         #comments[:] = []
                                         del comments[:]
                                         #comments.clear()  # requires python 3.3 or later
-                                    results.append(this_object)
                                 elif this_object is not None:
                                     if command=="v":
                                         #NOTE: references a v by vertex# are relative to file instead of 'o', but this is detected & fixed at end of this method (for each object discovered) since file may not match spec
@@ -558,47 +563,14 @@ class WObjFile:
                                     comments.append(comment_notag)
                     line_counting_number += 1
                 #end for lines in file
-
-                # THE "finalize_obj" CODE BELOW IS NO LONGER NEEDED SINCE OFFSETS WERE ALREADY APPLIED ABOVE
-                #vertex_count = 0
-                #for result_index in range(0,len(results)):
-                    #this_object = results[result_index]
-                    #vertex_count += len(this_object.vertices)
-                    #texcoord_count += len(this_object.texcoords)
-                    #normal_count += len(this_object.normals)
-                    #if result_index>0:
-                        ##Intentionally use max for min and the reverse, so that actual min/max can be found by comparison:
-                        #min_v_index = MAX_INDEX
-                        #max_v_index = MIN_INDEX
-                        #min_vt_index = MAX_INDEX
-                        #max_vt_index = MIN_INDEX
-                        #min_vn_index = MAX_INDEX
-                        #max_vn_index = MIN_INDEX
-                        #for face_index in range(0,this_object.faces):
-                            ##NOTE: Using index directly is ok since offset was already subtracted from each index upon conversion to int above
-                            #this_face = this_object.faces[face_index]
-                            #for vertex_index in range(0,len(this_face)):
-                                #if this_face[FACE_V] is not None:
-                                    #if this_face[FACE_V] > max_v_index:
-                                        #max_v_index = this_face[FACE_V]
-                                    #if this_face[FACE_V] < min_v_index:
-                                        #min_v_index = this_face[FACE_V]
-                                #if this_face[FACE_VT] is not None:
-                                    #if this_face[FACE_VT] > max_vt_index:
-                                        #max_vt_index = this_face[FACE_VT]
-                                    #if this_face[FACE_VT] < min_vt_index:
-                                        #min_vt_index = this_face[FACE_VT]
-                                #if this_face[FACE_VN] is not None:
-                                    #if this_face[FACE_VN] > max_vn_index:
-                                        #max_vn_index = this_face[FACE_VN]
-                                    #if this_face[FACE_VN] < min_vn_index:
-                                        #min_vn_index = this_face[FACE_VN]
-                        ##debug assumes no loose vertices
-                        #for face_index in range(0,this_object.faces):
-
+                #NOTE: "finalize_obj" code is no longer needed since offsets were already applied above and original format is kept intact (indices instead of opengl-style vertex info array)
+                if this_object is not None:
+                    results.append(this_object)
+                    this_object = None
             else:
                 print("ERROR in get_wobjects_from_obj: missing file or cannot access '"+filename+"'")
         except:
+            print("Could not finish get_wobjects_from_obj '"+filename+"':")
             view_traceback()
         return results
 

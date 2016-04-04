@@ -89,7 +89,7 @@ class Renderer(Widget):
         #self.glops.load_obj(resource_find("barrel.obj"))
         #self.glops.load_obj(resource_find("KivyGlopsDemoScene.obj"))
         self.glops.load_obj(resource_find("testnurbs-all-textured.obj"))
-
+        
 
         #self.glops.load_obj(resource_find("pyramid.obj"))
         #self.glops.load_obj(resource_find("orion.obj"))

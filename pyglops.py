@@ -112,10 +112,10 @@ class PyGlopsLight:
        self.compute_distance_attenuation = False
 
 V_POS_INDEX = 0
-V_NORMAL_INDEX = 1
-V_DIFFUSE_INDEX = 2
-V_TC0_INDEX = 3
-V_TC1_INDEX = 4
+V_TC0_INDEX = 1
+V_TC1_INDEX = 2
+V_DIFFUSE_INDEX = 3
+V_NORMAL_INDEX = 4
 #see also pyglopsmesh.vertex_depth below
 
 #indices of tuples inside vertex_format (see PyGlop)
@@ -147,6 +147,7 @@ class PyGlop:
     def __init__(self):
         self.properties = {}
         #formerly in MeshData:
+        # order MUST match V_POS_INDEX etc above
         self.vertex_format = [
             (b'a_position', 4, 'float'),  # Munshi prefers vec4 (Kivy prefers vec3)
             (b'a_texcoord0', 4, 'float'),  # Munshi prefers vec4 (Kivy prefers vec2); vTexCoord0; available if enable_tex[0] is true
@@ -167,9 +168,10 @@ class PyGlop:
         self.specular_coefficent = 16.0
         self.opacity = 1.0
 
-        if result is None:
-            print("WARNING: no material for Glop named '"+str(self.name)+"'")
-        return result
+        #TODO: find out where this code goes (was here for unknown reason)
+        #if result is None:
+        #    print("WARNING: no material for Glop named '"+str(self.name)+"' (NOT YET IMPLEMENTED)")
+        #return result
 
     def _on_change_pivot(self):
         pass
@@ -404,19 +406,27 @@ class PyGlops:
                 participle = "loading WObjFile"
                 this_objfile.load(obj_path)
                 if this_objfile.wobjects is not None:
-                    for i in range(0,len(this_objfile.wobjects)):
-                        participle = "getting wobject"
-                        this_wobject = this_objfile.wobjects[i]
-                        participle = "converting wobject"
-                        this_pyglop = get_pyglop_from_wobject(this_wobject)
-                        participle = "appending pyglop to scene"
-                        if self.glops is None:
-                            self.glops = list()
-                        self.glops.append(this_pyglop)
-                        if this_pyglop.name is not None:
-                            print("appended glop named '"+this_pyglop.name+"'")
-                        else:
-                            print("appended glop")
+                    if len(this_objfile.wobjects)>0:
+                        for i in range(0,len(this_objfile.wobjects)):
+                            participle = "getting wobject"
+                            this_wobject = this_objfile.wobjects[i]
+                            participle = "converting wobject"
+                            this_pyglop = self.get_pyglop_from_wobject(this_wobject)
+                            if this_pyglop is not None:
+                                participle = "appending pyglop to scene"
+                                if self.glops is None:
+                                    self.glops = list()
+                                self.glops.append(this_pyglop)
+                                if this_pyglop.name is not None:
+                                    print("appended glop named '"+this_pyglop.name+"'")
+                                else:
+                                    print("appended glop")
+                            else:
+                                print("ERROR: this_pyglop is None after converting from wobject")
+                    else:
+                        print("ERROR: 0 wobjects could be read from '"+obj_path+"'")
+                else:
+                    print("ERROR: 0 wobjects could be read from '"+obj_path+"'")
             else:
                 print("ERROR: file '"+str(obj_path)+"' not found")
         except:  # Exception as e:
@@ -439,21 +449,32 @@ class PyGlops:
         NORMAL_OFFSET = -1
         TEXCOORD0_OFFSET = -1
         COLOR_OFFSET = -1
+
+        POSITION_INDEX = -1
+        NORMAL_INDEX = -1
+        TEXCOORD0_INDEX = -1
+        COLOR_INDEX = -1
+        
         #this_pyglop.vertex_depth = 0
         offset = 0
         temp_vertex = list()
         for i in range(0,len(this_pyglop.vertex_format)):
-            vformat_name_lower = this_pyglop.vertex_format[i][VFORMAT_NAME_INDEX].lower()
+            #first convert from bytestring to str
+            vformat_name_lower = str(this_pyglop.vertex_format[i][VFORMAT_NAME_INDEX]).lower()
             if "pos" in vformat_name_lower:
                 POSITION_OFFSET = offset
+                POSITION_INDEX = i
             elif "normal" in vformat_name_lower:
                 NORMAL_OFFSET = offset
+                NORMAL_INDEX = i
             elif ("texcoord" in vformat_name_lower) or ("tc0" in vformat_name_lower):
                 if TEXCOORD0_OFFSET<0:
                     TEXCOORD0_OFFSET = offset
+                    TEXCOORD0_INDEX = i
                 #else ignore since is probably the second index such as a_texcoord1
             elif "color" in vformat_name_lower:
-                COLOR_OFFSET = color
+                COLOR_OFFSET = offset
+                COLOR_INDEX = i
             offset += this_pyglop.vertex_format[i][VFORMAT_VECTOR_LEN_INDEX]
         if offset > this_pyglop.vertex_depth:
             print("ERROR: The count of values in vertex format chunks (chunk_count:"+str(len(this_pyglop.vertex_format))+"; value_count:"+str(offset)+") is greater than the vertex depth "+str(this_pyglop.vertex_depth))
@@ -484,14 +505,19 @@ class PyGlops:
 #
         if not IS_SELF_VFORMAT_OK:
             sys.exit(1)
-        
+        zero_vertex = list()
         for index in range(0,this_pyglop.vertex_depth):
             zero_vertex.append(0.0)
         #this_offset = COLOR_OFFSET
-        channel_count = this_pyglop.vertex_format[COLOR_OFFSET][VFORMAT_VECTOR_LEN_INDEX]
+        print("VFORMAT_VECTOR_LEN_INDEX:"+str(VFORMAT_VECTOR_LEN_INDEX))
+        print("len(this_pyglop.vertex_format):"+str(len(this_pyglop.vertex_format)))
+        print("COLOR_INDEX:"+str(COLOR_INDEX))
+        print("COLOR_OFFSET:"+str(COLOR_OFFSET))
+        print("len(this_pyglop.vertex_format[COLOR_INDEX]):"+str(len(this_pyglop.vertex_format[COLOR_INDEX])))
+        channel_count = this_pyglop.vertex_format[COLOR_INDEX][VFORMAT_VECTOR_LEN_INDEX]
         print("Using "+str(channel_count)+"-bit vertex color")
         for channel_subindex in range(0,channel_count):
-            zero_vertex[COLOR_OFFSET+channel_subindex] = -1.0  # -1.0 for None
+            zero_vertex[COLOR_OFFSET+channel_subindex] = -1.0  # -1.0 for None #TODO: asdf flag a different way to work with new standard shader
 
 
         participle="accessing object from list"
@@ -513,9 +539,10 @@ class PyGlops:
                 if this_wobject.wmaterial is not None:
                     this_wobject.set_textures_from_mtl_dict(this_wobject.wmaterial._map_filename_dict)
                     #TODO: so something with _map_params_dict (wobjfile.py makes each entry a list of params if OBJ had map params before map file name)
-        except Exception as e:
-            print("Could not finish "+participle+" in import_wobject: "+str(e))
-
+        except:  # Exception as e:
+            #print("Could not finish "+participle+" in get_pyglop_from_wobject: "+str(e))
+            print("Could not finish "+participle+" in get_pyglop_from_wobject: ")
+            view_traceback()
 
         if this_pyglop.vertices is None:
             this_pyglop.vertices = []
@@ -712,8 +739,10 @@ class PyGlops:
                     participle = "generating pivot point"
                     this_wobject.transform_pivot_to_geometry()
 
-            except Exception as e:
-                print("Could not finish "+participle+" at source_face_index "+str(source_face_index)+" in import_wobject: "+str(e))
+            except:  # Exception as e:
+                #print("Could not finish "+participle+" at source_face_index "+str(source_face_index)+" in import_wobject: "+str(e))
+                print("Could not finish "+participle+" at source_face_index "+str(source_face_index)+" in import_wobject: ")
+                view_traceback()
 
                     #print("vertices after extending: "+str(this_wobject.vertices))
                     #print("indices after extending: "+str(this_wobject.indices))
