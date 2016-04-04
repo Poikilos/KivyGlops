@@ -49,16 +49,16 @@
 attribute vec3  a_position; //set by Mesh (named by vertex_format)
 attribute vec3  vNormal; //set by Mesh (named by vertex_format)
 attribute vec4  vColor; //TODO: oops noone set this (neither kivy nor nskrypnik [C:\Kivy-1.8.0-py3.3-win32\kivy\examples\3Drendering\simple.glsl doesn't even mention the variable ])--vertex_format should name it. No wonder having no texture (or multiplying by v_color) makes object invisible. 
-attribute vec2  vTexCoord0; //set by Mesh (named by vertex_format)
+attribute vec2  vTexCoord0; //set by Mesh (named by vertex_format); 0 since multiple UVs may be needed if using multiple textures (usually maps above 0 are for situations such as a video on a mesh of a screen)
 
-uniform mat4 modelview_mat; 
-uniform mat4 projection_mat; 
+uniform mat4 modelview_mat; //KivyGlop variable (since may affect different objects separately, or a hierarchy of objects)
+uniform mat4 projection_mat; //Scene variable (since changes perspective)
 
 varying vec4 normal_vec; //set by vertex shader below
-varying vec4 vertex_pos; 
+varying vec4 vertex_pos; //local glsl variable (computed from a_position and matrices)
 uniform mat4 normal_mat; //normal-only
 varying vec4 frag_color; //set by vertex shader below (according to v_color)
-varying vec2 uv_vec; 
+varying vec2 uv_vec; //set by glsl (derived from vTexCoord0 directly, but varying between vertices)
 
 
 varying vec2 uv; //http://www.kickjs.org/example/shader_editor/shader_editor.html
@@ -67,7 +67,7 @@ varying vec3 n; //http://www.kickjs.org/example/shader_editor/shader_editor.html
 
 void main()
 {
-    //compute vertex position in eye_sapce and normalize normal vector
+    //compute vertex position in eye_space and normalize normal vector
     vec4 pos = modelview_mat * vec4(a_position,1.0);
     vertex_pos = pos;
     normal_vec = vec4(vNormal,0.0);
