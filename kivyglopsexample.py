@@ -22,6 +22,9 @@ from kivyglops import *
 from pyrealtime import *
 from kivy.input.providers.mouse import MouseMotionEvent
 
+MODE_EDIT = "edit"
+MODE_GAME = "game"
+
 class Renderer(Widget):
     IsVerbose = False
     IsVisualDebugMode = False
@@ -35,8 +38,6 @@ class Renderer(Widget):
     focal_distance = None
 
     mode = None
-    MODE_EDIT = "edit"
-    MODE_GAME = "game"
 
     look_point = None
 
@@ -58,7 +59,7 @@ class Renderer(Widget):
         self.world_boundary_max = [None,None,None]
         self.camera_walk_units_per_second = 12.0
         self.camera_turn_radians_per_second = math.radians(90.0)
-        self.mode = self.MODE_EDIT
+        self.mode = MODE_EDIT
         self.player1_controller = PyRealTimeController()
         self.controllers.append(self.player1_controller)
         self.focal_distance = 2.0
@@ -75,13 +76,14 @@ class Renderer(Widget):
 
         self.glops = KivyGlops()
         self.canvas = RenderContext(compute_normal_mat=True)
-        self.canvas["_world_light_dir"] = (0.0,.5,1.0);
-        self.canvas["_world_light_dir_eye_space"] = (0.0,.5,1.0); #rotated in update_glsl
+        self.canvas["_world_light_dir"] = (0.0, 0.5, 1.0);
+        self.canvas["_world_light_dir_eye_space"] = (0.0, 0.5, 1.0); #rotated in update_glsl
         self.canvas["camera_light_multiplier"] = (1.0, 1.0, 1.0, 1.0)
         self.canvas.shader.source = resource_find('simple1b.glsl')
         #self.canvas.shader.source = resource_find('shade-kivyglops-standard.glsl')
         #self.canvas.shader.source = resource_find('shade-normal-only.glsl')
         #self.canvas.shader.source = resource_find('shade-texture-only.glsl')
+        #self.canvas.shader.source = resource_find('shade-kivyglops-minimal.glsl')
 
         #self.glops.load_obj(resource_find("barrels triangulated (Costinus at turbosquid).obj"))
         #self.glops.load_obj(resource_find("barrel.obj"))
@@ -288,7 +290,7 @@ class Renderer(Widget):
         # move in the direction you are facing
         if moving_x != 0.0 or moving_z != 0.0:
             #makes movement relative to rotation (which alaso limits speed when moving diagonally):
-            moving_theta = KivyGlops.theta_radians_from_rectangular(moving_x, moving_z)
+            moving_theta = theta_radians_from_rectangular(moving_x, moving_z)
             moving_r_multiplier = math.sqrt((moving_x*moving_x)+(moving_z*moving_z))
             if moving_r_multiplier > 1.0:
                 moving_r_multiplier = 1.0  # Limited so that you can't move faster when moving diagonally
@@ -354,7 +356,7 @@ class Renderer(Widget):
 
         #must translate first, otherwise look_at will override position on rotation axis ('y' in this case)
         modelViewMatrix.translate(self.camera_translate[0], self.camera_translate[1], self.camera_translate[2])
-        #moving_theta = KivyGlops.theta_radians_from_rectangular(moving_x, moving_z)
+        #moving_theta = theta_radians_from_rectangular(moving_x, moving_z)
         modelViewMatrix = modelViewMatrix.look_at(self.camera_translate[0], self.camera_translate[1], self.camera_translate[2], self.look_point[0], self.look_point[1], self.look_point[2], 0, 1, 0)
 
 
@@ -391,7 +393,7 @@ class Renderer(Widget):
             ):
             #self.canvas["_world_light_dir"] = (0.0,.5,1.0);
             #self.canvas["_world_light_dir_eye_space"] = (0.0,.5,1.0);
-            world_light_theta = KivyGlops.theta_radians_from_rectangular(self.canvas["_world_light_dir"][0], self.canvas["_world_light_dir"][2])
+            world_light_theta = theta_radians_from_rectangular(self.canvas["_world_light_dir"][0], self.canvas["_world_light_dir"][2])
             light_theta = world_light_theta+self.camera_rotate_y[0]
             light_r = math.sqrt((self.canvas["_world_light_dir"][0]*self.canvas["_world_light_dir"][0])+(self.canvas["_world_light_dir"][2]*self.canvas["_world_light_dir"][2]))
             self.canvas["_world_light_dir_eye_space"] = light_r * math.cos(light_theta), self.canvas["_world_light_dir_eye_space"][1], light_r * math.sin(light_theta)

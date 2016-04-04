@@ -17,6 +17,9 @@ This provides simple dependency-free access to OBJ files and certain 3D math ope
 import os
 import sys  # exception etc
 import math
+import traceback
+
+from common import view_traceback
 
 #these are needed since in python 3, int is no longer bounded:
 MIN_INDEX = -9223372036854775807
@@ -61,7 +64,7 @@ def get_fvec7(values,start_index=0):
         #result = (float(values[start_index]), float(values[start_index+1]), float(values[start_index+2]), 1.0)
     #return result
 
-#class WObjFile (see further down) most accurately represents the obj file format. It contains a list of WObjects (each WObject has only the material it needs from the mtl file)
+#class WObjFile (see further down) most accurately represents the obj file format (except indices start at 0 in WObject instead of 1 which file uses). It contains a list of WObjects (each WObject has only the material it needs from the mtl file)
 
 class WIlluminationModel:
     number = None
@@ -77,7 +80,7 @@ class WIlluminationModel:
     is_reflection_raytrace = None
     is_shadow_cast_onto_invisible_surfaces = None
 
-    def set_from_illumination_model_number(number):
+    def set_from_illumination_model_number(self, number):
         result = True
         self.number = number  #changed to None below if invalid
         if number==0:
@@ -126,14 +129,14 @@ class WIlluminationModel:
             self.number = None
         return result
 
-class WColorArgInfo():
+class WColorArgInfo:
     _param = None
     _value_min_count = None
     _value_max_count = None
     _description = None
     _value_descriptions = None
 
-    def __init__(param, description, value_min_count, value_max_count, value_descriptions):
+    def __init__(self, param, description, value_min_count, value_max_count, value_descriptions):
         self._param = param
         self._description = description
         self._value_min_count = value_min_count
@@ -152,7 +155,7 @@ color_arg_type_strings.append(WColorArgInfo("blendu","blend U in map",1,1,["on|o
 color_arg_type_strings.append(WColorArgInfo("blendv","blend V in map",1,1,["on|off"]))
 color_arg_type_strings.append(WColorArgInfo("clamp","clamp to 0-1 in UV range",1,1,["on|off"]))
 color_arg_type_strings.append(WColorArgInfo("cc","color correction (only for map_Ka, map_Kd, and map_Ks)",1,1,["on|off"]))
-color_arg_type_strings.append(WColorArgInfo("mm","base gain",2,2,["black level"|"white level (processed before black level, so acts as range)"]))
+color_arg_type_strings.append(WColorArgInfo("mm","base gain",2,2,["black level|white level (processed before black level, so acts as range)"]))
 color_arg_type_strings.append(WColorArgInfo("t","turbulence (post-processes tiled textures to hide seem)",2,3,["u","v","w"]))
 color_arg_type_strings.append(WColorArgInfo("texres","resizes texture before using, such as for NPOT textures; if used, image is forced to a square",2,3,["pixel count"]))
 
@@ -220,7 +223,7 @@ class WMaterial:
     #_map_reflection = None  # refl; can be -type sphere
 
 
-    def __init__(name=None):
+    def __init__(self, name=None):
         self.name = name
         self._opacity = 1.0
         self._map_filename_dict = {}
@@ -256,7 +259,7 @@ class WObject:
 
     _opening_comments = None
 
-    def __init__(name=None):
+    def __init__(self, name=None):
         self._name = name
 
     def append_opening_comment(self, text):
@@ -264,7 +267,7 @@ class WObject:
             self._opening_comments = list()
         self._opening_comments.append(text)
 
-    def append_dump_as_yaml_array(thisList, thisName, sourceList, tabStringMinimum):
+    def append_dump_as_yaml_array(self, thisList, thisName, sourceList, tabStringMinimum):
         tabString="  "
         thisList.append(tabStringMinimum+thisName+":")
         for i in range(0,len(sourceList)):
@@ -310,7 +313,7 @@ def get_wmaterials_from_mtl(filename):
                 if (len(line_strip)>0) and (line_strip[0]!="#"):
                     space_index = line_strip.find(" ")
                     if space_index>-1:
-                        if len(line_strip) => (space_index+1):
+                        if len(line_strip) >= (space_index+1):  #TODO: audit this weird check
                             args_string = line_strip[space_index+1:].strip()
                         if len(args_string)>0:
                             command = line_strip[:space_index].strip()
@@ -341,7 +344,7 @@ def get_wmaterials_from_mtl(filename):
                                         print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) unknown illumination model number '"+args_string+"'")
                                 elif command=="d":
                                     halo_string = " -halo "
-                                    if len(args_string)>=halo_string:
+                                    if len(args_string)>=len(halo_string):
                                         if args_string[:len(halo_string)]==halo_string:
                                             #TODO: halo formula: dissolve = 1.0 - (N*v)(1.0-factor)  # makes center transparent
                                             args_string=args_string[len(halo_string):]
@@ -411,8 +414,10 @@ def get_wmaterials_from_mtl(filename):
         else:
             print("ERROR in get_wmaterials_from_mtl: missing file or cannot access '"+filename+"'")
     except:
-        e = sys.exc_info()[0]
-        print("Could not finish get_materials_from_mtl:" + str(e))
+        #e = sys.exc_info()[0]
+        #print("Could not finish get_materials_from_mtl:" + str(e))
+        print("Could not finish get_materials_from_mtl:")
+        view_traceback()
     return results
 
 class WObjFile:
@@ -439,7 +444,7 @@ class WObjFile:
                         space_index = line_strip.find(" ")
                         if space_index>-1:
                             args_string = ""
-                            if len(line_strip) => (space_index+1):
+                            if len(line_strip) >= (space_index+1):  #TODO: audit this weird check
                                 args_string = line_strip[space_index+1:].strip()
                             if len(args_string)>0:
                                 command = line_strip[:space_index]
@@ -593,7 +598,10 @@ class WObjFile:
 
             else:
                 print("ERROR in get_wobjects_from_obj: missing file or cannot access '"+filename+"'")
+        except:
+            view_traceback()
         return results
+
 
 
 

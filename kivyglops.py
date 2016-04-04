@@ -13,6 +13,7 @@ It provides features that are specific to display method
 from pyglops import *
 from kivy.resources import resource_find
 from kivy.graphics import *
+from kivy.uix.widget import Widget
 
 class KivyGlopsMaterial(PyGlopsMaterial):
     
