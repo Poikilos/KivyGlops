@@ -235,6 +235,14 @@ class WMaterial:
         self._opening_comments.append(text)
 
 
+#Also in pyglops.py; formerly dumpAsYAMLArray
+def append_dump_as_yaml_array(thisList, thisName, sourceList, tabStringMinimum):
+    tabString="  "
+    thisList.append(tabStringMinimum+thisName+":")
+    for i in range(0,len(sourceList)):
+        thisList.append(tabStringMinimum+tabString+"- "+str(sourceList[i]))
+
+
 class WObject:
     #region raw OBJ data (as per nskrypnik)
     #_name = None
@@ -268,27 +276,15 @@ class WObject:
             self._opening_comments = list()
         self._opening_comments.append(text)
 
-    def append_dump_as_yaml_array(self, thisList, thisName, sourceList, tabStringMinimum):
-        tabString="  "
-        thisList.append(tabStringMinimum+thisName+":")
-        for i in range(0,len(sourceList)):
-            thisList.append(tabStringMinimum+tabString+"- "+str(sourceList[i]))
-
     def append_dump(self, thisList, tabStringMinimum):
         if self.obj_path is not None:
             thisList.append(tabStringMinimum+tabString+"obj_path: "+self.obj_path)
-        WObject.append_dump_as_yaml_array(thisList, "vertices",self.vertices,tabStringMinimum+tabString)
-        WObject.append_dump_as_yaml_array(thisList, "texcoords",self.texcoords,tabStringMinimum+tabString)
-        WObject.append_dump_as_yaml_array(thisList, "normals",self.normals,tabStringMinimum+tabString)
-        dumpAsYAMLArray(thisList, "_vertex_strings",self._vertex_strings,tabStringMinimum+tabString)
-        dumpAsYAMLArray(thisList, "parameter_space_vertices",self.parameter_space_vertices,tabStringMinimum+tabString)
-        dumpAsYAMLArray(thisList, "faces",self.faces,tabStringMinimum+tabString)
-
-
-
-
-
-
+        thisList = append_dump_as_yaml_array(thisList, "vertices",self.vertices,tabStringMinimum+tabString)
+        thisList = append_dump_as_yaml_array(thisList, "texcoords",self.texcoords,tabStringMinimum+tabString)
+        thisList = append_dump_as_yaml_array(thisList, "normals",self.normals,tabStringMinimum+tabString)
+        thisList = append_dump_as_yaml_array(thisList, "_vertex_strings",self._vertex_strings,tabStringMinimum+tabString)
+        thisList = append_dump_as_yaml_array(thisList, "parameter_space_vertices",self.parameter_space_vertices,tabStringMinimum+tabString)
+        thisList = append_dump_as_yaml_array(thisList, "faces",self.faces,tabStringMinimum+tabString)
 
 
 ILLUMINATIONMODEL_DESCRIPTION_STRINGS = ["Color on and Ambient off","Color on and Ambient on","Highlight on","Reflection on and Ray trace on","Transparency: Glass on, Reflection: Ray trace on","Reflection: Fresnel on and Ray trace on","Transparency: Refraction on, Reflection: Fresnel off and Ray trace on","Transparency: Refraction on, Reflection: Fresnel on and Ray trace on","Reflection on and Ray trace off","Transparency: Glass on, Reflection: Ray trace off","Casts shadows onto invisible surfaces"]
@@ -301,25 +297,25 @@ def get_illumination_model_description(illuminationModelIndex):
     return resultString
 
 
-def get_wmaterials_from_mtl(filename):
+def get_wmaterial_dict_from_mtl(filename):
     results = None
     try:
         if os.path.exists(filename):
-            results = list()
+            results = dict()
             comments = list()
-            this_material = None
             line_counting_number = 1
+            this_mtl_name = None
             for line in open(filename, "r"):
                 line_strip = line.strip()
                 if (len(line_strip)>0) and (line_strip[0]!="#"):
                     space_index = line_strip.find(" ")
                     if space_index>-1:
+                        args_string = ""
                         if len(line_strip) >= (space_index+1):  #TODO: audit this weird check
                             args_string = line_strip[space_index+1:].strip()
                         if len(args_string)>0:
                             command = line_strip[:space_index].strip()
-                            if (this_material is not None) or (command == "newmtl"):
-
+                            if (this_mtl_name is not None) or (command == "newmtl"):
                                 badspace="\t"
                                 badspace_index = args_string.find(badspace)
                                 while badspace_index > -1:
@@ -334,13 +330,16 @@ def get_wmaterials_from_mtl(filename):
 
                                 params = args_string.split(" ")  # line_strip[space_index+1:].strip()
                                 if command=="newmtl":
-                                    this_material = WMaterial(name=args_string)
-                                    results.append(this_material)
+                                    this_mtl_name = args_string
+                                    if this_mtl_name not in results.keys():
+                                        results[this_mtl_name] = WMaterial(name=this_mtl_name)
+                                    else:
+                                        print("WARNING: newmtl already exists: '"+this_mtl_name+"'")
                                 elif command=="illum":
                                     this_illum = WIlluminationModel()
                                     result=this_illum.set_from_illumination_model_number(int(args_string))
                                     if result:
-                                        this_material._illumination_model = this_illum
+                                        results[this_mtl_name]._illumination_model = this_illum
                                     else:
                                         print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) unknown illumination model number '"+args_string+"'")
                                 elif command=="d":
@@ -352,15 +351,15 @@ def get_wmaterials_from_mtl(filename):
                                             print(filename+" ("+str(line_counting_number)+",0): (NOT YET IMPLEMENTED) halo, so using next value as plain opacity value instead")
                                     this_opacity = float(args_string)
                                     if (this_opacity>=0.0) and (this_opacity<=1.0):
-                                        this_material._opacity = this_opacity
+                                        results[this_mtl_name]._opacity = this_opacity
                                     else:
-                                        print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) invalid opacity '"+args_string+"' so using '"+str(this_material._opacity)+"' instead")
+                                        print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) invalid opacity '"+args_string+"' so using '"+str(results[this_mtl_name]._opacity)+"' instead")
                                 elif command=="Tr":
                                     this_transparency = float(args_string)
                                     if (this_transparency>=0.0) and (this_transparency<=1.0):
-                                        this_material._opacity = 1.0-this_transparency
+                                        results[this_mtl_name]._opacity = 1.0-this_transparency
                                     else:
-                                        print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) invalid transparency '"+args_string+"' so using '"+str(this_material._opacity)+"' instead")
+                                        print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) invalid transparency '"+args_string+"' so using '"+str(results[this_mtl_name]._opacity)+"' instead")
                                 elif command=="Kd":
                                     is_args_ok = True
                                     value_start=3
@@ -375,25 +374,25 @@ def get_wmaterials_from_mtl(filename):
                                     if is_args_ok:
                                         diffuse_color=args_string.split(" ")
                                         if len(diffuse_color)>=3:
-                                            this_material._diffuse_color = [float(diffuse_color[len(diffuse_color)-3]), float(diffuse_color[len(diffuse_color)-2]), float(diffuse_color[len(diffuse_color)-1])]
+                                            results[this_mtl_name]._diffuse_color = [float(diffuse_color[len(diffuse_color)-3]), float(diffuse_color[len(diffuse_color)-2]), float(diffuse_color[len(diffuse_color)-1])]
                                         else:
                                             print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) color must have 3 values (r g b): '"+command+"'")
                                 elif len(command)>4 and (command[:4]=="map_"):
                                     if len(args_string)>0 and args_string[0]=="-":
                                         #TODO: load OBJ map params
-                                        this_material._map_filename_dict[command] = params[len(params)-1]
-                                        this_material._map_params_dict = params[:len(params)-1]
-                                        #this_material._map_diffuse_filename = params[len(params)-1]
+                                        results[this_mtl_name]._map_filename_dict[command] = params[len(params)-1]
+                                        results[this_mtl_name]._map_params_dict = params[:len(params)-1]
+                                        #results[this_mtl_name]._map_diffuse_filename = params[len(params)-1]
                                         #args = args_string.split(" ")
-                                        #this_material._map_diffuse_filename = args[len(args)-1]
+                                        #results[this_mtl_name]._map_diffuse_filename = args[len(args)-1]
                                         #if len(args)>1:
                                         #    print(filename+" ("+str(line_counting_number)+",0): (NOT YET IMPLEMENTED) map arguments were ignored (except filename): '"+args_string+"'")
 
                                     else:
                                         #process as string in case filename has spaces (works only if no params)
-                                        this_material._map_filename_dict[command] = args_string
+                                        results[this_mtl_name]._map_filename_dict[command] = args_string
                                         # (no params)
-                                        #this_material._map_diffuse_filename = args_string
+                                        #results[this_mtl_name]._map_diffuse_filename = args_string
                                 else:
                                     print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) unknown material command '"+command+"'")
                             else:
@@ -406,20 +405,24 @@ def get_wmaterials_from_mtl(filename):
                     if len(line_strip)>0:
                         comment_notag = line_strip[1:].strip()
                         if len(comment_notag) > 0:
-                            if this_material is not None:
-                                this_material.append_opening_comment(comment_notag)
+                            if this_mtl_name is not None:
+                                if results[this_mtl_name] is not None:
+                                    results[this_mtl_name].append_opening_comment(comment_notag)
+                                else:
+                                    comments.append(comment_notag)
                             else:
                                 comments.append(comment_notag)
                 line_counting_number += 1
             #end for lines in file
         else:
-            print("ERROR in get_wmaterials_from_mtl: missing file or cannot access '"+filename+"'")
+            print("ERROR in get_wmaterial_dict_from_mtl: missing file or cannot access '"+filename+"'")
     except:
         #e = sys.exc_info()[0]
-        #print("Could not finish get_materials_from_mtl:" + str(e))
-        print("Could not finish get_materials_from_mtl:")
+        #print("Could not finish get_wmaterial_dict_from_mtl:" + str(e))
+        print("Could not finish get_wmaterial_dict_from_mtl:")
         view_traceback()
     return results
+
 
 class WObjFile:
     wobjects = None
@@ -432,6 +435,7 @@ class WObjFile:
         try:
             if os.path.exists(filename):
                 results = list()
+                result_index = -1
                 comments = list()
                 this_object = None
                 line_counting_number = 1
@@ -455,10 +459,11 @@ class WObjFile:
                                 params = args_string.split(" ")  # line_strip[space_index+1:].strip()
                                 if command=="mtllib":
                                     this_mtl_filename = args_string
-                                    materials = get_wmaterials_from_mtl(this_mtl_filename)
+                                    materials = get_wmaterial_dict_from_mtl(this_mtl_filename)
                                 elif command=="o":
                                     if this_object is not None:
                                         results.append(this_object)
+                                        result_index += 1  # ok since starts at -1
                                         this_object = None
                                         #v_offset += len(this_object.vertices)
                                         #vt_offset += len(this_object.texcoords)
@@ -533,9 +538,12 @@ class WObjFile:
                                         this_object.faces.append( this_face )
                                     elif command=="usemtl":
                                         if materials is not None:
-                                            this_object.material = find_by_name(materials,args_string)
-                                            if this_object.material is None:
-                                                print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) unknown material '"+args_string+"'")
+                                            if args_string in materials.keys():
+                                                this_object.wmaterial = materials[args_string]  # find_by_name(materials,args_string)
+                                                if this_object.wmaterial is None:
+                                                    print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) wmaterial named '"+args_string+"' is None")
+                                            else:
+                                                print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) unknown wmaterial name '"+args_string+"'")
                                         else:
                                             print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) usemtl '"+args_string+"' is impossible since a material was not loaded with mtllib command first.")
                                     elif command=="s":

@@ -33,7 +33,7 @@ from wobjfile import *
 class PyGlopsMaterial:
     properties = None
     name = None
-    mtlFileName = None  #required so that references to materials work properly
+    mtlFileName = None  # mtl file path (only if based on WMaterial of WObject)
 
     #region vars based on OpenGL ES 1.1
     ambient_color = None  # vec4
@@ -79,7 +79,7 @@ def theta_radians_from_rectangular(x, y):
         theta = math.atan2(y, x)
     return theta
 
-
+#Also in wobjfile.py:
 def append_dump_as_yaml_array(thisList, thisName, sourceList, tabStringMinimum):
     tabString="  "
     thisList.append(tabStringMinimum+thisName+":")
@@ -138,11 +138,26 @@ class PyGlop:
     vertex_format = None
     vertices = None
     indices = None
-    diffuse_color = None
-    ambient_color = None
-    specular_color = None
-    specular_coefficent = None
-    opacity = None
+    #opacity = None  moved to material.diffuse_color 4th channel
+    
+    #region vars based on OpenGL ES 1.1 MOVED TO material
+    #ambient_color = None  # vec4
+    #diffuse_color = None  # vec4
+    #specular_color = None  # vec4
+    ##emissive_color = None  # vec4
+    #specular_exponent = None  # float
+    #endregion vars based on OpenGL ES 1.1 MOVED TO material
+    
+    #region calculated from vertex_format
+    POSITION_OFFSET = None
+    NORMAL_OFFSET = None
+    TEXCOORD0_OFFSET = None
+    COLOR_OFFSET = None
+    POSITION_INDEX = None
+    NORMAL_INDEX = None
+    TEXCOORD0_INDEX = None
+    COLOR_INDEX = None
+    #endregion calculated from vertex_format
 
     def __init__(self):
         self.properties = {}
@@ -158,15 +173,18 @@ class PyGlop:
         self.vertex_depth = 0
         for i in range(0,len(self.vertex_format)):
             self.vertex_depth += self.vertex_format[i][VFORMAT_VECTOR_LEN_INDEX]
-
+        
+        self.on_vertex_format_change()
+        
         self.indices = []  # list of tris (vertex index, vertex index, vertex index, etc)
 
         # Default basic material of this glop
-        self.diffuse_color = (1.0, 1.0, 1.0, 1.0)  # overlay vertex color onto this using vertex alpha
-        self.ambient_color = (0.0, 0.0, 0.0)
-        self.specular_color = (1.0, 1.0, 1.0)
-        self.specular_coefficent = 16.0
-        self.opacity = 1.0
+        self.material = PyGlopsMaterial()
+        self.material.diffuse_color = (1.0, 1.0, 1.0, 1.0)  # overlay vertex color onto this using vertex alpha
+        self.material.ambient_color = (0.0, 0.0, 0.0)
+        self.material.specular_color = (1.0, 1.0, 1.0)
+        self.material.specular_coefficent = 16.0
+        #self.material.opacity = 1.0
 
         #TODO: find out where this code goes (was here for unknown reason)
         #if result is None:
@@ -186,11 +204,11 @@ class PyGlop:
         try:
             if self.material is not None:
                 if self.material.properties is not None:
-                    result = self.material.properties["map_Kd"]
+                    result = self.material.properties["diffuse_path"]
         except:
             pass  #don't care
         if result is None:
-            print("WARNING: no material for Glop named '"+str(self.name)+"'")
+            print("WARNING: no diffuse texture specified in Glop named '"+str(self.name)+"'")
         return result
 
     def get_min_x(self):
@@ -254,8 +272,9 @@ class PyGlop:
                             self._min_coords[axisIndex] = self.vertices[i*self.vertex_depth+axisIndex]
                         if self._max_coords[axisIndex] is None or self.vertices[i*self.vertex_depth+axisIndex] > self._max_coords[axisIndex]:
                             self._max_coords[axisIndex] = self.vertices[i*self.vertex_depth+axisIndex]
-        except Exception as e:
-            print("Could not finish "+participle+" in recalculate_bounds: "+str(e))
+        except:  # Exception as e:
+            print("Could not finish "+participle+" in recalculate_bounds: ")
+            view_traceback()
 
     def get_center_average_of_vertices(self):
         #results = (0.0,0.0,0.0)
@@ -293,24 +312,33 @@ class PyGlop:
                 if (counts[axisIndex]>0):
                     participle = "calculating results"
                     results[axisIndex] = totals[axisIndex] / counts[axisIndex]
-        except Exception as e:
-            print("Could not finish "+participle+" in get_center_average_of_vertices: "+str(e))
+        except:  # Exception as e:
+            print("Could not finish "+participle+" in get_center_average_of_vertices: ")
+            view_traceback()
         return results[0], results[1], results[2]
 
     def set_textures_from_mtl_dict(self, mtl_dict):
+        #print("")
+        #print("set_textures_from_mtl_dict...")
+        #print("")
         try:
-            self.diffuse_color = mtl_dict.get('Kd') or self.diffuse_color
-            self.diffuse_color = [float(v) for v in self.diffuse_color]
-            self.ambient_color = mtl_dict.get('Ka') or self.ambient_color
-            self.ambient_color = [float(v) for v in self.ambient_color]
-            self.specular_color = mtl_dict.get('Ks') or self.specular_color
-            self.specular_color = [float(v) for v in self.specular_color]
-            self.specular_coefficent = float(mtl_dict.get('Ns', self.specular_coefficent))
-            self.opacity = mtl_dict.get('d')
-            if self.opacity is None:
-                self.opacity = 1.0 - float(mtl_dict.get('Tr', 0.0))
+            self.material.diffuse_color = mtl_dict.get('Kd') or self.material.diffuse_color
+            self.material.diffuse_color = [float(v) for v in self.material.diffuse_color]
+            self.material.ambient_color = mtl_dict.get('Ka') or self.material.ambient_color
+            self.material.ambient_color = [float(v) for v in self.material.ambient_color]
+            self.material.specular_color = mtl_dict.get('Ks') or self.material.specular_color
+            self.material.specular_color = [float(v) for v in self.material.specular_color]
+            self.material.specular_coefficent = float(mtl_dict.get('Ns', self.material.specular_coefficent))
+            #TODO: store as diffuse color alpha instead: self.opacity = mtl_dict.get('d')
+            #TODO: store as diffuse color alpha instead: if self.opacity is None:
+            #TODO: store as diffuse color alpha instead:     self.opacity = 1.0 - float(mtl_dict.get('Tr', 0.0))
+            if "map_Kd" in mtl_dict.keys():
+                self.material.properties["diffuse_path"] = mtl_dict["map_Kd"]
+                #print("  NOTE: diffuse_path: "+self.material.properties["diffuse_path"])
+            #else:
+                #print("  WARNING: No map_Kd among material keys "+str(mtl_dict.keys()))
 
-        except Exception:
+        except:  # Exception:
             print("Could not finish set_textures_from_mtl_dict:")
             view_traceback()
 
@@ -347,15 +375,89 @@ class PyGlop:
         tabString="  "
         if self.name is not None:
             thisList.append(tabStringMinimum+tabString+"name: "+self.name)
+        if self.vertices is not None:
+            thisList.append(tabStringMinimum+tabString+"vertices_count: "+str(len(self.vertices)/self.vertex_depth))
+        thisList.append(tabStringMinimum+tabString+"vertex_depth: "+str(self.vertex_depth))
+        if self.vertices is not None:
+            thisList.append(tabStringMinimum+tabString+"vertices_info_len: "+str(len(self.vertices)))
+
+        thisList.append(tabStringMinimum+tabString+"#VFORMAT_VECTOR_LEN_INDEX:"+str(VFORMAT_VECTOR_LEN_INDEX))
+        thisList.append(tabStringMinimum+tabString+"#len(self.vertex_format):"+str(len(self.vertex_format)))
+        thisList.append(tabStringMinimum+tabString+"#COLOR_INDEX:"+str(self.COLOR_INDEX))
+        thisList.append(tabStringMinimum+tabString+"#COLOR_OFFSET:"+str(self.COLOR_OFFSET))
+        thisList.append(tabStringMinimum+tabString+"#len(self.vertex_format[self.COLOR_INDEX]):"+str(len(self.vertex_format[self.COLOR_INDEX])))
+        channel_count = self.vertex_format[self.COLOR_INDEX][VFORMAT_VECTOR_LEN_INDEX]
+        thisList.append(tabStringMinimum+tabString+"#vertex_bytes_per_pixel:"+str(channel_count))
+
+        
         for k,v in sorted(self.properties.items()):
             thisList.append(tabStringMinimum+tabString+k+": "+v)
 
         thisTextureFileName=self.get_texture_diffuse_filename()
         if thisTextureFileName is not None:
             thisList.append(tabStringMinimum+tabString+"get_texture_diffuse_filename(): "+thisTextureFileName)
-        dumpAsYAMLArray(thisList, "vertices",self.vertices,tabStringMinimum+tabString)
+        
+        #thisList=append_dump_as_yaml_array(thisList, "vertex_info_1D",self.vertices,tabStringMinimum+tabString)
+        tabString="  "
+        thisList.append(tabStringMinimum+tabString+"vertex_info_1D:")
+        component_offset = 0
+        vertex_actual_index = 0
+        for i in range(0,len(self.vertices)):
+            if component_offset==0:
+                thisList.append(tabStringMinimum+tabString+tabString+"#vertex ["+str(vertex_actual_index)+"]:")
+            if component_offset==self.COLOR_OFFSET:
+                thisList.append(tabStringMinimum+tabString+tabString+"#  color:")
+            if component_offset==self.NORMAL_OFFSET:
+                thisList.append(tabStringMinimum+tabString+tabString+"#  normal:")
+            if component_offset==self.POSITION_OFFSET:
+                thisList.append(tabStringMinimum+tabString+tabString+"#  position:")
+            if component_offset==self.TEXCOORD0_OFFSET:
+                thisList.append(tabStringMinimum+tabString+tabString+"#  texcoords0_vec4_and_texcoords1_vec4:")
+            thisList.append(tabStringMinimum+tabString+tabString+"- "+str(self.vertices[i]))
+            component_offset += 1
+            if component_offset==self.vertex_depth:
+                component_offset = 0
+                vertex_actual_index += 1
+        
 
+    def on_vertex_format_change(self):
+        self.POSITION_OFFSET = -1
+        self.NORMAL_OFFSET = -1
+        self.TEXCOORD0_OFFSET = -1
+        self.COLOR_OFFSET = -1
 
+        self.POSITION_INDEX = -1
+        self.NORMAL_INDEX = -1
+        self.TEXCOORD0_INDEX = -1
+        self.COLOR_INDEX = -1
+        
+        #this_pyglop.vertex_depth = 0
+        offset = 0
+        temp_vertex = list()
+        for i in range(0,len(self.vertex_format)):
+            #first convert from bytestring to str
+            vformat_name_lower = str(self.vertex_format[i][VFORMAT_NAME_INDEX]).lower()
+            if "pos" in vformat_name_lower:
+                self.POSITION_OFFSET = offset
+                self.POSITION_INDEX = i
+            elif "normal" in vformat_name_lower:
+                self.NORMAL_OFFSET = offset
+                self.NORMAL_INDEX = i
+            elif ("texcoord" in vformat_name_lower) or ("tc0" in vformat_name_lower):
+                if self.TEXCOORD0_OFFSET<0:
+                    self.TEXCOORD0_OFFSET = offset
+                    self.TEXCOORD0_INDEX = i
+                #else ignore since is probably the second index such as a_texcoord1
+            elif "color" in vformat_name_lower:
+                self.COLOR_OFFSET = offset
+                self.COLOR_INDEX = i
+            offset += self.vertex_format[i][VFORMAT_VECTOR_LEN_INDEX]
+        if offset > self.vertex_depth:
+            print("ERROR: The count of values in vertex format chunks (chunk_count:"+str(len(self.vertex_format))+"; value_count:"+str(offset)+") is greater than the vertex depth "+str(self.vertex_depth))
+        elif offset != self.vertex_depth:
+            print("WARNING: The count of values in vertex format chunks (chunk_count:"+str(len(self.vertex_format))+"; value_count:"+str(offset)+") does not total to vertex depth "+str(self.vertex_depth))
+        participle = "(before initializing)"
+        
 
 
 class PyGlops:
@@ -435,6 +537,7 @@ class PyGlops:
             view_traceback()
 
 
+
     def get_pyglop_from_wobject(self, this_wobject):  #formerly set_from_wobject formerly import_wobject; based on _finalize_obj_data
         this_pyglop = PyGlop()
         #from vertex_format above:
@@ -445,53 +548,18 @@ class PyGlops:
             #(b'a_color', 4, 'float'),  # vColor (diffuse color of vertex)
             #(b'a_normal', 3, 'float')  # vNormal; Munshi prefers vec3 (Kivy also prefers vec3)
             #]
-        POSITION_OFFSET = -1
-        NORMAL_OFFSET = -1
-        TEXCOORD0_OFFSET = -1
-        COLOR_OFFSET = -1
-
-        POSITION_INDEX = -1
-        NORMAL_INDEX = -1
-        TEXCOORD0_INDEX = -1
-        COLOR_INDEX = -1
-        
-        #this_pyglop.vertex_depth = 0
-        offset = 0
-        temp_vertex = list()
-        for i in range(0,len(this_pyglop.vertex_format)):
-            #first convert from bytestring to str
-            vformat_name_lower = str(this_pyglop.vertex_format[i][VFORMAT_NAME_INDEX]).lower()
-            if "pos" in vformat_name_lower:
-                POSITION_OFFSET = offset
-                POSITION_INDEX = i
-            elif "normal" in vformat_name_lower:
-                NORMAL_OFFSET = offset
-                NORMAL_INDEX = i
-            elif ("texcoord" in vformat_name_lower) or ("tc0" in vformat_name_lower):
-                if TEXCOORD0_OFFSET<0:
-                    TEXCOORD0_OFFSET = offset
-                    TEXCOORD0_INDEX = i
-                #else ignore since is probably the second index such as a_texcoord1
-            elif "color" in vformat_name_lower:
-                COLOR_OFFSET = offset
-                COLOR_INDEX = i
-            offset += this_pyglop.vertex_format[i][VFORMAT_VECTOR_LEN_INDEX]
-        if offset > this_pyglop.vertex_depth:
-            print("ERROR: The count of values in vertex format chunks (chunk_count:"+str(len(this_pyglop.vertex_format))+"; value_count:"+str(offset)+") is greater than the vertex depth "+str(this_pyglop.vertex_depth))
-        elif offset != this_pyglop.vertex_depth:
-            print("WARNING: The count of values in vertex format chunks (chunk_count:"+str(len(this_pyglop.vertex_format))+"; value_count:"+str(offset)+") does not total to vertex depth "+str(this_pyglop.vertex_depth))
-        participle = "(before initializing)"
+        #self.on_vertex_format_change()
         IS_SELF_VFORMAT_OK = True
-        if POSITION_OFFSET<0:
+        if this_pyglop.POSITION_OFFSET<0:
             IS_SELF_VFORMAT_OK = False
             print("Couldn't find name containing 'pos' or 'position' in any vertex format element (see pyglops.py PyGlop constructor)")
-        if NORMAL_OFFSET<0:
+        if this_pyglop.NORMAL_OFFSET<0:
             IS_SELF_VFORMAT_OK = False
             print("Couldn't find name containing 'normal' in any vertex format element (see pyglops.py PyGlop constructor)")
-        if TEXCOORD0_OFFSET<0:
+        if this_pyglop.TEXCOORD0_OFFSET<0:
             IS_SELF_VFORMAT_OK = False
             print("Couldn't find name containing 'texcoord' in any vertex format element (see pyglops.py PyGlop constructor)")
-        if COLOR_OFFSET<0:
+        if this_pyglop.COLOR_OFFSET<0:
             IS_SELF_VFORMAT_OK = False
             print("Couldn't find name containing 'color' in any vertex format element (see pyglops.py PyGlop constructor)")
         
@@ -508,16 +576,10 @@ class PyGlops:
         zero_vertex = list()
         for index in range(0,this_pyglop.vertex_depth):
             zero_vertex.append(0.0)
-        #this_offset = COLOR_OFFSET
-        print("VFORMAT_VECTOR_LEN_INDEX:"+str(VFORMAT_VECTOR_LEN_INDEX))
-        print("len(this_pyglop.vertex_format):"+str(len(this_pyglop.vertex_format)))
-        print("COLOR_INDEX:"+str(COLOR_INDEX))
-        print("COLOR_OFFSET:"+str(COLOR_OFFSET))
-        print("len(this_pyglop.vertex_format[COLOR_INDEX]):"+str(len(this_pyglop.vertex_format[COLOR_INDEX])))
-        channel_count = this_pyglop.vertex_format[COLOR_INDEX][VFORMAT_VECTOR_LEN_INDEX]
-        print("Using "+str(channel_count)+"-bit vertex color")
+        #this_offset = this_pyglop.COLOR_OFFSET
+        channel_count = this_pyglop.vertex_format[this_pyglop.COLOR_INDEX][VFORMAT_VECTOR_LEN_INDEX]
         for channel_subindex in range(0,channel_count):
-            zero_vertex[COLOR_OFFSET+channel_subindex] = -1.0  # -1.0 for None #TODO: asdf flag a different way to work with new standard shader
+            zero_vertex[this_pyglop.COLOR_OFFSET+channel_subindex] = -1.0  # -1.0 for None #TODO: asdf flag a different way (other than negative) to work with fake standard shader
 
 
         participle="accessing object from list"
@@ -532,13 +594,17 @@ class PyGlops:
             pass  #don't care
 
         try:
-            #if this_wobject.material is None:
+            #if this_wobject.wmaterial is None:
             participle="processing material"
-            if this_wobject.properties["usemtl"] is not None:
+            if this_wobject.wmaterial is not None:  # if this_wobject.properties["usemtl"] is not None:
                 #this_wobject.material=this_pyglop._getMaterial(this_wobject.properties["usemtl"])
-                if this_wobject.wmaterial is not None:
-                    this_wobject.set_textures_from_mtl_dict(this_wobject.wmaterial._map_filename_dict)
+                if this_wobject.wmaterial._map_filename_dict is not None:  # if this_wobject.wmaterial is not None:
+                    this_pyglop.set_textures_from_mtl_dict(this_wobject.wmaterial._map_filename_dict)
                     #TODO: so something with _map_params_dict (wobjfile.py makes each entry a list of params if OBJ had map params before map file name)
+                else:
+                    print("WARNING: this_wobject.wmaterial._map_filename_dict is None")
+            else:
+                print("WARNING: this_wobject.wmaterial is None")
         except:  # Exception as e:
             #print("Could not finish "+participle+" in get_pyglop_from_wobject: "+str(e))
             print("Could not finish "+participle+" in get_pyglop_from_wobject: ")
@@ -559,7 +625,7 @@ class PyGlops:
             #FACE_VERTEX_COMPONENT_VERTEX_INDEX = 0
             #FACE_VERTEX_COMPONENT_TEXCOORDS_INDEX = 1
             #FACE_VERTEX_COMPONENT_NORMAL_INDEX = 2
-            #NOTE: in obj format, TEXCOORDS_INDEX is optional unless NORMAL_INDEX is present
+            #NOTE: in obj format, TEXCOORDS_INDEX is optional
 
             #FACE_VERTEX_COMPONENT_VERTEX_INDEX = 0
             #FACE_VERTEX_COMPONENT_TEXCOORDS_INDEX = 1
@@ -577,7 +643,7 @@ class PyGlops:
 
             source_face_index = 0
             try:
-                if (len(self.indices)<1):
+                if (len(this_pyglop.indices)<1):
                     participle = "before detecting vertex component offsets"
                     #detecting vertex component offsets is required since indices in an obj file are sometimes relative to the first index in the FILE not the object
                     if this_wobject.faces is not None:
@@ -592,18 +658,18 @@ class PyGlops:
                                     #calculate new offsets, in case obj file was botched (for correct obj format, wobjfile.py changes indices so they are relative to wobject ('o' command) instead of file
                                     if componentIndex==FACE_V:
                                         thisVertexIndex = this_wobject.faces[faceIndex][componentIndex][vertexIndex]
-                                        if vertices_offset is None or thisVertexIndex<vertices_offset:
-                                            vertices_offset = thisVertexIndex
+                                        #if vertices_offset is None or thisVertexIndex<vertices_offset:
+                                            #vertices_offset = thisVertexIndex
                                     #if (len(this_wobject.faces[faceIndex][componentIndex])>=FACE_TC):
                                     elif componentIndex==FACE_TC:
                                         thisTexCoordIndex = this_wobject.faces[faceIndex][componentIndex][vertexIndex]
-                                        if texcoords_offset is None or thisTexCoordIndex<texcoords_offset:
-                                            texcoords_offset = thisTexCoordIndex
+                                        #if texcoords_offset is None or thisTexCoordIndex<texcoords_offset:
+                                            #texcoords_offset = thisTexCoordIndex
                                     #if (len(this_wobject.faces[faceIndex][componentIndex])>=FACE_VN):
                                     elif componentIndex==FACE_VN:
                                         thisNormalIndex = this_wobject.faces[faceIndex][componentIndex][vertexIndex]
-                                        if normals_offset is None or thisNormalIndex<normals_offset:
-                                            normals_offset = thisNormalIndex
+                                        #if normals_offset is None or thisNormalIndex<normals_offset:
+                                            #normals_offset = thisNormalIndex
 
                         #if vertices_offset is not None:
                             #print("detected vertices_offset:"+str(vertices_offset))
@@ -614,8 +680,10 @@ class PyGlops:
 
                     participle = "before processing faces"
                     dest_vertex_index = 0
+                    face_count = 0
                     for f in this_wobject.faces:
                         participle = "getting face components"
+                        #print("face["+str(source_face_index)+"]: "+participle)
                         
                         #DOES triangulate of more than 3 vertices in this face (connects each loose point to first vertex and previous vertex)
                         # (vertex_done_flags are no longer needed since that method is used)
@@ -632,6 +700,7 @@ class PyGlops:
                         vertexinfo_index = 0
                         source_face_vertex_count = 0
                         while vertexinfo_index<len(f):
+                            #print("vertex["+str(vertexinfo_index)+"]")
                             vertex_info = f[vertexinfo_index]
 
                             vertex_index = vertex_info[FACE_V]
@@ -651,17 +720,18 @@ class PyGlops:
                             #    normals_offset = 1
                             normals_offset = 0  # since wobjfile.py makes indices relative to object
                             try:
-                                participle = "getting normal components at "+str(norms[face_index]-normals_offset)
+                                participle = "getting normal components at "+str(normal_index-normals_offset)  # str(norms[face_index]-normals_offset)
                                 if normal_index is not None:
                                     normal = this_wobject.normals[normal_index-normals_offset]
                                 #if norms[face_index] != -1:
                                     #normal = this_wobject.normals[norms[face_index]-normals_offset]
-                            except Exception as e:
-                                print("Could not finish "+participle+" for wobject named '"+this_name+"'")
+                            except:  # Exception as e:
+                                print("Could not finish "+participle+" for wobject named '"+this_name+"':")
+                                view_traceback()
 
                             participle = "getting texture coordinate components"
-                            participle = "getting texture coordinate components at "+str(face_index)
-                            participle = "getting texture coordinate components using index "+str(tcs[face_index])
+                            participle = "getting texture coordinate components at "+str(face_count)
+                            participle = "getting texture coordinate components using index "+str(face_count)
                             #get texture coordinate components
                             #texcoord = (0.0, 0.0)
                             texcoord = (0.0, 0.0)
@@ -670,7 +740,7 @@ class PyGlops:
                             texcoords_offset = 0  # since wobjfile.py makes indices relative to object
                             try:
                                 if this_wobject.texcoords is not None:
-                                    participle = "getting normal components at "+str(tcs[face_index]-texcoords_offset)
+                                    participle = "getting normal components at "+str(texcoord_index-texcoords_offset)  # str(tcs[face_index]-texcoords_offset)
                                     if texcoord_index is not None:
                                         texcoord = this_wobject.texcoords[texcoord_index-texcoords_offset]
                                     #if tcs[face_index] != -1:
@@ -678,44 +748,49 @@ class PyGlops:
                                         #texcoord = this_wobject.texcoords[tcs[face_index]-texcoords_offset]
                                 else:
                                     print("Warning: no texcoords found in wobject named '"+this_name+"'")
-                            except Exception as e:
-                                print("Could not finish "+participle+" for wobject named '"+this_name+"'")
+                            except:  # Exception as e:
+                                print("Could not finish "+participle+" for wobject named '"+this_name+"':")
+                                view_traceback()
 
                             participle = "getting vertex components"
                             #if vertices_offset is None:
                             #    vertices_offset = 1
                             vertices_offset = 0  # since wobjfile.py makes indices relative to object
-                            participle = "accessing face vertex "+str(verts[face_index]-vertices_offset)+" (after applying vertices_offset:"+str(vertices_offset)+"; Count:"+str(len(this_wobject.vertices))+")"
+                            #participle = "accessing face vertex "+str(verts[face_index]-vertices_offset)+" (after applying vertices_offset:"+str(vertices_offset)+"; Count:"+str(len(this_wobject.vertices))+")"
+                            participle = "accessing face vertex "+str(vertex_index-vertices_offset)+" (after applying vertices_offset:"+str(vertices_offset)+"; Count:"+str(len(this_wobject.vertices))+")"
                             try:
-                                v = this_wobject.vertices[verts[face_index]-vertices_offset]
-                            except Exception as e:
-                                print("Could not finish "+participle+" for wobject named '"+this_name+"'")
+                                #v = this_wobject.vertices[verts[face_index]-vertices_offset]
+                                v = this_wobject.vertices[vertex_index-vertices_offset]
+                            except:  # Exception as e:
+                                print("Could not finish "+participle+" for wobject named '"+this_name+"':")
+                                view_traceback()
 
                             participle = "combining components"
                             #vertex_components = [v[0], v[1], v[2], normal[0], normal[1], normal[2], texcoord[0], 1 - texcoord[1]] #TODO: why does kivy-rotation3d version have texcoord[1] instead of 1 - texcoord[1] ????
-                            vertex_components = list(this_pyglop.vertex_depth)
+                            vertex_components = list()
                             for i in range(0,this_pyglop.vertex_depth):
-                                vertex_components[i] = 0.0
+                                vertex_components.append(0.0)
                             for element_index in range(0,3):
-                                vertex_components[POSITION_OFFSET+element_index] = v[element_index]
+                                vertex_components[this_pyglop.POSITION_OFFSET+element_index] = v[element_index]
                             for element_index in range(0,3):
-                                vertex_components[NORMAL_OFFSET+element_index] = normal[element_index]
+                                vertex_components[this_pyglop.NORMAL_OFFSET+element_index] = normal[element_index]
                             for element_index in range(0,2):
-                                vertex_components[TEXCOORD0_OFFSET+element_index] = texcoord[element_index]
+                                vertex_components[this_pyglop.TEXCOORD0_OFFSET+element_index] = texcoord[element_index]
                                 
                             if len(v)>3:
                                 #Handle nonstandard obj file with extended vertex info (color)
                                 abs_index = 0
                                 for element_index in range(4,len(v)):
-                                    vertex_components[COLOR_OFFSET+abs_index] = v[element_index]
+                                    vertex_components[this_pyglop.COLOR_OFFSET+abs_index] = v[element_index]
                                     abs_index += 1
                             else:
                                 #default to white vertex color
                                 #TODO: asdf change this to black with alpha 0.0 and overlay (using material color as base)
                                 for element_index in range(0,4):
-                                    vertex_components[COLOR_OFFSET+element_index] = 1.0
+                                    vertex_components[this_pyglop.COLOR_OFFSET+element_index] = 1.0
                             this_pyglop.vertices.extend(vertex_components)
                             source_face_vertex_count += 1
+                            vertexinfo_index += 1
                         participle = "combining triangle indices"
                         vertexinfo_index = 0
                         relative_source_face_vertex_index = 0  #required for tracking faces with less than 3 vertices
@@ -724,20 +799,25 @@ class PyGlops:
                             if vertexinfo_index==3:
                                 tri = [dest_vertex_index, dest_vertex_index+1, dest_vertex_index+2]
                                 #tri = [idx, idx+1, idx+2]  #TODO: is this wrong?? doesn't this assume indices are in order??
-                                this_wobject.indices.extend(tri)
+                                this_pyglop.indices.extend(tri)
                                 dest_vertex_index += 3
                                 relative_source_face_vertex_index += 3
                             elif vertexinfo_index>3:
                                 #TESSELATE MANUALLY for faces with more than 3 vertices (connect loose vertex with first vertex and previous vertex)
                                 tri = [face_first_vertex_dest_index, dest_vertex_index-1, dest_vertex_index]
+                                this_pyglop.indices.extend(tri)
                                 dest_vertex_index += 1
                                 relative_source_face_vertex_index += 1
+                            vertexinfo_index += 1
                         if relative_source_face_vertex_index<source_face_vertex_count:
                             # only happens if face has fewer than 3 vertices (botched obj file)
                             dest_vertex_index += source_face_vertex_count - relative_source_face_vertex_index
                         source_face_index += 1
                     participle = "generating pivot point"
-                    this_wobject.transform_pivot_to_geometry()
+                    
+                    this_pyglop.transform_pivot_to_geometry()
+                else:
+                    print("ERROR: can't use pyglop since already has vertices (len(this_pyglop.indices)>=1)")
 
             except:  # Exception as e:
                 #print("Could not finish "+participle+" at source_face_index "+str(source_face_index)+" in import_wobject: "+str(e))
@@ -747,9 +827,9 @@ class PyGlops:
                     #print("vertices after extending: "+str(this_wobject.vertices))
                     #print("indices after extending: "+str(this_wobject.indices))
         #         if this_wobject.mtl is not None:
-        #             this_wobject.material = this_wobject.mtl.get(this_wobject.obj_material)
-        #         if this_wobject.material is not None and this_wobject.material:
-        #             this_wobject.set_textures_from_mtl_dict(this_wobject.material)
+        #             this_wobject.wmaterial = this_wobject.mtl.get(this_wobject.obj_material)
+        #         if this_wobject.wmaterial is not None and this_wobject.wmaterial:
+        #             this_wobject.set_textures_from_mtl_dict(this_wobject.wmaterial)
                 #self.glops[self._current_object] = mesh
                 #mesh.calculate_normals()
                 #self.faces = []
@@ -758,5 +838,6 @@ class PyGlops:
         #             this_wobject.calculate_normals()  #this does not work. The call to calculate_normals is even commented out at <https://github.com/kivy/kivy/blob/master/examples/3Drendering/objloader.py> 20 Mar 2014. 16 Apr 2015.
         else:
             print("ERROR in import_wobject: existing vertices found {this_pyglop.name:'"+str(this_name)+"'}")
-    #end def set_from_wobject
+        return this_pyglop
+    #end def get_pyglop_from_wobject
 

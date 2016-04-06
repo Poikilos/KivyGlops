@@ -327,14 +327,14 @@ void main(void)
 
 precision mediump float;
 varying vec2 v_texCoord; // Varying in fragment shader
-uniform bool      enable_tex[NUM_TEXTURES]; // texture enables
-const int         indx_one = 1;
+uniform bool enable_tex[NUM_TEXTURES]; // texture enables
+const int    indx_one = 1;
 
 uniform sampler2D s_baseMap;
 uniform sampler2D s_lightMap;
 void main()
 {
-  vec4 baseColor;
+	vec4 baseColor;
 	vec4 lightColor;
 	if (enable_tex[indx_one]) {
 		baseColor = texture2D(s_baseMap, v_texCoord);

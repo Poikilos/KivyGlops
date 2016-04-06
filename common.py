@@ -6,3 +6,4 @@ def view_traceback():
     print(str(ex_type)+" "+str(ex)+": ")
     traceback.print_tb(tb)
     del tb
+    print("")

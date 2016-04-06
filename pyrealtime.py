@@ -34,9 +34,7 @@ class PyRealTimeController:
                 self._keystates[index].state = state
             if text is not None:
                 self._keystates[index].text = text
-        # except Exception as e:
-        #     print("Could not finish set_pressed: "+str(e))
-        except:
+        except:  # Exception as e:
             print("Could not finish set_pressed: "+str(traceback.format_exc()))
 
     def dump(self):

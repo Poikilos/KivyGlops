@@ -20,6 +20,32 @@ class KivyGlopsMaterial(PyGlopsMaterial):
     
     def __init__(self):
         super(KivyGlopsMaterial, self).__init__()
+
+def get_kivyglop_from_pyglop(this_pyglop):
+    this_kivyglop = KivyGlop()
+    this_kivyglop.name = this_pyglop.name
+    this_kivyglop.obj_path = this_pyglop.obj_path
+    this_kivyglop.properties = this_pyglop.properties
+    this_kivyglop.vertex_depth = this_pyglop.vertex_depth
+    this_kivyglop.material = this_pyglop.material
+    this_kivyglop._min_coords = this_pyglop._min_coords
+    this_kivyglop._max_coords = this_pyglop._max_coords
+    this_kivyglop._pivot_point = this_pyglop._pivot_point
+
+    this_kivyglop.vertex_format = this_pyglop.vertex_format
+    this_kivyglop.vertices = this_pyglop.vertices
+    this_kivyglop.indices = this_pyglop.indices
+    #region vars moved to material
+    #this_kivyglop.ambient_color = this_pyglop.ambient_color
+    #this_kivyglop.diffuse_color = this_pyglop.diffuse_color
+    #this_kivyglop.specular_color = this_pyglop.specular_color
+    ##emissive_color = None  # vec4
+    #this_kivyglop.specular_coefficent = this_pyglop.specular_coefficent
+    #endregion vars moved to material
+    #this_kivyglop.opacity = this_pyglop.opacity # use diffuse color 4th channel instead
+    
+    return this_kivyglop;
+
         
 class KivyGlop(PyGlop, Widget):
     
@@ -36,7 +62,8 @@ class KivyGlop(PyGlop, Widget):
     _color_instruction = None
 
     _pivot_scaled_point = None
-
+    
+    
     def __init__(self): #, pyglop=None):
         super(KivyGlop, self).__init__()
         #self.freeAngle = 0.0
@@ -80,6 +107,7 @@ class KivyGlop(PyGlop, Widget):
     def transform_pivot_to_geometry(self):
         super(KivyGlop, self).transform_pivot_to_geometry()
         #self._change_instructions()
+        self._on_change_pivot()
 
     def _on_change_pivot(self):
         super(KivyGlop, self)._on_change_pivot()
@@ -153,29 +181,41 @@ class KivyGlops(PyGlops):
         elif len(self.glops)<1:
             print("NO VALID OBJECTS FOUND in '"+obj_path+"'")
         for index in range(0,len(self.glops)):
-            this_glop = self.glops[index]
-            #this_glop = KivyGlop(pyglop=self.glops[index])
-            #if len(self.glops<=index):
-                #self.glops.append(this_glop)
-            #else:
-                #self.glops[index]=this_glop
-                
-            this_texture_image = Image(this_glop.get_texture_diffuse_filename())
-            this_texture = None
-            if len(this_glop.vertices)>0:
-                if (this_texture_image is not None):
-                    this_texture = this_texture_image.texture
-                self.glops[index]._mesh = Mesh(
-                        vertices=this_glop.vertices,
-                        indices=this_glop.indices,
-                        fmt=this_glop.vertex_format,
-                        mode='triangles',
-                        texture=this_texture,
-                    )
-                print(str(len(this_glop.vertices))+" vert(ex/ices)")
-            else:
-                print("WARNING: 0 vertices in glop")
-                if this_glop.name is not None:
-                    print("  named "+this_glop.name)
+            self.glops[index] = get_kivyglop_from_pyglop(self.glops[index])
+            try:
+                this_glop = self.glops[index]
+                #this_glop = KivyGlop(pyglop=self.glops[index])
+                #if len(self.glops<=index):
+                    #self.glops.append(this_glop)
+                #else:
+                    #self.glops[index]=this_glop
+                participle = "checking for texture"
+                this_texture_image_path = this_glop.get_texture_diffuse_filename()
+                this_texture_image = None
+                if this_texture_image_path is not None:
+                    participle = "getting image filename"
+                    participle = "loading "+this_texture_image_path
+                    this_texture_image = Image(this_texture_image_path)
+                participle = "assembling Mesh"
+                this_texture = None
+                if len(this_glop.vertices)>0:
+                    if (this_texture_image is not None):
+                        this_texture = this_texture_image.texture
+                    
+                    self.glops[index]._mesh = Mesh(
+                            vertices=this_glop.vertices,
+                            indices=this_glop.indices,
+                            fmt=this_glop.vertex_format,
+                            mode='triangles',
+                            texture=this_texture,
+                        )
+                    print(str(len(this_glop.vertices))+" vert(ex/ices)")
+                else:
+                    print("WARNING: 0 vertices in glop")
+                    if this_glop.name is not None:
+                        print("  named "+this_glop.name)
+            except:
+                print("ERROR: Could not finish "+participle+" in KivyGlops load_obj")
+                view_traceback()
                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
 
