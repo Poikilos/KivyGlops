@@ -3,14 +3,17 @@
 simple diffuse lighting based on laberts cosine law; see e.g.:
     http://en.wikipedia.org/wiki/Lambertian_reflectance
     http://en.wikipedia.org/wiki/Lambert%27s_cosine_law
+KivyGlops version
+(expertmm fork of Kivy-1.9.0-py3.4-win32-x86\kivy34\examples\3Drendering\simple.glsl)
 */
 ---VERTEX SHADER-------------------------------------------------------
 #ifdef GL_ES
     precision highp float;
 #endif
 
-attribute vec3  a_position;
-attribute vec3  a_normal;
+//why are these vec4? I don't know. Ask Munshi. I say let the GPU do the work, but I may go back and optimize this
+attribute vec4  a_position;
+attribute vec4  a_normal;
 
 uniform mat4 modelview_mat;
 uniform mat4 projection_mat;
@@ -20,9 +23,11 @@ varying vec4 vertex_pos;
 
 void main (void) {
     //compute vertex position in eye_sapce and normalize normal vector
-    vec4 pos = modelview_mat * vec4(a_position,1.0);
+    
+    vec4 pos = modelview_mat * a_position;//vec4 pos = modelview_mat * vec4(a_position,1.0);
     vertex_pos = pos;
-    normal_vec = vec4(a_normal,0.0);
+    
+    normal_vec = a_normal;//normal_vec = vec4(a_normal,0.0);
     gl_Position = projection_mat * pos;
 }
 

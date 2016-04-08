@@ -3,7 +3,7 @@ import math
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.window import Window
-from kivy.uix.widget import Widget
+from kivy.uix.widget import Widget  
 from kivy.resources import resource_find
 from kivy.graphics.transformation import Matrix
 from kivy.graphics.opengl import *
@@ -28,7 +28,7 @@ MODE_GAME = "game"
 class Renderer(Widget):
     IsVerbose = False
     IsVisualDebugMode = False
-    glops = None  # TODO: eliminate this by finishing KivyGlops as window (Widget), and making Renderer a subclass of KivyGlops
+    scene = None  # TODO: eliminate this by finishing KivyGlops as window (Widget), and making Renderer a subclass of KivyGlops
     frames_per_second = 60.0
     camera_walk_units_per_second = None
 
@@ -74,7 +74,7 @@ class Renderer(Widget):
 
         #self.bind(on_touch_down=self.canvasTouchDown)
 
-        self.glops = KivyGlops()
+        self.scene = KivyGlops()
         self.canvas = RenderContext(compute_normal_mat=True)
         self.canvas["_world_light_dir"] = (0.0, 0.5, 1.0);
         self.canvas["_world_light_dir_eye_space"] = (0.0, 0.5, 1.0); #rotated in update_glsl
@@ -85,17 +85,20 @@ class Renderer(Widget):
         #self.canvas.shader.source = resource_find('shade-texture-only.glsl')
         #self.canvas.shader.source = resource_find('shade-kivyglops-minimal.glsl')
 
-        #self.glops.load_obj(resource_find("barrels triangulated (Costinus at turbosquid).obj"))
-        #self.glops.load_obj(resource_find("barrel.obj"))
-        #self.glops.load_obj(resource_find("KivyGlopsDemoScene.obj"))
-        self.glops.load_obj(resource_find("testnurbs-all-textured.obj"))
+        #self.scene.load_obj(resource_find("barrels triangulated (Costinus at turbosquid).obj"))
+        #self.scene.load_obj(resource_find("barrel.obj"))
+        #self.scene.load_obj(resource_find("KivyGlopsDemoScene.obj"))
+        self.scene.load_obj(resource_find("testnurbs-all-textured.obj"))
+        #self.scene.load_obj(resource_find("WarehouseOfFruit_by_Expertmm.obj"))
+        
+        
         
 
-        #self.glops.load_obj(resource_find("pyramid.obj"))
-        #self.glops.load_obj(resource_find("orion.obj"))
+        #self.scene.load_obj(resource_find("pyramid.obj"))
+        #self.scene.load_obj(resource_find("orion.obj"))
         print(self.canvas.shader)
         glopsYAMLLines = []
-        self.glops.append_dump(glopsYAMLLines)
+        self.scene.append_dump(glopsYAMLLines)
         try:
             thisFile = open('glops-dump.yml', 'w')
             for i in range(0,len(glopsYAMLLines)):
@@ -111,15 +114,15 @@ class Renderer(Widget):
         self.canvas.add(PushMatrix())
         #self.canvas.add(thisTexture)
         #self.canvas.add(Color(1, 1, 1, 1))
-        for thisMeshIndex in range(0,len(self.glops.glops)):
+        for thisMeshIndex in range(0,len(self.scene.glops)):
             thisMeshName = ""
             #thisMesh = KivyGlop()
-            this_glop = self.glops.glops[thisMeshIndex]
+            this_glop = self.scene.glops[thisMeshIndex]
             if self.selected_glopIndex is None:
                 self.selected_glopIndex = thisMeshIndex
                 self.selected_glop = this_glop
             if this_glop.name is not None:
-                thisMeshName =  self.glops.glops[thisMeshIndex].name
+                thisMeshName =  self.scene.glops[thisMeshIndex].name
             self.canvas.add(PushMatrix())
             self.canvas.add(this_glop._translate_instruction)
             self.canvas.add(this_glop._rotate_instruction_x)
@@ -494,14 +497,14 @@ class Renderer(Widget):
 
 
     def selectMeshByIndex(self, index):
-        glop_count = len(self.glops.glops)
+        glop_count = len(self.scene.glops)
         if (index>=glop_count):
             index=0
         if self.IsVerbose:
             Logger.debug("trying to select index "+str(index)+" (count is "+str(glop_count)+")...")
         if (glop_count > 0):
             self.selected_glopIndex = index
-            self.selected_glop = self.glops.glops[index]
+            self.selected_glop = self.scene.glops[index]
         else:
             self.selected_glop = None
             self.selected_glopIndex = None

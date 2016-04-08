@@ -177,9 +177,9 @@ class KivyGlops(PyGlops):
         super(KivyGlops, self).load_obj(obj_path)
         if self.glops is None:
             self.glops = list()
-            print("FAILED TO LOAD '"+obj_path+"'")
+            print("FAILED TO LOAD '"+str(obj_path)+"'")
         elif len(self.glops)<1:
-            print("NO VALID OBJECTS FOUND in '"+obj_path+"'")
+            print("NO VALID OBJECTS FOUND in '"+str(obj_path)+"'")
         for index in range(0,len(self.glops)):
             self.glops[index] = get_kivyglop_from_pyglop(self.glops[index])
             try:
@@ -196,7 +196,7 @@ class KivyGlops(PyGlops):
                     participle = "getting image filename"
                     participle = "loading "+this_texture_image_path
                     this_texture_image = Image(this_texture_image_path)
-                participle = "assembling Mesh"
+                participle = "assembling kivy Mesh"
                 this_texture = None
                 if len(this_glop.vertices)>0:
                     if (this_texture_image is not None):

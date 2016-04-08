@@ -29,87 +29,7 @@ from common import view_traceback
 
 from kivy.resources import resource_find
 from wobjfile import *
-
-class PyGlopsMaterial:
-    properties = None
-    name = None
-    mtlFileName = None  # mtl file path (only if based on WMaterial of WObject)
-
-    #region vars based on OpenGL ES 1.1
-    ambient_color = None  # vec4
-    diffuse_color = None  # vec4
-    specular_color = None  # vec4
-    emissive_color = None  # vec4
-    specular_exponent = None  # float
-    #endregion vars based on OpenGL ES 1.1
-
-    def __init__(self):
-        self.properties = {}
-        self.ambient_color = (0.0, 0.0, 0.0, 1.0)
-        self.diffuse_color = (1.0, 1.0, 1.0, 1.0)
-        self.specular_color = (1.0, 1.0, 1.0, 1.0)
-        self.emissive_color = (0.0, 0.0, 0.0, 1.0)
-        self.specular_exponent = 1.0
-
-    def append_dump(self, thisList, tabStringMinimum):
-        thisList.append(tabStringMinimum+"material:")
-        tabString="  "
-        if self.name is not None:
-            thisList.append(tabStringMinimum+tabString+"name: "+self.name)
-        if self.mtlFileName is not None:
-            thisList.append(tabStringMinimum+tabString+"mtlFileName: "+self.mtlFileName)
-        for k,v in sorted(self.properties.items()):
-            thisList.append(tabStringMinimum+tabString+k+": "+str(v))
-
-def theta_radians_from_rectangular(x, y):
-    theta = 0.0
-    if (y != 0.0) or (x != 0.0):
-        # if x == 0:
-        #     if y < 0:
-        #         theta = math.radians(-90)
-        #     elif y > 0:
-        #         theta = math.radians(90.0)
-        # elif y == 0:
-        #     if x < 0:
-        #         theta = math.radians(180.0)
-        #     elif x > 0:
-        #         theta = math.radians(0.0)
-        # else:
-        #     theta = math.atan(y/x)
-        theta = math.atan2(y, x)
-    return theta
-
-#Also in wobjfile.py:
-def append_dump_as_yaml_array(thisList, thisName, sourceList, tabStringMinimum):
-    tabString="  "
-    thisList.append(tabStringMinimum+thisName+":")
-    for i in range(0,len(sourceList)):
-        thisList.append(tabStringMinimum+tabString+"- "+str(sourceList[i]))
-
-
-class PyGlopsLight:
-    #region vars based on OpenGL ES 1.1
-    position = None  # vec4 light position for a point/spot light or normalized dir. for a directional light
-    ambient_color = None  # vec4
-    diffuse_color = None  # vec4
-    specular_color = None  # vec4
-    spot_direction = None  # vec3
-    attenuation_factors = None  # vec3
-    spot_exponent = None  # float
-    spot_cutoff_angle = None  # float
-    compute_distance_attenuation = None  # bool
-    #endregion vars based on OpenGL ES 1.1
-   
-    def __init__(self):
-       self.position = (0.0, 0.0, 0.0, 0.0)
-       self.ambient_color = (0.0, 0.0, 0.0, 0.0)
-       self.diffuse_color = (0.0, 0.0, 0.0, 0.0)
-       self.specular_color = (0.0, 0.0, 0.0, 0.0)
-       self.spot_direction = (0.0, 0.0, 0.0)
-       self.attenuation_factors = (0.0, 0.0, 0.0)
-       self.spot_exponent = 1.0
-       self.spot_cutoff_angle = 45.0
-       self.compute_distance_attenuation = False
+add_dump_comments_enable = False
 
 V_POS_INDEX = 0
 V_TC0_INDEX = 1
@@ -149,13 +69,15 @@ class PyGlop:
     #endregion vars based on OpenGL ES 1.1 MOVED TO material
     
     #region calculated from vertex_format
-    POSITION_OFFSET = None
-    NORMAL_OFFSET = None
-    TEXCOORD0_OFFSET = None
+    _POSITION_OFFSET = None
+    _NORMAL_OFFSET = None
+    _TEXCOORD0_OFFSET = None
+    _TEXCOORD1_OFFSET = None
     COLOR_OFFSET = None
     POSITION_INDEX = None
     NORMAL_INDEX = None
     TEXCOORD0_INDEX = None
+    TEXCOORD1_INDEX = None
     COLOR_INDEX = None
     #endregion calculated from vertex_format
 
@@ -371,23 +293,49 @@ class PyGlop:
                 #self.vertices[v3i + 3 + k] = n[k]
 
     def append_dump(self, thisList, tabStringMinimum):
-        thisList.append(tabStringMinimum+"object:")
+        thisList.append(tabStringMinimum+"Glop:")
         tabString="  "
         if self.name is not None:
             thisList.append(tabStringMinimum+tabString+"name: "+self.name)
         if self.vertices is not None:
+            if add_dump_comments_enable:
+                thisList.append(tabStringMinimum+tabString+"#len(self.vertices)/self.vertex_depth:")
             thisList.append(tabStringMinimum+tabString+"vertices_count: "+str(len(self.vertices)/self.vertex_depth))
+        if self.indices is not None:
+            thisList.append(tabStringMinimum+tabString+"indices_count:"+str(len(self.indices)))
         thisList.append(tabStringMinimum+tabString+"vertex_depth: "+str(self.vertex_depth))
         if self.vertices is not None:
+            if add_dump_comments_enable:
+                thisList.append(tabStringMinimum+tabString+"#len(self.vertices):")
             thisList.append(tabStringMinimum+tabString+"vertices_info_len: "+str(len(self.vertices)))
-
-        thisList.append(tabStringMinimum+tabString+"#VFORMAT_VECTOR_LEN_INDEX:"+str(VFORMAT_VECTOR_LEN_INDEX))
-        thisList.append(tabStringMinimum+tabString+"#len(self.vertex_format):"+str(len(self.vertex_format)))
-        thisList.append(tabStringMinimum+tabString+"#COLOR_INDEX:"+str(self.COLOR_INDEX))
-        thisList.append(tabStringMinimum+tabString+"#COLOR_OFFSET:"+str(self.COLOR_OFFSET))
-        thisList.append(tabStringMinimum+tabString+"#len(self.vertex_format[self.COLOR_INDEX]):"+str(len(self.vertex_format[self.COLOR_INDEX])))
+        thisList.append(tabStringMinimum+tabString+"POSITION_INDEX:"+str(self.POSITION_INDEX))
+        thisList.append(tabStringMinimum+tabString+"NORMAL_INDEX:"+str(self.NORMAL_INDEX))
+        thisList.append(tabStringMinimum+tabString+"COLOR_INDEX:"+str(self.COLOR_INDEX))
+        
+        component_index = 0
+        component_offset = 0
+        
+        while component_index < len(self.vertex_format):
+            vertex_format_component = self.vertex_format[component_index]
+            component_name_bytestring, component_len, component_type = vertex_format_component
+            component_name = component_name_bytestring.decode("utf-8") 
+            thisList.append(tabStringMinimum+tabString+component_name+".len:"+str(component_len))
+            thisList.append(tabStringMinimum+tabString+component_name+".type:"+str(component_type))
+            thisList.append(tabStringMinimum+tabString+component_name+".index:"+str(component_index))
+            thisList.append(tabStringMinimum+tabString+component_name+".offset:"+str(component_offset))
+            component_index += 1
+            component_offset += component_len
+        
+        #thisList.append(tabStringMinimum+tabString+"POSITION_LEN:"+str(self.vertex_format[self.POSITION_INDEX][VFORMAT_VECTOR_LEN_INDEX]))
+        
+        if add_dump_comments_enable:
+            #thisList.append(tabStringMinimum+tabString+"#VFORMAT_VECTOR_LEN_INDEX:"+str(VFORMAT_VECTOR_LEN_INDEX))
+            thisList.append(tabStringMinimum+tabString+"#len(self.vertex_format):"+str(len(self.vertex_format)))
+            thisList.append(tabStringMinimum+tabString+"#COLOR_OFFSET:"+str(self.COLOR_OFFSET))
+            thisList.append(tabStringMinimum+tabString+"#len(self.vertex_format[self.COLOR_INDEX]):"+str(len(self.vertex_format[self.COLOR_INDEX])))
         channel_count = self.vertex_format[self.COLOR_INDEX][VFORMAT_VECTOR_LEN_INDEX]
-        thisList.append(tabStringMinimum+tabString+"#vertex_bytes_per_pixel:"+str(channel_count))
+        if add_dump_comments_enable:
+            thisList.append(tabStringMinimum+tabString+"#vertex_bytes_per_pixel:"+str(channel_count))
 
         
         for k,v in sorted(self.properties.items()):
@@ -399,36 +347,47 @@ class PyGlop:
         
         #thisList=append_dump_as_yaml_array(thisList, "vertex_info_1D",self.vertices,tabStringMinimum+tabString)
         tabString="  "
-        thisList.append(tabStringMinimum+tabString+"vertex_info_1D:")
+        if add_dump_comments_enable:
+            thisList.append(tabStringMinimum+tabString+"#1D vertex info array, aka:")
+        thisList.append(tabStringMinimum+tabString+"vertices:")
         component_offset = 0
         vertex_actual_index = 0
         for i in range(0,len(self.vertices)):
-            if component_offset==0:
-                thisList.append(tabStringMinimum+tabString+tabString+"#vertex ["+str(vertex_actual_index)+"]:")
-            if component_offset==self.COLOR_OFFSET:
-                thisList.append(tabStringMinimum+tabString+tabString+"#  color:")
-            if component_offset==self.NORMAL_OFFSET:
-                thisList.append(tabStringMinimum+tabString+tabString+"#  normal:")
-            if component_offset==self.POSITION_OFFSET:
-                thisList.append(tabStringMinimum+tabString+tabString+"#  position:")
-            if component_offset==self.TEXCOORD0_OFFSET:
-                thisList.append(tabStringMinimum+tabString+tabString+"#  texcoords0_vec4_and_texcoords1_vec4:")
+            if add_dump_comments_enable:
+                if component_offset==0:
+                    thisList.append(tabStringMinimum+tabString+tabString+"#vertex ["+str(vertex_actual_index)+"]:")
+                elif component_offset==self.COLOR_OFFSET:
+                    thisList.append(tabStringMinimum+tabString+tabString+"#  color:")
+                elif component_offset==self._NORMAL_OFFSET:
+                    thisList.append(tabStringMinimum+tabString+tabString+"#  normal:")
+                elif component_offset==self._POSITION_OFFSET:
+                    thisList.append(tabStringMinimum+tabString+tabString+"#  position:")
+                elif component_offset==self._TEXCOORD0_OFFSET:
+                    thisList.append(tabStringMinimum+tabString+tabString+"#  texcoords0:")
+                elif component_offset==self._TEXCOORD1_OFFSET:
+                    thisList.append(tabStringMinimum+tabString+tabString+"#  texcoords1:")
             thisList.append(tabStringMinimum+tabString+tabString+"- "+str(self.vertices[i]))
             component_offset += 1
             if component_offset==self.vertex_depth:
                 component_offset = 0
                 vertex_actual_index += 1
         
+        thisList.append(tabStringMinimum+tabString+"indices:")
+        for i in range(0,len(self.indices)):
+            thisList.append(tabStringMinimum+tabString+tabString+"- "+str(self.indices[i]))
+            
 
     def on_vertex_format_change(self):
-        self.POSITION_OFFSET = -1
-        self.NORMAL_OFFSET = -1
-        self.TEXCOORD0_OFFSET = -1
+        self._POSITION_OFFSET = -1
+        self._NORMAL_OFFSET = -1
+        self._TEXCOORD0_OFFSET = -1
+        self._TEXCOORD1_OFFSET = -1
         self.COLOR_OFFSET = -1
 
         self.POSITION_INDEX = -1
         self.NORMAL_INDEX = -1
         self.TEXCOORD0_INDEX = -1
+        self.TEXCOORD1_INDEX = -1
         self.COLOR_INDEX = -1
         
         #this_pyglop.vertex_depth = 0
@@ -438,15 +397,18 @@ class PyGlop:
             #first convert from bytestring to str
             vformat_name_lower = str(self.vertex_format[i][VFORMAT_NAME_INDEX]).lower()
             if "pos" in vformat_name_lower:
-                self.POSITION_OFFSET = offset
+                self._POSITION_OFFSET = offset
                 self.POSITION_INDEX = i
             elif "normal" in vformat_name_lower:
-                self.NORMAL_OFFSET = offset
+                self._NORMAL_OFFSET = offset
                 self.NORMAL_INDEX = i
             elif ("texcoord" in vformat_name_lower) or ("tc0" in vformat_name_lower):
-                if self.TEXCOORD0_OFFSET<0:
-                    self.TEXCOORD0_OFFSET = offset
+                if self._TEXCOORD0_OFFSET<0:
+                    self._TEXCOORD0_OFFSET = offset
                     self.TEXCOORD0_INDEX = i
+                elif self._TEXCOORD1_OFFSET<0 and ("tc0" not in vformat_name_lower):
+                    self._TEXCOORD1_OFFSET = offset
+                    self.TEXCOORD1_INDEX = i
                 #else ignore since is probably the second index such as a_texcoord1
             elif "color" in vformat_name_lower:
                 self.COLOR_OFFSET = offset
@@ -460,6 +422,89 @@ class PyGlop:
         
 
 
+class PyGlopsMaterial:
+    properties = None
+    name = None
+    mtlFileName = None  # mtl file path (only if based on WMaterial of WObject)
+
+    #region vars based on OpenGL ES 1.1
+    ambient_color = None  # vec4
+    diffuse_color = None  # vec4
+    specular_color = None  # vec4
+    emissive_color = None  # vec4
+    specular_exponent = None  # float
+    #endregion vars based on OpenGL ES 1.1
+
+    def __init__(self):
+        self.properties = {}
+        self.ambient_color = (0.0, 0.0, 0.0, 1.0)
+        self.diffuse_color = (1.0, 1.0, 1.0, 1.0)
+        self.specular_color = (1.0, 1.0, 1.0, 1.0)
+        self.emissive_color = (0.0, 0.0, 0.0, 1.0)
+        self.specular_exponent = 1.0
+
+    def append_dump(self, thisList, tabStringMinimum):
+        thisList.append(tabStringMinimum+"GlopsMaterial:")
+        tabString="  "
+        if self.name is not None:
+            thisList.append(tabStringMinimum+tabString+"name: "+self.name)
+        if self.mtlFileName is not None:
+            thisList.append(tabStringMinimum+tabString+"mtlFileName: "+self.mtlFileName)
+        for k,v in sorted(self.properties.items()):
+            thisList.append(tabStringMinimum+tabString+k+": "+str(v))
+
+def theta_radians_from_rectangular(x, y):
+    theta = 0.0
+    if (y != 0.0) or (x != 0.0):
+        # if x == 0:
+        #     if y < 0:
+        #         theta = math.radians(-90)
+        #     elif y > 0:
+        #         theta = math.radians(90.0)
+        # elif y == 0:
+        #     if x < 0:
+        #         theta = math.radians(180.0)
+        #     elif x > 0:
+        #         theta = math.radians(0.0)
+        # else:
+        #     theta = math.atan(y/x)
+        theta = math.atan2(y, x)
+    return theta
+
+#Also in wobjfile.py:
+def append_dump_as_yaml_array(thisList, thisName, sourceList, tabStringMinimum):
+    tabString="  "
+    thisList.append(tabStringMinimum+thisName+":")
+    for i in range(0,len(sourceList)):
+        thisList.append(tabStringMinimum+tabString+"- "+str(sourceList[i]))
+
+
+class PyGlopsLight:
+    #region vars based on OpenGL ES 1.1
+    position = None  # vec4 light position for a point/spot light or normalized dir. for a directional light
+    ambient_color = None  # vec4
+    diffuse_color = None  # vec4
+    specular_color = None  # vec4
+    spot_direction = None  # vec3
+    attenuation_factors = None  # vec3
+    spot_exponent = None  # float
+    spot_cutoff_angle = None  # float
+    compute_distance_attenuation = None  # bool
+    #endregion vars based on OpenGL ES 1.1
+   
+    def __init__(self):
+       self.position = (0.0, 0.0, 0.0, 0.0)
+       self.ambient_color = (0.0, 0.0, 0.0, 0.0)
+       self.diffuse_color = (0.0, 0.0, 0.0, 0.0)
+       self.specular_color = (0.0, 0.0, 0.0, 0.0)
+       self.spot_direction = (0.0, 0.0, 0.0)
+       self.attenuation_factors = (0.0, 0.0, 0.0)
+       self.spot_exponent = 1.0
+       self.spot_cutoff_angle = 45.0
+       self.compute_distance_attenuation = False
+
+
+
 class PyGlops:
     glops = None
     materials = None
@@ -469,10 +514,10 @@ class PyGlops:
 
     def append_dump(self, thisList):
         tabString="  "
-        thisList.append("Objects:")
+        thisList.append("Glops:")
         for i in range(0,len(self.glops)):
             self.glops[i].append_dump(thisList, tabString)
-        thisList.append("Materials:")
+        thisList.append("GlopsMaterials:")
         for i in range(0,len(self.materials)):
             self.materials[i].append_dump(thisList, tabString)
 
@@ -542,21 +587,21 @@ class PyGlops:
         this_pyglop = PyGlop()
         #from vertex_format above:
         #self.vertex_format = [
-            #(b'a_position', 4, 'float'),  # Munshi prefers vec4 (Kivy prefers vec3)
-            #(b'a_texcoord0', 4, 'float'),  # Munshi prefers vec4 (Kivy prefers vec2); vTexCoord0; available if enable_tex[0] is true
-            #(b'a_texcoord1', 4, 'float'),  # Munshi prefers vec4 (Kivy prefers vec2);  available if enable_tex[1] is true
+            #(b'a_position', , 'float'),  # Munshi prefers vec4 (Kivy prefers vec3)
+            #(b'a_texcoord0', , 'float'),  # Munshi prefers vec4 (Kivy prefers vec2); vTexCoord0; available if enable_tex[0] is true
+            #(b'a_texcoord1', , 'float'),  # Munshi prefers vec4 (Kivy prefers vec2);  available if enable_tex[1] is true
             #(b'a_color', 4, 'float'),  # vColor (diffuse color of vertex)
             #(b'a_normal', 3, 'float')  # vNormal; Munshi prefers vec3 (Kivy also prefers vec3)
             #]
         #self.on_vertex_format_change()
         IS_SELF_VFORMAT_OK = True
-        if this_pyglop.POSITION_OFFSET<0:
+        if this_pyglop._POSITION_OFFSET<0:
             IS_SELF_VFORMAT_OK = False
             print("Couldn't find name containing 'pos' or 'position' in any vertex format element (see pyglops.py PyGlop constructor)")
-        if this_pyglop.NORMAL_OFFSET<0:
+        if this_pyglop._NORMAL_OFFSET<0:
             IS_SELF_VFORMAT_OK = False
             print("Couldn't find name containing 'normal' in any vertex format element (see pyglops.py PyGlop constructor)")
-        if this_pyglop.TEXCOORD0_OFFSET<0:
+        if this_pyglop._TEXCOORD0_OFFSET<0:
             IS_SELF_VFORMAT_OK = False
             print("Couldn't find name containing 'texcoord' in any vertex format element (see pyglops.py PyGlop constructor)")
         if this_pyglop.COLOR_OFFSET<0:
@@ -576,6 +621,12 @@ class PyGlops:
         zero_vertex = list()
         for index in range(0,this_pyglop.vertex_depth):
             zero_vertex.append(0.0)
+        if (this_pyglop.vertex_format[this_pyglop.POSITION_INDEX][VFORMAT_VECTOR_LEN_INDEX]>3):
+            zero_vertex[3] = 1.0
+            #NOTE: this is done since usually if len is 3, simple.glsl included with kivy converts it to vec4 appending 1.0:
+            #attribute vec3 v_pos;
+            #void main (void) {
+            #vec4(v_pos,1.0);
         #this_offset = this_pyglop.COLOR_OFFSET
         channel_count = this_pyglop.vertex_format[this_pyglop.COLOR_INDEX][VFORMAT_VECTOR_LEN_INDEX]
         for channel_subindex in range(0,channel_count):
@@ -771,11 +822,11 @@ class PyGlops:
                             for i in range(0,this_pyglop.vertex_depth):
                                 vertex_components.append(0.0)
                             for element_index in range(0,3):
-                                vertex_components[this_pyglop.POSITION_OFFSET+element_index] = v[element_index]
+                                vertex_components[this_pyglop._POSITION_OFFSET+element_index] = v[element_index]
                             for element_index in range(0,3):
-                                vertex_components[this_pyglop.NORMAL_OFFSET+element_index] = normal[element_index]
+                                vertex_components[this_pyglop._NORMAL_OFFSET+element_index] = normal[element_index]
                             for element_index in range(0,2):
-                                vertex_components[this_pyglop.TEXCOORD0_OFFSET+element_index] = texcoord[element_index]
+                                vertex_components[this_pyglop._TEXCOORD0_OFFSET+element_index] = texcoord[element_index]
                                 
                             if len(v)>3:
                                 #Handle nonstandard obj file with extended vertex info (color)
@@ -795,20 +846,29 @@ class PyGlops:
                         vertexinfo_index = 0
                         relative_source_face_vertex_index = 0  #required for tracking faces with less than 3 vertices
                         face_first_vertex_dest_index = dest_vertex_index
+                        tesselated_f_count = 0
                         while vertexinfo_index<len(f):
-                            if vertexinfo_index==3:
+                            if vertexinfo_index==2:
                                 tri = [dest_vertex_index, dest_vertex_index+1, dest_vertex_index+2]
                                 #tri = [idx, idx+1, idx+2]  #TODO: is this wrong?? doesn't this assume indices are in order??
                                 this_pyglop.indices.extend(tri)
                                 dest_vertex_index += 3
                                 relative_source_face_vertex_index += 3
-                            elif vertexinfo_index>3:
+                                tesselated_f_count += 1
+                            elif vertexinfo_index>2:
                                 #TESSELATE MANUALLY for faces with more than 3 vertices (connect loose vertex with first vertex and previous vertex)
                                 tri = [face_first_vertex_dest_index, dest_vertex_index-1, dest_vertex_index]
                                 this_pyglop.indices.extend(tri)
                                 dest_vertex_index += 1
                                 relative_source_face_vertex_index += 1
+                                tesselated_f_count += 1
                             vertexinfo_index += 1
+                        
+                        if (tesselated_f_count<1):
+                            print("WARNING: Face tesselated to 0 faces")
+                        elif (tesselated_f_count>1):
+                            print("Face tesselated to "+str(tesselated_f_count)+" face(s)")
+                            
                         if relative_source_face_vertex_index<source_face_vertex_count:
                             # only happens if face has fewer than 3 vertices (botched obj file)
                             dest_vertex_index += source_face_vertex_count - relative_source_face_vertex_index
