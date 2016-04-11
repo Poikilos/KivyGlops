@@ -3,29 +3,34 @@
     precision highp float;
 #endif
 
-attribute vec3  v_pos;
-attribute vec4  v_color;
-attribute vec2  v_tc0;
+attribute vec4  a_position;
+attribute vec4  a_color;
+attribute vec2  a_texcoord0;
+attribute vec4  a_normal;
 
 uniform mat4 modelview_mat;
 uniform mat4 projection_mat;
 
 varying vec4 frag_color;
 varying vec2 uv_vec;
+varying vec3 v_normal;
+varying vec4 v_pos;
 
-struct VertextInput {
-	float3 vertex : POSITION;
-	float3 normal : NORMAL;
-};
-struct VertexOutput {
-	float4 pos : SV_POSITION;
-};
+// struct VertextInput {  //sic
+	// vec3 vertex : POSITION;
+	// vec3 normal : NORMAL;
+// };
+// struct VertexOutput {
+	// vec4 pos : SV_POSITION;
+// };
 
 void main (void) {
-    vec4 pos = modelview_mat * vec4(v_pos,1.0);
-    gl_Position = projection_mat * pos;
-    frag_color = v_color;
-    uv_vec = v_tc0;
+    vec4 pos = modelview_mat * a_position; //vec4(v_pos,1.0);
+	v_pos = projection_mat * pos;
+    gl_Position = v_pos;
+    frag_color = a_color;
+    uv_vec = a_texcoord0;
+	v_normal = a_normal.xyz;
 }
 
 
@@ -37,17 +42,26 @@ void main (void) {
 
 varying vec4 frag_color;
 varying vec2 uv_vec;
+varying vec3 v_normal;
+varying vec4 v_pos;
+uniform vec3 camera_world_pos;
 
 uniform sampler2D tex;
-//should have default sharpness above this
-uniform _sharpness;
+
+//should have default sharpness otherwise must always set it in calling program
+//uniform fresnel_sharpness; //uniform _sharpness;
 
 
 void main (void){
+	float default_fresnel_sharpness = .2;
+	//if (fresnel_sharpness==null) {
+		//fresnel_sharpness = default_fresnel_sharpness;
+	//}
+	float fresnel_sharpness = default_fresnel_sharpness;
     vec4 color = texture2D(tex, uv_vec);
-	float3 V = normalize( _WorldSpaceCameraPos.xyz - i.posWorld );
-	float3 N = normalize( i.normalDir );
-	float fresnel = pow( 1.0 - dot( N, V), _sharpness );
-	vec4 fresnel_color = (fresnel, fresnel, fresnel, 1.0);
+	vec3 V = normalize( camera_world_pos.xyz - v_pos.xyz );  // normalize( _WorldSpaceCameraPos.xyz - i.posWorld );
+	vec3 N = normalize(v_normal); //normalize( i.normalDir );
+	float fresnel = pow( 1.0 - dot( N, V), fresnel_sharpness ); //pow( 1.0 - dot( N, V), _sharpness );
+	vec4 fresnel_color = vec4(fresnel, fresnel, fresnel, 1.0);
     gl_FragColor = color * fresnel_color;
 }

@@ -46,10 +46,10 @@
     precision highp float;
 #endif
 
-attribute vec3  a_position; //set by Mesh (named by vertex_format)
+attribute vec4  a_position; //set by Mesh (named by vertex_format)
 attribute vec3  a_normal; //set by Mesh (named by vertex_format)
 attribute vec4  a_color; //TODO: oops noone set this (neither kivy nor nskrypnik [C:\Kivy-1.8.0-py3.3-win32\kivy\examples\3Drendering\simple.glsl doesn't even mention the variable ])--vertex_format should name it. No wonder having no texture (or multiplying by v_color) makes object invisible. 
-attribute vec2  a_texcoord0; //set by Mesh (named by vertex_format); 0 since multiple UVs may be needed if using multiple textures (usually maps above 0 are for situations such as a video on a mesh of a screen)
+attribute vec4  a_texcoord0; //set by Mesh (named by vertex_format); 0 since multiple UVs may be needed if using multiple textures (usually maps above 0 are for situations such as a video on a mesh of a screen)
 
 uniform mat4 modelview_mat; //KivyGlop variable (since may affect different objects separately, or a hierarchy of objects)
 uniform mat4 projection_mat; //Scene variable (since changes perspective)
@@ -68,7 +68,7 @@ varying vec3 n; //http://www.kickjs.org/example/shader_editor/shader_editor.html
 void main()
 {
     //compute vertex position in eye_space and normalize normal vector
-    vec4 pos = modelview_mat * vec4(a_position,1.0);
+    vec4 pos = modelview_mat * a_position; //vec4(v_pos,1.0); 
     vertex_pos = pos;
     normal_vec = vec4(a_normal,0.0);
     //gl_Position = projection_mat * pos;

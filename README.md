@@ -73,6 +73,8 @@ uniform mat4 modelview_mat;  //derived from self.canvas["modelview_mat"] = model
 uniform mat4 projection_mat;  //derived from self.canvas["projection_mat"] = projectionMatrix
 
 ## Developer Notes
+* each program you make should be a subclass of KivyGlops or other PyGlops subclass (representing framework you are using other than Kivy)
+* All subclasses of PyGlops should overload __init__, call super at beginning of it, and glops_init at end of it, like KivyGlops does.
 * pymesher module (which does not require Kivy) loads obj files using intermediate WObjFile class (planned: save&load native PyMesher files), and provides base classes for all classes in kivymesher module
 * pyrealtime module (which does not require Kivy) keeps track of keyboard state, allowing getting keystate asynchronously
 * update-kivymesher.bat will only work for students if teacher places KivyGlops in R:\Classes\ComputerProgramming\Examples\KivyGlops

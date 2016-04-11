@@ -394,7 +394,7 @@ def get_wmaterial_dict_from_mtl(filename):
                                         # (no params)
                                         #results[this_mtl_name]._map_diffuse_filename = args_string
                                 else:
-                                    print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) unknown material command '"+command+"'")
+                                    print(filename+" ("+str(line_counting_number)+",0): (NOT YET IMPLEMENTED) unknown material command '"+command+"'")
                             else:
                                 print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) material command before 'newmtl'")
                         else:
