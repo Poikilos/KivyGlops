@@ -19,3 +19,4 @@ GOTO EXIT_OK
 :EXIT_ERROR
 pause
 :EXIT_OK
+explorer "%DESTDIR_FULLNAME%"

@@ -350,29 +350,38 @@ class KivyGlopsWindow(Widget):
         self.glops_load()
         
     def load_obj(self,obj_path):
-        obj_path = resource_find(obj_path)
-        #super(KivyGlops, self).load_obj(obj_path)
-        new_glops = self.scene.get_pyglops_list_from_obj(obj_path)
-        if new_glops is None:
-            print("FAILED TO LOAD '"+str(obj_path)+"'")
-        elif len(new_glops)<1:
-            print("NO VALID OBJECTS FOUND in '"+str(obj_path)+"'")
-
-        if self.scene.glops is None:
-            self.scene.glops = list()
-            
-        #for index in range(0,len(self.glops)):
-        for index in range(0,len(new_glops)):
-            new_glops[index] = get_kivyglop_from_pyglop(new_glops[index])
-            #this_glop = new_glops[index]
-            #this_glop = KivyGlop(pyglop=self.glops[index])
-            #if len(self.glops<=index):
-                #self.glops.append(this_glop)
-            #else:
-                #self.glops[index]=this_glop
-            new_glops[index].generate_kivy_mesh()
-            self.add_glop(new_glops[index])
-            
+        if obj_path is not None:
+            original_path = obj_path
+            obj_path = resource_find(obj_path)
+            if obj_path is not None:
+                if os.path.isfile(obj_path):
+                    #super(KivyGlops, self).load_obj(obj_path)
+                    new_glops = self.scene.get_pyglops_list_from_obj(obj_path)
+                    if new_glops is None:
+                        print("FAILED TO LOAD '"+str(obj_path)+"'")
+                    elif len(new_glops)<1:
+                        print("NO VALID OBJECTS FOUND in '"+str(obj_path)+"'")
+                    else:
+                        if self.scene.glops is None:
+                            self.scene.glops = list()
+                            
+                        #for index in range(0,len(self.glops)):
+                        for index in range(0,len(new_glops)):
+                            new_glops[index] = get_kivyglop_from_pyglop(new_glops[index])
+                            #this_glop = new_glops[index]
+                            #this_glop = KivyGlop(pyglop=self.glops[index])
+                            #if len(self.glops<=index):
+                                #self.glops.append(this_glop)
+                            #else:
+                                #self.glops[index]=this_glop
+                            new_glops[index].generate_kivy_mesh()
+                            self.add_glop(new_glops[index])
+                else:
+                    print("missing '"+obj_path+"'")
+            else:
+                print("missing '"+original_path+"'")
+        else:
+            print("ERROR: obj_path is None for load_obj")
     def add_glop(self, this_glop):
         participle="initializing"
         try:
@@ -398,8 +407,8 @@ class KivyGlopsWindow(Widget):
                 this_glop.generate_kivy_mesh()
                 print("WARNING: glop had no mesh, so was generated when added to canvas. Please ensure it is a KivyGlop and not a PyGlop")
             self.canvas.add(this_glop._color_instruction)  #TODO: asdf add as uniform instead
-            if this_pyglop._mesh is not None:
-                self.canvas.add(this_pyglop._mesh)
+            if this_glop._mesh is not None:
+                self.canvas.add(this_glop._mesh)
                 print("Added mesh to canvas.")
             else:
                 print("NOT adding mesh.")

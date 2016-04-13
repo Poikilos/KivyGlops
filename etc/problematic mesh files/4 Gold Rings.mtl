@@ -1,0 +1,83 @@
+# Max2Mtl Version 4.0 Mar 10th, 2001
+#
+# Multi/Sub Material__2562 (2) to come 
+#
+newmtl GOLD
+Ka  0.0 0.0 0.0
+Kd  0.3 0.1 0.0
+Ks  1.0 1.0 1.0
+d  1.0
+Ns  0.0
+illum 2
+#
+newmtl DIAMOND
+Ka  0.0 0.0 0.0
+Kd  0.1 0.1 0.2
+Ks  1.0 1.0 1.0
+d  0.0
+Ns  30.0
+illum 2
+#
+# Multi/Sub Material__2562 done 
+#
+# Multi/Sub Material__2884 (2) to come 
+#
+newmtl GOLD
+Ka  0.0 0.0 0.0
+Kd  0.3 0.1 0.0
+Ks  1.0 1.0 1.0
+d  1.0
+Ns  0.0
+illum 2
+#
+newmtl rED
+Ka  0.0 0.0 0.0
+Kd  0.6 0.0 0.0
+Ks  1.0 1.0 1.0
+d  0.5
+Ns  30.0
+illum 2
+#
+# Multi/Sub Material__2884 done 
+#
+# Multi/Sub Material__2240 (2) to come 
+#
+newmtl GOLD
+Ka  0.0 0.0 0.0
+Kd  0.3 0.1 0.0
+Ks  1.0 1.0 1.0
+d  1.0
+Ns  0.0
+illum 2
+#
+newmtl BLUE
+Ka  0.0 0.0 0.0
+Kd  0.1 0.6 0.8
+Ks  1.0 1.0 1.0
+d  0.2
+Ns  30.0
+illum 2
+#
+# Multi/Sub Material__2240 done 
+#
+# Multi/Sub Material__3205 (2) to come 
+#
+newmtl GOLD
+Ka  0.0 0.0 0.0
+Kd  0.3 0.1 0.0
+Ks  1.0 1.0 1.0
+d  1.0
+Ns  0.0
+illum 2
+#
+newmtl GREEN
+Ka  0.0 0.0 0.0
+Kd  0.1 0.6 0.1
+Ks  1.0 1.0 1.0
+d  0.3
+Ns  30.0
+illum 2
+#
+# Multi/Sub Material__3205 done 
+#
+# EOF

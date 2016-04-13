@@ -11,6 +11,8 @@ import traceback
 #     pass
 #
 
+verbose_enable = False
+
 class PyRealTimeKeyState:
     state = None
     text = None

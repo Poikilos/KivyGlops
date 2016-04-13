@@ -30,6 +30,7 @@ from common import view_traceback
 from kivy.resources import resource_find
 from wobjfile import *
 add_dump_comments_enable = False
+verbose_enable = False
 
 V_POS_INDEX = 0
 V_TC0_INDEX = 1
@@ -750,7 +751,8 @@ def get_pyglop_from_wobject(this_wobject):  #formerly set_from_wobject formerly 
                                     #participle = "using texture coordinates at index "+str(tcs[face_index]-texcoords_offset)+" (after applying texcoords_offset:"+str(texcoords_offset)+"; Count:"+str(len(this_wobject.texcoords))+")"
                                     #texcoord = this_wobject.texcoords[tcs[face_index]-texcoords_offset]
                             else:
-                                print("Warning: no texcoords found in wobject named '"+this_name+"'")
+                                if verbose_enable:
+                                    print("Warning: no texcoords found in wobject named '"+this_name+"'")
                         except:  # Exception as e:
                             print("Could not finish "+participle+" for wobject named '"+this_name+"':")
                             view_traceback()
@@ -825,7 +827,8 @@ def get_pyglop_from_wobject(this_wobject):  #formerly set_from_wobject formerly 
                     if (tesselated_f_count<1):
                         print("WARNING: Face tesselated to 0 faces")
                     elif (tesselated_f_count>1):
-                        print("Face tesselated to "+str(tesselated_f_count)+" face(s)")
+                        if verbose_enable:
+                            print("Face tesselated to "+str(tesselated_f_count)+" face(s)")
                         
                     if relative_source_face_vertex_index<source_face_vertex_count:
                         # only happens if face has fewer than 3 vertices (botched obj file)

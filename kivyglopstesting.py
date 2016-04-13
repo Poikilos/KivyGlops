@@ -27,15 +27,16 @@ class MainForm(KivyGlopsWindow):
     #def __init__(self, **kwargs):
     def glops_load(self):
         #super(Renderer, self).__init__(**kwargs)
-        #self.scene.load_obj(resource_find("barrels triangulated (Costinus at turbosquid).obj"))
-        #self.scene.load_obj(resource_find("barrel.obj"))
-        #self.scene.load_obj(resource_find("KivyGlopsDemoScene.obj"))
-        #self.scene.load_obj(resource_find("WarehouseOfFruit_by_Expertmm.obj"))
-        #self.scene.load_obj(resource_find("pyramid.obj"))
-        #self.scene.load_obj(resource_find("testnurbs-all-textured.obj"))
-        #self.scene.load_obj(resource_find("orion.obj"))
-        #self.scene.load_obj(resource_find("testnurbs-all-textured.obj"))
-        self.load_obj(resource_find("testnurbs-all-textured.obj"))
+        #self.load_obj("barrels triangulated (Costinus at turbosquid).obj")
+        #self.load_obj("barrel.obj")
+        #self.load_obj("KivyGlopsDemoScene.obj")
+        #self.load_obj("WarehouseOfFruit_by_Expertmm.obj")
+        #self.load_obj("pyramid.obj")
+        #self.load_obj("testnurbs-all-textured.obj")
+        #self.load_obj("orion.obj")
+        #self.load_obj("testnurbs-all-textured.obj")
+        #self.load_obj("testnurbs-all-textured.obj")
+        self.load_obj("pedestal-suzanne.obj")
         #pass
 
 class KivyGlopsExampleApp(App):
