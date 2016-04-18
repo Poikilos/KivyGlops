@@ -617,13 +617,13 @@ def get_pyglop_from_wobject(this_wobject):  #formerly set_from_wobject formerly 
         this_pyglop.vertices = []
         vertex_components = zero_vertex[:]
         #obj format stores faces like (quads are allowed such as in following examples):
-        #f 1399/1619 1373/1593 1376/1596 1400/1620
+        #this_wobject_this_face 1399/1619 1373/1593 1376/1596 1400/1620
         #format is:
-        #f VERTEX_I VERTEX_I VERTEX_I VERTEX_I
+        #this_wobject_this_face VERTEX_I VERTEX_I VERTEX_I VERTEX_I
         #or
-        #f VERTEX_I/TEXCOORDSINDEX VERTEX_I/TEXCOORDSINDEX VERTEX_I/TEXCOORDSINDEX VERTEX_I/TEXCOORDSINDEX
+        #this_wobject_this_face VERTEX_I/TEXCOORDSINDEX VERTEX_I/TEXCOORDSINDEX VERTEX_I/TEXCOORDSINDEX VERTEX_I/TEXCOORDSINDEX
         #or
-        #f VERTEX_I/TEXCOORDSINDEX/NORMALINDEX VERTEX_I/TEXCOORDSINDEX/NORMALINDEX VERTEX_I/TEXCOORDSINDEX/NORMALINDEX VERTEX_I/TEXCOORDSINDEX/NORMALINDEX
+        #this_wobject_this_face VERTEX_I/TEXCOORDSINDEX/NORMALINDEX VERTEX_I/TEXCOORDSINDEX/NORMALINDEX VERTEX_I/TEXCOORDSINDEX/NORMALINDEX VERTEX_I/TEXCOORDSINDEX/NORMALINDEX
         #where *I are integers starting at 0 (stored starting at 1)
         #FACE_VERTEX_COMPONENT_VERTEX_INDEX = 0
         #FACE_VERTEX_COMPONENT_TEXCOORDS_INDEX = 1
@@ -685,27 +685,27 @@ def get_pyglop_from_wobject(this_wobject):  #formerly set_from_wobject formerly 
                 dest_vertex_index = 0
                 face_count = 0
                 new_texcoord = new_tuple(this_pyglop.vertex_format[this_pyglop.TEXCOORD0_INDEX][VFORMAT_VECTOR_LEN_INDEX])
-                for f in this_wobject.faces:
+                for this_wobject_this_face in this_wobject.faces:
                     participle = "getting face components"
                     #print("face["+str(source_face_index)+"]: "+participle)
                     
                     #DOES triangulate of more than 3 vertices in this face (connects each loose point to first vertex and previous vertex)
                     # (vertex_done_flags are no longer needed since that method is used)
                     #vertex_done_flags = list()
-                    #for vertexinfo_index in range(0,len(f)):
+                    #for vertexinfo_index in range(0,len(this_wobject_this_face)):
                     #    vertex_done_flags.append(False)
                     #vertices_done_count = 0
                     
                     #with wobjfile.py, each face is an arbitrary-length list of vertex_infos, where each vertex_info is a list containing vertex_index, texcoord_index, then normal_index, so ignore the following commented deprecated lines of code:
-                    #verts =  f[0]
-                    #norms = f[1]
-                    #tcs = f[2]
+                    #verts =  this_wobject_this_face[0]
+                    #norms = this_wobject_this_face[1]
+                    #tcs = this_wobject_this_face[2]
                     #for vertexinfo_index in range(3):
                     vertexinfo_index = 0
                     source_face_vertex_count = 0
-                    while vertexinfo_index<len(f):
+                    while vertexinfo_index<len(this_wobject_this_face):
                         #print("vertex["+str(vertexinfo_index)+"]")
-                        vertex_info = f[vertexinfo_index]
+                        vertex_info = this_wobject_this_face[vertexinfo_index]
 
                         vertex_index = vertex_info[FACE_V]
                         texcoord_index = vertex_info[FACE_TC]
@@ -802,15 +802,21 @@ def get_pyglop_from_wobject(this_wobject):  #formerly set_from_wobject formerly 
                         this_pyglop.vertices.extend(vertex_components)
                         source_face_vertex_count += 1
                         vertexinfo_index += 1
+                    #end while vertexinfo_index in face
+                    
                     participle = "combining triangle indices"
                     vertexinfo_index = 0
                     relative_source_face_vertex_index = 0  #required for tracking faces with less than 3 vertices
                     face_first_vertex_dest_index = dest_vertex_index
                     tesselated_f_count = 0
-                    while vertexinfo_index<len(f):
+                    #example obj quad (without Texcoord) vertex_index/texcoord_index/normal_index:
+                    #f 61//33 62//33 64//33 63//33
+                    #face_vertex_list=list()  # in case verts are out of order, prevent tesselation from connecting wrong verts
+                    while vertexinfo_index<len(this_wobject_this_face):
+                        #face_vertex_list.append(dest_vertex_index)
                         if vertexinfo_index==2:
+                            #OK to assume dest vertices are in order, since just created them (should work even if source vertices are not in order)
                             tri = [dest_vertex_index, dest_vertex_index+1, dest_vertex_index+2]
-                            #tri = [idx, idx+1, idx+2]  #TODO: is this wrong?? doesn't this assume indices are in order??
                             this_pyglop.indices.extend(tri)
                             dest_vertex_index += 3
                             relative_source_face_vertex_index += 3
@@ -870,9 +876,6 @@ class PyGlops:
     lastUntitledMeshNumber = -1
     lastCreatedMaterial = None
     lastCreatedMesh = None
-
-    def glops_load(self):
-        pass
 
     def append_dump(self, thisList):
         tabString="  "

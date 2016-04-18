@@ -19,7 +19,9 @@ import sys  # exception etc
 import math
 import traceback
 
-from common import view_traceback
+#from common import view_traceback
+#from common import get_by_name
+from common import *
 
 #these are needed since in python 3, int is no longer bounded:
 MIN_INDEX = -9223372036854775807
@@ -182,17 +184,6 @@ color_arg_type_strings.append(WColorArgInfo("texres","resizes texture before usi
 #   -texres value
 
 
-def find_by_name(object_list, needle):
-    result = None
-    for i in range(0,len(object_list)):
-        try:
-            if object_list[i].name == needle:
-                result = object_list[i]
-                break
-        except:
-            e = sys.exc_info()[0]
-            print("Could not finish find_by_name:" + str(e))
-    return result
 
 
 class WMaterial:
@@ -539,7 +530,7 @@ class WObjFile:
                                     elif command=="usemtl":
                                         if materials is not None:
                                             if args_string in materials.keys():
-                                                this_object.wmaterial = materials[args_string]  # find_by_name(materials,args_string)
+                                                this_object.wmaterial = materials[args_string]  # get_by_name(materials,args_string)
                                                 if this_object.wmaterial is None:
                                                     print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) wmaterial named '"+args_string+"' is None")
                                             else:

@@ -10,6 +10,7 @@ attribute vec4  a_normal;
 
 uniform mat4 modelview_mat;
 uniform mat4 projection_mat;
+//uniform material  material_state;
 
 varying vec4 frag_color;
 varying vec2 uv_vec;

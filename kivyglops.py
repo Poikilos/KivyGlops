@@ -21,6 +21,8 @@ from kivy.graphics.transformation import Matrix
 from kivy.graphics.opengl import *
 from kivy.graphics import *
 
+sub_canvas_enable = False
+
 #TODO: try adding captions and 2d axis indicators in canvas.after, or try RenderContext
 
 MODE_EDIT = "edit"
@@ -72,6 +74,9 @@ class KivyGlop(PyGlop, Widget):
     _color_instruction = None
 
     _pivot_scaled_point = None
+    _pushmatrix = None
+    _updatenormalmatrix = None
+    _popmatrix = None
     
     
     def __init__(self): #, pyglop=None):
@@ -79,7 +84,7 @@ class KivyGlop(PyGlop, Widget):
         #self.freeAngle = 0.0
         #self.degreesPerSecond = 0.0
         #self.freePos = (10.0,100.0)
-        self.canvas = RenderContext()
+        #self.canvas = RenderContext()
         #TODO:? self.canvas = RenderContext(compute_normal_mat=True)
         self._calculated_size = (1.0,1.0)  #finish this--or skip since only needed for getting pivot point
         #Rotate(angle=self.freeAngle, origin=(self._calculated_size[0]/2.0,self._calculated_size[1]/2.0))
@@ -94,7 +99,7 @@ class KivyGlop(PyGlop, Widget):
         self._scale_instruction = Scale(1.0,1.0,1.0)
         #self._scale_instruction.origin = self._pivot_point
         self._translate_instruction = Translate(0, 0, 0)
-        self._color_instruction = Color(Color(1.0,1.0,1.0,1.0))
+        self._color_instruction = Color(Color(1.0,1.0,1.0,1.0))  #TODO: eliminate this in favor of canvas["mat_diffuse_color"]
 
     def rotate_x_relative(self, angle):
         self._rotate_instruction_x.angle += angle
@@ -253,6 +258,10 @@ class KivyGlopsWindow(Widget):
     projection_near = None
     world_boundary_min = None
     world_boundary_max = None
+    _rendercontext = None # so gl operations can be added in realtime (after resetCallback is added, but so resetCallback is on the stack after them)
+
+    def update_glops(self):
+        pass
 
 
     def __init__(self, **kwargs):
@@ -303,7 +312,7 @@ class KivyGlopsWindow(Widget):
         self.cb = Callback(self.setup_gl_context)
         self.canvas.add(self.cb)
 
-        self.canvas.add(PushMatrix())
+        #self.canvas.add(PushMatrix())
         #self.canvas.add(this_texture)
         #self.canvas.add(Color(1, 1, 1, 1))
         #for thisMeshIndex in range(0,len(self.scene.glops)):
@@ -311,8 +320,9 @@ class KivyGlopsWindow(Widget):
         #    #thisMesh = KivyGlop()
         #    this_glop = self.scene.glops[thisMeshIndex]
         #    add_glop(this_glop)
-        self.canvas.add(PopMatrix())
-
+        #self.canvas.add(PopMatrix())
+        self._rendercontext = RenderContext(compute_normal_mat=True)
+        self.canvas.add(self._rendercontext)
 
         self.resetCallback = Callback(self.reset_gl_context)
         self.canvas.add(self.resetCallback)
@@ -347,8 +357,9 @@ class KivyGlopsWindow(Widget):
         if (Keyboard.keycodes["="]==43):
             Keyboard.keycodes["="]=61
         
-        self.glops_load()
-        
+        self.load_glops()
+    
+    
     def load_obj(self,obj_path):
         if obj_path is not None:
             original_path = obj_path
@@ -382,9 +393,12 @@ class KivyGlopsWindow(Widget):
                 print("missing '"+original_path+"'")
         else:
             print("ERROR: obj_path is None for load_obj")
+    
     def add_glop(self, this_glop):
         participle="initializing"
         try:
+            #context = self._rendercontext
+            context = self.canvas
             #if self.selected_glopIndex is None:
             #    self.selected_glopIndex = thisMeshIndex
             #    self.selected_glop = this_glop
@@ -393,26 +407,34 @@ class KivyGlopsWindow(Widget):
             thisMeshName = ""
             if this_glop.name is not None:
                 thisMeshName = this_glop.name
-            self.canvas.add(PushMatrix())
-            self.canvas.add(this_glop._translate_instruction)
-            self.canvas.add(this_glop._rotate_instruction_x)
-            self.canvas.add(this_glop._rotate_instruction_y)
-            self.canvas.add(this_glop._scale_instruction)
+            this_glop._pushmatrix=PushMatrix()
+            context.add(this_glop._pushmatrix)
+            context.add(this_glop._translate_instruction)
+            context.add(this_glop._rotate_instruction_x)
+            context.add(this_glop._rotate_instruction_y)
+            context.add(this_glop._rotate_instruction_z)
+            context.add(this_glop._scale_instruction)
             #self.scale = Scale(0.6)
             #m = list(self.scene.glops.values())[0]
-            #self.canvas.add(m)
-            self.canvas.add(UpdateNormalMatrix())
-
+            #context.add(m)
+            this_glop._updatenormalmatrix = UpdateNormalMatrix()
+            context.add(this_glop._updatenormalmatrix)
+            
             if this_glop._mesh is None:
                 this_glop.generate_kivy_mesh()
-                print("WARNING: glop had no mesh, so was generated when added to canvas. Please ensure it is a KivyGlop and not a PyGlop")
-            self.canvas.add(this_glop._color_instruction)  #TODO: asdf add as uniform instead
+                print("WARNING: glop had no mesh, so was generated when added to render context. Please ensure it is a KivyGlop and not a PyGlop")
+            context.add(this_glop._color_instruction)  #TODO: asdf add as uniform instead
             if this_glop._mesh is not None:
-                self.canvas.add(this_glop._mesh)
-                print("Added mesh to canvas.")
+                context.add(this_glop._mesh)
+                print("Added mesh to render context.")
             else:
                 print("NOT adding mesh.")
-            self.canvas.add(PopMatrix())
+            this_glop._popmatrix = PopMatrix()
+            context.add(this_glop._popmatrix)
+            if self.scene.glops is None:
+                self.scene.glops = list()
+            self.scene.glops.append(this_glop)
+            print("Appended Glop (count:"+str(len(self.scene.glops))+").")
         except:
             print("ERROR: Could not finish "+participle+" in KivyGlops load_obj")
             view_traceback()
@@ -472,9 +494,9 @@ class KivyGlopsWindow(Widget):
         elif (index==2):
             result = "z"
         return result
-
+    
     def update_glsl(self, *largs):
-
+        self.update_glops()
         rotation_multiplier_y = 0.0  # 1.0 is maximum speed
         moving_x = 0.0  # 1.0 is maximum speed
         moving_z = 0.0  # 1.0 is maximum speed; NOTE: increased z moves object farther away
@@ -651,6 +673,8 @@ class KivyGlopsWindow(Widget):
         if verbose_enable:
             Logger.debug("self.camera_walk_units_per_second:"+str(self.camera_walk_units_per_second)+"; location:"+str(self.camera_translate))
 
+    def get_pressed(self, key_name):
+        return self.player1_controller.get_pressed(Keyboard.keycodes[key_name])
 
     def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
 #         print('The key' + str(keycode) + ' pressed')

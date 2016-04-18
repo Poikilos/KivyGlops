@@ -17,6 +17,7 @@ from kivy.input.providers.mouse import MouseMotionEvent
 
 
 from kivyglops import *
+#from common import *
 
 import math
 import os
@@ -25,19 +26,46 @@ import os
 class MainForm(KivyGlopsWindow):
     
     #def __init__(self, **kwargs):
-    def glops_load(self):
+    def load_glops(self):
         #super(Renderer, self).__init__(**kwargs)
         #self.load_obj("barrels triangulated (Costinus at turbosquid).obj")
         #self.load_obj("barrel.obj")
-        #self.load_obj("KivyGlopsDemoScene.obj")
         #self.load_obj("WarehouseOfFruit_by_Expertmm.obj")
         #self.load_obj("pyramid.obj")
         #self.load_obj("testnurbs-all-textured.obj")
         #self.load_obj("orion.obj")
-        #self.load_obj("testnurbs-all-textured.obj")
+        #self.load_obj("KivyForest.obj")
         #self.load_obj("testnurbs-all-textured.obj")
         self.load_obj("pedestal-suzanne.obj")
-        #pass
+    
+            
+    def update_glops(self):
+        if self.get_pressed("j"):
+            self.selected_glop.rotate_y_relative(-1)
+        elif self.get_pressed("l"):
+            self.selected_glop.rotate_y_relative(1)
+            
+        #this_index = get_index_by_name(self.scene.glops, "Suzanne")
+        #if this_index>-1:
+        #    if self.get_pressed("j"):
+        #        self.scene.glops[this_index].rotate_y_relative(-1)
+        #    elif self.get_pressed("l"):
+        #        self.scene.glops[this_index].rotate_y_relative(1)
+        #else:
+        #    print("Object not found.")
+        #this_index = get_index_by_name(self.scene.glops, "Suzanne")
+        #if this_index > -1:
+        #    self.scene.glops[this_index].rotate_z_relative(1)
+        #    print("using index "+str(this_index))
+        #else:
+        #    print("Not found.")
+        
+        #this_glop = get_by_name(self.scene.glops, "Suzanne")
+        #if this_glop is not None:
+        #    this_glop.rotate_z_relative(1)
+        #else:
+        #    print("Not found.")
+        
 
 class KivyGlopsExampleApp(App):
     def build(self):

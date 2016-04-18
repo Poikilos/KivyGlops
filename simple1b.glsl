@@ -17,6 +17,7 @@ attribute vec4  a_normal;
 
 uniform mat4 modelview_mat;
 uniform mat4 projection_mat;
+uniform vec4  mat_diffuse_color; //the object color (as opposed to a_color which is the color vertex attribute)
 
 varying vec4 normal_vec;
 varying vec4 vertex_pos;

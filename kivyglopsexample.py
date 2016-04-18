@@ -24,8 +24,9 @@ from kivyglops import *
 
 class MainForm(KivyGlopsWindow):
 
-    def glops_load(self):
+    def load_glops(self):
         pass
+
 
 class KivyGlopsExampleApp(App):
     def build(self):
