@@ -1,5 +1,6 @@
 import sys
 import traceback
+verbose_enable = False
 
 def view_traceback():
     ex_type, ex, tb = sys.exc_info()
@@ -9,7 +10,7 @@ def view_traceback():
     print("")
     
     
-def get_by_name(object_list, needle):
+def get_by_name(object_list, needle):  # formerly find_by_name
     result = None
     for i in range(0,len(object_list)):
         try:

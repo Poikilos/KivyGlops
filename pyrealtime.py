@@ -11,7 +11,9 @@ import traceback
 #     pass
 #
 
-verbose_enable = False
+from common import *
+MODE_EDIT = "edit"
+MODE_GAME = "game"
 
 class PyRealTimeKeyState:
     state = None

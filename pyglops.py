@@ -18,7 +18,7 @@ import os
 import math
 #from docutils.utils.math.math2html import VerticalSpace
 #import traceback
-from common import view_traceback
+from common import *
 
 #references:
 #kivy-trackball objloader (version with no MTL loader) by nskrypnik
@@ -30,7 +30,6 @@ from common import view_traceback
 from kivy.resources import resource_find
 from wobjfile import *
 add_dump_comments_enable = False
-verbose_enable = False
 
 V_POS_INDEX = 0
 V_TC0_INDEX = 1
@@ -523,7 +522,7 @@ class PyGlopsLight:
     spot_cutoff_angle = None  # float
     compute_distance_attenuation = None  # bool
     #endregion vars based on OpenGL ES 1.1
-   
+    
     def __init__(self):
        self.position = (0.0, 0.0, 0.0, 0.0)
        self.ambient_color = (0.0, 0.0, 0.0, 0.0)

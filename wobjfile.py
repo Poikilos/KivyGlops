@@ -414,6 +414,7 @@ def get_wmaterial_dict_from_mtl(filename):
         view_traceback()
     return results
 
+texcoords_not_2_warning_enable = True
 
 class WObjFile:
     wobjects = None
@@ -421,7 +422,8 @@ class WObjFile:
     def load(self, filename):
         self.wobjects = self.get_wobjects_list(filename)
 
-    def get_wobjects_list(self, filename):  # formerly import_obj formerly get_wobjects_from_obj
+    def get_wobjects_list(self, filename):  # formerly import_obj formerly get_wobjects_from_obj    
+        global texcoords_not_2_warning_enable
         results = None
         try:
             if os.path.exists(filename):
@@ -439,6 +441,9 @@ class WObjFile:
                 vn_offset = 1
                 for line in open(filename, "r"):
                     line_strip = line.strip()
+                    nonstandard_o_signal_string = "# object "
+                    if line_strip[0:len(nonstandard_o_signal_string)]==nonstandard_o_signal_string:
+                        line_strip = "o "+line_strip[len(nonstandard_o_signal_string):]
                     if (len(line_strip)>0) and (line_strip[0]!="#"):
                         space_index = line_strip.find(" ")
                         if space_index>-1:
@@ -489,9 +494,19 @@ class WObjFile:
                                         args = args_string.split(" ")
                                         if len(args)>=2:
                                             this_object.texcoords.append(get_fvec2(args))
-                                        if len(args)!=2:
-                                            print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) texcoords must have 2 coordinates: '"+args_string+"'")
+                                        if (texcoords_not_2_warning_enable):
+                                            if (len(args)<2):
+                                                print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) texcoord missing coordinate (expected u v after vt but only got one param) so texture may not be applied correctly: '"+args_string+"'")
+                                            elif len(args)!=2:
+                                                if len(args)!=3:
+                                                    print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) texcoords must have 2 (vt u v) or 3 (vt u v w) coordinates: '"+args_string+"'")
+                                                else:
+                                                    print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) texcoord with 3 coordinates (vt u v w) so w may be ignored: '"+args_string+"'")
+                                            texcoords_not_2_warning_enable = False
+                                                
+                                        #still increment since is reference to index obj file:
                                         vt_offset += 1
+                                        
                                     elif command=="vn":
                                         #NOTE: presence of normals supercedes smoothing groups
                                         if this_object.normals is None:

@@ -24,7 +24,7 @@ from kivy.graphics import *
 from kivyglops import *
 
 
-class Renderer(Widget):
+class MinimalKivyGlopsWindow(Widget):
     scene = None
     def __init__(self, **kwargs):
         self.canvas = RenderContext(compute_normal_mat=True)
@@ -43,7 +43,7 @@ class Renderer(Widget):
         #self.scene.load_obj(resource_find("KivyGlopsDemoScene.obj"))
         self.scene.load_obj(resource_find("testnurbs-all-textured.obj"))
 
-        super(Renderer, self).__init__(**kwargs)
+        super(MinimalKivyGlopsWindow, self).__init__(**kwargs)
         with self.canvas:
             self.cb = Callback(self.setup_gl_context)
             PushMatrix()
@@ -98,9 +98,9 @@ class Renderer(Widget):
         PopMatrix()
 
 
-class RendererApp(App):
+class MinimalKivyGlopsWindowApp(App):
     def build(self):
-        return Renderer()
+        return MinimalKivyGlopsWindow()
 
 if __name__ == "__main__":
-    RendererApp().run()
+    MinimalKivyGlopsWindowApp().run()
