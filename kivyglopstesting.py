@@ -27,14 +27,13 @@ class MainForm(KivyGlopsWindow):
     
     #def __init__(self, **kwargs):
     def load_glops(self):
-        self.canvas.shader.source = resource_find('simple1b.glsl')
         #self.canvas.shader.source = resource_find('simple1b.glsl')
         #self.canvas.shader.source = resource_find('shade-kivyglops-standard.glsl')  # NOT working
         #self.canvas.shader.source = resource_find('shade-normal-only.glsl') #partially working
         #self.canvas.shader.source = resource_find('shade-texture-only.glsl')
         #self.canvas.shader.source = resource_find('shade-kivyglops-minimal.glsl')  # NOT working
         #self.canvas.shader.source = resource_find('fresnel.glsl')
-        #super(Renderer, self).__init__(**kwargs)
+        #super(MainForm, self).__init__(**kwargs)
         #self.load_obj("barrels triangulated (Costinus at turbosquid).obj")
         #self.load_obj("barrel.obj")
         #self.load_obj("WarehouseOfFruit_by_Expertmm.obj")
@@ -42,16 +41,43 @@ class MainForm(KivyGlopsWindow):
         #self.load_obj("testnurbs-all-textured.obj")
         #self.load_obj("orion.obj")
         self.load_obj("KivyForest.obj")
-        #self.load_obj("4 Gold Rings.obj")
         
+        #self.load_obj("etc/problematic mesh files/4 Gold Rings.obj")  # self.load_obj("4 Gold Rings.obj")
         #self.load_obj("pedestal-suzanne.obj")
     
-            
+    
     def update_glops(self):
-        if self.get_pressed("j"):
-            self.selected_glop.rotate_y_relative(-1)
-        elif self.get_pressed("l"):
-            self.selected_glop.rotate_y_relative(1)
+        if self.selected_glop is not None:
+            if self.get_pressed("j"):
+                self.selected_glop.rotate_y_relative(1)
+            elif self.get_pressed("l"):
+                self.selected_glop.rotate_y_relative(-1)
+            elif self.get_pressed("i"):
+                self.selected_glop.rotate_x_relative(-1)
+            elif self.get_pressed("k"):
+                self.selected_glop.rotate_x_relative(1)
+            elif self.get_pressed("u"):
+                self.selected_glop.rotate_z_relative(1)
+            elif self.get_pressed("o"):
+                self.selected_glop.rotate_z_relative(-1)
+
+            if self.get_pressed("left"):
+                self.selected_glop.translate_x_relative(-.1)
+            elif self.get_pressed("right"):
+                self.selected_glop.translate_x_relative(.1)
+            elif self.get_pressed("up"):
+                self.selected_glop.translate_y_relative(.1)
+            elif self.get_pressed("down"):
+                self.selected_glop.translate_y_relative(-.1)
+            elif self.get_pressed("-"):
+                self.selected_glop.translate_z_relative(-.1)
+            elif self.get_pressed("="):
+                self.selected_glop.translate_z_relative(.1)
+
+        #else:
+            #print("No glop selected.")
+
+
             
         #this_index = get_index_by_name(self.scene.glops, "Suzanne")
         #if this_index>-1:

@@ -421,7 +421,7 @@ class KivyGlopsWindow(Widget):
             
             if this_glop._mesh is None:
                 this_glop.generate_kivy_mesh()
-                print("WARNING: glop had no mesh, so was generated when added to render context. Please ensure it is a KivyGlop and not a PyGlop")
+                print("WARNING: glop had no mesh, so was generated when added to render context. Please ensure it is a KivyGlop and not a PyGlop (however, vertex indices misread could also lead to missing Mesh object).")
             context.add(this_glop._color_instruction)  #TODO: asdf add as uniform instead
             if this_glop._mesh is not None:
                 context.add(this_glop._mesh)
@@ -565,7 +565,7 @@ class KivyGlopsWindow(Widget):
         #if verbose_enable:
         #    print("update_glsl...")
         asp = float(self.width) / float(self.height)
-		#was .3 when projection_near was 1
+        #was .3 when projection_near was 1
         field_of_view_factor = 0.03
         asp = asp*field_of_view_factor
         proj = Matrix()

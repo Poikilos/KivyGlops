@@ -1,4 +1,4 @@
-# Blender MTL File: 'KivyForest.blend'
+# Blender MTL File: 'KivyForest1b.blend'
 # Material Count: 4
 
 newmtl Material
@@ -10,7 +10,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 1
-map_Kd KivyForest-ground.png
+map_Kd etc\KivyForest-ground.png
 
 newmtl Material.001
 Ns 96.078431
@@ -21,7 +21,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 1
-map_Kd KivyForest-tree.png
+map_Kd etc\KivyForest-tree.png
 
 newmtl Material.002
 Ns 96.078431
@@ -32,7 +32,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 1
-map_Kd KivyForest-kiwi.png
+map_Kd etc\KivyForest-kiwi.png
 
 newmtl None
 Ns 0

@@ -224,11 +224,11 @@ class KivyGlops(PyGlops):
     def __init__(self):
         super(KivyGlops, self).__init__()
 
-    def createMesh(self):
-        #return PyGlops.createMesh(self)
+    def create_mesh(self):
+        #return PyGlops.create_mesh(self)
         return KivyGlop()
 
-    def createMaterial(self):
+    def create_material(self):
         return KivyGlopsMaterial()
 
 class KivyGlopsWindow(Widget):
@@ -238,7 +238,7 @@ class KivyGlopsWindow(Widget):
     camera_walk_units_per_second = None
 
     selected_glop = None
-    selected_glopIndex = None
+    selected_glop_index = None
 
     focal_distance = None
 
@@ -258,6 +258,9 @@ class KivyGlopsWindow(Widget):
     world_boundary_min = None
     world_boundary_max = None
     _rendercontext = None # so gl operations can be added in realtime (after resetCallback is added, but so resetCallback is on the stack after them)
+
+    def load_glops(self):
+        print("Warning: you should subclass KivyGlopsWindow and implement load_glops (and usually update_glops for changing objects each frame)")
 
     def update_glops(self):
         pass
@@ -326,7 +329,7 @@ class KivyGlopsWindow(Widget):
         self.resetCallback = Callback(self.reset_gl_context)
         self.canvas.add(self.resetCallback)
 
-        self.camera_translate = [0, 1.7, -25] #x,y,z where y is up  #1.7 since 5'10" person is ~1.77m, and eye down a bit
+        self.camera_translate = [0, 1.7, 25] #x,y,z where y is up  #1.7 since 5'10" person is ~1.77m, and eye down a bit
         #This is done axis by axis--the only reason is so that you can do OpenGL 6 (boundary detection) lesson from expertmultimedia.com starting with this file
         if self.world_boundary_min[0] is not None:
             if self.camera_translate[0] < self.world_boundary_min[0]:
@@ -338,7 +341,7 @@ class KivyGlopsWindow(Widget):
             if self.camera_translate[2] < self.world_boundary_min[2]: #this is done only for this axis, just so that you can do OpenGL 6 lesson using this file (boundary detection)
                 self.camera_translate[2] = self.world_boundary_min[2]
         self.camera_rotate_x = [0.0, 1.0, 0.0, 0.0]
-        self.camera_rotate_y = [math.radians(90.0), 0.0, 1.0, 0.0]
+        self.camera_rotate_y = [math.radians(-90.0), 0.0, 1.0, 0.0]
         self.camera_rotate_z = [0.0, 0.0, 0.0, 1.0]
         self.camera_ax = 0
         self.camera_ay = 0
@@ -376,6 +379,7 @@ class KivyGlopsWindow(Widget):
                             self.scene.glops = list()
                             
                         #for index in range(0,len(self.glops)):
+                        favorite_pivot_point = None
                         for index in range(0,len(new_glops)):
                             new_glops[index] = get_kivyglop_from_pyglop(new_glops[index])
                             #this_glop = new_glops[index]
@@ -386,6 +390,18 @@ class KivyGlopsWindow(Widget):
                                 #self.glops[index]=this_glop
                             new_glops[index].generate_kivy_mesh()
                             self.add_glop(new_glops[index])
+                            print("")
+                            if (favorite_pivot_point is None):
+                                favorite_pivot_point = new_glops[index]._pivot_point
+                            
+                        #TODO: apply pivot point (change vertices as if pivot point were 0,0,0) to ensure translate 0 is world 0; instead of:
+                        #center it (use just one pivot point so objects in obj remain aligned):
+                        for index in range(0,len(new_glops)):
+                            new_glops[index].translate_x_relative(-1.0*favorite_pivot_point[0])
+                            new_glops[index].translate_y_relative(-1.0*favorite_pivot_point[1])
+                            new_glops[index].translate_z_relative(-1.0*favorite_pivot_point[2])
+                            
+                        print("")
                 else:
                     print("missing '"+obj_path+"'")
             else:
@@ -398,10 +414,10 @@ class KivyGlopsWindow(Widget):
         try:
             #context = self._rendercontext
             context = self.canvas
-            #if self.selected_glopIndex is None:
-            #    self.selected_glopIndex = this_glop_index
+            #if self.selected_glop_index is None:
+            #    self.selected_glop_index = this_glop_index
             #    self.selected_glop = this_glop
-            self.selected_glopIndex = len(self.scene.glops)
+            self.selected_glop_index = len(self.scene.glops)
             self.selected_glop = this_glop
             thisMeshName = ""
             if this_glop.name is not None:
@@ -434,6 +450,7 @@ class KivyGlopsWindow(Widget):
                 self.scene.glops = list()
             self.scene.glops.append(this_glop)
             print("Appended Glop (count:"+str(len(self.scene.glops))+").")
+            
         except:
             print("ERROR: Could not finish "+participle+" in KivyGlops load_obj")
             view_traceback()
@@ -498,7 +515,7 @@ class KivyGlopsWindow(Widget):
         self.update_glops()
         rotation_multiplier_y = 0.0  # 1.0 is maximum speed
         moving_x = 0.0  # 1.0 is maximum speed
-        moving_z = 0.0  # 1.0 is maximum speed; NOTE: increased z moves object farther away
+        moving_z = 0.0  # 1.0 is maximum speed; NOTE: increased z should move object closer to viewer in right-handed coordinate system
         moving_theta = 0.0
         position_change = [0.0, 0.0, 0.0]
         # for keycode strings, see  http://kivy.org/docs/_modules/kivy/core/window.html
@@ -708,17 +725,17 @@ class KivyGlopsWindow(Widget):
 #         elif keycode[1] == 'numpadsubtract' or keycode[1] == 'numpadsubstract':  #since is mispelled as numpadsubstract in kivy
 #             pass
         elif keycode[1] == "tab":
-            self.selectMeshByIndex(self.selected_glopIndex+1)
-            if verbose_enable:
-                this_name = None
-                if self.selected_glopIndex is not None:
-                    this_name = "["+str(self.selected_glopIndex)+"]"
-                if self.selected_glop is not None and self.selected_glop.name is not None:
-                    this_name = self.selected_glop.name
-                if this_name is not None:
-                    Logger.debug('Selected glop: '+this_name)
-                else:
-                    Logger.debug('Select glop failed (maybe there are no glops loaded.')
+            self.select_mesh_by_index(self.selected_glop_index+1)
+            #if verbose_enable:
+            this_name = None
+            if self.selected_glop_index is not None:
+                this_name = "["+str(self.selected_glop_index)+"]"
+            if self.selected_glop is not None and self.selected_glop.name is not None:
+                this_name = self.selected_glop.name
+            if this_name is not None:
+                print('Selected glop: '+this_name)
+            else:
+                print('Select glop failed (maybe there are no glops loaded.')
         # else:
         #     print('Pressed unused key: ' + str(keycode) + "; text:"+text)
 
@@ -736,18 +753,18 @@ class KivyGlopsWindow(Widget):
         #print('Released key ' + str(keycode))
 
 
-    def selectMeshByIndex(self, index):
+    def select_mesh_by_index(self, index):
         glops_count = len(self.scene.glops)
         if (index>=glops_count):
             index=0
         if verbose_enable:
             Logger.debug("trying to select index "+str(index)+" (count is "+str(glops_count)+")...")
         if (glops_count > 0):
-            self.selected_glopIndex = index
+            self.selected_glop_index = index
             self.selected_glop = self.scene.glops[index]
         else:
             self.selected_glop = None
-            self.selected_glopIndex = None
+            self.selected_glop_index = None
 
     def _keyboard_closed(self):
         print('Keyboard disconnected!')
