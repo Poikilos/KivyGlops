@@ -22,6 +22,7 @@ import math
 # from kivyglops import KivyGlop
 from kivyglops import *
 
+
 class MainForm(KivyGlopsWindow):
 
     def load_glops(self):
@@ -32,6 +33,7 @@ class KivyGlopsExampleApp(App):
     def build(self):
         mainform = MainForm()
         return mainform
+
 
 if __name__ == "__main__":
     KivyGlopsExampleApp().run()

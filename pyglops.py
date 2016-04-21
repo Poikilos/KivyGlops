@@ -43,6 +43,7 @@ VFORMAT_NAME_INDEX = 0
 VFORMAT_VECTOR_LEN_INDEX = 1
 VFORMAT_TYPE_INDEX = 2
 
+
 # PyGlop defines a single OpenGL-ready object. PyGlops should be used for importing, since one mesh file (such as obj) can contain several meshes. PyGlops handles the 3D scene.
 class PyGlop:
     name = None #object name such as from OBJ's 'o' statement
@@ -457,6 +458,22 @@ class PyGlopsMaterial:
         for k,v in sorted(self.properties.items()):
             thisList.append(tabStringMinimum+tabString+k+": "+str(v))
 
+
+def angles_to_angle_and_matrix(anglesXYZ):
+    angleAndMatrix = [0.0, 0.0, 0.0, 0.0]
+    for axisIndex in range(len(anglesXYZ)):
+        while anglesXYZ[axisIndex]<0:
+            anglesXYZ[axisIndex] += 360.0
+        if anglesXYZ[axisIndex] > angleAndMatrix[0]:
+            angleAndMatrix[0] = anglesXYZ[axisIndex]
+    if angleAndMatrix[0] > 0:
+        for axisIndex in range(len(anglesXYZ)):
+            angleAndMatrix[1+axisIndex] = anglesXYZ[axisIndex] / angleAndMatrix[0]
+    else:
+        angleAndMatrix[3] = .000001
+    return angleAndMatrix
+
+
 def theta_radians_from_rectangular(x, y):
     theta = 0.0
     if (y != 0.0) or (x != 0.0):
@@ -475,12 +492,14 @@ def theta_radians_from_rectangular(x, y):
         theta = math.atan2(y, x)
     return theta
 
+
 #Also in wobjfile.py:
 def append_dump_as_yaml_array(thisList, thisName, sourceList, tabStringMinimum):
     tabString="  "
     thisList.append(tabStringMinimum+thisName+":")
     for i in range(0,len(sourceList)):
         thisList.append(tabStringMinimum+tabString+"- "+str(sourceList[i]))
+
 
 def new_tuple(length, fill_start=0, fill_len=-1, fill_value=1.0):
     result = None
@@ -510,6 +529,7 @@ def new_tuple(length, fill_start=0, fill_len=-1, fill_value=1.0):
         #result = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
     return tuple(tmp)  # result
 
+
 class PyGlopsLight:
     #region vars based on OpenGL ES 1.1
     position = None  # vec4 light position for a point/spot light or normalized dir. for a directional light
@@ -533,6 +553,7 @@ class PyGlopsLight:
        self.spot_exponent = 1.0
        self.spot_cutoff_angle = 45.0
        self.compute_distance_attenuation = False
+
 
 def get_pyglop_from_wobject(this_wobject):  #formerly set_from_wobject formerly import_wobject; based on _finalize_obj_data
     this_pyglop = None

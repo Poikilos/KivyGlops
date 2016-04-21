@@ -15,7 +15,6 @@ from kivy.core.window import Keyboard
 #from kivy.clock import Clock
 from kivy.input.providers.mouse import MouseMotionEvent
 
-
 from kivyglops import *
 #from common import *
 
@@ -27,7 +26,7 @@ class MainForm(KivyGlopsWindow):
     
     #def __init__(self, **kwargs):
     def load_glops(self):
-        #self.canvas.shader.source = resource_find('simple1b.glsl')
+        self.canvas.shader.source = resource_find('simple1b.glsl')
         #self.canvas.shader.source = resource_find('shade-kivyglops-standard.glsl')  # NOT working
         #self.canvas.shader.source = resource_find('shade-normal-only.glsl') #partially working
         #self.canvas.shader.source = resource_find('shade-texture-only.glsl')
@@ -40,8 +39,10 @@ class MainForm(KivyGlopsWindow):
         #self.load_obj("pyramid.obj")
         #self.load_obj("testnurbs-all-textured.obj")
         #self.load_obj("orion.obj")
+        #self._meshes.add(PushMatrix())
         self.load_obj("KivyForest.obj")
-        
+        #self._meshes.add(PopMatrix())
+        #self.finalize_scene()
         #self.load_obj("etc/problematic mesh files/4 Gold Rings.obj")  # self.load_obj("4 Gold Rings.obj")
         #self.load_obj("pedestal-suzanne.obj")
     
@@ -105,6 +106,7 @@ class KivyGlopsExampleApp(App):
     def build(self):
         mainform = MainForm()
         return mainform
+
 
 if __name__ == "__main__":
     KivyGlopsExampleApp().run()

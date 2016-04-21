@@ -15,6 +15,7 @@ from common import *
 MODE_EDIT = "edit"
 MODE_GAME = "game"
 
+
 class PyRealTimeKeyState:
     state = None
     text = None
@@ -22,6 +23,7 @@ class PyRealTimeKeyState:
     def __init__(self):
         self.state = False
         self.text = ""
+
 
 class PyRealTimeController:
 

@@ -34,6 +34,7 @@ class KivyGlopsMaterial(PyGlopsMaterial):
     def __init__(self):
         super(KivyGlopsMaterial, self).__init__()
 
+
 def get_kivyglop_from_pyglop(this_pyglop):
     this_kivyglop = KivyGlop()
     this_kivyglop.name = this_pyglop.name
@@ -57,7 +58,8 @@ def get_kivyglop_from_pyglop(this_pyglop):
     #endregion vars moved to material
     #this_kivyglop.opacity = this_pyglop.opacity # use diffuse color 4th channel instead
     
-    return this_kivyglop;
+    return this_kivyglop
+
 
 class KivyGlop(PyGlop, Widget):
     
@@ -129,7 +131,7 @@ class KivyGlop(PyGlop, Widget):
         self._on_change_scale_instruction()
 
     def get_scale(self):
-        return (self._scale_instruction.x + self._scale_instruction.y + self._scale_instruction.z) / 3.0;
+        return (self._scale_instruction.x + self._scale_instruction.y + self._scale_instruction.z) / 3.0
 
     def set_scale(self, overall_scale):
         self._scale_instruction.x = overall_scale
@@ -207,20 +209,6 @@ class KivyGlop(PyGlop, Widget):
 
 class KivyGlops(PyGlops):
     
-    def angles_to_angle_and_matrix(self, anglesXYZ):
-        angleAndMatrix = [0.0, 0.0, 0.0, 0.0]
-        for axisIndex in range(len(anglesXYZ)):
-            while anglesXYZ[axisIndex]<0:
-                anglesXYZ[axisIndex] += 360.0
-            if anglesXYZ[axisIndex] > angleAndMatrix[0]:
-                angleAndMatrix[0] = anglesXYZ[axisIndex]
-        if angleAndMatrix[0] > 0:
-            for axisIndex in range(len(anglesXYZ)):
-                angleAndMatrix[1+axisIndex] = anglesXYZ[axisIndex] / angleAndMatrix[0]
-        else:
-            angleAndMatrix[3] = .000001
-        return angleAndMatrix
-
     def __init__(self):
         super(KivyGlops, self).__init__()
 
@@ -230,6 +218,7 @@ class KivyGlops(PyGlops):
 
     def create_material(self):
         return KivyGlopsMaterial()
+
 
 class KivyGlopsWindow(Widget):
     IsVisualDebugMode = False
@@ -257,7 +246,7 @@ class KivyGlopsWindow(Widget):
     projection_near = None
     world_boundary_min = None
     world_boundary_max = None
-    _rendercontext = None # so gl operations can be added in realtime (after resetCallback is added, but so resetCallback is on the stack after them)
+    _meshes = None # so gl operations can be added in realtime (after resetCallback is added, but so resetCallback is on the stack after them)
 
     def load_glops(self):
         print("Warning: you should subclass KivyGlopsWindow and implement load_glops (and usually update_glops for changing objects each frame)")
@@ -288,8 +277,8 @@ class KivyGlopsWindow(Widget):
 
         self.scene = KivyGlops()
         self.canvas = RenderContext(compute_normal_mat=True)
-        self.canvas["_world_light_dir"] = (0.0, 0.5, 1.0);
-        self.canvas["_world_light_dir_eye_space"] = (0.0, 0.5, 1.0); #rotated in update_glsl
+        self.canvas["_world_light_dir"] = (0.0, 0.5, 1.0)
+        self.canvas["_world_light_dir_eye_space"] = (0.0, 0.5, 1.0) #rotated in update_glsl
         self.canvas["camera_light_multiplier"] = (1.0, 1.0, 1.0, 1.0)
         #self.canvas.shader.source = resource_find('simple1b.glsl')
         #self.canvas.shader.source = resource_find('shade-kivyglops-standard.glsl')  # NOT working
@@ -313,6 +302,8 @@ class KivyGlopsWindow(Widget):
         super(KivyGlopsWindow, self).__init__(**kwargs)
         self.cb = Callback(self.setup_gl_context)
         self.canvas.add(self.cb)
+        
+        self.canvas.add(PushMatrix())
 
         #self.canvas.add(PushMatrix())
         #self.canvas.add(this_texture)
@@ -323,11 +314,10 @@ class KivyGlopsWindow(Widget):
         #    this_glop = self.scene.glops[this_glop_index]
         #    add_glop(this_glop)
         #self.canvas.add(PopMatrix())
-        self._rendercontext = RenderContext(compute_normal_mat=True)
-        self.canvas.add(self._rendercontext)
-
-        self.resetCallback = Callback(self.reset_gl_context)
-        self.canvas.add(self.resetCallback)
+        self._meshes = InstructionGroup() #RenderContext(compute_normal_mat=True)
+        self.canvas.add(self._meshes)
+        
+        self.finalize_scene()
 
         self.camera_translate = [0, 1.7, 25] #x,y,z where y is up  #1.7 since 5'10" person is ~1.77m, and eye down a bit
         #This is done axis by axis--the only reason is so that you can do OpenGL 6 (boundary detection) lesson from expertmultimedia.com starting with this file
@@ -361,6 +351,12 @@ class KivyGlopsWindow(Widget):
         
         self.load_glops()
     
+    def finalize_scene(self):
+        self.canvas.add(PopMatrix())
+        
+        self.resetCallback = Callback(self.reset_gl_context)
+        self.canvas.add(self.resetCallback)
+        
     
     def load_obj(self,obj_path):
         if obj_path is not None:
@@ -412,8 +408,8 @@ class KivyGlopsWindow(Widget):
     def add_glop(self, this_glop):
         participle="initializing"
         try:
-            #context = self._rendercontext
-            context = self.canvas
+            context = self._meshes
+            #context = self.canvas
             #if self.selected_glop_index is None:
             #    self.selected_glop_index = this_glop_index
             #    self.selected_glop = this_glop
@@ -751,7 +747,6 @@ class KivyGlopsWindow(Widget):
     def _on_keyboard_up(self, keyboard, keycode):
         self.player1_controller.set_pressed(keycode[0], keycode[1], False)
         #print('Released key ' + str(keycode))
-
 
     def select_mesh_by_index(self, index):
         glops_count = len(self.scene.glops)
