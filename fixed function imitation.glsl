@@ -72,7 +72,7 @@ uniform mat4      projection_matrix;   // combined model-view +
 uniform mat4      modelview_matrix;     // model view matrix
 uniform mat3      inv_modelview_matrix; // inverse model-view
                                         // matrix used
-// to transform normal
+										// to transform normal
 uniform mat4      tex_matrix[NUM_TEXTURES]; // texture matrices
 uniform bool      enable_tex[NUM_TEXTURES]; // texture enables
 uniform bool      enable_tex_matrix[NUM_TEXTURES]; // texture matrix

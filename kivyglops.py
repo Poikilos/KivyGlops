@@ -86,8 +86,12 @@ class KivyGlop(PyGlop, Widget):
         #self.freeAngle = 0.0
         #self.degreesPerSecond = 0.0
         #self.freePos = (10.0,100.0)
+        
+        #TODO:
         #self.canvas = RenderContext()
-        #TODO:? self.canvas = RenderContext(compute_normal_mat=True)
+        #self.canvas = RenderContext(compute_normal_mat=True)
+        self.canvas = InstructionGroup()
+        
         self._calculated_size = (1.0,1.0)  #finish this--or skip since only needed for getting pivot point
         #Rotate(angle=self.freeAngle, origin=(self._calculated_size[0]/2.0,self._calculated_size[1]/2.0))
         self._pivot_point = 0.0, 0.0, 0.0  #self.get_center_average_of_vertices()
@@ -408,13 +412,14 @@ class KivyGlopsWindow(Widget):
     def add_glop(self, this_glop):
         participle="initializing"
         try:
-            context = self._meshes
+            #context = self._meshes
             #context = self.canvas
             #if self.selected_glop_index is None:
             #    self.selected_glop_index = this_glop_index
             #    self.selected_glop = this_glop
             self.selected_glop_index = len(self.scene.glops)
             self.selected_glop = this_glop
+            context = this_glop.canvas
             thisMeshName = ""
             if this_glop.name is not None:
                 thisMeshName = this_glop.name
@@ -434,6 +439,9 @@ class KivyGlopsWindow(Widget):
             if this_glop._mesh is None:
                 this_glop.generate_kivy_mesh()
                 print("WARNING: glop had no mesh, so was generated when added to render context. Please ensure it is a KivyGlop and not a PyGlop (however, vertex indices misread could also lead to missing Mesh object).")
+            print("_color_instruction: "+str(this_glop._color_instruction))
+            print("u_color: "+str(this_glop.material.diffuse_color))
+            
             context.add(this_glop._color_instruction)  #TODO: asdf add as uniform instead
             if this_glop._mesh is not None:
                 context.add(this_glop._mesh)
@@ -445,6 +453,9 @@ class KivyGlopsWindow(Widget):
             if self.scene.glops is None:
                 self.scene.glops = list()
             self.scene.glops.append(this_glop)
+            
+            self._meshes.add(context)
+            
             print("Appended Glop (count:"+str(len(self.scene.glops))+").")
             
         except:

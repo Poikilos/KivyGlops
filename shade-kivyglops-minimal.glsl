@@ -46,13 +46,43 @@
     precision highp float;
 #endif
 
-attribute vec4  a_position; //set by Mesh (named by vertex_format)
-attribute vec3  a_normal; //set by Mesh (named by vertex_format)
-attribute vec4  a_color; //TODO: oops noone set this (neither kivy nor nskrypnik [C:\Kivy-1.8.0-py3.3-win32\kivy\examples\3Drendering\simple.glsl doesn't even mention the variable ])--vertex_format should name it. No wonder having no texture (or multiplying by v_color) makes object invisible. 
-attribute vec4  a_texcoord0; //set by Mesh (named by vertex_format); 0 since multiple UVs may be needed if using multiple textures (usually maps above 0 are for situations such as a video on a mesh of a screen)
+struct material {
+   vec4    ambient_color;
+   vec4    diffuse_color;
+   vec4    specular_color;
+   vec4    emissive_color;
+   float   specular_exponent;
+};
+const float       c_zero = 0.0;
+const float       c_one = 1.0;
+const int         indx_zero = 0;
+const int         indx_one = 1;
+
+
+uniform mat4 projection_mat; //Scene variable (since changes perspective)
 
 uniform mat4 modelview_mat; //KivyGlop variable (since may affect different objects separately, or a hierarchy of objects)
-uniform mat4 projection_mat; //Scene variable (since changes perspective)
+//uniform mat3      inv_modelview_matrix; // inverse model-view
+                                        // matrix used
+										// to transform normal
+uniform material  material_state; //if loaded obj, values is determined by get_pyglop_from_wobject
+uniform vec4 u_color;
+
+attribute vec4  a_position; //set in Mesh vertex (named by vertex_format)
+attribute vec2  a_texcoord0; //set in Mesh vertex (named by vertex_format); 0 since multiple UVs may be needed if using multiple textures (usually maps above 0 are for situations such as a video on a mesh of a screen)
+//attribute vec2  a_texcoord1;
+attribute vec4  a_color;  //set in Mesh vertex (named by vertex_format)
+attribute vec3  a_normal; //set in Mesh vertex (named by vertex_format)
+
+//************************************************
+// varying variables output by the vertex shader
+//************************************************
+varying vec4        v_texcoord[NUM_TEXTURES];
+varying vec4        v_front_color;
+varying vec4        v_back_color;
+//varying float       v_fog_factor;
+//varying float       v_ucp_factor;
+
 
 varying vec4 normal_vec; //set by vertex shader below
 varying vec4 vertex_pos; //local glsl variable (computed from a_position and matrices)
@@ -60,13 +90,23 @@ uniform mat4 normal_mat; //normal-only
 varying vec4 frag_color; //set by vertex shader below (according to v_color)
 varying vec2 uv_vec; //set by glsl (derived from a_texcoord0 directly, but varying between vertices)
 
-
-varying vec2 uv; //http://www.kickjs.org/example/shader_editor/shader_editor.html
-varying vec3 n; //http://www.kickjs.org/example/shader_editor/shader_editor.html
+//varying vec2 uv; //http://www.kickjs.org/example/shader_editor/shader_editor.html
+//varying vec3 n; //http://www.kickjs.org/example/shader_editor/shader_editor.html
 
 
 void main()
 {
+	//if(enable_lighting)
+	//{
+	//}
+	//else
+	//{
+	  // set the default output color to be the per-vertex /
+	  // per-primitive color
+	  //v_front_color = a_color;
+	  //v_back_color = a_color;
+	//}
+
     //compute vertex position in eye_space and normalize normal vector
     vec4 pos = modelview_mat * a_position; //vec4(v_pos,1.0); 
     vertex_pos = pos;
@@ -77,7 +117,8 @@ void main()
     /* gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex; this is the c++ way*/
     //vec4 pos = modelview_mat * vec4(a_position,1.0);
     gl_Position = projection_mat * pos;
-    frag_color = v_color;
+	// u_color = material_state.diffuse_color;
+    frag_color = v_color * u_color;
     uv_vec = a_texcoord0;
 
     //uv = a_texcoord0; //uv = uv1; //http://www.kickjs.org/example/shader_editor/shader_editor.html
@@ -117,8 +158,8 @@ uniform sampler2D tex;
 //#endregion texture-only
 uniform vec3 _world_light_dir_eye_space;
 
-varying vec3 n; //http://www.kickjs.org/example/shader_editor/shader_editor.html
-varying vec2 uv; //http://www.kickjs.org/example/shader_editor/shader_editor.html
+//varying vec3 n; //http://www.kickjs.org/example/shader_editor/shader_editor.html
+//varying vec2 uv; //http://www.kickjs.org/example/shader_editor/shader_editor.html
 
 void main()
 {

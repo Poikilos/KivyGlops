@@ -26,11 +26,10 @@ class MainForm(KivyGlopsWindow):
     
     #def __init__(self, **kwargs):
     def load_glops(self):
-        self.canvas.shader.source = resource_find('simple1b.glsl')
-        #self.canvas.shader.source = resource_find('shade-kivyglops-standard.glsl')  # NOT working
+        #self.canvas.shader.source = resource_find('simple1b.glsl')
         #self.canvas.shader.source = resource_find('shade-normal-only.glsl') #partially working
         #self.canvas.shader.source = resource_find('shade-texture-only.glsl')
-        #self.canvas.shader.source = resource_find('shade-kivyglops-minimal.glsl')  # NOT working
+        self.canvas.shader.source = resource_find('shade-kivyglops-minimal.glsl')
         #self.canvas.shader.source = resource_find('fresnel.glsl')
         #super(MainForm, self).__init__(**kwargs)
         #self.load_obj("barrels triangulated (Costinus at turbosquid).obj")
@@ -39,12 +38,9 @@ class MainForm(KivyGlopsWindow):
         #self.load_obj("pyramid.obj")
         #self.load_obj("testnurbs-all-textured.obj")
         #self.load_obj("orion.obj")
-        #self._meshes.add(PushMatrix())
         self.load_obj("KivyForest.obj")
-        #self._meshes.add(PopMatrix())
-        #self.finalize_scene()
         #self.load_obj("etc/problematic mesh files/4 Gold Rings.obj")  # self.load_obj("4 Gold Rings.obj")
-        #self.load_obj("pedestal-suzanne.obj")
+        self.load_obj("pedestal-suzanne.obj")
     
     
     def update_glops(self):
