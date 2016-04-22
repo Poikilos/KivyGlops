@@ -41,7 +41,7 @@ class MinimalKivyGlopsWindow(Widget):
         #self.scene.load_obj(resource_find("barrels triangulated (Costinus at turbosquid).obj"))
         #self.scene.load_obj(resource_find("barrel.obj"))
         #self.scene.load_obj(resource_find("KivyGlopsDemoScene.obj"))
-        self.scene.load_obj(resource_find("testnurbs-all-textured.obj"))
+        self.load_obj("testnurbs-all-textured.obj")
 
         super(MinimalKivyGlopsWindow, self).__init__(**kwargs)
         with self.canvas:
@@ -65,7 +65,7 @@ class MinimalKivyGlopsWindow(Widget):
         self.canvas['diffuse_light'] = (1.0, 1.0, 0.8)
         self.canvas['ambient_light'] = (0.1, 0.1, 0.1)
         self.rot.angle += 1
-    
+
     def dump_pyglop(self, m):
         this_list = list()
         m.append_dump(this_list, "")
@@ -75,7 +75,7 @@ class MinimalKivyGlopsWindow(Widget):
             outs.write(line+"\n")
         outs.close()
         print("dumped object to '"+dump_path+"'")
-        
+
 
     def setup_scene(self):
         Color(1, 1, 1, 1)
@@ -87,7 +87,7 @@ class MinimalKivyGlopsWindow(Widget):
         #m = list(self.scene.objects.values())[0]
         m = self.scene.glops[0]
         #self.dump_pyglop(m)
-        
+
         UpdateNormalMatrix()
         self.mesh = Mesh(
             vertices=m.vertices,
