@@ -1,0 +1,4 @@
+# Kivy Caveats:
+
+## OpenGL-related:
+* If z-order is incorrect, problem may be that you need to add Mesh and the Instructions before it as an InstructionGroup instead of a RenderContext
