@@ -362,7 +362,9 @@ class KivyGlopsWindow(Widget):
         self.canvas.add(self.resetCallback)
         
     
-    def load_obj(self,obj_path):
+    def load_obj(self,obj_path, swapyz_enable=False, centered=False):
+        if swapyz_enable:
+            print("NOT YET IMPLEMENTED: swapyz_enable")
         if obj_path is not None:
             original_path = obj_path
             obj_path = resource_find(obj_path)
@@ -377,7 +379,7 @@ class KivyGlopsWindow(Widget):
                     else:
                         if self.scene.glops is None:
                             self.scene.glops = list()
-                            
+                        
                         #for index in range(0,len(self.glops)):
                         favorite_pivot_point = None
                         for index in range(0,len(new_glops)):
@@ -393,13 +395,16 @@ class KivyGlopsWindow(Widget):
                             print("")
                             if (favorite_pivot_point is None):
                                 favorite_pivot_point = new_glops[index]._pivot_point
-                            
-                        #TODO: apply pivot point (change vertices as if pivot point were 0,0,0) to ensure translate 0 is world 0; instead of:
-                        #center it (use just one pivot point so objects in obj remain aligned):
-                        for index in range(0,len(new_glops)):
-                            new_glops[index].translate_x_relative(-1.0*favorite_pivot_point[0])
-                            new_glops[index].translate_y_relative(-1.0*favorite_pivot_point[1])
-                            new_glops[index].translate_z_relative(-1.0*favorite_pivot_point[2])
+                                
+                        if centered:
+                            #TODO: apply pivot point instead (change vertices as if pivot point were 0,0,0) to ensure translate 0 is world 0; instead of:
+                            #center it (use only one pivot point, so all objects in obj file remain aligned with each other):
+                            for index in range(0,len(new_glops)):
+                                new_glops[index].translate_x_relative(-1.0*favorite_pivot_point[0])
+                                new_glops[index].translate_y_relative(-1.0*favorite_pivot_point[1])
+                                new_glops[index].translate_z_relative(-1.0*favorite_pivot_point[2])
+                                #TODO: new_glops[index].apply_translate()
+                                #TODO: new_glops[index].reset_translate()
                             
                         print("")
                 else:

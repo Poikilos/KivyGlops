@@ -38,9 +38,10 @@ class MainForm(KivyGlopsWindow):
         #self.load_obj("pyramid.obj")
         #self.load_obj("testnurbs-all-textured.obj")
         #self.load_obj("orion.obj")
-        self.load_obj("KivyForest.obj")
         #self.load_obj("etc/problematic mesh files/4 Gold Rings.obj")  # self.load_obj("4 Gold Rings.obj")
-        self.load_obj("pedestal-suzanne.obj")
+        #self.load_obj("KivyForest.obj")
+        #self.load_obj("pedestal-suzanne.obj")
+        self.load_obj("OfficeInterior.obj", centered=True)
     
     
     def update_glops(self):
