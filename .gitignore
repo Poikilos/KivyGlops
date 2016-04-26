@@ -1,6 +1,9 @@
 # KivyGlops generated files
 glops-dump.yml
 
+#blender leftovers
+*.blend1
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
