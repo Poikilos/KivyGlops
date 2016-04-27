@@ -38,10 +38,18 @@ class MainForm(KivyGlopsWindow):
         #self.load_obj("pyramid.obj")
         #self.load_obj("testnurbs-all-textured.obj")
         #self.load_obj("orion.obj")
-        #self.load_obj("etc/problematic mesh files/4 Gold Rings.obj")  # self.load_obj("4 Gold Rings.obj")
+        #self.load_obj("etc/problematic mesh files/4 Gold Rings.obj", centered=True)  # self.load_obj("4 Gold Rings.obj")
         #self.load_obj("KivyForest.obj")
         #self.load_obj("pedestal-suzanne.obj")
-        self.load_obj("OfficeInterior.obj", centered=True)
+        #self.load_obj("colonnato.obj") #has memory errors and takes several minutes to load
+        #self.load_obj("OfficeInterior.obj")
+        
+        self.load_obj("OfficeInteriorWalkmesh.obj")
+        walkmesh_names = self.get_similar_names("floor")
+        self.load_obj("OfficeInterior.obj")
+        for name in walkmesh_names:
+            print("Found possible walkmesh: "+name)
+            is_ok = self.use_walkmesh(name, hide=True)
     
     
     def update_glops(self):

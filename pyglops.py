@@ -44,6 +44,50 @@ VFORMAT_VECTOR_LEN_INDEX = 1
 VFORMAT_TYPE_INDEX = 2
 
 
+
+#halfplane check (which half) formerly sign
+def get_halfplane_sign(p1, p2, p3):
+    #return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
+    return (p1[0] - p3[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p3[1]);
+#PointInTriangle and sign are from http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle
+#edited Oct 18 '14 at 18:52 by msrd0
+#answered Jan 12 '10 at 14:27 by Kornel Kisielewicz
+#(based on http://www.gamedev.net/community/forums/topic.asp?topic_id=295943)
+def PointInTriangle(pt, v1, v2, v3):
+    b1 = get_halfplane_sign(pt, v1, v2) < 0.0
+    b2 = get_halfplane_sign(pt, v2, v3) < 0.0
+    b3 = get_halfplane_sign(pt, v3, v1) < 0.0
+    #WARNING: returns false sometimes on edge, depending whether triangle is clockwise or counter-clockwise
+    return (b1 == b2) and (b2 == b3)
+
+#3 vector version of Developer's solution to <http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle> answered Jan 6 '14 at 11:32 by Developer
+def is_in_triangle(pt,v0, v1, v2):
+    '''checks if point pt(2) is inside triangle tri(3x2). @Developer'''
+    a = 1/(-v1[1]*v2[0]+v0[1]*(-v1[0]+v2[0])+v0[0]*(v1[1]-v2[1])+v1[0]*v2[1])
+    s = a*(v2[0]*v0[1]-v0[0]*v2[1]+(v2[1]-v0[1])*pt[0]+(v0[0]-v2[0])*pt[1])
+    if s<0: return False
+    else: t = a*(v0[0]*v1[1]-v1[0]*v0[1]+(v0[1]-v1[1])*pt[0]+(v1[0]-v0[0])*pt[1])
+    return ((t>0) and (1-s-t>0))
+
+#Did not yet read article: http://totologic.blogspot.fr/2014/01/accurate-point-in-triangle-test.html
+
+#Developer's solution to <http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle> answered Jan 6 '14 at 11:32 by Developer
+def PointInsideTriangle2(pt,tri):
+    '''checks if point pt(2) is inside triangle tri(3x2). @Developer'''
+    a = 1/(-tri[1,1]*tri[2,0]+tri[0,1]*(-tri[1,0]+tri[2,0])+tri[0,0]*(tri[1,1]-tri[2,1])+tri[1,0]*tri[2,1])
+    s = a*(tri[2,0]*tri[0,1]-tri[0,0]*tri[2,1]+(tri[2,1]-tri[0,1])*pt[0]+(tri[0,0]-tri[2,0])*pt[1])
+    if s<0: return False
+    else: t = a*(tri[0,0]*tri[1,1]-tri[1,0]*tri[0,1]+(tri[0,1]-tri[1,1])*pt[0]+(tri[1,0]-tri[0,0])*pt[1])
+    return ((t>0) and (1-s-t>0))
+
+#def IsInTriangle_Barymetric(px, py, p0x, p0y, p1x, p1y, p2x, p2y):
+#    Area = 1/2*(-p1y*p2x + p0y*(-p1x + p2x) + p0x*(p1y - p2y) + p1x*p2y)
+#    s = 1/(2*Area)*(p0y*p2x - p0x*p2y + (p2y - p0y)*px + (p0x - p2x)*py)
+#    t = 1/(2*Area)*(p0x*p1y - p0y*p1x + (p0y - p1y)*px + (p1x - p0x)*py)
+#    #TODO: fix situation where it fails when clockwise (see discussion at http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle )
+#    return  s>0 && t>0 && 1-s-t>0
+
+
 # PyGlop defines a single OpenGL-ready object. PyGlops should be used for importing, since one mesh file (such as obj) can contain several meshes. PyGlops handles the 3D scene.
 class PyGlop:
     name = None #object name such as from OBJ's 'o' statement
@@ -914,6 +958,8 @@ class PyGlops:
     lastUntitledMeshNumber = -1
     lastCreatedMaterial = None
     lastCreatedMesh = None
+    _walkmeshes = None
+    eye_height = None
 
     def append_dump(self, thisList):
         tabString="  "
@@ -925,6 +971,8 @@ class PyGlops:
             self.materials[i].append_dump(thisList, tabString)
 
     def __init__(self):
+        self.eye_height = 1.7  # 1.7 since 5'10" person is ~1.77m, and eye down a bit
+        self._walkmeshes = []
         self.glops = []
         self.materials = []
 
