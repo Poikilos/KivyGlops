@@ -81,6 +81,7 @@ class KivyGlop(PyGlop, Widget):
     _popmatrix = None
     
     
+    
     def __init__(self):
         super(KivyGlop, self).__init__()
         #self.freeAngle = 0.0
@@ -106,6 +107,9 @@ class KivyGlop(PyGlop, Widget):
         #self._scale_instruction.origin = self._pivot_point
         self._translate_instruction = Translate(0, 0, 0)
         self._color_instruction = Color(Color(1.0, 1.0, 1.0, 1.0))  # TODO: eliminate this in favor of canvas["mat_diffuse_color"]
+
+    def get_context(self):
+        return self.canvas
 
     def rotate_x_relative(self, angle):
         self._rotate_instruction_x.angle += angle
@@ -215,6 +219,7 @@ class KivyGlops(PyGlops):
     
     def __init__(self):
         super(KivyGlops, self).__init__()
+        self.camera_glop = get_kivyglop_from_pyglop(self.camera_glop)
 
     def create_mesh(self):
         #return PyGlops.create_mesh(self)
@@ -294,15 +299,16 @@ class KivyGlopsWindow(Widget):
         #formerly, .obj was loaded here using load_obj (now calling program does that)
         
         #print(self.canvas.shader)  #just prints type and memory address
-        glopsYAMLLines = []
-        self.scene.append_dump(glopsYAMLLines)
-        try:
-            thisFile = open('glops-dump.yml', 'w')
-            for i in range(0,len(glopsYAMLLines)):
-                thisFile.write(glopsYAMLLines[i]+"\n")
-            thisFile.close()
-        except:
-            print("Could not finish writing dump.")
+        if dump_enable:
+            glopsYAMLLines = []
+            self.scene.append_dump(glopsYAMLLines)
+            try:
+                thisFile = open('glops-dump.yml', 'w')
+                for i in range(0,len(glopsYAMLLines)):
+                    thisFile.write(glopsYAMLLines[i]+"\n")
+                thisFile.close()
+            except:
+                print("Could not finish writing dump.")
         super(KivyGlopsWindow, self).__init__(**kwargs)
         self.cb = Callback(self.setup_gl_context)
         self.canvas.add(self.cb)
@@ -322,7 +328,7 @@ class KivyGlopsWindow(Widget):
         self.canvas.add(self._meshes)
         
         self.finalize_scene()
-        self.camera_translate = [0, self.scene.eye_height, 25] #x,y,z where y is up  
+        self.camera_translate = [0, self.scene.camera_glop.eye_height, 25] #x,y,z where y is up  
         #This is done axis by axis--the only reason is so that you can do OpenGL 6 (boundary detection) lesson from expertmultimedia.com starting with this file
         if self.world_boundary_min[0] is not None:
             if self.camera_translate[0] < self.world_boundary_min[0]:
@@ -362,7 +368,7 @@ class KivyGlopsWindow(Widget):
         
     def get_nearest_walkmesh_point(self, pt):
         result = None
-        #second_nearest_result = None
+        second_nearest_result = None
         for this_glop in self.scene._walkmeshes:
             X_i = this_glop._POSITION_OFFSET + 0
             Y_i = this_glop._POSITION_OFFSET + 1
@@ -376,12 +382,14 @@ class KivyGlopsWindow(Widget):
                 
                 distance = math.sqrt( (pt[0]-this_glop.vertices[X_abs_i+0])**2 + (pt[2]*this_glop.vertices[X_abs_i+2])**2 )
                 if (result is None) or (distance_min) is None or (distance<distance_min):
-                    #second_nearest_result = result
+                    if result is not None:
+                        second_nearest_result = result[0],result[1],result[2]
                     result = this_glop.vertices[X_abs_i+0], this_glop.vertices[X_abs_i+1], this_glop.vertices[X_abs_i+2]
                     distance_min = distance
                 X_abs_i += this_glop.vertex_depth
-                
-            #TODO: use second_nearest_result to get nearest location along the edge instead of warping to a vertex
+            if second_nearest_result is not None:
+                asdf#distance1 = 
+                #TODO: use second_nearest_result to get nearest location along the edge instead of warping to a vertex
         return result
 
     def is_in_any_walkmesh_xz(self, pt):
@@ -407,7 +415,9 @@ class KivyGlopsWindow(Widget):
         for this_glop in self.scene.glops:
             if this_glop.name == name:
                 result = True
-                self.scene._walkmeshes.append(this_glop)
+                if this_glop not in self.scene._walkmeshes:
+                    self.scene._walkmeshes.append(this_glop)
+                    self._meshes.remove(this_glop.get_context())
                 break
         return result
         
@@ -476,6 +486,7 @@ class KivyGlopsWindow(Widget):
         else:
             print("ERROR: obj_path is None for load_obj")
     
+    
     def add_glop(self, this_glop):
         participle="initializing"
         try:
@@ -486,7 +497,7 @@ class KivyGlopsWindow(Widget):
             #    self.selected_glop = this_glop
             self.selected_glop_index = len(self.scene.glops)
             self.selected_glop = this_glop
-            context = this_glop.canvas
+            context = this_glop.get_context()
             thisMeshName = ""
             if this_glop.name is not None:
                 thisMeshName = this_glop.name
@@ -645,22 +656,33 @@ class KivyGlopsWindow(Widget):
 
             #print(str(self.camera_translate[0])+","+str(self.camera_translate[2])+" each coordinate should be between matching one in "+str(self._world_cube.get_min_x())+","+str(self._world_cube.get_min_z())+" and "+str(self._world_cube.get_max_x())+","+str(self._world_cube.get_max_z()))
             #print(str(self.camera_translate)+" each coordinate should be between matching one in "+str(self.world_boundary_min)+" and "+str(self.world_boundary_max))
-
+        
         for axis_index in range(0,3):
             if position_change[axis_index] is not None:
                 self.camera_translate[axis_index] += position_change[axis_index]
-        if not self.is_in_any_walkmesh_xz(self.camera_translate):
-            #print("Out of bounds")
-            corrected_pos = self.get_nearest_walkmesh_point( self.camera_translate )
-            if corrected_pos is not None:
-                self.camera_translate[0] = corrected_pos[0]
-                self.camera_translate[1] = corrected_pos[1] + self.scene.eye_height  # TODO: check y (vertical) axis against eye height and jump height etc
-                self.camera_translate[2] = corrected_pos[2]
+        if len(self.scene._walkmeshes)>0:
+            if not self.is_in_any_walkmesh_xz(self.camera_translate):
+                #print("Out of bounds") asdf
+                #if self.scene.prev_inbounds_camera_translate is not None:
+                #    self.camera_translate[0] = self.scene.prev_inbounds_camera_translate[0]
+                #    self.camera_translate[1] = self.scene.prev_inbounds_camera_translate[1]
+                #    self.camera_translate[2] = self.scene.prev_inbounds_camera_translate[2]
+                #else:
+                corrected_pos = self.get_nearest_walkmesh_point( self.camera_translate )
+                if corrected_pos is not None:
+                    self.camera_translate[0] = corrected_pos[0]
+                    self.camera_translate[1] = corrected_pos[1] + self.scene.camera_glop.eye_height  # TODO: check y (vertical) axis against eye height and jump height etc
+                    self.camera_translate[2] = corrected_pos[2]
+                else:
+                    print("ERROR: could not find point to bring player in bounds.")
             else:
-                print("ERROR: could not find point to bring player in bounds.")
+                #print("In bounds")
+                pass
         else:
-            #print("In bounds")
+            #print("No bounds")
             pass
+        self.scene.prev_inbounds_camera_translate = self.camera_translate[0], self.camera_translate[1], self.camera_translate[2]
+            
         # else:
         #     self.camera_translate[0] += self.camera_walk_units_per_frame * moving_x
         #     self.camera_translate[2] += self.camera_walk_units_per_frame * moving_z

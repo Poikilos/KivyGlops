@@ -29,6 +29,7 @@ from common import *
 
 from kivy.resources import resource_find
 from wobjfile import *
+dump_enable = False
 add_dump_comments_enable = False
 
 V_POS_INDEX = 0
@@ -97,8 +98,9 @@ class PyGlop:
     material = None
     _min_coords = None  #bounding cube minimums in local coordinates
     _max_coords = None  #bounding cube maximums in local coordinates
-    _pivot_point = None  #TODO: eliminate this--instead always use 0,0,0 and move vertices to change pivot; currently calculated from average of vertices if was imported from obj
-
+    _pivot_point = None  #TODO: asdf eliminate this--instead always use 0,0,0 and move vertices to change pivot; currently calculated from average of vertices if was imported from obj
+    feet_offset = None  # distance from center
+    eye_height = None  # distance from floor
 
     vertex_format = None
     vertices = None
@@ -959,7 +961,8 @@ class PyGlops:
     lastCreatedMaterial = None
     lastCreatedMesh = None
     _walkmeshes = None
-    eye_height = None
+    camera_glop = None
+    prev_inbounds_camera_translate = None
 
     def append_dump(self, thisList):
         tabString="  "
@@ -971,7 +974,8 @@ class PyGlops:
             self.materials[i].append_dump(thisList, tabString)
 
     def __init__(self):
-        self.eye_height = 1.7  # 1.7 since 5'10" person is ~1.77m, and eye down a bit
+        self.camera_glop = PyGlop()  #should be remade to subclass of PyGlop in subclass of PyGlops
+        self.camera_glop.eye_height = 1.7  # 1.7 since 5'10" person is ~1.77m, and eye down a bit
         self._walkmeshes = []
         self.glops = []
         self.materials = []
