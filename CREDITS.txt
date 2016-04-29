@@ -8,3 +8,7 @@ testnurbs-all-textured
 by expertmm
 based on testnurbs
 by nskrypnik
+
+Any graphics included with KivyGlops from other sources are CC Zero (public domain) unless otherwise noted (see CREDITS.txt)
+However, included graphics as created or altered for KivyGlops are CC-BY-SA 4.0
+https://creativecommons.org/licenses/by-sa/4.0/legalcode

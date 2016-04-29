@@ -8,8 +8,10 @@ Control 3D objects and the camera in your 3D Kivy app!
 * Camera can be moved and rotated separately from objects
 * Loads each object (even if in same OBJ file) separately, in a format readily usable by Kivy (Loads OBJ files into an intermediate format: KivyGlop)
 * KivyGlops tutorials are available for download at [expertmultimedia.com/usingpython](http://expertmultimedia.com/usingpython/py3tutorials.html) (Unit 4 OpenGL)
+* Triangulates (tesselates) obj input manually
 
 ## Changes
+* (2016-04-29) Switched to using only graphics that are public domain (changed license of modified resources to CC-BY-SA 4.0); such as, removed graphics based on cinder block wall from photoshoptextures.com due to quirky custom license
 * (2016-02-12) Change the PyGlops ObjFile and objfile.py to WObjFile and wobjfile.py (to avoid naming conflict with ObjFile and objfile.py in Kivy examples)
 * (2016-02-04) Finish separating (native) PyGlop from (Wavefront(R)) WObject for many reasons including: avoid storing redundant data; keep track of what format of data is stored in list members; allow storage of strict obj format; allow conversion back&forth or to other formats being sure of what o3d contains
 * (2016-02-04) Rename *MesherMesh types to *Glop to avoid confusion with (Kivy's) Mesh type which is stored in *o3d._mesh
@@ -26,7 +28,8 @@ Control 3D objects and the camera in your 3D Kivy app!
 * (2015-04-06) ran 2to3 (originally based on nskrypnik's kivy-rotation3d), which only had to change objloader (changes raise to function notation, and map(a,b) to map(list(a,b)) )
 
 ## Known Issues
-* Triangulate objects (instead of leaving holes)
+* should only place unique points into glop when individuating objects in o file
+* fix glitch where walking into corner fights between walls (resolve by getting better pushed_angle that moves in same direction as walking instead of same direction as pushed back by boundary)
 * Implement lighting by improving shader (instead of only flat shading of textured objects being available)
 * Calculate rotation on other axes before calling look_at (only does y rotation currently, using a&d keys)
 * Does not load map types from mtl that do not start with "map_":

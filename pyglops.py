@@ -44,7 +44,118 @@ VFORMAT_NAME_INDEX = 0
 VFORMAT_VECTOR_LEN_INDEX = 1
 VFORMAT_TYPE_INDEX = 2
 
+def get_rect_from_polar_deg(r, theta):
+    x = r * math.cos(math.radians(theta))
+    y = r * math.sin(math.radians(theta))
+    return x,y
 
+def get_rect_from_polar_rad(r, theta):
+    x = r * math.cos(theta)
+    y = r * math.sin(theta)
+    return x,y
+
+def angle_trunc(a):
+    while a < 0.0:
+        a += math.pi * 2
+    return a
+# angle_trunc and getAngleBetweenPoints edited Jul 19 '15 at 20:12  answered Sep 28 '11 at 16:10  Peter O. <http://stackoverflow.com/questions/7586063/how-to-calculate-the-angle-between-a-line-and-the-horizontal-axis>. 29 Apr 2016
+def getAngleBetweenPoints(x_orig, y_orig, x_landmark, y_landmark):
+    deltaY = y_landmark - y_orig
+    deltaX = x_landmark - x_orig
+    return angle_trunc(atan2(deltaY, deltaX))
+
+#get angle between two points (from a to b), swizzled to 2d on xz plane; based on getAngleBetweenPoints
+def get_angle_between_two_vec3_xz(a, b):
+    deltaY = b[2] - a[2]
+    deltaX = b[0] - a[0]
+    return angle_trunc(math.atan2(deltaY, deltaX))
+
+#returns nearest point on line bc from point a, swizzled to 2d on xz plane
+def get_nearest_vec3_on_vec3line_using_xz(a, b, c): #formerly PointSegmentDistanceSquared
+    t = None
+    #as per http://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
+    kMinSegmentLenSquared = 0.00000001 # adjust to suit.  If you use float, you'll probably want something like 0.000001f
+    kEpsilon = 1.0E-14 # adjust to suit.  If you use floats, you'll probably want something like 1E-7f
+    #same as 1.0 * 10**-14 according to http://python-reference.readthedocs.io/en/latest/docs/float/scientific.html
+    dx = c[0] - b[0]
+    dy = c[2] - b[2]
+    db = [a[0] - b[0], 0.0, a[2] - b[2]]  # 0.0 since swizzling to xz (ignore source y)
+    segLenSquared = (dx * dx) + (dy * dy)
+    if segLenSquared >= -kMinSegmentLenSquared and segLenSquared <= kMinSegmentLenSquared:
+        # segment is a point.
+        qx = b[0]
+        qy = b[2]
+        t = 0.0
+        distance = ((db[0] * db[0]) + (db[2] * db[2]))
+        return qx, a[1], qy, distance
+    else:
+        # Project a line from p to the segment [p1,p2].  By considering the line
+        # extending the segment, parameterized as p1 + (t * (p2 - p1)),
+        # we find projection of point p onto the line. 
+        # It falls where t = [(p - p1) . (p2 - p1)] / |p2 - p1|^2
+        t = ((db[0] * dx) + (db[2] * dy)) / segLenSquared
+        if t < kEpsilon:
+            # intersects at or to the "left" of first segment vertex (b[0], b[2]).  If t is approximately 0.0, then
+            # intersection is at p1.  If t is less than that, then there is no intersection (i.e. p is not within
+            # the 'bounds' of the segment)
+            if t > -kEpsilon:
+                # intersects at 1st segment vertex
+                t = 0.0
+            # set our 'intersection' point to p1.
+            qx = b[0]
+            qy = b[2]
+        elif t > (1.0 - kEpsilon): # Note: If you wanted the ACTUAL intersection point of where the projected lines would intersect if
+        # we were doing PointLineDistanceSquared, then qx would be (b[0] + (t * dx)) and qy would be (b[2] + (t * dy)).
+
+            # intersects at or to the "right" of second segment vertex (c[0], c[2]).  If t is approximately 1.0, then
+            # intersection is at p2.  If t is greater than that, then there is no intersection (i.e. p is not within
+            # the 'bounds' of the segment)
+            if t < (1.0 + kEpsilon):
+                # intersects at 2nd segment vertex
+                t = 1.0
+            # set our 'intersection' point to p2.
+            qx = c[0]
+            qy = c[2]
+        else:
+            # Note: If you wanted the ACTUAL intersection point of where the projected lines would intersect if
+            # we were doing PointLineDistanceSquared, then qx would be (b[0] + (t * dx)) and qy would be (b[2] + (t * dy)).
+            # The projection of the point to the point on the segment that is perpendicular succeeded and the point
+            # is 'within' the bounds of the segment.  Set the intersection point as that projected point.
+            qx = b[0] + (t * dx)
+            qy = b[2] + (t * dy)
+        # return the squared distance from p to the intersection point.  Note that we return the squared distance
+        # as an oaimization because many times you just need to compare relative distances and the squared values
+        # works fine for that.  If you want the ACTUAL distance, just take the square root of this value.
+        dpqx = a[0] - qx
+        dpqy = a[2] - qy
+        distance = ((dpqx * dpqx) + (dpqy * dpqy))
+        return qx, a[1], qy, distance
+            
+            
+#returns distance from point a to line bc, swizzled to 2d on xz plane
+def get_distance_vec2_to_vec2line_xz(a, b, c):
+    return math.sin(math.atan2(b[2] - a[2], b[0] - a[0]) - math.atan2(c[2] - a[2], c[0] - a[0])) * math.sqrt((b[0] - a[0]) * (b[0] - a[0]) + (b[2] - a[2]) * (b[2] - a[2]))
+
+#returns distance from point a to line bc
+def get_distance_vec2_to_vec2line(a, b, c):
+    #from ADOConnection on stackoverflow answered Nov 18 '13 at 22:37
+    #this commented part is the expanded version of the same answer (both versions are given in answer)
+    #// normalize points
+    #Point cn = new Point(c[0] - a[0], c[1] - a[1]);
+    #Point bn = new Point(b[0] - a[0], b[1] - a[1]);
+
+    #double angle = Math.Atan2(bn[1], bn[0]) - Math.Atan2(cn[1], cn[0]);
+    #double abLength = Math.Sqrt(bn[0]*bn[0] + bn[1]*bn[1]);
+
+    #return math.sin(angle)*abLength;
+    return math.sin(math.atan2(b[1] - a[1], b[0] - a[0]) - math.atan2(c[1] - a[1], c[0] - a[0])) * math.sqrt((b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1]))
+
+#swizzle to 2d point on xz plane, then get distance
+def get_distance_vec3_xz(first_pt, second_pt):
+    return math.sqrt( (second_pt[0]-first_pt[0])**2 + (second_pt[2]-first_pt[2])**2 )
+
+def get_distance_vec2(first_pt, second_pt):
+    return math.sqrt( (second_pt[0]-first_pt[0])**2 + (second_pt[1]-first_pt[1])**2 )
 
 #halfplane check (which half) formerly sign
 def get_halfplane_sign(p1, p2, p3):
@@ -60,6 +171,12 @@ def PointInTriangle(pt, v1, v2, v3):
     b3 = get_halfplane_sign(pt, v3, v1) < 0.0
     #WARNING: returns false sometimes on edge, depending whether triangle is clockwise or counter-clockwise
     return (b1 == b2) and (b2 == b3)
+    
+def get_pushed_vec3_xz_rad(pos, r, theta):
+    #push_x, push_y = (0,0)
+    #if r != 0:
+    push_x, push_y = get_rect_from_polar_rad(r, theta)
+    return pos[0]+push_x, pos[1], pos[2]+push_y
 
 #3 vector version of Developer's solution to <http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle> answered Jan 6 '14 at 11:32 by Developer
 def is_in_triangle(pt,v0, v1, v2):
@@ -101,7 +218,8 @@ class PyGlop:
     _pivot_point = None  #TODO: asdf eliminate this--instead always use 0,0,0 and move vertices to change pivot; currently calculated from average of vertices if was imported from obj
     feet_offset = None  # distance from center
     eye_height = None  # distance from floor
-
+    hit_radius = None
+    #IF ADDING NEW VARIABLE here, remember to update any copy functions (such as get_kivyglop_from_pyglop) or copy constructors in your subclass or calling program
     vertex_format = None
     vertices = None
     indices = None
@@ -129,6 +247,7 @@ class PyGlop:
     #endregion calculated from vertex_format
 
     def __init__(self):
+        self.hit_radius = 0.1524  # .5' equals .1524m
         self.properties = {}
         #formerly in MeshData:
         # order MUST match V_POS_INDEX etc above
@@ -976,6 +1095,7 @@ class PyGlops:
     def __init__(self):
         self.camera_glop = PyGlop()  #should be remade to subclass of PyGlop in subclass of PyGlops
         self.camera_glop.eye_height = 1.7  # 1.7 since 5'10" person is ~1.77m, and eye down a bit
+        self.camera_glop.hit_radius = .1
         self._walkmeshes = []
         self.glops = []
         self.materials = []

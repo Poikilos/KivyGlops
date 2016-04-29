@@ -1,0 +1,3 @@
+http://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
+The idea is to move A to (0, 0) and rotate triangle clockwise to make C lay on X axis, when this happen, By will be the distance.
+-ADOConnection 

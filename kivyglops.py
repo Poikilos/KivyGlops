@@ -45,6 +45,8 @@ def get_kivyglop_from_pyglop(this_pyglop):
     this_kivyglop._min_coords = this_pyglop._min_coords
     this_kivyglop._max_coords = this_pyglop._max_coords
     this_kivyglop._pivot_point = this_pyglop._pivot_point
+    this_kivyglop.eye_height = this_pyglop.eye_height
+    this_kivyglop.hit_radius = this_pyglop.hit_radius
 
     this_kivyglop.vertex_format = this_pyglop.vertex_format
     this_kivyglop.vertices = this_pyglop.vertices
@@ -365,10 +367,53 @@ class KivyGlopsWindow(Widget):
         
         self.resetCallback = Callback(self.reset_gl_context)
         self.canvas.add(self.resetCallback)
-        
-    def get_nearest_walkmesh_point(self, pt):
+    
+    def get_nearest_walkmesh_vec3_using_xz(self, pt):
         result = None
-        second_nearest_result = None
+        closest_distance = None
+        poly_sides_count = 3
+        #corners = list()
+        #for i in range(0,poly_sides_count):
+        #    corners.append( (0.0, 0.0, 0.0) )
+        for this_glop in self.scene._walkmeshes:
+            face_i = 0
+            indices_count = len(this_glop.indices)
+            while (face_i<indices_count):
+                v_offset = this_glop.indices[face_i]*this_glop.vertex_depth
+                a_vertex = this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+0], this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+1], this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+2]
+                v_offset = this_glop.indices[face_i+1]*this_glop.vertex_depth
+                b_vertex = this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+0], this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+1], this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+2]
+                v_offset = this_glop.indices[face_i+2]*this_glop.vertex_depth
+                c_vertex = this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+0], this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+1], this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+2]
+                #side_a_distance = get_distance_vec3_xz(pt, a_vertex, b_vertex)
+                #side_b_distance = get_distance_vec3_xz(pt, b_vertex, c_vertex)
+                #side_c_distance = get_distance_vec3_xz(pt, c_vertex, a_vertex)
+                this_point = get_nearest_vec3_on_vec3line_using_xz(pt, a_vertex, b_vertex)
+                this_distance = this_point[3] #4th index of returned tuple is distance                
+                tri_distance = this_distance
+                tri_point = this_point
+
+                this_point = get_nearest_vec3_on_vec3line_using_xz(pt, b_vertex, c_vertex)
+                this_distance = this_point[3] #4th index of returned tuple is distance
+                if this_distance < tri_distance:
+                    tri_distance = this_distance
+                    tri_point = this_point
+
+                this_point = get_nearest_vec3_on_vec3line_using_xz(pt, c_vertex, a_vertex)
+                this_distance = this_point[3] #4th index of returned tuple is distance
+                if this_distance < tri_distance:
+                    tri_distance = this_distance
+                    tri_point = this_point
+                
+                if (closest_distance is None) or (tri_distance<closest_distance):
+                    result = tri_point[0], tri_point[1], tri_point[2]  # ok to return y since already swizzled (get_nearest_vec3_on_vec3line_using_xz copies source's y to return's y)
+                    closest_distance = tri_distance
+                face_i += poly_sides_count
+        return result
+    
+    def get_nearest_walkmesh_vertex_using_xz(self, pt):
+        result = None
+        second_nearest_pt = None
         for this_glop in self.scene._walkmeshes:
             X_i = this_glop._POSITION_OFFSET + 0
             Y_i = this_glop._POSITION_OFFSET + 1
@@ -379,17 +424,23 @@ class KivyGlopsWindow(Widget):
             v_len = len(this_glop.vertices)
             distance_min = None
             while X_abs_i < v_len:
-                
-                distance = math.sqrt( (pt[0]-this_glop.vertices[X_abs_i+0])**2 + (pt[2]*this_glop.vertices[X_abs_i+2])**2 )
+                distance = math.sqrt( (pt[0]-this_glop.vertices[X_abs_i+0])**2 + (pt[2]-this_glop.vertices[X_abs_i+2])**2 )
                 if (result is None) or (distance_min) is None or (distance<distance_min):
-                    if result is not None:
-                        second_nearest_result = result[0],result[1],result[2]
+                    #if result is not None:
+                        #second_nearest_pt = result[0],result[1],result[2]
                     result = this_glop.vertices[X_abs_i+0], this_glop.vertices[X_abs_i+1], this_glop.vertices[X_abs_i+2]
                     distance_min = distance
                 X_abs_i += this_glop.vertex_depth
-            if second_nearest_result is not None:
-                asdf#distance1 = 
-                #TODO: use second_nearest_result to get nearest location along the edge instead of warping to a vertex
+            
+            #DOESN'T WORK since second_nearest_pt may not be on edge
+            #if second_nearest_pt is not None:
+            #    distance1 = get_distance_vec3_xz(pt, result)
+            #    distance2 = get_distance_vec3_xz(pt, second_nearest_pt)
+            #    distance_total=distance1+distance2
+            #    distance1_weight = distance1/distance_total
+            #    distance2_weight = distance2/distance_total
+            #    result = result[0]*distance1_weight+second_nearest_pt[0]*distance2_weight, result[1]*distance1_weight+second_nearest_pt[1]*distance2_weight, result[2]*distance1_weight+second_nearest_pt[2]*distance2_weight
+                #TODO: use second_nearest_pt to get nearest location along the edge instead of warping to a vertex
         return result
 
     def is_in_any_walkmesh_xz(self, pt):
@@ -668,10 +719,13 @@ class KivyGlopsWindow(Widget):
                 #    self.camera_translate[1] = self.scene.prev_inbounds_camera_translate[1]
                 #    self.camera_translate[2] = self.scene.prev_inbounds_camera_translate[2]
                 #else:
-                corrected_pos = self.get_nearest_walkmesh_point( self.camera_translate )
+                corrected_pos = self.get_nearest_walkmesh_vec3_using_xz( self.camera_translate )
                 if corrected_pos is not None:
+                    pushed_angle = get_angle_between_two_vec3_xz(self.camera_translate, corrected_pos)
+                    corrected_pos = get_pushed_vec3_xz_rad(corrected_pos, self.scene.camera_glop.hit_radius, pushed_angle)
                     self.camera_translate[0] = corrected_pos[0]
-                    self.camera_translate[1] = corrected_pos[1] + self.scene.camera_glop.eye_height  # TODO: check y (vertical) axis against eye height and jump height etc
+                    self.camera_translate[1] = corrected_pos[1]   # TODO: check y (vertical) axis against eye height and jump height etc
+                    #+ self.scene.camera_glop.eye_height #no longer needed since swizzled to xz (get_nearest_walkmesh_vec3_using_xz returns original's y in return's y)
                     self.camera_translate[2] = corrected_pos[2]
                 else:
                     print("ERROR: could not find point to bring player in bounds.")
