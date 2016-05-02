@@ -248,6 +248,7 @@ class WObject:
     #parameter_space_vertices = None  #only for curves--not really implemented, just loaded from obj
     #faces = None
     #endregion raw OBJ data (as per nskrypnik)
+    source_path = None
     parameter_space_vertices = None  #only for curves--not really implemented, just loaded from obj
     mtl_filename = None
     material_name = None
@@ -269,8 +270,8 @@ class WObject:
         self._opening_comments.append(text)
 
     def append_dump(self, thisList, tabStringMinimum):
-        if self.obj_path is not None:
-            thisList.append(tabStringMinimum+tabString+"obj_path: "+self.obj_path)
+        if self.source_path is not None:
+            thisList.append(tabStringMinimum+tabString+"source_path: "+self.source_path)
         thisList = append_dump_as_yaml_array(thisList, "vertices",self.vertices,tabStringMinimum+tabString)
         thisList = append_dump_as_yaml_array(thisList, "texcoords",self.texcoords,tabStringMinimum+tabString)
         thisList = append_dump_as_yaml_array(thisList, "normals",self.normals,tabStringMinimum+tabString)
@@ -298,7 +299,7 @@ def get_wmaterial_dict_from_mtl(filename):
             line_counting_number = 1
             this_mtl_name = None
             for line in open(filename, "r"):
-                
+
                 line_strip = line.strip()
                 while ("\t" in line_strip):
                     line_strip = line_strip.replace("\t", " ")
@@ -312,7 +313,7 @@ def get_wmaterial_dict_from_mtl(filename):
                             args_string = line_strip[space_index+1:].strip()
                         if len(args_string)>0:
                             command = line_strip[:space_index].strip()
-                            
+
                             if (this_mtl_name is not None) or (command == "newmtl"):
                                 badspace="\t"
                                 badspace_index = args_string.find(badspace)
@@ -331,7 +332,7 @@ def get_wmaterial_dict_from_mtl(filename):
                                     this_mtl_name = args_string
                                     if this_mtl_name not in results.keys():
                                         results[this_mtl_name] = WMaterial(name=this_mtl_name)
-                                        
+
                                         this_mtl_filename = filename
                                         if (this_mtl_filename[:2]=="./") or (this_mtl_filename[:2]==".\\"):
                                             this_mtl_filename = this_mtl_filename[2:]
@@ -435,11 +436,11 @@ NYI_s_enable = True
 
 class WObjFile:
     wobjects = None
-    
+
     def load(self, filename):
         self.wobjects = self.get_wobjects_list(filename)
 
-    def get_wobjects_list(self, filename):  # formerly import_obj formerly get_wobjects_from_obj    
+    def get_wobjects_list(self, filename):  # formerly import_obj formerly get_wobjects_from_obj
         global texcoords_not_2_warning_enable
         global NYI_s_enable
         results = None
@@ -505,6 +506,7 @@ class WObjFile:
                                         #vn_offset += len(this_object.normals)
                                     smoothing_group = None
                                     this_object = WObject(name=args_string)
+                                    this_object.source_path = filename
                                     this_object.mtl_filename = this_mtl_filename
                                     this_wobject_v_count = 0
                                     this_wobject_vt_count = 0
@@ -525,6 +527,7 @@ class WObjFile:
                                         #vn_offset += len(this_object.normals)
                                     smoothing_group = None
                                     this_object = WObject(name=args_string)
+                                    this_object.source_path = filename
                                     this_object.mtl_filename = this_mtl_filename
                                     this_wobject_v_count = 0
                                     this_wobject_vt_count = 0
@@ -543,9 +546,9 @@ class WObjFile:
                                         args = args_string.split(" ")
                                         result_v = (0.0, 0.0, 0.0)
                                         if len(args)>=7:
-                                            result_v = get_fvec7(args)  #allow nonstandard x,y,z,r,g,b,a format
+                                            result_v = get_fvec7(args)  #allow nonstandard x,y,z,r,g,b,a (position then color) format
                                         elif len(args)>=6:
-                                            result_v = get_fvec6(args)  #allow nonstandard x,y,z,r,g,b format
+                                            result_v = get_fvec6(args)  #allow nonstandard x,y,z,r,g,b (position then color) format
                                         elif len(args)>=3:
                                             result_v = get_fvec3(args)
                                         if len(args)!=3 and len(args)!=6 and len(args)!=7:
@@ -577,7 +580,7 @@ class WObjFile:
                                         absolute_vt_count += 1
                                         #still increment since is reference to index obj file:
                                         #vt_offset += 1
-                                        
+
                                     elif command=="vn":
                                         #NOTE: presence of normals supercedes smoothing groups
                                         args = args_string.split(" ")
@@ -657,7 +660,7 @@ class WObjFile:
                                                     this_object.normals = list()
                                                 this_object.normals.append(absolute_vn_list[absolute_vn_index])
                                                 this_wobject_vn_count += 1
-                                            
+
                                             this_face.append([vertex_number,texcoord_number,normal_number])
                                         this_object.faces.append( this_face )
                                     elif command=="usemtl":

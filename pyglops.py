@@ -91,7 +91,7 @@ def get_nearest_vec3_on_vec3line_using_xz(a, b, c): #formerly PointSegmentDistan
     else:
         # Project a line from p to the segment [p1,p2].  By considering the line
         # extending the segment, parameterized as p1 + (t * (p2 - p1)),
-        # we find projection of point p onto the line. 
+        # we find projection of point p onto the line.
         # It falls where t = [(p - p1) . (p2 - p1)] / |p2 - p1|^2
         t = ((db[0] * dx) + (db[2] * dy)) / segLenSquared
         if t < kEpsilon:
@@ -130,8 +130,8 @@ def get_nearest_vec3_on_vec3line_using_xz(a, b, c): #formerly PointSegmentDistan
         dpqy = a[2] - qy
         distance = ((dpqx * dpqx) + (dpqy * dpqy))
         return qx, a[1], qy, distance
-            
-            
+
+
 #returns distance from point a to line bc, swizzled to 2d on xz plane
 def get_distance_vec2_to_vec2line_xz(a, b, c):
     return math.sin(math.atan2(b[2] - a[2], b[0] - a[0]) - math.atan2(c[2] - a[2], c[0] - a[0])) * math.sqrt((b[0] - a[0]) * (b[0] - a[0]) + (b[2] - a[2]) * (b[2] - a[2]))
@@ -171,7 +171,7 @@ def PointInTriangle(pt, v1, v2, v3):
     b3 = get_halfplane_sign(pt, v3, v1) < 0.0
     #WARNING: returns false sometimes on edge, depending whether triangle is clockwise or counter-clockwise
     return (b1 == b2) and (b2 == b3)
-    
+
 def get_pushed_vec3_xz_rad(pos, r, theta):
     #push_x, push_y = (0,0)
     #if r != 0:
@@ -209,7 +209,7 @@ def PointInsideTriangle2(pt,tri):
 # PyGlop defines a single OpenGL-ready object. PyGlops should be used for importing, since one mesh file (such as obj) can contain several meshes. PyGlops handles the 3D scene.
 class PyGlop:
     name = None #object name such as from OBJ's 'o' statement
-    obj_path = None  #required so that meshdata objects can be uniquely identified (where more than one file has same object name)
+    source_path = None  #required so that meshdata objects can be uniquely identified (where more than one file has same object name)
     properties = None #dictionary of properties--has indices such as usemtl
     vertex_depth = None
     material = None
@@ -224,7 +224,7 @@ class PyGlop:
     vertices = None
     indices = None
     #opacity = None  moved to material.diffuse_color 4th channel
-    
+
     #region vars based on OpenGL ES 1.1 MOVED TO material
     #ambient_color = None  # vec4
     #diffuse_color = None  # vec4
@@ -232,7 +232,7 @@ class PyGlop:
     ##emissive_color = None  # vec4
     #specular_exponent = None  # float
     #endregion vars based on OpenGL ES 1.1 MOVED TO material
-    
+
     #region calculated from vertex_format
     _POSITION_OFFSET = None
     _NORMAL_OFFSET = None
@@ -261,9 +261,9 @@ class PyGlop:
         self.vertex_depth = 0
         for i in range(0,len(self.vertex_format)):
             self.vertex_depth += self.vertex_format[i][VFORMAT_VECTOR_LEN_INDEX]
-        
+
         self.on_vertex_format_change()
-        
+
         self.indices = []  # list of tris (vertex index, vertex index, vertex index, etc)
 
         # Default basic material of this glop
@@ -407,7 +407,7 @@ class PyGlop:
             view_traceback()
 
         return tuple(results)
-        
+
 
     def set_textures_from_mtl_dict(self, mtl_dict):
         #print("")
@@ -481,23 +481,23 @@ class PyGlop:
         thisList.append(tabStringMinimum+tabString+"POSITION_INDEX:"+str(self.POSITION_INDEX))
         thisList.append(tabStringMinimum+tabString+"NORMAL_INDEX:"+str(self.NORMAL_INDEX))
         thisList.append(tabStringMinimum+tabString+"COLOR_INDEX:"+str(self.COLOR_INDEX))
-        
+
         component_index = 0
         component_offset = 0
-        
+
         while component_index < len(self.vertex_format):
             vertex_format_component = self.vertex_format[component_index]
             component_name_bytestring, component_len, component_type = vertex_format_component
-            component_name = component_name_bytestring.decode("utf-8") 
+            component_name = component_name_bytestring.decode("utf-8")
             thisList.append(tabStringMinimum+tabString+component_name+".len:"+str(component_len))
             thisList.append(tabStringMinimum+tabString+component_name+".type:"+str(component_type))
             thisList.append(tabStringMinimum+tabString+component_name+".index:"+str(component_index))
             thisList.append(tabStringMinimum+tabString+component_name+".offset:"+str(component_offset))
             component_index += 1
             component_offset += component_len
-        
+
         #thisList.append(tabStringMinimum+tabString+"POSITION_LEN:"+str(self.vertex_format[self.POSITION_INDEX][VFORMAT_VECTOR_LEN_INDEX]))
-        
+
         if add_dump_comments_enable:
             #thisList.append(tabStringMinimum+tabString+"#VFORMAT_VECTOR_LEN_INDEX:"+str(VFORMAT_VECTOR_LEN_INDEX))
             thisList.append(tabStringMinimum+tabString+"#len(self.vertex_format):"+str(len(self.vertex_format)))
@@ -507,14 +507,14 @@ class PyGlop:
         if add_dump_comments_enable:
             thisList.append(tabStringMinimum+tabString+"#vertex_bytes_per_pixel:"+str(channel_count))
 
-        
+
         for k,v in sorted(self.properties.items()):
             thisList.append(tabStringMinimum+tabString+k+": "+v)
 
         thisTextureFileName=self.get_texture_diffuse_filename()
         if thisTextureFileName is not None:
             thisList.append(tabStringMinimum+tabString+"get_texture_diffuse_filename(): "+thisTextureFileName)
-        
+
         #thisList=append_dump_as_yaml_array(thisList, "vertex_info_1D",self.vertices,tabStringMinimum+tabString)
         tabString="  "
         if add_dump_comments_enable:
@@ -541,11 +541,11 @@ class PyGlop:
             if component_offset==self.vertex_depth:
                 component_offset = 0
                 vertex_actual_index += 1
-        
+
         thisList.append(tabStringMinimum+tabString+"indices:")
         for i in range(0,len(self.indices)):
             thisList.append(tabStringMinimum+tabString+tabString+"- "+str(self.indices[i]))
-            
+
 
     def on_vertex_format_change(self):
         self._POSITION_OFFSET = -1
@@ -559,7 +559,7 @@ class PyGlop:
         self.TEXCOORD0_INDEX = -1
         self.TEXCOORD1_INDEX = -1
         self.COLOR_INDEX = -1
-        
+
         #this_pyglop.vertex_depth = 0
         offset = 0
         temp_vertex = list()
@@ -589,7 +589,7 @@ class PyGlop:
         elif offset != self.vertex_depth:
             print("WARNING: The count of values in vertex format chunks (chunk_count:"+str(len(self.vertex_format))+"; value_count:"+str(offset)+") does not total to vertex depth "+str(self.vertex_depth))
         participle = "(before initializing)"
-        
+
 
 
 class PyGlopsMaterial:
@@ -707,7 +707,7 @@ class PyGlopsLight:
     spot_cutoff_angle = None  # float
     compute_distance_attenuation = None  # bool
     #endregion vars based on OpenGL ES 1.1
-    
+
     def __init__(self):
        self.position = (0.0, 0.0, 0.0, 0.0)
        self.ambient_color = (0.0, 0.0, 0.0, 0.0)
@@ -724,6 +724,7 @@ def get_pyglop_from_wobject(this_wobject):  #formerly set_from_wobject formerly 
     this_pyglop = None
     if (this_wobject.faces is not None):
         this_pyglop = PyGlop()
+        this_pyglop.source_path = this_wobject.source_path
         #from vertex_format above:
         #self.vertex_format = [
             #(b'a_position', , 'float'),  # Munshi prefers vec4 (Kivy prefers vec3)
@@ -746,7 +747,7 @@ def get_pyglop_from_wobject(this_wobject):  #formerly set_from_wobject formerly 
         if this_pyglop.COLOR_OFFSET<0:
             IS_SELF_VFORMAT_OK = False
             print("Couldn't find name containing 'color' in any vertex format element (see pyglops.py PyGlop constructor)")
-        
+
         #vertices_offset = None
         #normals_offset = None
         #texcoords_offset = None
@@ -820,7 +821,7 @@ def get_pyglop_from_wobject(this_wobject):  #formerly set_from_wobject formerly 
             #FACE_VERTEX_COMPONENT_VERTEX_INDEX = 0
             #FACE_VERTEX_COMPONENT_TEXCOORDS_INDEX = 1
             #FACE_VERTEX_COMPONENT_NORMAL_INDEX = 2
-            
+
             #nskrypnik put them in a different order than obj format (0,1,2) for some reason so do this order instead ONLY if using his obj loader:
             #FACE_VERTEX_COMPONENT_VERTEX_INDEX = 0
             #FACE_VERTEX_COMPONENT_TEXCOORDS_INDEX = 2
@@ -876,14 +877,14 @@ def get_pyglop_from_wobject(this_wobject):  #formerly set_from_wobject formerly 
                         for this_wobject_this_face in this_wobject.faces:
                             participle = "getting face components"
                             #print("face["+str(source_face_index)+"]: "+participle)
-                            
+
                             #DOES triangulate of more than 3 vertices in this face (connects each loose point to first vertex and previous vertex)
                             # (vertex_done_flags are no longer needed since that method is used)
                             #vertex_done_flags = list()
                             #for vertexinfo_index in range(0,len(this_wobject_this_face)):
                             #    vertex_done_flags.append(False)
                             #vertices_done_count = 0
-                            
+
                             #with wobjfile.py, each face is an arbitrary-length list of vertex_infos, where each vertex_info is a list containing vertex_index, texcoord_index, then normal_index, so ignore the following commented deprecated lines of code:
                             #verts =  this_wobject_this_face[0]
                             #norms = this_wobject_this_face[1]
@@ -939,7 +940,7 @@ def get_pyglop_from_wobject(this_wobject):  #formerly set_from_wobject formerly 
                                         #    participle = "getting texcoord components at "+str(texcoord_index-texcoords_offset)  # str(norms[face_index]-normals_offset)
                                         #else:
                                         participle = "getting texcoord components at "+str(texcoord_index)+"-"+str(texcoords_offset)  # str(norms[face_index]-normals_offset)
-                                        
+
                                         if texcoord_index is not None:
                                             texcoord = this_wobject.texcoords[texcoord_index-texcoords_offset]
                                         #if tcs[face_index] != -1:
@@ -981,12 +982,12 @@ def get_pyglop_from_wobject(this_wobject):  #formerly set_from_wobject formerly 
                                 for element_index in range(0,3):
                                     vertex_components[this_pyglop._NORMAL_OFFSET+element_index] = normal[element_index]
                                 for element_index in range(0,2):
-                                    
+
                                     if element_index==1:
                                         vertex_components[this_pyglop._TEXCOORD0_OFFSET+element_index] = 1-texcoord[element_index]
                                     else:
                                         vertex_components[this_pyglop._TEXCOORD0_OFFSET+element_index] = texcoord[element_index]
-                                    
+
                                 if len(v)>3:
                                     #Handle nonstandard obj file with extended vertex info (color)
                                     abs_index = 0
@@ -1002,7 +1003,7 @@ def get_pyglop_from_wobject(this_wobject):  #formerly set_from_wobject formerly 
                                 source_face_vertex_count += 1
                                 vertexinfo_index += 1
                             #end while vertexinfo_index in face
-                            
+
                             participle = "combining triangle indices"
                             vertexinfo_index = 0
                             relative_source_face_vertex_index = 0  #required for tracking faces with less than 3 vertices
@@ -1028,13 +1029,13 @@ def get_pyglop_from_wobject(this_wobject):  #formerly set_from_wobject formerly 
                                     relative_source_face_vertex_index += 1
                                     tesselated_f_count += 1
                                 vertexinfo_index += 1
-                            
+
                             if (tesselated_f_count<1):
                                 print("WARNING: Face tesselated to 0 faces")
                             elif (tesselated_f_count>1):
                                 if verbose_enable:
                                     print("Face tesselated to "+str(tesselated_f_count)+" face(s)")
-                                
+
                             if relative_source_face_vertex_index<source_face_vertex_count:
                                 print("WARNING: Face has fewer than 3 vertices (problematic obj file)")
                                 dest_vertex_index += source_face_vertex_count - relative_source_face_vertex_index
@@ -1042,7 +1043,7 @@ def get_pyglop_from_wobject(this_wobject):  #formerly set_from_wobject formerly 
                     else:
                         print("WARNING: this_wobject.faces list is None in object '"+this_name+"'")
                     participle = "generating pivot point"
-                    
+
                     this_pyglop.transform_pivot_to_geometry()
                 else:
                     print("ERROR: can't use pyglop since already has vertices (len(this_pyglop.indices)>=1)")
@@ -1115,7 +1116,7 @@ class PyGlops:
                         result=self.glops[index]
         return result
 
-    def get_pyglops_list_from_obj(self, obj_path):  # load_obj(self, obj_path): #TODO: ? swapyz=False):
+    def get_pyglops_list_from_obj(self, source_path):  # load_obj(self, source_path): #TODO: ? swapyz=False):
         participle = "(before initializing)"
         linePlus1 = 1
         #firstMeshIndex = len(self.glops)
@@ -1123,12 +1124,12 @@ class PyGlops:
         try:
             #self.lastCreatedMesh = None
             participle = "checking path"
-            if os.path.exists(obj_path):
-                results = list()  # create now, so that if None, that means obj_path didn't exist
+            if os.path.exists(source_path):
+                results = list()  # create now, so that if None, that means source_path didn't exist
                 participle = "setting up WObjFile"
                 this_objfile = WObjFile()
                 participle = "loading WObjFile"
-                this_objfile.load(obj_path)
+                this_objfile.load(source_path)
                 if this_objfile.wobjects is not None:
                     if len(this_objfile.wobjects)>0:
                         for i in range(0,len(this_objfile.wobjects)):
@@ -1148,11 +1149,11 @@ class PyGlops:
                             else:
                                 print("ERROR: this_pyglop is None after converting from wobject")
                     else:
-                        print("ERROR: 0 wobjects could be read from '"+obj_path+"'")
+                        print("ERROR: 0 wobjects could be read from '"+source_path+"'")
                 else:
-                    print("ERROR: 0 wobjects could be read from '"+obj_path+"'")
+                    print("ERROR: 0 wobjects could be read from '"+source_path+"'")
             else:
-                print("ERROR: file '"+str(obj_path)+"' not found")
+                print("ERROR: file '"+str(source_path)+"' not found")
         except:  # Exception as e:
             #print("Could not finish a wobject in load_obj while "+participle+" on line "+str(linePlus1)+": "+str(e))
             print("Could not finish a wobject in load_obj while "+participle+" on line "+str(linePlus1)+":")

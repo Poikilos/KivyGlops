@@ -30,7 +30,7 @@ sub_canvas_enable = False
 
 
 class KivyGlopsMaterial(PyGlopsMaterial):
-    
+
     def __init__(self):
         super(KivyGlopsMaterial, self).__init__()
 
@@ -38,7 +38,7 @@ class KivyGlopsMaterial(PyGlopsMaterial):
 def get_kivyglop_from_pyglop(this_pyglop):
     this_kivyglop = KivyGlop()
     this_kivyglop.name = this_pyglop.name
-    this_kivyglop.obj_path = this_pyglop.obj_path
+    this_kivyglop.source_path = this_pyglop.source_path
     this_kivyglop.properties = this_pyglop.properties
     this_kivyglop.vertex_depth = this_pyglop.vertex_depth
     this_kivyglop.material = this_pyglop.material
@@ -59,12 +59,12 @@ def get_kivyglop_from_pyglop(this_pyglop):
     #this_kivyglop.specular_coefficent = this_pyglop.specular_coefficent
     #endregion vars moved to material
     #this_kivyglop.opacity = this_pyglop.opacity # use diffuse color 4th channel instead
-    
+
     return this_kivyglop
 
 
 class KivyGlop(PyGlop, Widget):
-    
+
     #freeAngle = None
     #degreesPerSecond = None
     #freePos = None
@@ -81,20 +81,20 @@ class KivyGlop(PyGlop, Widget):
     _pushmatrix = None
     _updatenormalmatrix = None
     _popmatrix = None
-    
-    
-    
+
+
+
     def __init__(self):
         super(KivyGlop, self).__init__()
         #self.freeAngle = 0.0
         #self.degreesPerSecond = 0.0
         #self.freePos = (10.0,100.0)
-        
+
         #TODO:
         #self.canvas = RenderContext()
         #self.canvas = RenderContext(compute_normal_mat=True)
         self.canvas = InstructionGroup()
-        
+
         self._calculated_size = (1.0,1.0)  #finish this--or skip since only needed for getting pivot point
         #Rotate(angle=self.freeAngle, origin=(self._calculated_size[0]/2.0,self._calculated_size[1]/2.0))
         self._pivot_point = 0.0, 0.0, 0.0  #self.get_center_average_of_vertices()
@@ -162,7 +162,7 @@ class KivyGlop(PyGlop, Widget):
         self._rotate_instruction_z.origin = self._pivot_scaled_point
         #self._translate_instruction.x = self.freePos[0]-self._rectangle_instruction.size[0]*self._scale_instruction.x/2
         #self._translate_instruction.y = self.freePos[1]-self._rectangle_instruction.size[1]*self._scale_instruction.y/2
-        #self._rotate_instruction.origin = self._rectangle_instruction.size[0]*self._scale_instruction.x/2.0, self._rectangle_instruction.size[1]*self._scale_instruction.x/2.0 
+        #self._rotate_instruction.origin = self._rectangle_instruction.size[0]*self._scale_instruction.x/2.0, self._rectangle_instruction.size[1]*self._scale_instruction.x/2.0
         #self._rotate_instruction.angle = self.freeAngle
         this_name = ""
         if self.name is not None:
@@ -201,7 +201,7 @@ class KivyGlop(PyGlop, Widget):
         if len(self.vertices)>0:
             if (this_texture_image is not None):
                 this_texture = this_texture_image.texture
-            
+
             self._mesh = Mesh(
                     vertices=self.vertices,
                     indices=self.indices,
@@ -210,7 +210,7 @@ class KivyGlop(PyGlop, Widget):
                     texture=this_texture,
                 )
             print(str(len(self.vertices))+" vert(ex/ices)")
-            
+
         else:
             print("WARNING: 0 vertices in glop")
             if self.name is not None:
@@ -218,7 +218,7 @@ class KivyGlop(PyGlop, Widget):
 
 
 class KivyGlops(PyGlops):
-    
+
     def __init__(self):
         super(KivyGlops, self).__init__()
         self.camera_glop = get_kivyglop_from_pyglop(self.camera_glop)
@@ -297,9 +297,9 @@ class KivyGlopsWindow(Widget):
         #self.canvas.shader.source = resource_find('shade-texture-only.glsl')
         #self.canvas.shader.source = resource_find('shade-kivyglops-minimal.glsl')  # NOT working
         self.canvas.shader.source = resource_find('fresnel.glsl')
-        
+
         #formerly, .obj was loaded here using load_obj (now calling program does that)
-        
+
         #print(self.canvas.shader)  #just prints type and memory address
         if dump_enable:
             glopsYAMLLines = []
@@ -314,7 +314,7 @@ class KivyGlopsWindow(Widget):
         super(KivyGlopsWindow, self).__init__(**kwargs)
         self.cb = Callback(self.setup_gl_context)
         self.canvas.add(self.cb)
-        
+
         self.canvas.add(PushMatrix())
 
         #self.canvas.add(PushMatrix())
@@ -328,9 +328,9 @@ class KivyGlopsWindow(Widget):
         #self.canvas.add(PopMatrix())
         self._meshes = InstructionGroup() #RenderContext(compute_normal_mat=True)
         self.canvas.add(self._meshes)
-        
+
         self.finalize_scene()
-        self.camera_translate = [0, self.scene.camera_glop.eye_height, 25] #x,y,z where y is up  
+        self.camera_translate = [0, self.scene.camera_glop.eye_height, 25] #x,y,z where y is up
         #This is done axis by axis--the only reason is so that you can do OpenGL 6 (boundary detection) lesson from expertmultimedia.com starting with this file
         if self.world_boundary_min[0] is not None:
             if self.camera_translate[0] < self.world_boundary_min[0]:
@@ -359,15 +359,15 @@ class KivyGlopsWindow(Widget):
             Keyboard.keycodes["-"]=45
         if (Keyboard.keycodes["="]==43):
             Keyboard.keycodes["="]=61
-        
+
         self.load_glops()
-    
+
     def finalize_scene(self):
         self.canvas.add(PopMatrix())
-        
+
         self.resetCallback = Callback(self.reset_gl_context)
         self.canvas.add(self.resetCallback)
-    
+
     def get_nearest_walkmesh_vec3_using_xz(self, pt):
         result = None
         closest_distance = None
@@ -389,7 +389,7 @@ class KivyGlopsWindow(Widget):
                 #side_b_distance = get_distance_vec3_xz(pt, b_vertex, c_vertex)
                 #side_c_distance = get_distance_vec3_xz(pt, c_vertex, a_vertex)
                 this_point = get_nearest_vec3_on_vec3line_using_xz(pt, a_vertex, b_vertex)
-                this_distance = this_point[3] #4th index of returned tuple is distance                
+                this_distance = this_point[3] #4th index of returned tuple is distance
                 tri_distance = this_distance
                 tri_point = this_point
 
@@ -404,13 +404,13 @@ class KivyGlopsWindow(Widget):
                 if this_distance < tri_distance:
                     tri_distance = this_distance
                     tri_point = this_point
-                
+
                 if (closest_distance is None) or (tri_distance<closest_distance):
                     result = tri_point[0], tri_point[1], tri_point[2]  # ok to return y since already swizzled (get_nearest_vec3_on_vec3line_using_xz copies source's y to return's y)
                     closest_distance = tri_distance
                 face_i += poly_sides_count
         return result
-    
+
     def get_nearest_walkmesh_vertex_using_xz(self, pt):
         result = None
         second_nearest_pt = None
@@ -431,7 +431,7 @@ class KivyGlopsWindow(Widget):
                     result = this_glop.vertices[X_abs_i+0], this_glop.vertices[X_abs_i+1], this_glop.vertices[X_abs_i+2]
                     distance_min = distance
                 X_abs_i += this_glop.vertex_depth
-            
+
             #DOESN'T WORK since second_nearest_pt may not be on edge
             #if second_nearest_pt is not None:
             #    distance1 = get_distance_vec3_xz(pt, result)
@@ -460,7 +460,7 @@ class KivyGlopsWindow(Widget):
                     break
                 poly_offset += poly_side_count
         return result
-        
+
     def use_walkmesh(self, name, hide=True):
         result = False
         for this_glop in self.scene.glops:
@@ -471,7 +471,7 @@ class KivyGlopsWindow(Widget):
                     self._meshes.remove(this_glop.get_context())
                 break
         return result
-        
+
     def get_similar_names(self, partial_name):
         results = None
         checked_count = 0
@@ -484,25 +484,25 @@ class KivyGlopsWindow(Widget):
                     results.append(this_glop.name)
         print("checked "+str(checked_count))
         return results
-    
-    def load_obj(self,obj_path, swapyz_enable=False, centered=False):
+
+    def load_obj(self,source_path, swapyz_enable=False, centered=False):
         if swapyz_enable:
             print("NOT YET IMPLEMENTED: swapyz_enable")
-        if obj_path is not None:
-            original_path = obj_path
-            obj_path = resource_find(obj_path)
-            if obj_path is not None:
-                if os.path.isfile(obj_path):
-                    #super(KivyGlops, self).load_obj(obj_path)
-                    new_glops = self.scene.get_pyglops_list_from_obj(obj_path)
+        if source_path is not None:
+            original_path = source_path
+            source_path = resource_find(source_path)
+            if source_path is not None:
+                if os.path.isfile(source_path):
+                    #super(KivyGlops, self).load_obj(source_path)
+                    new_glops = self.scene.get_pyglops_list_from_obj(source_path)
                     if new_glops is None:
-                        print("FAILED TO LOAD '"+str(obj_path)+"'")
+                        print("FAILED TO LOAD '"+str(source_path)+"'")
                     elif len(new_glops)<1:
-                        print("NO VALID OBJECTS FOUND in '"+str(obj_path)+"'")
+                        print("NO VALID OBJECTS FOUND in '"+str(source_path)+"'")
                     else:
                         if self.scene.glops is None:
                             self.scene.glops = list()
-                        
+
                         #for index in range(0,len(self.glops)):
                         favorite_pivot_point = None
                         for index in range(0,len(new_glops)):
@@ -518,7 +518,7 @@ class KivyGlopsWindow(Widget):
                             print("")
                             if (favorite_pivot_point is None):
                                 favorite_pivot_point = new_glops[index]._pivot_point
-                                
+
                         if centered:
                             #TODO: apply pivot point instead (change vertices as if pivot point were 0,0,0) to ensure translate 0 is world 0; instead of:
                             #center it (use only one pivot point, so all objects in obj file remain aligned with each other):
@@ -528,16 +528,16 @@ class KivyGlopsWindow(Widget):
                                 new_glops[index].translate_z_relative(-1.0*favorite_pivot_point[2])
                                 #TODO: new_glops[index].apply_translate()
                                 #TODO: new_glops[index].reset_translate()
-                            
+
                         print("")
                 else:
-                    print("missing '"+obj_path+"'")
+                    print("missing '"+source_path+"'")
             else:
                 print("missing '"+original_path+"'")
         else:
-            print("ERROR: obj_path is None for load_obj")
-    
-    
+            print("ERROR: source_path is None for load_obj")
+
+
     def add_glop(self, this_glop):
         participle="initializing"
         try:
@@ -564,13 +564,13 @@ class KivyGlopsWindow(Widget):
             #context.add(m)
             this_glop._updatenormalmatrix = UpdateNormalMatrix()
             context.add(this_glop._updatenormalmatrix)
-            
+
             if this_glop._mesh is None:
                 this_glop.generate_kivy_mesh()
                 print("WARNING: glop had no mesh, so was generated when added to render context. Please ensure it is a KivyGlop and not a PyGlop (however, vertex indices misread could also lead to missing Mesh object).")
             print("_color_instruction: "+str(this_glop._color_instruction))
             print("u_color: "+str(this_glop.material.diffuse_color))
-            
+
             context.add(this_glop._color_instruction)  #TODO: asdf add as uniform instead
             if this_glop._mesh is not None:
                 context.add(this_glop._mesh)
@@ -582,15 +582,15 @@ class KivyGlopsWindow(Widget):
             if self.scene.glops is None:
                 self.scene.glops = list()
             self.scene.glops.append(this_glop)
-            
+
             self._meshes.add(context)
-            
+
             print("Appended Glop (count:"+str(len(self.scene.glops))+").")
-            
+
         except:
             print("ERROR: Could not finish "+participle+" in KivyGlops load_obj")
             view_traceback()
-    
+
     def set_world_boundary_by_object(self, thisGlopsMesh, use_x, use_y, use_z):
         self._world_cube = thisGlopsMesh
         if (self._world_cube is not None):
@@ -646,7 +646,7 @@ class KivyGlopsWindow(Widget):
         elif (index==2):
             result = "z"
         return result
-    
+
     def update_glsl(self, *largs):
         self.update_glops()
         rotation_multiplier_y = 0.0  # 1.0 is maximum speed
@@ -707,7 +707,7 @@ class KivyGlopsWindow(Widget):
 
             #print(str(self.camera_translate[0])+","+str(self.camera_translate[2])+" each coordinate should be between matching one in "+str(self._world_cube.get_min_x())+","+str(self._world_cube.get_min_z())+" and "+str(self._world_cube.get_max_x())+","+str(self._world_cube.get_max_z()))
             #print(str(self.camera_translate)+" each coordinate should be between matching one in "+str(self.world_boundary_min)+" and "+str(self.world_boundary_max))
-        
+
         for axis_index in range(0,3):
             if position_change[axis_index] is not None:
                 self.camera_translate[axis_index] += position_change[axis_index]
@@ -736,7 +736,7 @@ class KivyGlopsWindow(Widget):
             #print("No bounds")
             pass
         self.scene.prev_inbounds_camera_translate = self.camera_translate[0], self.camera_translate[1], self.camera_translate[2]
-            
+
         # else:
         #     self.camera_translate[0] += self.camera_walk_units_per_frame * moving_x
         #     self.camera_translate[2] += self.camera_walk_units_per_frame * moving_z
@@ -763,7 +763,7 @@ class KivyGlopsWindow(Widget):
         #0 is the angle (1, 2, and 3 are the matrix)
         self.look_point[0] = self.focal_distance * math.cos(self.camera_rotate_y[0])
         self.look_point[2] = self.focal_distance * math.sin(self.camera_rotate_y[0])
-        
+
         self.look_point[1] = 0.0  #(changed in "for" loop below) since y is up, and 1 is y, ignore index 1 when we are rotating on that axis
 
 
