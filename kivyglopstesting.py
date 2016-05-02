@@ -44,9 +44,18 @@ class MainForm(KivyGlopsWindow):
         #self.load_obj("colonnato.obj") #has memory errors and takes several minutes to load
         #self.load_obj("OfficeInterior.obj")
         
-        self.load_obj("OfficeInteriorWalkmesh.obj")
-        walkmesh_names = self.get_similar_names("floor")
-        self.load_obj("OfficeInterior.obj")
+        #self.load_obj("OfficeInteriorWalkmesh.obj")
+        #walkmesh_names = self.get_similar_names("floor")
+        #self.load_obj("OfficeInterior.obj")
+        #for name in walkmesh_names:
+        #    print("Found possible walkmesh: "+name)
+        #    is_ok = self.use_walkmesh(name, hide=True)
+
+        self.load_obj("C:\\Users\\jgustafson\\ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\town2lowpoly.obj")
+        #self.load_obj("R:\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\town2lowpoly.obj")
+        #self.load_obj("town2lowpoly.obj")
+        #town2lowpoly (including dependencies) is available from http://www.expertmultimedia.com/usingpython/resources/Environments,Outdoor-Manmade/seaport.zip
+        walkmesh_names = self.get_similar_names("walkmesh")
         for name in walkmesh_names:
             print("Found possible walkmesh: "+name)
             is_ok = self.use_walkmesh(name, hide=True)

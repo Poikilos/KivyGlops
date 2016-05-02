@@ -228,11 +228,11 @@ class WMaterial:
 
 
 #Also in pyglops.py; formerly dumpAsYAMLArray
-def append_dump_as_yaml_array(thisList, thisName, sourceList, tabStringMinimum):
+def append_dump_as_yaml_array(thisList, thisName, sourceList, this_min_tab):
     tabString="  "
-    thisList.append(tabStringMinimum+thisName+":")
+    thisList.append(this_min_tab+thisName+":")
     for i in range(0,len(sourceList)):
-        thisList.append(tabStringMinimum+tabString+"- "+str(sourceList[i]))
+        thisList.append(this_min_tab+tabString+"- "+str(sourceList[i]))
 
 
 class WObject:
@@ -269,15 +269,15 @@ class WObject:
             self._opening_comments = list()
         self._opening_comments.append(text)
 
-    def append_dump(self, thisList, tabStringMinimum):
+    def append_dump(self, thisList, this_min_tab):
         if self.source_path is not None:
-            thisList.append(tabStringMinimum+tabString+"source_path: "+self.source_path)
-        thisList = append_dump_as_yaml_array(thisList, "vertices",self.vertices,tabStringMinimum+tabString)
-        thisList = append_dump_as_yaml_array(thisList, "texcoords",self.texcoords,tabStringMinimum+tabString)
-        thisList = append_dump_as_yaml_array(thisList, "normals",self.normals,tabStringMinimum+tabString)
-        thisList = append_dump_as_yaml_array(thisList, "_vertex_strings",self._vertex_strings,tabStringMinimum+tabString)
-        thisList = append_dump_as_yaml_array(thisList, "parameter_space_vertices",self.parameter_space_vertices,tabStringMinimum+tabString)
-        thisList = append_dump_as_yaml_array(thisList, "faces",self.faces,tabStringMinimum+tabString)
+            thisList.append(this_min_tab+tabString+"source_path: "+self.source_path)
+        thisList = append_dump_as_yaml_array(thisList, "vertices",self.vertices,this_min_tab+tabString)
+        thisList = append_dump_as_yaml_array(thisList, "texcoords",self.texcoords,this_min_tab+tabString)
+        thisList = append_dump_as_yaml_array(thisList, "normals",self.normals,this_min_tab+tabString)
+        thisList = append_dump_as_yaml_array(thisList, "_vertex_strings",self._vertex_strings,this_min_tab+tabString)
+        thisList = append_dump_as_yaml_array(thisList, "parameter_space_vertices",self.parameter_space_vertices,this_min_tab+tabString)
+        thisList = append_dump_as_yaml_array(thisList, "faces",self.faces,this_min_tab+tabString)
 
 
 ILLUMINATIONMODEL_DESCRIPTION_STRINGS = ["Color on and Ambient off","Color on and Ambient on","Highlight on","Reflection on and Ray trace on","Transparency: Glass on, Reflection: Ray trace on","Reflection: Fresnel on and Ray trace on","Transparency: Refraction on, Reflection: Fresnel off and Ray trace on","Transparency: Refraction on, Reflection: Fresnel on and Ray trace on","Reflection on and Ray trace off","Transparency: Glass on, Reflection: Ray trace off","Casts shadows onto invisible surfaces"]
@@ -467,6 +467,10 @@ class WObjFile:
                 absolute_v_count = 0
                 absolute_vt_count = 0
                 absolute_vn_count = 0
+                individuated_v_count = 0
+                v_map = None
+                vt_map = None
+                vn_map = None
                 for line in open(filename, "r"):
                     line_strip = line.strip()
                     while ("\t" in line_strip):
@@ -505,6 +509,9 @@ class WObjFile:
                                         #vt_offset += len(this_object.texcoords)
                                         #vn_offset += len(this_object.normals)
                                     smoothing_group = None
+                                    v_map = dict()
+                                    vt_map = dict()
+                                    vn_map = dict()
                                     this_object = WObject(name=args_string)
                                     this_object.source_path = filename
                                     this_object.mtl_filename = this_mtl_filename
@@ -526,6 +533,9 @@ class WObjFile:
                                         #vt_offset += len(this_object.texcoords)
                                         #vn_offset += len(this_object.normals)
                                     smoothing_group = None
+                                    v_map = dict()
+                                    vt_map = dict()
+                                    vn_map = dict()
                                     this_object = WObject(name=args_string)
                                     this_object.source_path = filename
                                     this_object.mtl_filename = this_mtl_filename
@@ -619,6 +629,13 @@ class WObjFile:
                                                         vertex_number = this_wobject_v_count  # ok since adding it below
                                                     else:
                                                         print("  WARNING: vertex number 0 on obj is nonstandard and will be skipped")
+                                                    if absolute_v_index is not None:
+                                                        abs_v_i_s = str(absolute_v_index)
+                                                        if abs_v_i_s in v_map:
+                                                            absolute_v_index = None  # prevents copying same one to wobject again below
+                                                            vertex_number = v_map[abs_v_i_s]
+                                                        else:
+                                                            v_map[abs_v_i_s] = vertex_number
                                             if len(values)>=2:
                                                 values[FACE_TC] = values[FACE_TC].strip()
                                                 if len(values[FACE_TC])>0:  # if not blank string
@@ -632,6 +649,13 @@ class WObjFile:
                                                         texcoord_number = this_wobject_vt_count  # ok since adding it below
                                                     else:
                                                         print("  WARNING: texcoord number 0 on obj is nonstandard and will be skipped")
+                                                    if absolute_vt_index is not None:
+                                                        abs_vt_i_s = str(absolute_vt_index)
+                                                        if abs_vt_i_s in vt_map:
+                                                            absolute_vt_index = None  # prevents copying same one to wobject again below
+                                                            texcoord_number = vt_map[abs_vt_i_s]
+                                                        else:
+                                                            vt_map[abs_vt_i_s] = texcoord_number
                                             if len(values)>=3:
                                                 values[FACE_VN] = values[FACE_VN].strip()
                                                 if len(values[FACE_VN])>0:  # if not blank string
@@ -645,19 +669,30 @@ class WObjFile:
                                                         normal_number = this_wobject_vn_count  # ok since adding it below
                                                     else:
                                                         print("  WARNING: normal number 0 on obj is nonstandard and will be skipped")
-                                            if vertex_number is not None:
+                                                    if absolute_vn_index is not None:
+                                                        abs_vn_i_s = str(absolute_vn_index)
+                                                        if abs_vn_i_s in vn_map:
+                                                            absolute_vn_index = None  # prevents copying same one to wobject again below
+                                                            normal_number = vn_map[abs_vn_i_s]
+                                                        else:
+                                                            vn_map[abs_vn_i_s] = normal_number
+                                            if absolute_v_index is not None:
                                                 if this_object.vertices is None:
                                                     this_object.vertices = list()
+                                                v_num_s = str(vertex_number)
                                                 this_object.vertices.append(absolute_v_list[absolute_v_index])
+                                                individuated_v_count += 1
                                                 this_wobject_v_count += 1
-                                            if texcoord_number is not None:
+                                            if absolute_vt_index is not None:
                                                 if this_object.texcoords is None:
                                                     this_object.texcoords = list()
+                                                vt_num_s = str(texcoord_number)
                                                 this_object.texcoords.append(absolute_vt_list[absolute_vt_index])
                                                 this_wobject_vt_count += 1
-                                            if normal_number is not None:
+                                            if absolute_vn_index is not None:
                                                 if this_object.normals is None:
                                                     this_object.normals = list()
+                                                vn_num_s = str(normal_number)
                                                 this_object.normals.append(absolute_vn_list[absolute_vn_index])
                                                 this_wobject_vn_count += 1
 
@@ -703,6 +738,7 @@ class WObjFile:
                 #NOTE: "finalize_obj" code is no longer needed since offsets were already applied above and original format is kept intact (indices instead of opengl-style vertex info array)
                 if this_object is not None:
                     results.append(this_object)
+                    print(str(len(absolute_v_list))+" vertices loaded as "+str(individuated_v_count)+" vertices")
                     this_object = None
             else:
                 print("ERROR in get_wobjects_from_obj: missing file or cannot access '"+filename+"'")

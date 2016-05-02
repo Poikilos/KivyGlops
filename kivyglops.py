@@ -174,24 +174,25 @@ class KivyGlop(PyGlop, Widget):
 
     def generate_kivy_mesh(self):
         participle = "checking for texture"
-        self.lastLoadedFileName = self.get_texture_diffuse_filename()
+        self.last_loaded_path = self.get_texture_diffuse_path()
         this_texture_image = None
-        if self.lastLoadedFileName is not None:
+        if self.last_loaded_path is not None:
             participle = "getting image filename"
             try:
-                participle = "loading "+self.lastLoadedFileName
-                this_texture_image = Image(self.lastLoadedFileName)
+                participle = "loading "+self.last_loaded_path
+                this_texture_image = Image(self.last_loaded_path)
+                print("Loaded texture '"+self.last_loaded_path+"'")
             except:
-                print("Could not finish loading texture: " + self.lastLoadedFileName)
+                print("Could not finish loading texture: " + self.last_loaded_path)
                 view_traceback()
         else:
             if verbose_enable:
-                Logger.debug("Warning: no texture specified for glop named '"+thisMeshName+"'")
-                materialName = ""
+                Logger.debug("Warning: no texture specified for glop named '"+this_mesh_name+"'")
+                this_material_name = ""
                 if self.material is not None:
                     if self.material.name is not None:
-                        materialName = self.material.name
-                        Logger.debug("(material named '"+materialName+"')")
+                        this_material_name = self.material.name
+                        Logger.debug("(material named '"+this_material_name+"')")
                     else:
                         Logger.debug("(material with no name)")
                 else:
@@ -321,7 +322,7 @@ class KivyGlopsWindow(Widget):
         #self.canvas.add(this_texture)
         #self.canvas.add(Color(1, 1, 1, 1))
         #for this_glop_index in range(0,len(self.scene.glops)):
-        #    thisMeshName = ""
+        #    this_mesh_name = ""
         #    #thisMesh = KivyGlop()
         #    this_glop = self.scene.glops[this_glop_index]
         #    add_glop(this_glop)
@@ -549,9 +550,9 @@ class KivyGlopsWindow(Widget):
             self.selected_glop_index = len(self.scene.glops)
             self.selected_glop = this_glop
             context = this_glop.get_context()
-            thisMeshName = ""
+            this_mesh_name = ""
             if this_glop.name is not None:
-                thisMeshName = this_glop.name
+                this_mesh_name = this_glop.name
             this_glop._pushmatrix=PushMatrix()
             context.add(this_glop._pushmatrix)
             context.add(this_glop._translate_instruction)
@@ -568,7 +569,7 @@ class KivyGlopsWindow(Widget):
             if this_glop._mesh is None:
                 this_glop.generate_kivy_mesh()
                 print("WARNING: glop had no mesh, so was generated when added to render context. Please ensure it is a KivyGlop and not a PyGlop (however, vertex indices misread could also lead to missing Mesh object).")
-            print("_color_instruction: "+str(this_glop._color_instruction))
+            print("_color_instruction: "+str( (this_glop._color_instruction.r, this_glop._color_instruction.g, this_glop._color_instruction.b) ))
             print("u_color: "+str(this_glop.material.diffuse_color))
 
             context.add(this_glop._color_instruction)  #TODO: asdf add as uniform instead

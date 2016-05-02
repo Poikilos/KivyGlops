@@ -76,6 +76,7 @@ def get_nearest_vec3_on_vec3line_using_xz(a, b, c): #formerly PointSegmentDistan
     #as per http://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
     kMinSegmentLenSquared = 0.00000001 # adjust to suit.  If you use float, you'll probably want something like 0.000001f
     kEpsilon = 1.0E-14 # adjust to suit.  If you use floats, you'll probably want something like 1E-7f
+    #epsilon is the common name for the floating point error constant (needed since some base 10 numbers cannot be stored as IEEE 754 with absolute precision)
     #same as 1.0 * 10**-14 according to http://python-reference.readthedocs.io/en/latest/docs/float/scientific.html
     dx = c[0] - b[0]
     dy = c[2] - b[2]
@@ -287,12 +288,16 @@ class PyGlop:
         self._on_change_pivot()
         pass
 
-    def get_texture_diffuse_filename(self):  #formerly getTextureFileName(self):
+    def get_texture_diffuse_path(self):  #formerly getTextureFileName(self):
         result = None
         try:
             if self.material is not None:
                 if self.material.properties is not None:
                     result = self.material.properties["diffuse_path"]
+                    if not os.path.exists(result):
+                        try_path = os.path.join(self.source_path, result)
+                        if os.path.exists(try_path):
+                            result = try_path
         except:
             pass  #don't care
         if result is None:
@@ -462,25 +467,25 @@ class PyGlop:
                 #self.vertices[v2i + 3 + k] = n[k]
                 #self.vertices[v3i + 3 + k] = n[k]
 
-    def append_dump(self, thisList, tabStringMinimum):
-        thisList.append(tabStringMinimum+"Glop:")
+    def append_dump(self, thisList, this_min_tab):
+        thisList.append(this_min_tab+"Glop:")
         tabString="  "
         if self.name is not None:
-            thisList.append(tabStringMinimum+tabString+"name: "+self.name)
+            thisList.append(this_min_tab+tabString+"name: "+self.name)
         if self.vertices is not None:
             if add_dump_comments_enable:
-                thisList.append(tabStringMinimum+tabString+"#len(self.vertices)/self.vertex_depth:")
-            thisList.append(tabStringMinimum+tabString+"vertices_count: "+str(len(self.vertices)/self.vertex_depth))
+                thisList.append(this_min_tab+tabString+"#len(self.vertices)/self.vertex_depth:")
+            thisList.append(this_min_tab+tabString+"vertices_count: "+str(len(self.vertices)/self.vertex_depth))
         if self.indices is not None:
-            thisList.append(tabStringMinimum+tabString+"indices_count:"+str(len(self.indices)))
-        thisList.append(tabStringMinimum+tabString+"vertex_depth: "+str(self.vertex_depth))
+            thisList.append(this_min_tab+tabString+"indices_count:"+str(len(self.indices)))
+        thisList.append(this_min_tab+tabString+"vertex_depth: "+str(self.vertex_depth))
         if self.vertices is not None:
             if add_dump_comments_enable:
-                thisList.append(tabStringMinimum+tabString+"#len(self.vertices):")
-            thisList.append(tabStringMinimum+tabString+"vertices_info_len: "+str(len(self.vertices)))
-        thisList.append(tabStringMinimum+tabString+"POSITION_INDEX:"+str(self.POSITION_INDEX))
-        thisList.append(tabStringMinimum+tabString+"NORMAL_INDEX:"+str(self.NORMAL_INDEX))
-        thisList.append(tabStringMinimum+tabString+"COLOR_INDEX:"+str(self.COLOR_INDEX))
+                thisList.append(this_min_tab+tabString+"#len(self.vertices):")
+            thisList.append(this_min_tab+tabString+"vertices_info_len: "+str(len(self.vertices)))
+        thisList.append(this_min_tab+tabString+"POSITION_INDEX:"+str(self.POSITION_INDEX))
+        thisList.append(this_min_tab+tabString+"NORMAL_INDEX:"+str(self.NORMAL_INDEX))
+        thisList.append(this_min_tab+tabString+"COLOR_INDEX:"+str(self.COLOR_INDEX))
 
         component_index = 0
         component_offset = 0
@@ -489,62 +494,62 @@ class PyGlop:
             vertex_format_component = self.vertex_format[component_index]
             component_name_bytestring, component_len, component_type = vertex_format_component
             component_name = component_name_bytestring.decode("utf-8")
-            thisList.append(tabStringMinimum+tabString+component_name+".len:"+str(component_len))
-            thisList.append(tabStringMinimum+tabString+component_name+".type:"+str(component_type))
-            thisList.append(tabStringMinimum+tabString+component_name+".index:"+str(component_index))
-            thisList.append(tabStringMinimum+tabString+component_name+".offset:"+str(component_offset))
+            thisList.append(this_min_tab+tabString+component_name+".len:"+str(component_len))
+            thisList.append(this_min_tab+tabString+component_name+".type:"+str(component_type))
+            thisList.append(this_min_tab+tabString+component_name+".index:"+str(component_index))
+            thisList.append(this_min_tab+tabString+component_name+".offset:"+str(component_offset))
             component_index += 1
             component_offset += component_len
 
-        #thisList.append(tabStringMinimum+tabString+"POSITION_LEN:"+str(self.vertex_format[self.POSITION_INDEX][VFORMAT_VECTOR_LEN_INDEX]))
+        #thisList.append(this_min_tab+tabString+"POSITION_LEN:"+str(self.vertex_format[self.POSITION_INDEX][VFORMAT_VECTOR_LEN_INDEX]))
 
         if add_dump_comments_enable:
-            #thisList.append(tabStringMinimum+tabString+"#VFORMAT_VECTOR_LEN_INDEX:"+str(VFORMAT_VECTOR_LEN_INDEX))
-            thisList.append(tabStringMinimum+tabString+"#len(self.vertex_format):"+str(len(self.vertex_format)))
-            thisList.append(tabStringMinimum+tabString+"#COLOR_OFFSET:"+str(self.COLOR_OFFSET))
-            thisList.append(tabStringMinimum+tabString+"#len(self.vertex_format[self.COLOR_INDEX]):"+str(len(self.vertex_format[self.COLOR_INDEX])))
+            #thisList.append(this_min_tab+tabString+"#VFORMAT_VECTOR_LEN_INDEX:"+str(VFORMAT_VECTOR_LEN_INDEX))
+            thisList.append(this_min_tab+tabString+"#len(self.vertex_format):"+str(len(self.vertex_format)))
+            thisList.append(this_min_tab+tabString+"#COLOR_OFFSET:"+str(self.COLOR_OFFSET))
+            thisList.append(this_min_tab+tabString+"#len(self.vertex_format[self.COLOR_INDEX]):"+str(len(self.vertex_format[self.COLOR_INDEX])))
         channel_count = self.vertex_format[self.COLOR_INDEX][VFORMAT_VECTOR_LEN_INDEX]
         if add_dump_comments_enable:
-            thisList.append(tabStringMinimum+tabString+"#vertex_bytes_per_pixel:"+str(channel_count))
+            thisList.append(this_min_tab+tabString+"#vertex_bytes_per_pixel:"+str(channel_count))
 
 
         for k,v in sorted(self.properties.items()):
-            thisList.append(tabStringMinimum+tabString+k+": "+v)
+            thisList.append(this_min_tab+tabString+k+": "+v)
 
-        thisTextureFileName=self.get_texture_diffuse_filename()
+        thisTextureFileName=self.get_texture_diffuse_path()
         if thisTextureFileName is not None:
-            thisList.append(tabStringMinimum+tabString+"get_texture_diffuse_filename(): "+thisTextureFileName)
+            thisList.append(this_min_tab+tabString+"get_texture_diffuse_path(): "+thisTextureFileName)
 
-        #thisList=append_dump_as_yaml_array(thisList, "vertex_info_1D",self.vertices,tabStringMinimum+tabString)
+        #thisList=append_dump_as_yaml_array(thisList, "vertex_info_1D",self.vertices,this_min_tab+tabString)
         tabString="  "
         if add_dump_comments_enable:
-            thisList.append(tabStringMinimum+tabString+"#1D vertex info array, aka:")
-        thisList.append(tabStringMinimum+tabString+"vertices:")
+            thisList.append(this_min_tab+tabString+"#1D vertex info array, aka:")
+        thisList.append(this_min_tab+tabString+"vertices:")
         component_offset = 0
         vertex_actual_index = 0
         for i in range(0,len(self.vertices)):
             if add_dump_comments_enable:
                 if component_offset==0:
-                    thisList.append(tabStringMinimum+tabString+tabString+"#vertex ["+str(vertex_actual_index)+"]:")
+                    thisList.append(this_min_tab+tabString+tabString+"#vertex ["+str(vertex_actual_index)+"]:")
                 elif component_offset==self.COLOR_OFFSET:
-                    thisList.append(tabStringMinimum+tabString+tabString+"#  color:")
+                    thisList.append(this_min_tab+tabString+tabString+"#  color:")
                 elif component_offset==self._NORMAL_OFFSET:
-                    thisList.append(tabStringMinimum+tabString+tabString+"#  normal:")
+                    thisList.append(this_min_tab+tabString+tabString+"#  normal:")
                 elif component_offset==self._POSITION_OFFSET:
-                    thisList.append(tabStringMinimum+tabString+tabString+"#  position:")
+                    thisList.append(this_min_tab+tabString+tabString+"#  position:")
                 elif component_offset==self._TEXCOORD0_OFFSET:
-                    thisList.append(tabStringMinimum+tabString+tabString+"#  texcoords0:")
+                    thisList.append(this_min_tab+tabString+tabString+"#  texcoords0:")
                 elif component_offset==self._TEXCOORD1_OFFSET:
-                    thisList.append(tabStringMinimum+tabString+tabString+"#  texcoords1:")
-            thisList.append(tabStringMinimum+tabString+tabString+"- "+str(self.vertices[i]))
+                    thisList.append(this_min_tab+tabString+tabString+"#  texcoords1:")
+            thisList.append(this_min_tab+tabString+tabString+"- "+str(self.vertices[i]))
             component_offset += 1
             if component_offset==self.vertex_depth:
                 component_offset = 0
                 vertex_actual_index += 1
 
-        thisList.append(tabStringMinimum+tabString+"indices:")
+        thisList.append(this_min_tab+tabString+"indices:")
         for i in range(0,len(self.indices)):
-            thisList.append(tabStringMinimum+tabString+tabString+"- "+str(self.indices[i]))
+            thisList.append(this_min_tab+tabString+tabString+"- "+str(self.indices[i]))
 
 
     def on_vertex_format_change(self):
@@ -613,30 +618,30 @@ class PyGlopsMaterial:
         self.emissive_color = (0.0, 0.0, 0.0, 1.0)
         self.specular_exponent = 1.0
 
-    def append_dump(self, thisList, tabStringMinimum):
-        thisList.append(tabStringMinimum+"GlopsMaterial:")
+    def append_dump(self, thisList, this_min_tab):
+        thisList.append(this_min_tab+"GlopsMaterial:")
         tabString="  "
         if self.name is not None:
-            thisList.append(tabStringMinimum+tabString+"name: "+self.name)
+            thisList.append(this_min_tab+tabString+"name: "+self.name)
         if self.mtlFileName is not None:
-            thisList.append(tabStringMinimum+tabString+"mtlFileName: "+self.mtlFileName)
+            thisList.append(this_min_tab+tabString+"mtlFileName: "+self.mtlFileName)
         for k,v in sorted(self.properties.items()):
-            thisList.append(tabStringMinimum+tabString+k+": "+str(v))
+            thisList.append(this_min_tab+tabString+k+": "+str(v))
 
-
-def angles_to_angle_and_matrix(anglesXYZ):
-    angleAndMatrix = [0.0, 0.0, 0.0, 0.0]
-    for axisIndex in range(len(anglesXYZ)):
-        while anglesXYZ[axisIndex]<0:
-            anglesXYZ[axisIndex] += 360.0
-        if anglesXYZ[axisIndex] > angleAndMatrix[0]:
-            angleAndMatrix[0] = anglesXYZ[axisIndex]
-    if angleAndMatrix[0] > 0:
-        for axisIndex in range(len(anglesXYZ)):
-            angleAndMatrix[1+axisIndex] = anglesXYZ[axisIndex] / angleAndMatrix[0]
+#variable name ends in xyz so must be ready to be swizzled
+def angles_to_angle_and_matrix(angles_list_xyz):
+    result_angle_matrix = [0.0, 0.0, 0.0, 0.0]
+    for axisIndex in range(len(angles_list_xyz)):
+        while angles_list_xyz[axisIndex]<0:
+            angles_list_xyz[axisIndex] += 360.0
+        if angles_list_xyz[axisIndex] > result_angle_matrix[0]:
+            result_angle_matrix[0] = angles_list_xyz[axisIndex]
+    if result_angle_matrix[0] > 0:
+        for axisIndex in range(len(angles_list_xyz)):
+            result_angle_matrix[1+axisIndex] = angles_list_xyz[axisIndex] / result_angle_matrix[0]
     else:
-        angleAndMatrix[3] = .000001
-    return angleAndMatrix
+        result_angle_matrix[3] = .000001
+    return result_angle_matrix
 
 
 def theta_radians_from_rectangular(x, y):
@@ -659,11 +664,11 @@ def theta_radians_from_rectangular(x, y):
 
 
 #Also in wobjfile.py:
-def append_dump_as_yaml_array(thisList, thisName, sourceList, tabStringMinimum):
+def append_dump_as_yaml_array(thisList, thisName, sourceList, this_min_tab):
     tabString="  "
-    thisList.append(tabStringMinimum+thisName+":")
+    thisList.append(this_min_tab+thisName+":")
     for i in range(0,len(sourceList)):
-        thisList.append(tabStringMinimum+tabString+"- "+str(sourceList[i]))
+        thisList.append(this_min_tab+tabString+"- "+str(sourceList[i]))
 
 
 def new_tuple(length, fill_start=0, fill_len=-1, fill_value=1.0):
