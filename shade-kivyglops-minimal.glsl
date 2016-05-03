@@ -57,6 +57,7 @@ const float       c_zero = 0.0;
 const float       c_one = 1.0;
 const int         indx_zero = 0;
 const int         indx_one = 1;
+const int		NUM_TEXTURES = 1;
 
 
 uniform mat4 projection_mat; //Scene variable (since changes perspective)
@@ -87,7 +88,7 @@ varying vec4        v_back_color;
 varying vec4 normal_vec; //set by vertex shader below
 varying vec4 vertex_pos; //local glsl variable (computed from a_position and matrices)
 uniform mat4 normal_mat; //normal-only
-varying vec4 frag_color; //set by vertex shader below (according to v_color)
+varying vec4 frag_color; //set by vertex shader below (according to a_color)
 varying vec2 uv_vec; //set by glsl (derived from a_texcoord0 directly, but varying between vertices)
 
 //varying vec2 uv; //http://www.kickjs.org/example/shader_editor/shader_editor.html
@@ -118,7 +119,7 @@ void main()
     //vec4 pos = modelview_mat * vec4(a_position,1.0);
     gl_Position = projection_mat * pos;
 	// u_color = material_state.diffuse_color;
-    frag_color = v_color * u_color;
+    frag_color = a_color * u_color;
     uv_vec = a_texcoord0;
 
     //uv = a_texcoord0; //uv = uv1; //http://www.kickjs.org/example/shader_editor/shader_editor.html

@@ -29,7 +29,7 @@ class MainForm(KivyGlopsWindow):
         #self.canvas.shader.source = resource_find('simple1b.glsl')
         #self.canvas.shader.source = resource_find('shade-normal-only.glsl') #partially working
         #self.canvas.shader.source = resource_find('shade-texture-only.glsl')
-        self.canvas.shader.source = resource_find('shade-kivyglops-minimal.glsl')
+        #self.canvas.shader.source = resource_find('shade-kivyglops-minimal.glsl')
         #self.canvas.shader.source = resource_find('fresnel.glsl')
         #super(MainForm, self).__init__(**kwargs)
         #self.load_obj("barrels triangulated (Costinus at turbosquid).obj")
@@ -50,10 +50,11 @@ class MainForm(KivyGlopsWindow):
         #for name in walkmesh_names:
         #    print("Found possible walkmesh: "+name)
         #    is_ok = self.use_walkmesh(name, hide=True)
-
-        #self.load_obj("C:\\Users\\jgustafson\\ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\town2lowpoly.obj")
-        self.load_obj("C:\\Users\\owner\\ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\town2lowpoly.obj")
+        
+        self.load_obj("C:\\Users\\jgustafson\\ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\town2lowerpoly.obj")
+        #self.load_obj("C:\\Users\\owner\\ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\town2lowpoly.obj")
         #self.load_obj("R:\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\town2lowpoly.obj")
+        #self.load_obj("etc\\problematic mesh files\\town2floor_glrepeat.obj")
         #self.load_obj("town2lowpoly.obj")
         #town2lowpoly (including dependencies) is available from http://www.expertmultimedia.com/usingpython/resources/Environments,Outdoor-Manmade/seaport.zip
         walkmesh_names = self.get_similar_names("walkmesh")

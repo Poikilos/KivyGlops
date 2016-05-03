@@ -293,15 +293,21 @@ class PyGlop:
         try:
             if self.material is not None:
                 if self.material.properties is not None:
-                    result = self.material.properties["diffuse_path"]
-                    if not os.path.exists(result):
-                        try_path = os.path.join(self.source_path, result)
-                        if os.path.exists(try_path):
-                            result = try_path
+                    if "diffuse_path" in self.material.properties:
+                        result = self.material.properties["diffuse_path"]
+                        if not os.path.exists(result):
+                            try_path = os.path.join(os.path.dirname(os.path.abspath(self.source_path)), result)  #
+                            if os.path.exists(try_path):
+                                result = try_path
+                            else:
+                                print("Could not find texture (tried '"+str(try_path)+"'")
         except:
-            pass  #don't care
+            print("Could not finish get_texture_diffuse_path:")
+            view_traceback()
+            #pass  #don't care
         if result is None:
-            print("WARNING: no diffuse texture specified in Glop named '"+str(self.name)+"'")
+            if verbose_enable:
+                print("NOTE: no diffuse texture specified in Glop named '"+str(self.name)+"'")
         return result
 
     def get_min_x(self):
@@ -433,7 +439,7 @@ class PyGlop:
                 self.material.properties["diffuse_path"] = mtl_dict["map_Kd"]
                 #print("  NOTE: diffuse_path: "+self.material.properties["diffuse_path"])
             #else:
-                #print("  WARNING: No map_Kd among material keys "+str(mtl_dict.keys()))
+                #print("  WARNING: "+str(self.name)+" has no map_Kd among material keys "+','.join(mtl_dict.keys()))
 
         except:  # Exception:
             print("Could not finish set_textures_from_mtl_dict:")
@@ -1147,10 +1153,11 @@ class PyGlops:
                                 #if results is None:
                                 #    results = list()
                                 results.append(this_pyglop)
-                                if this_pyglop.name is not None:
-                                    print("appended glop named '"+this_pyglop.name+"'")
-                                else:
-                                    print("appended glop")
+                                if verbose_enable:
+                                    if this_pyglop.name is not None:
+                                        print("appended glop named '"+this_pyglop.name+"'")
+                                    else:
+                                        print("appended glop {name:None}")
                             else:
                                 print("ERROR: this_pyglop is None after converting from wobject")
                     else:

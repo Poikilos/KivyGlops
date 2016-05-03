@@ -1,0 +1,4 @@
+4 Gold Rings PROBLEMS
+* Uses mesh groups (g command)
+* 4 Gold Rings.mtl uses various values for Ns (needs to be implemented)
+* Objects are very far from 0,0,0

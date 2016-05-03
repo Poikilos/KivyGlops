@@ -180,8 +180,11 @@ class KivyGlop(PyGlop, Widget):
             participle = "getting image filename"
             try:
                 participle = "loading "+self.last_loaded_path
-                this_texture_image = Image(self.last_loaded_path)
-                print("Loaded texture '"+self.last_loaded_path+"'")
+                if os.path.isfile(self.last_loaded_path):
+                    this_texture_image = Image(self.last_loaded_path)
+                else:
+                    this_texture_image = Image(resource_find(self.last_loaded_path))
+                print("Loaded texture '"+str(self.last_loaded_path)+"'")
             except:
                 print("Could not finish loading texture: " + self.last_loaded_path)
                 view_traceback()
@@ -202,6 +205,7 @@ class KivyGlop(PyGlop, Widget):
         if len(self.vertices)>0:
             if (this_texture_image is not None):
                 this_texture = this_texture_image.texture
+                this_texture.wrap = 'repeat'  # does same as GL_REPEAT -- see https://gist.github.com/tshirtman/3868962#file-main-py-L15
 
             self._mesh = Mesh(
                     vertices=self.vertices,
@@ -210,7 +214,8 @@ class KivyGlop(PyGlop, Widget):
                     mode='triangles',
                     texture=this_texture,
                 )
-            print(str(len(self.vertices))+" vert(ex/ices)")
+            if verbose_enable:
+                print(str(len(self.vertices))+" vert(ex/ices)")
 
         else:
             print("WARNING: 0 vertices in glop")
@@ -480,10 +485,10 @@ class KivyGlopsWindow(Widget):
             results = list()
             for this_glop in self.scene.glops:
                 checked_count += 1
-                print("checked "+this_glop.name.lower())
+                #print("checked "+this_glop.name.lower())
                 if partial_name in this_glop.name.lower():
                     results.append(this_glop.name)
-        print("checked "+str(checked_count))
+        #print("checked "+str(checked_count))
         return results
 
     def load_obj(self,source_path, swapyz_enable=False, centered=False):
@@ -569,13 +574,14 @@ class KivyGlopsWindow(Widget):
             if this_glop._mesh is None:
                 this_glop.generate_kivy_mesh()
                 print("WARNING: glop had no mesh, so was generated when added to render context. Please ensure it is a KivyGlop and not a PyGlop (however, vertex indices misread could also lead to missing Mesh object).")
-            print("_color_instruction: "+str( (this_glop._color_instruction.r, this_glop._color_instruction.g, this_glop._color_instruction.b) ))
+            print("_color_instruction.r,.g,.b,.a: "+str( [this_glop._color_instruction.r, this_glop._color_instruction.g, this_glop._color_instruction.b, this_glop._color_instruction.a] ))
             print("u_color: "+str(this_glop.material.diffuse_color))
 
             context.add(this_glop._color_instruction)  #TODO: asdf add as uniform instead
             if this_glop._mesh is not None:
                 context.add(this_glop._mesh)
-                print("Added mesh to render context.")
+                if verbose_enable:
+                    print("Added mesh to render context.")
             else:
                 print("NOT adding mesh.")
             this_glop._popmatrix = PopMatrix()
@@ -586,7 +592,8 @@ class KivyGlopsWindow(Widget):
 
             self._meshes.add(context)
 
-            print("Appended Glop (count:"+str(len(self.scene.glops))+").")
+            if verbose_enable:
+                print("Appended Glop (count:"+str(len(self.scene.glops))+").")
 
         except:
             print("ERROR: Could not finish "+participle+" in KivyGlops load_obj")
@@ -715,12 +722,13 @@ class KivyGlopsWindow(Widget):
         if len(self.scene._walkmeshes)>0:
             if not self.is_in_any_walkmesh_xz(self.camera_translate):
                 #print("Out of bounds")
-                if self.scene.prev_inbounds_camera_translate is not None:
-                    self.camera_translate[0] = self.scene.prev_inbounds_camera_translate[0]
-                    self.camera_translate[1] = self.scene.prev_inbounds_camera_translate[1]
-                    self.camera_translate[2] = self.scene.prev_inbounds_camera_translate[2]
-                else:
-                    corrected_pos = self.get_nearest_walkmesh_vec3_using_xz( self.camera_translate )
+                corrected_pos = None
+                #if self.scene.prev_inbounds_camera_translate is not None:
+                #    self.camera_translate[0] = self.scene.prev_inbounds_camera_translate[0]
+                #    self.camera_translate[1] = self.scene.prev_inbounds_camera_translate[1]
+                #    self.camera_translate[2] = self.scene.prev_inbounds_camera_translate[2]
+                #else:
+                corrected_pos = self.get_nearest_walkmesh_vec3_using_xz( self.camera_translate )
                 if corrected_pos is not None:
                     pushed_angle = get_angle_between_two_vec3_xz(self.camera_translate, corrected_pos)
                     corrected_pos = get_pushed_vec3_xz_rad(corrected_pos, self.scene.camera_glop.hit_radius, pushed_angle)
@@ -728,8 +736,8 @@ class KivyGlopsWindow(Widget):
                     self.camera_translate[1] = corrected_pos[1]   # TODO: check y (vertical) axis against eye height and jump height etc
                     #+ self.scene.camera_glop.eye_height #no longer needed since swizzled to xz (get_nearest_walkmesh_vec3_using_xz returns original's y in return's y)
                     self.camera_translate[2] = corrected_pos[2]
-                else:
-                    print("ERROR: could not find point to bring player in bounds.")
+                #else:
+                #    print("ERROR: could not find point to bring player in bounds.")
             else:
                 #print("In bounds")
                 pass
