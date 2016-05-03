@@ -217,7 +217,7 @@ class PyGlop:
     _min_coords = None  #bounding cube minimums in local coordinates
     _max_coords = None  #bounding cube maximums in local coordinates
     _pivot_point = None  #TODO: asdf eliminate this--instead always use 0,0,0 and move vertices to change pivot; currently calculated from average of vertices if was imported from obj
-    feet_offset = None  # distance from center
+    foot_reach = None  # distance from center (such as root bone) to floor
     eye_height = None  # distance from floor
     hit_radius = None
     #IF ADDING NEW VARIABLE here, remember to update any copy functions (such as get_kivyglop_from_pyglop) or copy constructors in your subclass or calling program
@@ -1140,7 +1140,7 @@ class PyGlops:
                         for i in range(0,len(this_objfile.wobjects)):
                             participle = "getting wobject"
                             this_wobject = this_objfile.wobjects[i]
-                            participle = "converting wobject"
+                            participle = "converting wobject..."
                             this_pyglop = get_pyglop_from_wobject(this_wobject)
                             if this_pyglop is not None:
                                 participle = "appending pyglop to scene"

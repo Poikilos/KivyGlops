@@ -714,13 +714,13 @@ class KivyGlopsWindow(Widget):
                 self.camera_translate[axis_index] += position_change[axis_index]
         if len(self.scene._walkmeshes)>0:
             if not self.is_in_any_walkmesh_xz(self.camera_translate):
-                #print("Out of bounds") asdf
-                #if self.scene.prev_inbounds_camera_translate is not None:
-                #    self.camera_translate[0] = self.scene.prev_inbounds_camera_translate[0]
-                #    self.camera_translate[1] = self.scene.prev_inbounds_camera_translate[1]
-                #    self.camera_translate[2] = self.scene.prev_inbounds_camera_translate[2]
-                #else:
-                corrected_pos = self.get_nearest_walkmesh_vec3_using_xz( self.camera_translate )
+                #print("Out of bounds")
+                if self.scene.prev_inbounds_camera_translate is not None:
+                    self.camera_translate[0] = self.scene.prev_inbounds_camera_translate[0]
+                    self.camera_translate[1] = self.scene.prev_inbounds_camera_translate[1]
+                    self.camera_translate[2] = self.scene.prev_inbounds_camera_translate[2]
+                else:
+                    corrected_pos = self.get_nearest_walkmesh_vec3_using_xz( self.camera_translate )
                 if corrected_pos is not None:
                     pushed_angle = get_angle_between_two_vec3_xz(self.camera_translate, corrected_pos)
                     corrected_pos = get_pushed_vec3_xz_rad(corrected_pos, self.scene.camera_glop.hit_radius, pushed_angle)

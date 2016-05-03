@@ -23,7 +23,7 @@ import os
 
 
 class MainForm(KivyGlopsWindow):
-    
+
     #def __init__(self, **kwargs):
     def load_glops(self):
         #self.canvas.shader.source = resource_find('simple1b.glsl')
@@ -43,7 +43,7 @@ class MainForm(KivyGlopsWindow):
         #self.load_obj("pedestal-suzanne.obj")
         #self.load_obj("colonnato.obj") #has memory errors and takes several minutes to load
         #self.load_obj("OfficeInterior.obj")
-        
+
         #self.load_obj("OfficeInteriorWalkmesh.obj")
         #walkmesh_names = self.get_similar_names("floor")
         #self.load_obj("OfficeInterior.obj")
@@ -51,7 +51,8 @@ class MainForm(KivyGlopsWindow):
         #    print("Found possible walkmesh: "+name)
         #    is_ok = self.use_walkmesh(name, hide=True)
 
-        self.load_obj("C:\\Users\\jgustafson\\ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\town2lowpoly.obj")
+        #self.load_obj("C:\\Users\\jgustafson\\ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\town2lowpoly.obj")
+        self.load_obj("C:\\Users\\owner\\ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\town2lowpoly.obj")
         #self.load_obj("R:\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\town2lowpoly.obj")
         #self.load_obj("town2lowpoly.obj")
         #town2lowpoly (including dependencies) is available from http://www.expertmultimedia.com/usingpython/resources/Environments,Outdoor-Manmade/seaport.zip
@@ -59,8 +60,8 @@ class MainForm(KivyGlopsWindow):
         for name in walkmesh_names:
             print("Found possible walkmesh: "+name)
             is_ok = self.use_walkmesh(name, hide=True)
-    
-    
+
+
     def update_glops(self):
         if self.selected_glop is not None:
             if self.get_pressed("j"):
@@ -93,7 +94,7 @@ class MainForm(KivyGlopsWindow):
             #print("No glop selected.")
 
 
-            
+
         #this_index = get_index_by_name(self.scene.glops, "Suzanne")
         #if this_index>-1:
         #    if self.get_pressed("j"):
@@ -108,13 +109,13 @@ class MainForm(KivyGlopsWindow):
         #    print("using index "+str(this_index))
         #else:
         #    print("Not found.")
-        
+
         #this_glop = get_by_name(self.scene.glops, "Suzanne")
         #if this_glop is not None:
         #    this_glop.rotate_z_relative(1)
         #else:
         #    print("Not found.")
-        
+
 
 class KivyGlopsExampleApp(App):
     def build(self):
