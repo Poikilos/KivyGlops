@@ -1,0 +1,3 @@
+medseaport issues
+* (SOLVED: texture.wrap = "repeat") paving stones mesh requires GL_REPEAT
+* Empty.1239 has no vertices (formerly named Cube.1239)
