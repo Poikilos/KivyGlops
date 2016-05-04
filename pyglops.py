@@ -153,7 +153,10 @@ def get_distance_vec2_to_vec2line(a, b, c):
 
 #swizzle to 2d point on xz plane, then get distance
 def get_distance_vec3_xz(first_pt, second_pt):
-    return math.sqrt( (second_pt[0]-first_pt[0])**2 + (second_pt[2]-first_pt[2])**2 )
+    return math.sqrt( (second_pt[0]-first_pt[0])**2 + (second_pt[2]-first_pt[2])**2 )    
+
+def get_distance_vec3(first_pt, second_pt):
+    return math.sqrt((second_pt[0] - first_pt[0])**2 + (second_pt[1] - first_pt[1])**2 + (second_pt[2] - first_pt[2])**2)
 
 def get_distance_vec2(first_pt, second_pt):
     return math.sqrt( (second_pt[0]-first_pt[0])**2 + (second_pt[1]-first_pt[1])**2 )
@@ -180,32 +183,83 @@ def get_pushed_vec3_xz_rad(pos, r, theta):
     return pos[0]+push_x, pos[1], pos[2]+push_y
 
 #3 vector version of Developer's solution to <http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle> answered Jan 6 '14 at 11:32 by Developer
-def is_in_triangle(pt,v0, v1, v2):
-    '''checks if point pt(2) is inside triangle tri(3x2). @Developer'''
+#uses x and y values
+def is_in_triangle_HALFPLANES(check_pt,v0, v1, v2):
+    '''checks if point check_pt(2) is inside triangle tri(3x2). @Developer'''
     a = 1/(-v1[1]*v2[0]+v0[1]*(-v1[0]+v2[0])+v0[0]*(v1[1]-v2[1])+v1[0]*v2[1])
-    s = a*(v2[0]*v0[1]-v0[0]*v2[1]+(v2[1]-v0[1])*pt[0]+(v0[0]-v2[0])*pt[1])
+    s = a*(v2[0]*v0[1]-v0[0]*v2[1]+(v2[1]-v0[1])*check_pt[0]+(v0[0]-v2[0])*check_pt[1])
     if s<0: return False
-    else: t = a*(v0[0]*v1[1]-v1[0]*v0[1]+(v0[1]-v1[1])*pt[0]+(v1[0]-v0[0])*pt[1])
+    else: t = a*(v0[0]*v1[1]-v1[0]*v0[1]+(v0[1]-v1[1])*check_pt[0]+(v1[0]-v0[0])*check_pt[1])
     return ((t>0) and (1-s-t>0))
+
+def is_in_triangle_HALFPLANES_xz(check_pt,v0, v1, v2):
+    '''checks if point check_pt(2) is inside triangle tri(3x2). @Developer'''
+    a = 1/(-v1[2]*v2[0]+v0[2]*(-v1[0]+v2[0])+v0[0]*(v1[2]-v2[2])+v1[0]*v2[2])
+    s = a*(v2[0]*v0[2]-v0[0]*v2[2]+(v2[2]-v0[2])*check_pt[0]+(v0[0]-v2[0])*check_pt[2])
+    if s<0: return False
+    else: t = a*(v0[0]*v1[2]-v1[0]*v0[2]+(v0[2]-v1[2])*check_pt[0]+(v1[0]-v0[0])*check_pt[2])
+    return ((t>0) and (1-s-t>0))
+
+#float calcY(vec3 p1, vec3 p2, vec3 p3, float x, float z) {
+# as per http://stackoverflow.com/questions/5507762/how-to-find-z-by-arbitrary-x-y-coordinates-within-triangle-if-you-have-triangle
+#  edited Jan 21 '15 at 15:07 josh2112 answered Apr 1 '11 at 0:02 Martin Beckett
+def get_y_from_xz(p1, p2, p3, x, z):
+    det = (p2[2] - p3[2]) * (p1[0] - p3[0]) + (p3[0] - p2[0]) * (p1[2] - p3[2]);
+
+    l1 = ((p2[2] - p3[2]) * (x - p3[0]) + (p3[0] - p2[0]) * (z - p3[2])) / det;
+    l2 = ((p3[2] - p1[2]) * (x - p3[0]) + (p1[0] - p3[0]) * (z - p3[2])) / det;
+    l3 = 1.0 - l1 - l2;
+
+    return l1 * p1[1] + l2 * p2[1] + l3 * p3[1];
 
 #Did not yet read article: http://totologic.blogspot.fr/2014/01/accurate-point-in-triangle-test.html
 
 #Developer's solution to <http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle> answered Jan 6 '14 at 11:32 by Developer
-def PointInsideTriangle2(pt,tri):
-    '''checks if point pt(2) is inside triangle tri(3x2). @Developer'''
+def PointInsideTriangle2_vec2(check_pt,tri):
+    '''checks if point check_pt(2) is inside triangle tri(3x2). @Developer'''
     a = 1/(-tri[1,1]*tri[2,0]+tri[0,1]*(-tri[1,0]+tri[2,0])+tri[0,0]*(tri[1,1]-tri[2,1])+tri[1,0]*tri[2,1])
-    s = a*(tri[2,0]*tri[0,1]-tri[0,0]*tri[2,1]+(tri[2,1]-tri[0,1])*pt[0]+(tri[0,0]-tri[2,0])*pt[1])
+    s = a*(tri[2,0]*tri[0,1]-tri[0,0]*tri[2,1]+(tri[2,1]-tri[0,1])*check_pt[0]+(tri[0,0]-tri[2,0])*check_pt[1])
     if s<0: return False
-    else: t = a*(tri[0,0]*tri[1,1]-tri[1,0]*tri[0,1]+(tri[0,1]-tri[1,1])*pt[0]+(tri[1,0]-tri[0,0])*pt[1])
+    else: t = a*(tri[0,0]*tri[1,1]-tri[1,0]*tri[0,1]+(tri[0,1]-tri[1,1])*check_pt[0]+(tri[1,0]-tri[0,0])*check_pt[1])
     return ((t>0) and (1-s-t>0))
 
-#def IsInTriangle_Barymetric(px, py, p0x, p0y, p1x, p1y, p2x, p2y):
-#    Area = 1/2*(-p1y*p2x + p0y*(-p1x + p2x) + p0x*(p1y - p2y) + p1x*p2y)
-#    s = 1/(2*Area)*(p0y*p2x - p0x*p2y + (p2y - p0y)*px + (p0x - p2x)*py)
-#    t = 1/(2*Area)*(p0x*p1y - p0y*p1x + (p0y - p1y)*px + (p1x - p0x)*py)
+def is_in_triangle_coords(px, py, p0x, p0y, p1x, p1y, p2x, p2y):
+#    IsInTriangle_Barymetric
+    kEpsilon = 1.0E-14 # adjust to suit.  If you use floats, you'll probably want something like 1E-7f (added by expertmm)
+    Area = 1/2*(-p1y*p2x + p0y*(-p1x + p2x) + p0x*(p1y - p2y) + p1x*p2y)
+    s = 1/(2*Area)*(p0y*p2x - p0x*p2y + (p2y - p0y)*px + (p0x - p2x)*py)
+    t = 1/(2*Area)*(p0x*p1y - p0y*p1x + (p0y - p1y)*px + (p1x - p0x)*py)
 #    #TODO: fix situation where it fails when clockwise (see discussion at http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle )
-#    return  s>0 && t>0 && 1-s-t>0
+    return  s>kEpsilon and t>kEpsilon and 1-s-t>kEpsilon
 
+#swizzled to xz (uses index 0 and 2 of vec3)
+def is_in_triangle_xz(check_vec3, a_vec3, b_vec3, c_vec3):
+#    IsInTriangle_Barymetric
+    kEpsilon = 1.0E-14 # adjust to suit.  If you use floats, you'll probably want something like 1E-7f (added by expertmm)
+    Area = 1/2*(-b_vec3[2]*c_vec3[0] + a_vec3[2]*(-b_vec3[0] + c_vec3[0]) + a_vec3[0]*(b_vec3[2] - c_vec3[2]) + b_vec3[0]*c_vec3[2])
+    s = 1/(2*Area)*(a_vec3[2]*c_vec3[0] - a_vec3[0]*c_vec3[2] + (c_vec3[2] - a_vec3[2])*check_vec3[0] + (a_vec3[0] - c_vec3[0])*check_vec3[2])
+    t = 1/(2*Area)*(a_vec3[0]*b_vec3[2] - a_vec3[2]*b_vec3[0] + (a_vec3[2] - b_vec3[2])*check_vec3[0] + (b_vec3[0] - a_vec3[0])*check_vec3[2])
+#    #TODO: fix situation where it fails when clockwise (see discussion at http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle )
+    return  s>kEpsilon and t>kEpsilon and 1-s-t>kEpsilon
+
+#swizzled to xz (uses index 0 and 2 of vec3)
+def is_in_triangle_vec2(check_vec2, a_vec2, b_vec2, c_vec2):
+#    IsInTriangle_Barymetric
+    kEpsilon = 1.0E-14 # adjust to suit.  If you use floats, you'll probably want something like 1E-7f (added by expertmm)
+    Area = 1/2*(-b_vec2[1]*c_vec2[0] + a_vec2[1]*(-b_vec2[0] + c_vec2[0]) + a_vec2[0]*(b_vec2[1] - c_vec2[1]) + b_vec2[0]*c_vec2[1])
+    s = 1/(2*Area)*(a_vec2[1]*c_vec2[0] - a_vec2[0]*c_vec2[1] + (c_vec2[1] - a_vec2[1])*check_vec2[0] + (a_vec2[0] - c_vec2[0])*check_vec2[1])
+    t = 1/(2*Area)*(a_vec2[0]*b_vec2[1] - a_vec2[1]*b_vec2[0] + (a_vec2[1] - b_vec2[1])*check_vec2[0] + (b_vec2[0] - a_vec2[0])*check_vec2[1])
+#    #TODO: fix situation where it fails when clockwise (see discussion at http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle )
+    return  s>kEpsilon and t>kEpsilon and 1-s-t>kEpsilon
+
+#class ItemData:  #changed to dict
+#    name = None
+#    passive_bumper_command = None
+#    health_ratio = None
+    
+#    def __init__(self, bump="obtain"):
+#        health_ratio = 1.0
+#        passive_bumper_command = bump
 
 # PyGlop defines a single OpenGL-ready object. PyGlops should be used for importing, since one mesh file (such as obj) can contain several meshes. PyGlops handles the 3D scene.
 class PyGlop:
@@ -220,6 +274,8 @@ class PyGlop:
     foot_reach = None  # distance from center (such as root bone) to floor
     eye_height = None  # distance from floor
     hit_radius = None
+    item_dict = None
+    bump_enable = None
     #IF ADDING NEW VARIABLE here, remember to update any copy functions (such as get_kivyglop_from_pyglop) or copy constructors in your subclass or calling program
     vertex_format = None
     vertices = None
@@ -249,7 +305,10 @@ class PyGlop:
 
     def __init__(self):
         self.hit_radius = 0.1524  # .5' equals .1524m
+        self.bump_enable = False
         self.properties = {}
+        self.properties["inventory_index"] = -1
+        self.properties["inventory_items"] = []
         #formerly in MeshData:
         # order MUST match V_POS_INDEX etc above
         self.vertex_format = [
@@ -279,6 +338,45 @@ class PyGlop:
         #if result is None:
         #    print("WARNING: no material for Glop named '"+str(self.name)+"' (NOT YET IMPLEMENTED)")
         #return result
+        
+    def push_glop_item(self, this_glop, this_glop_index):
+        result = False
+        #item_dict = {}
+        item_dict = this_glop.item_dict
+        print("obtained item: "+str(item_dict))
+        #item_dict["glop_index"] = this_glop_index
+        #item_dict["glop_name"] = this_glop.name
+        for i in range(0,len(self.properties["inventory_items"])):
+            if self.properties["inventory_items"][i] == None:
+                self.properties["inventory_items"][i] = item_dict
+                result = True
+                break
+        if not result:
+            self.properties["inventory_items"].append(item_dict)
+            result = True
+        if result:
+            if self.properties["inventory_index"] < 0:
+                self.properties["inventory_index"] = 0
+        return result
+    
+    def select_next_inventory_slot(self, is_forward):
+        delta = 1
+        if not is_forward:
+            delta = -1
+        if len(self.properties["inventory_items"]) > 0:
+            self.properties["inventory_index"] += delta
+            if self.properties["inventory_index"] < 0:
+                self.properties["inventory_index"] = len(self.properties["inventory_items"]) - 1
+            elif self.properties["inventory_index"] >= len(self.properties["inventory_items"]):
+                self.properties["inventory_index"] = 0
+            this_item_dict = self.properties["inventory_items"][self.properties["inventory_index"]]
+            proper_name = ""
+            if "glop_name" in this_item_dict:
+                proper_name = this_item_dict["glop_name"]
+            print("Selected "+this_item_dict["name"]+" "+proper_name+" in slot "+str(self.properties["inventory_index"]))
+            print("You have "+str(len(self.properties["inventory_items"]))+" item(s).")
+        else:
+            print("You have 0 items.")
 
     def _on_change_pivot(self):
         pass
@@ -1094,6 +1192,19 @@ class PyGlops:
     _walkmeshes = None
     camera_glop = None
     prev_inbounds_camera_translate = None
+    _bumper_indices = None
+    _bumpee_indices = None
+
+    def __init__(self):
+        self.camera_glop = PyGlop()  #should be remade to subclass of PyGlop in subclass of PyGlops
+        self.camera_glop.eye_height = 1.7  # 1.7 since 5'10" person is ~1.77m, and eye down a bit
+        self.camera_glop.hit_radius = .1
+        self.camera_glop.name = "camera_glop"
+        self._walkmeshes = []
+        self.glops = []
+        self.materials = []
+        self._bumper_indices = []
+        self._bumpee_indices = []
 
     def append_dump(self, thisList):
         tabString="  "
@@ -1103,14 +1214,6 @@ class PyGlops:
         thisList.append("GlopsMaterials:")
         for i in range(0,len(self.materials)):
             self.materials[i].append_dump(thisList, tabString)
-
-    def __init__(self):
-        self.camera_glop = PyGlop()  #should be remade to subclass of PyGlop in subclass of PyGlops
-        self.camera_glop.eye_height = 1.7  # 1.7 since 5'10" person is ~1.77m, and eye down a bit
-        self.camera_glop.hit_radius = .1
-        self._walkmeshes = []
-        self.glops = []
-        self.materials = []
 
     def create_mesh(self):
         return PyGlop()

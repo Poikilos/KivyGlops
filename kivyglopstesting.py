@@ -21,7 +21,6 @@ from kivyglops import *
 import math
 import os
 
-
 class MainForm(KivyGlopsWindow):
 
     #def __init__(self, **kwargs):
@@ -51,18 +50,37 @@ class MainForm(KivyGlopsWindow):
         #    print("Found possible walkmesh: "+name)
         #    is_ok = self.use_walkmesh(name, hide=True)
 
-        self.load_obj("C:\\Users\\owner\\ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-minimal.obj")
+        #self.load_obj("C:\\Users\\owner\\ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-minimal.obj")
         #self.load_obj("C:\\Users\\jgustafson\\ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-minimal.obj")
         #self.load_obj("C:\\Users\\owner\\ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-lowpoly.obj")
         #self.load_obj("R:\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-lowpoly.obj")
+        self.load_obj("R:\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-minimal.obj")
         #self.load_obj("etc\\problematic mesh files\\medseaport1b-floor_glrepeat.obj")
         #self.load_obj("medseaport1b-lowpoly.obj")
         #medseaport1b-lowpoly (including dependencies) is available from http://www.expertmultimedia.com/usingpython/resources/Environments,Outdoor-Manmade/seaport.zip
+
+        self.load_obj("medseaport1b-minimal.obj")
+        
+        # If you already have existing walkmesh code,
+        # keep that instead of typing this section.
         walkmesh_names = self.get_similar_names("walkmesh")
         for name in walkmesh_names:
-            print("Found possible walkmesh: "+name)
+            print("Using walkmesh: "+name)
             is_ok = self.use_walkmesh(name, hide=True)
+        
+        item_dict = dict()
+        item_dict["name"] = "barrel"
+        item_dict["bump"] = "hide; obtain"
+        item_dict["use"] = "throw_arc"
 
+        barrel_names = self.get_similar_names("barrel")
+        for name in barrel_names:
+            print("Preparing item: "+name)
+            self.set_as_item(name, item_dict)
+    
+    #part 5 sound (for music part see load_glops)
+    def bump_glop(self, bumpee_name, bumper_name):
+        pass
 
     def update_glops(self):
         if self.selected_glop is not None:
@@ -91,11 +109,8 @@ class MainForm(KivyGlopsWindow):
                 self.selected_glop.translate_z_relative(-.1)
             elif self.get_pressed("="):
                 self.selected_glop.translate_z_relative(.1)
-
         #else:
             #print("No glop selected.")
-
-
 
         #this_index = get_index_by_name(self.scene.glops, "Suzanne")
         #if this_index>-1:

@@ -27,6 +27,18 @@ from common import *
 
 #TODO: try adding captions and 2d axis indicators in canvas.after, or try RenderContext
 sub_canvas_enable = False
+missing_bumper_warning_enable = True
+missing_bumpee_warning_enable = True
+missing_radius_warning_enable = True
+
+def get_distance_kivyglops(a_glop, b_glop):
+    return math.sqrt((b_glop._translate_instruction.x - a_glop._translate_instruction.x)**2 +
+                     (b_glop._translate_instruction.y - a_glop._translate_instruction.y)**2 +
+                     (b_glop._translate_instruction.z - a_glop._translate_instruction.z)**2)
+
+#def get_distance_vec3(a_vec3, b_vec3):
+#    return math.sqrt((b_vec3[0] - a_vec3[0])**2 + (b_vec3[1] - a_vec3[1])**2 + (b_vec3[2] - a_vec3[2])**2)
+
 
 
 class KivyGlopsMaterial(PyGlopsMaterial):
@@ -47,6 +59,7 @@ def get_kivyglop_from_pyglop(this_pyglop):
     this_kivyglop._pivot_point = this_pyglop._pivot_point
     this_kivyglop.eye_height = this_pyglop.eye_height
     this_kivyglop.hit_radius = this_pyglop.hit_radius
+    this_kivyglop.item_dict = this_pyglop.item_dict
 
     this_kivyglop.vertex_format = this_pyglop.vertex_format
     this_kivyglop.vertices = this_pyglop.vertices
@@ -228,6 +241,8 @@ class KivyGlops(PyGlops):
     def __init__(self):
         super(KivyGlops, self).__init__()
         self.camera_glop = get_kivyglop_from_pyglop(self.camera_glop)
+        self.glops.append(self.camera_glop)
+        self._bumper_indices.append(len(self.glops)-1)
 
     def create_mesh(self):
         #return PyGlops.create_mesh(self)
@@ -271,6 +286,44 @@ class KivyGlopsWindow(Widget):
     def update_glops(self):
         pass
 
+    def _internal_bump_glop(self, bumpee_index, bumper_index):
+        bumpee_name = self.scene.glops[bumpee_index].name
+        bumper_name = self.scene.glops[bumper_index].name
+        #result = 
+        self.bump_glop(bumpee_name, bumper_name)
+        #if result is not None:
+            #if "bumpee_name" in result:
+            #    bumpee_name = result["bumpee_name"]
+            #if "bumper_name" in result:
+            #    bumper_name = result["bumper_name"]
+        #asdf remove if bumpee_glop.item_dict.
+        
+        #if bumpee_name is not None and bumper_name is not None:
+        if self.scene.glops[bumpee_index].item_dict is not None:
+            if "bump" in self.scene.glops[bumpee_index].item_dict:
+                if self.scene.glops[bumpee_index].bump_enable:
+                    if self.scene.glops[bumpee_index].item_dict["bump"] is not None:
+                        commands = self.scene.glops[bumpee_index].item_dict["bump"].split(";")
+                        for command in commands:
+                            command = command.strip()
+                            if command=="hide":
+                                self._meshes.remove(self.scene.glops[bumpee_index].get_context())
+                                self.scene.glops[bumpee_index].bump_enable = False
+                                pass
+                            elif command=="obtain":
+                                self.scene.camera_glop.push_glop_item(self.scene.glops[bumpee_index], bumpee_index)
+                                print(command+" "+self.scene.glops[bumpee_index].name)
+                            else:
+                                print("Glop named "+str(self.scene.glops[bumpee_index].name)+" attempted an unknown glop command (in bump event): "+str(command))
+                    else:
+                        print("self.scene.glops[bumpee_index].item_dict['bump'] is None")
+            else:
+                print("self.scene.glops[bumpee_index].item_dict does not contain 'bump'")
+        else:
+            print("bumped object '"+str(self.scene.glops[bumpee_index].name)+"' is not an item")
+    
+    def bump_glop(self, bumpee_name, bumper_name):
+        return None
 
     def __init__(self, **kwargs):
         self.world_boundary_min = [None,None,None]
@@ -336,17 +389,23 @@ class KivyGlopsWindow(Widget):
         self.canvas.add(self._meshes)
 
         self.finalize_scene()
-        self.camera_translate = [0, self.scene.camera_glop.eye_height, 25] #x,y,z where y is up
+        
+        #x,y,z where y is up:
+        self.scene.camera_glop._translate_instruction.x = 0
+        self.scene.camera_glop._translate_instruction.y = self.scene.camera_glop.eye_height
+        self.scene.camera_glop._translate_instruction.z = 25
+        
+        
         #This is done axis by axis--the only reason is so that you can do OpenGL 6 (boundary detection) lesson from expertmultimedia.com starting with this file
         if self.world_boundary_min[0] is not None:
-            if self.camera_translate[0] < self.world_boundary_min[0]:
-                self.camera_translate[0] = self.world_boundary_min[0]
+            if self.scene.camera_glop._translate_instruction.x < self.world_boundary_min[0]:
+                self.scene.camera_glop._translate_instruction.x = self.world_boundary_min[0]
         if self.world_boundary_min[1] is not None:
-            if self.camera_translate[1] < self.world_boundary_min[1]: #this is done only for this axis, just so that you can do OpenGL 6 lesson using this file (boundary detection)
-                self.camera_translate[1] = self.world_boundary_min[1]
+            if self.scene.camera_glop._translate_instruction.y < self.world_boundary_min[1]: #this is done only for this axis, just so that you can do OpenGL 6 lesson using this file (boundary detection)
+                self.scene.camera_glop._translate_instruction.y = self.world_boundary_min[1]
         if self.world_boundary_min[2] is not None:
-            if self.camera_translate[2] < self.world_boundary_min[2]: #this is done only for this axis, just so that you can do OpenGL 6 lesson using this file (boundary detection)
-                self.camera_translate[2] = self.world_boundary_min[2]
+            if self.scene.camera_glop._translate_instruction.z < self.world_boundary_min[2]: #this is done only for this axis, just so that you can do OpenGL 6 lesson using this file (boundary detection)
+                self.scene.camera_glop._translate_instruction.z = self.world_boundary_min[2]
         self.camera_rotate_x = [0.0, 1.0, 0.0, 0.0]
         self.camera_rotate_y = [math.radians(-90.0), 0.0, 1.0, 0.0]
         self.camera_rotate_z = [0.0, 0.0, 0.0, 1.0]
@@ -449,22 +508,30 @@ class KivyGlopsWindow(Widget):
                 #TODO: use second_nearest_pt to get nearest location along the edge instead of warping to a vertex
         return result
 
-    def is_in_any_walkmesh_xz(self, pt):
-        result = False
+    def is_in_any_walkmesh_xz(self, check_vec3):
+        return get_container_walkmesh_and_poly_index_xz(check_vec3) is not None
+
+    def get_container_walkmesh_and_poly_index_xz(self, check_vec3):
+        result = None
         X_i = 0
-        Y_i = 2  # actually z since ignoring y
-        pt_2d = pt[X_i], pt[Y_i]
-        for this_glop in self.scene._walkmeshes:
+        second_i = 2  # actually z since ignoring y
+        check_vec2 = check_vec3[X_i], check_vec3[second_i]
+        walkmesh_i = 0
+        while walkmesh_i < len(self.scene._walkmeshes):
+            this_glop = self.scene._walkmeshes[walkmesh_i]
             X_i = this_glop._POSITION_OFFSET + 0
-            Y_i = this_glop._POSITION_OFFSET + 2
+            second_i = this_glop._POSITION_OFFSET + 2
             poly_side_count = 3
             poly_count = int(len(this_glop.indices)/poly_side_count)
             poly_offset = 0
             for poly_index in range(0,poly_count):
-                if (  is_in_triangle( pt_2d, (this_glop.vertices[this_glop.indices[poly_offset]*this_glop.vertex_depth+X_i],this_glop.vertices[this_glop.indices[poly_offset]*this_glop.vertex_depth+Y_i]), (this_glop.vertices[this_glop.indices[poly_offset+1]*this_glop.vertex_depth+X_i],this_glop.vertices[this_glop.indices[poly_offset+1]*this_glop.vertex_depth+Y_i]), (this_glop.vertices[this_glop.indices[poly_offset+2]*this_glop.vertex_depth+X_i],this_glop.vertices[this_glop.indices[poly_offset+2]*this_glop.vertex_depth+Y_i]) )  ):
-                    result = True
+                if (  is_in_triangle_vec2( check_vec2, (this_glop.vertices[this_glop.indices[poly_offset]*this_glop.vertex_depth+X_i],this_glop.vertices[this_glop.indices[poly_offset]*this_glop.vertex_depth+second_i]), (this_glop.vertices[this_glop.indices[poly_offset+1]*this_glop.vertex_depth+X_i],this_glop.vertices[this_glop.indices[poly_offset+1]*this_glop.vertex_depth+second_i]), (this_glop.vertices[this_glop.indices[poly_offset+2]*this_glop.vertex_depth+X_i],this_glop.vertices[this_glop.indices[poly_offset+2]*this_glop.vertex_depth+second_i]) )  ):
+                    result = dict()
+                    result["walkmesh_index"] = walkmesh_i
+                    result["polygon_offset"] = poly_offset
                     break
                 poly_offset += poly_side_count
+            walkmesh_i += 1
         return result
 
     def use_walkmesh(self, name, hide=True):
@@ -482,12 +549,14 @@ class KivyGlopsWindow(Widget):
         results = None
         checked_count = 0
         if partial_name is not None and len(partial_name)>0:
+            partial_name_lower = partial_name.lower()
             results = list()
             for this_glop in self.scene.glops:
                 checked_count += 1
                 #print("checked "+this_glop.name.lower())
-                if partial_name in this_glop.name.lower():
-                    results.append(this_glop.name)
+                if this_glop.name is not None:
+                    if partial_name_lower in this_glop.name.lower():
+                        results.append(this_glop.name)
         #print("checked "+str(checked_count))
         return results
 
@@ -519,16 +588,32 @@ class KivyGlopsWindow(Widget):
                                 #self.glops.append(this_glop)
                             #else:
                                 #self.glops[index]=this_glop
-                            new_glops[index].generate_kivy_mesh()
-                            self.add_glop(new_glops[index])
                             print("")
                             if (favorite_pivot_point is None):
                                 favorite_pivot_point = new_glops[index]._pivot_point
 
+                        print("  applying pivot points...")
+                        for index in range(0,len(new_glops)):
+                            #apply pivot point (so that glop's _translate_instruction is actually the center)
+                            vertex_count = int(len(new_glops[index].vertices)/new_glops[index].vertex_depth)
+                            v_offset = 0
+                            for v_number in range(0, vertex_count):
+                                new_glops[index].vertices[v_offset+new_glops[index]._POSITION_OFFSET+0] -= new_glops[index]._pivot_point[0]
+                                new_glops[index].vertices[v_offset+new_glops[index]._POSITION_OFFSET+1] -= new_glops[index]._pivot_point[1]
+                                new_glops[index].vertices[v_offset+new_glops[index]._POSITION_OFFSET+2] -= new_glops[index]._pivot_point[2]
+                                v_offset += new_glops[index].vertex_depth
+                            #print("    moving from "+str( (new_glops[index]._translate_instruction.x, new_glops[index]._translate_instruction.y, new_glops[index]._translate_instruction.z) ))
+                            new_glops[index]._translate_instruction.x = new_glops[index]._pivot_point[0]
+                            new_glops[index]._translate_instruction.y = new_glops[index]._pivot_point[1]
+                            new_glops[index]._translate_instruction.z = new_glops[index]._pivot_point[2]
+                            new_glops[index]._pivot_point = (0.0, 0.0, 0.0)
+                            new_glops[index].generate_kivy_mesh()
+                            self.add_glop(new_glops[index])
                         if centered:
                             #TODO: apply pivot point instead (change vertices as if pivot point were 0,0,0) to ensure translate 0 is world 0; instead of:
                             #center it (use only one pivot point, so all objects in obj file remain aligned with each other):
                             for index in range(0,len(new_glops)):
+                                print("  centering from "+str(favorite_pivot_point))
                                 new_glops[index].translate_x_relative(-1.0*favorite_pivot_point[0])
                                 new_glops[index].translate_y_relative(-1.0*favorite_pivot_point[1])
                                 new_glops[index].translate_z_relative(-1.0*favorite_pivot_point[2])
@@ -624,26 +709,26 @@ class KivyGlopsWindow(Widget):
     def rotate_view_relative(self, angle, axis_index):
         #TODO: delete this method and see solutions from http://stackoverflow.com/questions/10048018/opengl-camera-rotation
         #such as set_view method of https://github.com/sgolodetz/hesperus2/blob/master/Shipwreck/MapEditor/GUI/Camera.java
-        self.rotate_view_relative_around_point(angle, axis_index, self.camera_translate[0], self.camera_translate[1], self.camera_translate[2])
+        self.rotate_view_relative_around_point(angle, axis_index, self.scene.camera_glop._translate_instruction.x, self.scene.camera_glop._translate_instruction.y, self.scene.camera_glop._translate_instruction.z)
 
     def rotate_view_relative_around_point(self, angle, axis_index, around_x, around_y, around_z):
         if axis_index == 0:  #x
             # += around_y * math.tan(angle)
             self.camera_rotate_x[0] += angle
             # origin_distance = math.sqrt(around_z*around_z + around_y*around_y)
-            # self.camera_translate[2] += origin_distance * math.cos(-1*angle)
-            # self.camera_translate[1] += origin_distance * math.sin(-1*angle)
+            # self.scene.camera_glop._translate_instruction.z += origin_distance * math.cos(-1*angle)
+            # self.scene.camera_glop._translate_instruction.y += origin_distance * math.sin(-1*angle)
         elif axis_index == 1:  #y
             self.camera_rotate_y[0] += angle
             # origin_distance = math.sqrt(around_x*around_x + around_z*around_z)
-            # self.camera_translate[0] += origin_distance * math.cos(-1*angle)
-            # self.camera_translate[2] += origin_distance * math.sin(-1*angle)
+            # self.scene.camera_glop._translate_instruction.x += origin_distance * math.cos(-1*angle)
+            # self.scene.camera_glop._translate_instruction.z += origin_distance * math.sin(-1*angle)
         else:  #z
-            #self.camera_translate[2] += around_y * math.tan(angle)
+            #self.scene.camera_glop._translate_instruction.z += around_y * math.tan(angle)
             self.camera_rotate_z[0] += angle
             # origin_distance = math.sqrt(around_x*around_x + around_y*around_y)
-            # self.camera_translate[0] += origin_distance * math.cos(-1*angle)
-            # self.camera_translate[1] += origin_distance * math.sin(-1*angle)
+            # self.scene.camera_glop._translate_instruction.x += origin_distance * math.cos(-1*angle)
+            # self.scene.camera_glop._translate_instruction.y += origin_distance * math.sin(-1*angle)
 
     def axis_index_to_string(self,index):
         result = "unknown axis"
@@ -654,8 +739,44 @@ class KivyGlopsWindow(Widget):
         elif (index==2):
             result = "z"
         return result
-
-    def update_glsl(self, *largs):
+        
+    def set_as_item(self, glop_name, item_dict):
+        result = False
+        if glop_name is not None:
+            for i in range(0,len(self.scene.glops)):
+                if self.scene.glops[i].name == glop_name:
+                    self.scene.glops[i].item_dict = item_dict
+                    self.scene.glops[i].item_dict["glop_name"] = self.scene.glops[i].name
+                    self.scene.glops[i].item_dict["glop_index"] = i
+                    self.scene.glops[i].bump_enable = True
+                    self.scene._bumpee_indices.append(i)
+                    break
+        return result
+        
+    def use_selected(self, user_glop):
+        if user_glop.properties is not None:
+            if "inventory_items" in user_glop.properties:
+                if "inventory_index" in user_glop.properties:
+                    user_glop.properties["inventory_items"]["inventory_index"]
+                    this_item = user_glop.properties["inventory_items"]["inventory_index"]
+                    glop_index = None
+                    item_glop = None
+                    if "glop_index" in this_item:
+                        glop_index = this_item["glop_index"]
+                        if glop_index is not None:
+                            item_glop = self.scene.glops[glop_index]
+                    if item_glop is not None:
+                        if item_glop.item_dict is not None:
+                            if "use" in item_glop.item_dict:
+                                print(item_glop.item_dict["use"]+" "+item_glop.name)
+                            else:
+                                print(item_glop.name+" has no use.")
+                        else:
+                            print("ERROR: tried to use a glop that is not an item (this should not be in "+str(user_glop.name)+"'s inventory)")
+                    #self.scene.glops[
+                
+    
+    def update_glsl(self, *largs):        
         self.update_glops()
         rotation_multiplier_y = 0.0  # 1.0 is maximum speed
         moving_x = 0.0  # 1.0 is maximum speed
@@ -678,12 +799,15 @@ class KivyGlopsWindow(Widget):
         if self.player1_controller.get_pressed(Keyboard.keycodes["s"]):
             moving_z = -1.0
 
+        if self.player1_controller.get_pressed(Keyboard.keycodes["e"]):
+            self.use_selected(self.scene.camera_glop)
+
         if rotation_multiplier_y != 0.0:
             delta_y = self.camera_turn_radians_per_frame * rotation_multiplier_y
             self.camera_rotate_y[0] += delta_y
-            #origin_distance = math.sqrt(self.camera_translate[0]*self.camera_translate[0] + self.camera_translate[2]*self.camera_translate[2])
-            #self.camera_translate[0] -= origin_distance * math.cos(delta_y)
-            #self.camera_translate[2] -= origin_distance * math.sin(delta_y)
+            #origin_distance = math.sqrt(self.scene.camera_glop._translate_instruction.x*self.scene.camera_glop._translate_instruction.x + self.scene.camera_glop._translate_instruction.z*self.scene.camera_glop._translate_instruction.z)
+            #self.scene.camera_glop._translate_instruction.x -= origin_distance * math.cos(delta_y)
+            #self.scene.camera_glop._translate_instruction.z -= origin_distance * math.sin(delta_y)
 
         #xz coords of edges of 16x16 square are:
         # move in the direction you are facing
@@ -700,55 +824,72 @@ class KivyGlopsWindow(Widget):
             position_change[0] = self.camera_walk_units_per_frame*moving_r_multiplier * math.cos(self.camera_rotate_y[0]+moving_theta+math.radians(-90))
             position_change[2] = self.camera_walk_units_per_frame*moving_r_multiplier * math.sin(self.camera_rotate_y[0]+moving_theta+math.radians(-90))
 
-            # if (self.camera_translate[0] + move_by_x > self._world_cube.get_max_x()):
-            #     move_by_x = self._world_cube.get_max_x() - self.camera_translate[0]
-            #     print(str(self.camera_translate[0])+" of max_x:"+str(self._world_cube.get_max_x()))
-            # if (self.camera_translate[2] + move_by_z > self._world_cube.get_max_z()):
-            #     move_by_z = self._world_cube.get_max_z() - self.camera_translate[2]
-            #     print(str(self.camera_translate[2])+" of max_z:"+str(self._world_cube.get_max_z()))
-            # if (self.camera_translate[0] + move_by_x < self._world_cube.get_min_x()):
-            #     move_by_x = self._world_cube.get_min_x() - self.camera_translate[0]
-            #     print(str(self.camera_translate[0])+" of max_x:"+str(self._world_cube.get_max_x()))
-            # if (self.camera_translate[2] + move_by_z < self._world_cube.get_min_z()):
-            #     move_by_z = self._world_cube.get_min_z() - self.camera_translate[2]
-            #     print(str(self.camera_translate[2])+" of max_z:"+str(self._world_cube.get_max_z()))
+            # if (self.scene.camera_glop._translate_instruction.x + move_by_x > self._world_cube.get_max_x()):
+            #     move_by_x = self._world_cube.get_max_x() - self.scene.camera_glop._translate_instruction.x
+            #     print(str(self.scene.camera_glop._translate_instruction.x)+" of max_x:"+str(self._world_cube.get_max_x()))
+            # if (self.scene.camera_glop._translate_instruction.z + move_by_z > self._world_cube.get_max_z()):
+            #     move_by_z = self._world_cube.get_max_z() - self.scene.camera_glop._translate_instruction.z
+            #     print(str(self.scene.camera_glop._translate_instruction.z)+" of max_z:"+str(self._world_cube.get_max_z()))
+            # if (self.scene.camera_glop._translate_instruction.x + move_by_x < self._world_cube.get_min_x()):
+            #     move_by_x = self._world_cube.get_min_x() - self.scene.camera_glop._translate_instruction.x
+            #     print(str(self.scene.camera_glop._translate_instruction.x)+" of max_x:"+str(self._world_cube.get_max_x()))
+            # if (self.scene.camera_glop._translate_instruction.z + move_by_z < self._world_cube.get_min_z()):
+            #     move_by_z = self._world_cube.get_min_z() - self.scene.camera_glop._translate_instruction.z
+            #     print(str(self.scene.camera_glop._translate_instruction.z)+" of max_z:"+str(self._world_cube.get_max_z()))
 
-            #print(str(self.camera_translate[0])+","+str(self.camera_translate[2])+" each coordinate should be between matching one in "+str(self._world_cube.get_min_x())+","+str(self._world_cube.get_min_z())+" and "+str(self._world_cube.get_max_x())+","+str(self._world_cube.get_max_z()))
-            #print(str(self.camera_translate)+" each coordinate should be between matching one in "+str(self.world_boundary_min)+" and "+str(self.world_boundary_max))
+            #print(str(self.scene.camera_glop._translate_instruction.x)+","+str(self.scene.camera_glop._translate_instruction.z)+" each coordinate should be between matching one in "+str(self._world_cube.get_min_x())+","+str(self._world_cube.get_min_z())+" and "+str(self._world_cube.get_max_x())+","+str(self._world_cube.get_max_z()))
+            #print(str( (self.scene.camera_glop._translate_instruction.x, self.scene.camera_glop._translate_instruction.y, self.scene.camera_glop._translate_instruction.z) )+" each coordinate should be between matching one in "+str(self.world_boundary_min)+" and "+str(self.world_boundary_max))
 
-        for axis_index in range(0,3):
-            if position_change[axis_index] is not None:
-                self.camera_translate[axis_index] += position_change[axis_index]
+        #for axis_index in range(0,3):
+        if position_change[0] is not None:
+            self.scene.camera_glop._translate_instruction.x += position_change[0]
+        if position_change[1] is not None:
+            self.scene.camera_glop._translate_instruction.y += position_change[1]    
+        if position_change[2] is not None:
+            self.scene.camera_glop._translate_instruction.z += position_change[2]   
+             
         if len(self.scene._walkmeshes)>0:
-            if not self.is_in_any_walkmesh_xz(self.camera_translate):
+            walkmesh_result = self.get_container_walkmesh_and_poly_index_xz( (self.scene.camera_glop._translate_instruction.x, self.scene.camera_glop._translate_instruction.y, self.scene.camera_glop._translate_instruction.z) )
+            if walkmesh_result is None:
                 #print("Out of bounds")
                 corrected_pos = None
                 #if self.scene.prev_inbounds_camera_translate is not None:
-                #    self.camera_translate[0] = self.scene.prev_inbounds_camera_translate[0]
-                #    self.camera_translate[1] = self.scene.prev_inbounds_camera_translate[1]
-                #    self.camera_translate[2] = self.scene.prev_inbounds_camera_translate[2]
+                #    self.scene.camera_glop._translate_instruction.x = self.scene.prev_inbounds_camera_translate[0]
+                #    self.scene.camera_glop._translate_instruction.y = self.scene.prev_inbounds_camera_translate[1]
+                #    self.scene.camera_glop._translate_instruction.z = self.scene.prev_inbounds_camera_translate[2]
                 #else:
-                corrected_pos = self.get_nearest_walkmesh_vec3_using_xz( self.camera_translate )
+                corrected_pos = self.get_nearest_walkmesh_vec3_using_xz( (self.scene.camera_glop._translate_instruction.x, self.scene.camera_glop._translate_instruction.y, self.scene.camera_glop._translate_instruction.z) )
                 if corrected_pos is not None:
-                    pushed_angle = get_angle_between_two_vec3_xz(self.camera_translate, corrected_pos)
+                    pushed_angle = get_angle_between_two_vec3_xz( (self.scene.camera_glop._translate_instruction.x, self.scene.camera_glop._translate_instruction.y, self.scene.camera_glop._translate_instruction.z), corrected_pos)
                     corrected_pos = get_pushed_vec3_xz_rad(corrected_pos, self.scene.camera_glop.hit_radius, pushed_angle)
-                    self.camera_translate[0] = corrected_pos[0]
-                    self.camera_translate[1] = corrected_pos[1]   # TODO: check y (vertical) axis against eye height and jump height etc
+                    self.scene.camera_glop._translate_instruction.x = corrected_pos[0]
+                    self.scene.camera_glop._translate_instruction.y = corrected_pos[1]   # TODO: check y (vertical) axis against eye height and jump height etc
                     #+ self.scene.camera_glop.eye_height #no longer needed since swizzled to xz (get_nearest_walkmesh_vec3_using_xz returns original's y in return's y)
-                    self.camera_translate[2] = corrected_pos[2]
+                    self.scene.camera_glop._translate_instruction.z = corrected_pos[2]
                 #else:
                 #    print("ERROR: could not find point to bring player in bounds.")
             else:
                 #print("In bounds")
-                pass
+                result_glop = self.scene._walkmeshes[walkmesh_result["walkmesh_index"]]
+                X_i = result_glop._POSITION_OFFSET + 0
+                Y_i = result_glop._POSITION_OFFSET + 1
+                Z_i = result_glop._POSITION_OFFSET + 2
+                ground_tri = list()
+                ground_tri.append( (result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]]*result_glop.vertex_depth+X_i], result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]]*result_glop.vertex_depth+Y_i], result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]]*result_glop.vertex_depth+Z_i]) )
+                ground_tri.append( (result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]+1]*result_glop.vertex_depth+X_i], result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]+1]*result_glop.vertex_depth+Y_i], result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]+1]*result_glop.vertex_depth+Z_i]) )
+                ground_tri.append( (result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]+2]*result_glop.vertex_depth+X_i], result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]+2]*result_glop.vertex_depth+Y_i], result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]+2]*result_glop.vertex_depth+Z_i]) )
+                #self.scene.camera_glop._translate_instruction.y = ground_tri[0][1] + self.scene.camera_glop.eye_height
+                self.scene.camera_glop._translate_instruction.y = get_y_from_xz(ground_tri[0], ground_tri[1], ground_tri[2], self.scene.camera_glop._translate_instruction.x, self.scene.camera_glop._translate_instruction.z) + self.scene.camera_glop.eye_height
+                #if self.scene.prev_inbounds_camera_translate is None or self.scene.camera_glop._translate_instruction.y != self.scene.prev_inbounds_camera_translate[1]:
+                    #print("y:"+str(self.scene.camera_glop._translate_instruction.y))
         else:
             #print("No bounds")
             pass
-        self.scene.prev_inbounds_camera_translate = self.camera_translate[0], self.camera_translate[1], self.camera_translate[2]
+        self.scene.prev_inbounds_camera_translate = self.scene.camera_glop._translate_instruction.x, self.scene.camera_glop._translate_instruction.y, self.scene.camera_glop._translate_instruction.z
 
         # else:
-        #     self.camera_translate[0] += self.camera_walk_units_per_frame * moving_x
-        #     self.camera_translate[2] += self.camera_walk_units_per_frame * moving_z
+        #     self.scene.camera_glop._translate_instruction.x += self.camera_walk_units_per_frame * moving_x
+        #     self.scene.camera_glop._translate_instruction.z += self.camera_walk_units_per_frame * moving_z
 
         #if verbose_enable:
         #    print("update_glsl...")
@@ -776,16 +917,18 @@ class KivyGlopsWindow(Widget):
         self.look_point[1] = 0.0  #(changed in "for" loop below) since y is up, and 1 is y, ignore index 1 when we are rotating on that axis
 
 
-        #modelViewMatrix = modelViewMatrix.look_at(0,self.camera_translate[1],0, self.look_point[0], self.look_point[1], self.look_point[2], 0, 1, 0)
+        #modelViewMatrix = modelViewMatrix.look_at(0,self.scene.camera_glop._translate_instruction.y,0, self.look_point[0], self.look_point[1], self.look_point[2], 0, 1, 0)
 
         #Since what you are looking at should be relative to yourself, add camera's position:
-        for axis_index in range(3):
-            self.look_point[axis_index] += self.camera_translate[axis_index]
-
+        
+        self.look_point[0] += self.scene.camera_glop._translate_instruction.x
+        self.look_point[1] += self.scene.camera_glop._translate_instruction.y
+        self.look_point[2] += self.scene.camera_glop._translate_instruction.z
+        
         #must translate first, otherwise look_at will override position on rotation axis ('y' in this case)
-        modelViewMatrix.translate(self.camera_translate[0], self.camera_translate[1], self.camera_translate[2])
+        modelViewMatrix.translate(self.scene.camera_glop._translate_instruction.x, self.scene.camera_glop._translate_instruction.y, self.scene.camera_glop._translate_instruction.z)
         #moving_theta = theta_radians_from_rectangular(moving_x, moving_z)
-        modelViewMatrix = modelViewMatrix.look_at(self.camera_translate[0], self.camera_translate[1], self.camera_translate[2], self.look_point[0], self.look_point[1], self.look_point[2], 0, 1, 0)
+        modelViewMatrix = modelViewMatrix.look_at(self.scene.camera_glop._translate_instruction.x, self.scene.camera_glop._translate_instruction.y, self.scene.camera_glop._translate_instruction.z, self.look_point[0], self.look_point[1], self.look_point[2], 0, 1, 0)
 
 
 
@@ -794,7 +937,7 @@ class KivyGlopsWindow(Widget):
 
         self.canvas['projection_mat'] = proj
         self.canvas['modelview_mat'] = modelViewMatrix
-        self.canvas["camera_world_pos"] = self.camera_translate
+        self.canvas["camera_world_pos"] = [self.scene.camera_glop._translate_instruction.x, self.scene.camera_glop._translate_instruction.y, self.scene.camera_glop._translate_instruction.z]
         #if verbose_enable:
         #    Logger.debug("ok (update_glsl)")
 
@@ -811,7 +954,7 @@ class KivyGlopsWindow(Widget):
         if is_look_point_changed:
             pass
             #print("Now looking at "+str(self.look_point))
-            #print ("position: "+str(self.camera_translate)+"; self.camera_rotate_y[0]:"+str(self.camera_rotate_y[0]) +"("+str(math.degrees(self.camera_rotate_y[0]))+"degrees); moving_theta:"+str(math.degrees(moving_theta))+" degrees")
+            #print ("position: "+str( (self.scene.camera_glop._translate_instruction.x, self.scene.camera_glop._translate_instruction.y, self.scene.camera_glop._translate_instruction.z) )+"; self.camera_rotate_y[0]:"+str(self.camera_rotate_y[0]) +"("+str(math.degrees(self.camera_rotate_y[0]))+"degrees); moving_theta:"+str(math.degrees(moving_theta))+" degrees")
 
         if (self._previous_world_light_dir is None
             or self._previous_world_light_dir[0]!=self.canvas["_world_light_dir"][0]
@@ -828,7 +971,33 @@ class KivyGlopsWindow(Widget):
             self.canvas["_world_light_dir_eye_space"] = light_r * math.cos(light_theta), self.canvas["_world_light_dir_eye_space"][1], light_r * math.sin(light_theta)
             self._previous_camera_rotate_y_angle = self.camera_rotate_y[0]
             self._previous_world_light_dir = self.canvas["_world_light_dir"][0], self.canvas["_world_light_dir"][1], self.canvas["_world_light_dir"][2]
-
+        
+        global missing_bumper_warning_enable
+        global missing_bumpee_warning_enable
+        global missing_radius_warning_enable
+        for bumper_index_index in range(0,len(self.scene._bumper_indices)):
+            bumper_index = self.scene._bumper_indices[bumper_index_index]
+            bumper_name = self.scene.glops[bumper_index].name
+            for bumpee_index_index in range(0, len(self.scene._bumpee_indices)):
+                bumpee_index = self.scene._bumpee_indices[bumpee_index_index]
+                bumpee_name = self.scene.glops[bumpee_index].name
+                distance = get_distance_kivyglops(self.scene.glops[bumpee_index], self.scene.glops[bumper_index])
+                if self.scene.glops[bumpee_index].hit_radius is not None and self.scene.glops[bumpee_index].hit_radius is not None:
+                    total_hit_radius = self.scene.glops[bumpee_index].hit_radius+self.scene.glops[bumper_index].hit_radius
+                    if distance <= total_hit_radius:
+                        if self.scene.glops[bumpee_index].bump_enable:
+                            print("distance:"+str(total_hit_radius)+" <= total_hit_radius:"+str(total_hit_radius))
+                            print("bumper:"+str( (self.scene.glops[bumper_index]._translate_instruction.x, self.scene.glops[bumper_index]._translate_instruction.y, self.scene.glops[bumper_index]._translate_instruction.z) ) +
+                                  "; bumpee:"+str( (self.scene.glops[bumpee_index]._translate_instruction.x, self.scene.glops[bumpee_index]._translate_instruction.y, self.scene.glops[bumpee_index]._translate_instruction.z) ))
+                            self._internal_bump_glop(bumpee_index, bumper_index)
+                    else:
+                        #print("did not bump "+str(bumpee_name)+" (bumper is at "+str( (self.scene.camera_glop._translate_instruction.x,self.scene.camera_glop._translate_instruction.y,self.scene.camera_glop._translate_instruction.z) )+")")
+                        pass
+                else:
+                    if missing_radius_warning_enable:
+                        print("WARNING: Missing radius while checking bumpee named "+str(bumpee_name))
+                        missing_radius_warning_enable = False
+    #end update_glsl
 
     def define_rotate_angle(self, touch):
         x_angle = (touch.dx/self.width)*360
@@ -860,7 +1029,7 @@ class KivyGlopsWindow(Widget):
 
     def print_location(self):
         if verbose_enable:
-            Logger.debug("self.camera_walk_units_per_second:"+str(self.camera_walk_units_per_second)+"; location:"+str(self.camera_translate))
+            Logger.debug("self.camera_walk_units_per_second:"+str(self.camera_walk_units_per_second)+"; location:"+str( (self.scene.camera_glop._translate_instruction.x, self.scene.camera_glop._translate_instruction.y, self.scene.camera_glop._translate_instruction.z) ))
 
     def get_pressed(self, key_name):
         return self.player1_controller.get_pressed(Keyboard.keycodes[key_name])
@@ -880,9 +1049,9 @@ class KivyGlopsWindow(Widget):
         if keycode[1] == 'escape':
             pass  #keyboard.release()
         # elif keycode[1] == 'w':
-        #     self.camera_translate[2] += self.camera_walk_units_per_frame
+        #     self.scene.camera_glop._translate_instruction.z += self.camera_walk_units_per_frame
         # elif keycode[1] == 's':
-        #     self.camera_translate[2] -= self.camera_walk_units_per_frame
+        #     self.scene.camera_glop._translate_instruction.z -= self.camera_walk_units_per_frame
         # elif text == 'a':
         #     self.player1_controller["left"] = True
         #     self.moving_x = -1.0
@@ -907,6 +1076,10 @@ class KivyGlopsWindow(Widget):
                 print('Selected glop: '+this_name)
             else:
                 print('Select glop failed (maybe there are no glops loaded.')
+        elif keycode[1] == "x":
+            self.scene.camera_glop.select_next_inventory_slot(True)
+        elif keycode[1] == "z":
+            self.scene.camera_glop.select_next_inventory_slot(False)
         # else:
         #     print('Pressed unused key: ' + str(keycode) + "; text:"+text)
 
@@ -990,7 +1163,7 @@ class KivyGlopsWindow(Widget):
 #                     Logger.debug('Scale down')
 #
 #                 if scale:
-#                     self.camera_translate[2] += scale
-#                     print(scale, self.camera_translate)
+#                     self.scene.camera_glop._translate_instruction.z += scale
+#                     print(str(scale) + " " + (self.scene.camera_glop._translate_instruction.x, self.scene.camera_glop._translate_instruction.y, self.scene.camera_glop._translate_instruction.z) )
 #             self.update_glsl()
 
