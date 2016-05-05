@@ -25,6 +25,8 @@ from kivy.logger import Logger
 from kivy.vector import Vector
 from common import *
 
+import time
+
 #TODO: try adding captions and 2d axis indicators in canvas.after, or try RenderContext
 sub_canvas_enable = False
 missing_bumper_warning_enable = True
@@ -39,6 +41,11 @@ def get_distance_kivyglops(a_glop, b_glop):
 #def get_distance_vec3(a_vec3, b_vec3):
 #    return math.sqrt((b_vec3[0] - a_vec3[0])**2 + (b_vec3[1] - a_vec3[1])**2 + (b_vec3[2] - a_vec3[2])**2)
 
+def translate_to_string(_translate_instruction):
+    result = "None"
+    if _translate_instruction is not None:
+        result = str([_translate_instruction.x, _translate_instruction.y, _translate_instruction.z])
+    return result
 
 
 class KivyGlopsMaterial(PyGlopsMaterial):
@@ -541,7 +548,9 @@ class KivyGlopsWindow(Widget):
                 result = True
                 if this_glop not in self.scene._walkmeshes:
                     self.scene._walkmeshes.append(this_glop)
-                    self._meshes.remove(this_glop.get_context())
+                    print("Using walkmesh at "+translate_to_string(this_glop._translate_instruction))
+                    if hide:
+                        self._meshes.remove(this_glop.get_context())
                 break
         return result
 
@@ -740,8 +749,9 @@ class KivyGlopsWindow(Widget):
             result = "z"
         return result
         
-    def set_as_item(self, glop_name, item_dict):
+    def set_as_item(self, glop_name, template_dict):
         result = False
+        item_dict = get_dict_deepcopy(template_dict)  #prevents every item from being the same
         if glop_name is not None:
             for i in range(0,len(self.scene.glops)):
                 if self.scene.glops[i].name == glop_name:
@@ -754,27 +764,47 @@ class KivyGlopsWindow(Widget):
         return result
         
     def use_selected(self, user_glop):
-        if user_glop.properties is not None:
-            if "inventory_items" in user_glop.properties:
-                if "inventory_index" in user_glop.properties:
-                    user_glop.properties["inventory_items"]["inventory_index"]
-                    this_item = user_glop.properties["inventory_items"]["inventory_index"]
-                    glop_index = None
-                    item_glop = None
-                    if "glop_index" in this_item:
-                        glop_index = this_item["glop_index"]
-                        if glop_index is not None:
-                            item_glop = self.scene.glops[glop_index]
-                    if item_glop is not None:
-                        if item_glop.item_dict is not None:
-                            if "use" in item_glop.item_dict:
-                                print(item_glop.item_dict["use"]+" "+item_glop.name)
-                            else:
-                                print(item_glop.name+" has no use.")
-                        else:
-                            print("ERROR: tried to use a glop that is not an item (this should not be in "+str(user_glop.name)+"'s inventory)")
-                    #self.scene.glops[
-                
+        if user_glop is not None:
+            if user_glop.properties is not None:
+                if "inventory_items" in user_glop.properties:
+                    if "inventory_index" in user_glop.properties:
+                        try:
+                            user_glop.properties["inventory_items"][user_glop.properties["inventory_index"]]
+                            this_item = user_glop.properties["inventory_items"][user_glop.properties["inventory_index"]]
+                            glop_index = None
+                            item_glop = None
+                            if "glop_index" in this_item:
+                                glop_index = this_item["glop_index"]
+                                if glop_index is not None:
+                                    item_glop = self.scene.glops[glop_index]
+                            if item_glop is not None:
+                                if item_glop.item_dict is not None:
+                                    if "use" in item_glop.item_dict:
+                                        is_ready = True
+                                        if "cooldown" in item_glop.item_dict:
+                                            is_ready = False
+                                            if ("RUNTIME_last_used_time" not in item_glop.item_dict) or (time.time() - item_glop.item_dict["RUNTIME_last_used_time"]):
+                                                item_glop.item_dict["RUNTIME_last_used_time"] = time.time()
+                                                is_ready = True
+                                        if is_ready:
+                                            print(item_glop.item_dict["use"]+" "+item_glop.name)
+                                            if "throw_" in item_glop.item_dict["use"]:
+                                                user_glop.pop_glop_item(user_glop.properties["inventory_index"])
+                                                item_glop._translate_instruction.x = user_glop._translate_instruction.x
+                                                item_glop._translate_instruction.y = user_glop._translate_instruction.y
+                                                item_glop._translate_instruction.z = user_glop._translate_instruction.z
+                                                self._meshes.add(item_glop.get_context())
+                                    else:
+                                        print(item_glop.name+" has no use.")
+                                else:
+                                    print("ERROR: tried to use a glop that is not an item (this should not be in "+str(user_glop.name)+"'s inventory)")
+                            #self.scene.glops[
+                        except:
+                            print("user_glop.name:"+str(user_glop.name))
+                            print('user_glop.properties["inventory_index"]:'+str(user_glop.properties["inventory_index"]))
+                            print('len(user_glop.properties["inventory_items"]):'+str(len(user_glop.properties["inventory_items"])))
+                            print("Could not finish use_selected:")
+                            view_traceback()
     
     def update_glsl(self, *largs):        
         self.update_glops()

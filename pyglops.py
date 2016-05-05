@@ -338,21 +338,34 @@ class PyGlop:
         #if result is None:
         #    print("WARNING: no material for Glop named '"+str(self.name)+"' (NOT YET IMPLEMENTED)")
         #return result
-        
+    
+    def pop_glop_item(self, this_glop_index):
+        try:
+            self.properties["inventory_items"].pop(this_glop_index)
+            if this_glop_index == 0:
+                self.select_next_inventory_slot(True)
+            else:
+                self.select_next_inventory_slot(False)
+        except:
+            print("Could not finish pop_glop_item:")
+            view_traceback()
+    
     def push_glop_item(self, this_glop, this_glop_index):
         result = False
         #item_dict = {}
         item_dict = this_glop.item_dict
-        print("obtained item: "+str(item_dict))
-        #item_dict["glop_index"] = this_glop_index
-        #item_dict["glop_name"] = this_glop.name
+        
+        #item_dict["glop_index"] = this_glop_index  #already done when set as itme
+        #item_dict["glop_name"] = this_glop.name  #already done when set as itme
         for i in range(0,len(self.properties["inventory_items"])):
             if self.properties["inventory_items"][i] == None:
                 self.properties["inventory_items"][i] = item_dict
                 result = True
+                print("obtained item in slot "+str(i)+": "+str(item_dict))
                 break
         if not result:
             self.properties["inventory_items"].append(item_dict)
+            print("obtained item in new slot: "+str(item_dict))
             result = True
         if result:
             if self.properties["inventory_index"] < 0:

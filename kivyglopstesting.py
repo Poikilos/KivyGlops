@@ -59,19 +59,20 @@ class MainForm(KivyGlopsWindow):
         #self.load_obj("medseaport1b-lowpoly.obj")
         #medseaport1b-lowpoly (including dependencies) is available from http://www.expertmultimedia.com/usingpython/resources/Environments,Outdoor-Manmade/seaport.zip
 
-        self.load_obj("medseaport1b-minimal.obj")
+        #self.load_obj("medseaport1b-minimal.obj")
         
         # If you already have existing walkmesh code,
         # keep that instead of typing this section.
         walkmesh_names = self.get_similar_names("walkmesh")
         for name in walkmesh_names:
-            print("Using walkmesh: "+name)
+            print("Using walkmesh: ")
             is_ok = self.use_walkmesh(name, hide=True)
         
         item_dict = dict()
         item_dict["name"] = "barrel"
         item_dict["bump"] = "hide; obtain"
         item_dict["use"] = "throw_arc"
+        item_dict["cooldown"] = .7
 
         barrel_names = self.get_similar_names("barrel")
         for name in barrel_names:
