@@ -142,13 +142,13 @@ class KivyGlop(PyGlop, Widget):
     def rotate_z_relative(self, angle):
         self._rotate_instruction_z.angle += angle
 
-    def translate_x_relative(self, distance):
+    def move_x_relative(self, distance):
         self._translate_instruction.x += distance
 
-    def translate_y_relative(self, distance):
+    def move_y_relative(self, distance):
         self._translate_instruction.y += distance
 
-    def translate_z_relative(self, distance):
+    def move_z_relative(self, distance):
         self._translate_instruction.z += distance
 
     def transform_pivot_to_geometry(self):
@@ -191,6 +191,22 @@ class KivyGlop(PyGlop, Widget):
         #print("_on_change_scale_instruction for object named '"+this_name+"'")
         #print ("_pivot_point:"+str(self._pivot_point))
         #print ("_pivot_scaled_point:"+str(self._pivot_scaled_point))
+
+    def apply_translate(self):
+        vertex_count = int(len(self.vertices)/self.vertex_depth)
+        v_offset = 0
+        for v_number in range(0, vertex_count):
+            self.vertices[v_offset+self._POSITION_OFFSET+0] -= self._translate_instruction.x
+            self.vertices[v_offset+self._POSITION_OFFSET+1] -= self._translate_instruction.y
+            self.vertices[v_offset+self._POSITION_OFFSET+2] -= self._translate_instruction.z
+            self._pivot_point = (self._pivot_point[0] - self._translate_instruction.x,
+                                 self._pivot_point[1] - self._translate_instruction.y,
+                                 self._pivot_point[2] - self._translate_instruction.z)
+            self._translate_instruction.x = 0.0
+            self._translate_instruction.y = 0.0
+            self._translate_instruction.z = 0.0
+            v_offset += self.vertex_depth
+        self.apply_pivot()
 
     def generate_kivy_mesh(self):
         participle = "checking for texture"
@@ -543,14 +559,17 @@ class KivyGlopsWindow(Widget):
 
     def use_walkmesh(self, name, hide=True):
         result = False
-        for this_glop in self.scene.glops:
-            if this_glop.name == name:
+        #for this_glop in self.scene.glops:
+        for index in range(0, len(self.scene.glops)):
+            if self.scene.glops[index].name == name:
                 result = True
-                if this_glop not in self.scene._walkmeshes:
-                    self.scene._walkmeshes.append(this_glop)
-                    print("Using walkmesh at "+translate_to_string(this_glop._translate_instruction))
+                if self.scene.glops[index] not in self.scene._walkmeshes:
+                    self.scene._walkmeshes.append(self.scene.glops[index])
+                    print("Applying walkmesh translate "+translate_to_string(self.scene.glops[index]._translate_instruction))
+                    self.scene.glops[index].apply_translate()
+                    print("  pivot:"+str(self.scene.glops[index]._pivot_point))
                     if hide:
-                        self._meshes.remove(this_glop.get_context())
+                        self._meshes.remove(self.scene.glops[index].get_context())
                 break
         return result
 
@@ -568,8 +587,8 @@ class KivyGlopsWindow(Widget):
                         results.append(this_glop.name)
         #print("checked "+str(checked_count))
         return results
-
-    def load_obj(self,source_path, swapyz_enable=False, centered=False):
+        
+    def load_obj(self, source_path, swapyz_enable=False, centered=False):
         if swapyz_enable:
             print("NOT YET IMPLEMENTED: swapyz_enable")
         if source_path is not None:
@@ -604,18 +623,12 @@ class KivyGlopsWindow(Widget):
                         print("  applying pivot points...")
                         for index in range(0,len(new_glops)):
                             #apply pivot point (so that glop's _translate_instruction is actually the center)
-                            vertex_count = int(len(new_glops[index].vertices)/new_glops[index].vertex_depth)
-                            v_offset = 0
-                            for v_number in range(0, vertex_count):
-                                new_glops[index].vertices[v_offset+new_glops[index]._POSITION_OFFSET+0] -= new_glops[index]._pivot_point[0]
-                                new_glops[index].vertices[v_offset+new_glops[index]._POSITION_OFFSET+1] -= new_glops[index]._pivot_point[1]
-                                new_glops[index].vertices[v_offset+new_glops[index]._POSITION_OFFSET+2] -= new_glops[index]._pivot_point[2]
-                                v_offset += new_glops[index].vertex_depth
+                            prev_pivot = new_glops[index]._pivot_point[0], new_glops[index]._pivot_point[1], new_glops[index]._pivot_point[2]
+                            new_glops[index].apply_pivot()
                             #print("    moving from "+str( (new_glops[index]._translate_instruction.x, new_glops[index]._translate_instruction.y, new_glops[index]._translate_instruction.z) ))
-                            new_glops[index]._translate_instruction.x = new_glops[index]._pivot_point[0]
-                            new_glops[index]._translate_instruction.y = new_glops[index]._pivot_point[1]
-                            new_glops[index]._translate_instruction.z = new_glops[index]._pivot_point[2]
-                            new_glops[index]._pivot_point = (0.0, 0.0, 0.0)
+                            new_glops[index]._translate_instruction.x = prev_pivot[0]
+                            new_glops[index]._translate_instruction.y = prev_pivot[1]
+                            new_glops[index]._translate_instruction.z = prev_pivot[2]
                             new_glops[index].generate_kivy_mesh()
                             self.add_glop(new_glops[index])
                         if centered:
@@ -623,9 +636,9 @@ class KivyGlopsWindow(Widget):
                             #center it (use only one pivot point, so all objects in obj file remain aligned with each other):
                             for index in range(0,len(new_glops)):
                                 print("  centering from "+str(favorite_pivot_point))
-                                new_glops[index].translate_x_relative(-1.0*favorite_pivot_point[0])
-                                new_glops[index].translate_y_relative(-1.0*favorite_pivot_point[1])
-                                new_glops[index].translate_z_relative(-1.0*favorite_pivot_point[2])
+                                new_glops[index].move_x_relative(-1.0*favorite_pivot_point[0])
+                                new_glops[index].move_y_relative(-1.0*favorite_pivot_point[1])
+                                new_glops[index].move_z_relative(-1.0*favorite_pivot_point[2])
                                 #TODO: new_glops[index].apply_translate()
                                 #TODO: new_glops[index].reset_translate()
 
@@ -759,6 +772,7 @@ class KivyGlopsWindow(Widget):
                     self.scene.glops[i].item_dict["glop_name"] = self.scene.glops[i].name
                     self.scene.glops[i].item_dict["glop_index"] = i
                     self.scene.glops[i].bump_enable = True
+                    self.scene.glops[i].hit_radius = 1.0
                     self.scene._bumpee_indices.append(i)
                     break
         return result
@@ -784,8 +798,11 @@ class KivyGlopsWindow(Widget):
                                         if "cooldown" in item_glop.item_dict:
                                             is_ready = False
                                             if ("RUNTIME_last_used_time" not in item_glop.item_dict) or (time.time() - item_glop.item_dict["RUNTIME_last_used_time"]):
+                                                
+                                                if ("RUNTIME_last_used_time" in item_glop.item_dict):
+                                                    #Don't assume cooled down when obtained, otherwise rapid firing items will be allowed
+                                                    is_ready = True
                                                 item_glop.item_dict["RUNTIME_last_used_time"] = time.time()
-                                                is_ready = True
                                         if is_ready:
                                             print(item_glop.item_dict["use"]+" "+item_glop.name)
                                             if "throw_" in item_glop.item_dict["use"]:

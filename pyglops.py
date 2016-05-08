@@ -338,6 +338,16 @@ class PyGlop:
         #if result is None:
         #    print("WARNING: no material for Glop named '"+str(self.name)+"' (NOT YET IMPLEMENTED)")
         #return result
+
+    def apply_pivot(self):
+        vertex_count = int(len(self.vertices)/self.vertex_depth)
+        v_offset = 0
+        for v_number in range(0, vertex_count):
+            self.vertices[v_offset+self._POSITION_OFFSET+0] -= self._pivot_point[0]
+            self.vertices[v_offset+self._POSITION_OFFSET+1] -= self._pivot_point[1]
+            self.vertices[v_offset+self._POSITION_OFFSET+2] -= self._pivot_point[2]
+            v_offset += self.vertex_depth
+        self._pivot_point = (0.0, 0.0, 0.0)
     
     def pop_glop_item(self, this_glop_index):
         try:
