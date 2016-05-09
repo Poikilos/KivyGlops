@@ -783,39 +783,39 @@ class KivyGlopsWindow(Widget):
                 if "inventory_items" in user_glop.properties:
                     if "inventory_index" in user_glop.properties:
                         try:
-                            user_glop.properties["inventory_items"][user_glop.properties["inventory_index"]]
-                            this_item = user_glop.properties["inventory_items"][user_glop.properties["inventory_index"]]
-                            glop_index = None
-                            item_glop = None
-                            if "glop_index" in this_item:
-                                glop_index = this_item["glop_index"]
-                                if glop_index is not None:
-                                    item_glop = self.scene.glops[glop_index]
-                            if item_glop is not None:
-                                if item_glop.item_dict is not None:
-                                    if "use" in item_glop.item_dict:
-                                        is_ready = True
-                                        if "cooldown" in item_glop.item_dict:
-                                            is_ready = False
-                                            if ("RUNTIME_last_used_time" not in item_glop.item_dict) or (time.time() - item_glop.item_dict["RUNTIME_last_used_time"]):
-                                                
-                                                if ("RUNTIME_last_used_time" in item_glop.item_dict):
-                                                    #Don't assume cooled down when obtained, otherwise rapid firing items will be allowed
-                                                    is_ready = True
-                                                item_glop.item_dict["RUNTIME_last_used_time"] = time.time()
-                                        if is_ready:
-                                            print(item_glop.item_dict["use"]+" "+item_glop.name)
-                                            if "throw_" in item_glop.item_dict["use"]:
-                                                user_glop.pop_glop_item(user_glop.properties["inventory_index"])
-                                                item_glop._translate_instruction.x = user_glop._translate_instruction.x
-                                                item_glop._translate_instruction.y = user_glop._translate_instruction.y
-                                                item_glop._translate_instruction.z = user_glop._translate_instruction.z
-                                                self._meshes.add(item_glop.get_context())
+                            if user_glop.properties["inventory_index"] > -1:
+                                user_glop.properties["inventory_items"][user_glop.properties["inventory_index"]]
+                                this_item = user_glop.properties["inventory_items"][user_glop.properties["inventory_index"]]
+                                glop_index = None
+                                item_glop = None
+                                if "glop_index" in this_item:
+                                    glop_index = this_item["glop_index"]
+                                    if glop_index is not None:
+                                        item_glop = self.scene.glops[glop_index]
+                                if item_glop is not None:
+                                    if item_glop.item_dict is not None:
+                                        if "use" in item_glop.item_dict:
+                                            is_ready = True
+                                            if "cooldown" in item_glop.item_dict:
+                                                is_ready = False
+                                                if ("RUNTIME_last_used_time" not in item_glop.item_dict) or (time.time() - item_glop.item_dict["RUNTIME_last_used_time"]):
+                                                    if ("RUNTIME_last_used_time" in item_glop.item_dict):
+                                                        is_ready = True
+                                                    #else Don't assume cooled down when obtained, otherwise rapid firing items will be allowed
+                                                    item_glop.item_dict["RUNTIME_last_used_time"] = time.time()
+                                            if is_ready:
+                                                print(item_glop.item_dict["use"]+" "+item_glop.name)
+                                                if "throw_" in item_glop.item_dict["use"]:
+                                                    user_glop.pop_glop_item(user_glop.properties["inventory_index"])
+                                                    item_glop._translate_instruction.x = user_glop._translate_instruction.x
+                                                    item_glop._translate_instruction.y = user_glop._translate_instruction.y
+                                                    item_glop._translate_instruction.z = user_glop._translate_instruction.z
+                                                    self._meshes.add(item_glop.get_context())
+                                        else:
+                                            print(item_glop.name+" has no use.")
                                     else:
-                                        print(item_glop.name+" has no use.")
-                                else:
-                                    print("ERROR: tried to use a glop that is not an item (this should not be in "+str(user_glop.name)+"'s inventory)")
-                            #self.scene.glops[
+                                        print("ERROR: tried to use a glop that is not an item (this should not be in "+str(user_glop.name)+"'s inventory)")
+                                #self.scene.glops[
                         except:
                             print("user_glop.name:"+str(user_glop.name))
                             print('user_glop.properties["inventory_index"]:'+str(user_glop.properties["inventory_index"]))
@@ -846,7 +846,7 @@ class KivyGlopsWindow(Widget):
         if self.player1_controller.get_pressed(Keyboard.keycodes["s"]):
             moving_z = -1.0
 
-        if self.player1_controller.get_pressed(Keyboard.keycodes["e"]):
+        if self.player1_controller.get_pressed(Keyboard.keycodes["enter"]):
             self.use_selected(self.scene.camera_glop)
 
         if rotation_multiplier_y != 0.0:
@@ -1067,6 +1067,7 @@ class KivyGlopsWindow(Widget):
 #         thisTouch.
 
         #if touch.is_mouse_scrolling:
+        self.use_selected(self.scene.camera_glop)
 
     def on_touch_up(self, touch):
         super(KivyGlopsWindow, self).on_touch_up(touch)

@@ -113,6 +113,7 @@ class MainForm(KivyGlopsWindow):
         #else:
             #print("No glop selected.")
 
+        
         #this_index = get_index_by_name(self.scene.glops, "Suzanne")
         #if this_index>-1:
         #    if self.get_pressed("j"):

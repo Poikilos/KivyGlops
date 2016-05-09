@@ -44,6 +44,9 @@ VFORMAT_NAME_INDEX = 0
 VFORMAT_VECTOR_LEN_INDEX = 1
 VFORMAT_TYPE_INDEX = 2
 
+EMPTY_ITEM = dict()
+EMPTY_ITEM["name"] = "Empty"
+
 def get_rect_from_polar_deg(r, theta):
     x = r * math.cos(math.radians(theta))
     y = r * math.sin(math.radians(theta))
@@ -351,7 +354,8 @@ class PyGlop:
     
     def pop_glop_item(self, this_glop_index):
         try:
-            self.properties["inventory_items"].pop(this_glop_index)
+            #self.properties["inventory_items"].pop(this_glop_index)
+            self.properties["inventory_items"][this_glop_index] = EMPTY_ITEM
             if this_glop_index == 0:
                 self.select_next_inventory_slot(True)
             else:
@@ -397,7 +401,11 @@ class PyGlop:
             if "glop_name" in this_item_dict:
                 proper_name = this_item_dict["glop_name"]
             print("Selected "+this_item_dict["name"]+" "+proper_name+" in slot "+str(self.properties["inventory_index"]))
-            print("You have "+str(len(self.properties["inventory_items"]))+" item(s).")
+            item_count = 0
+            for index in range(0, len(self.properties["inventory_items"])):
+                if self.properties["inventory_items"][index]["name"] != EMPTY_ITEM["name"]:
+                    item_count += 1
+            print("You have "+str(item_count)+" item(s).")
         else:
             print("You have 0 items.")
 
