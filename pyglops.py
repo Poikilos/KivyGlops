@@ -47,6 +47,8 @@ VFORMAT_TYPE_INDEX = 2
 EMPTY_ITEM = dict()
 EMPTY_ITEM["name"] = "Empty"
 
+kEpsilon = 1.0E-14 # adjust to suit.  If you use floats, you'll probably want something like 1E-7f
+
 def get_rect_from_polar_deg(r, theta):
     x = r * math.cos(math.radians(theta))
     y = r * math.sin(math.radians(theta))
@@ -78,7 +80,7 @@ def get_nearest_vec3_on_vec3line_using_xz(a, b, c): #formerly PointSegmentDistan
     t = None
     #as per http://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
     kMinSegmentLenSquared = 0.00000001 # adjust to suit.  If you use float, you'll probably want something like 0.000001f
-    kEpsilon = 1.0E-14 # adjust to suit.  If you use floats, you'll probably want something like 1E-7f
+
     #epsilon is the common name for the floating point error constant (needed since some base 10 numbers cannot be stored as IEEE 754 with absolute precision)
     #same as 1.0 * 10**-14 according to http://python-reference.readthedocs.io/en/latest/docs/float/scientific.html
     dx = c[0] - b[0]
@@ -156,7 +158,7 @@ def get_distance_vec2_to_vec2line(a, b, c):
 
 #swizzle to 2d point on xz plane, then get distance
 def get_distance_vec3_xz(first_pt, second_pt):
-    return math.sqrt( (second_pt[0]-first_pt[0])**2 + (second_pt[2]-first_pt[2])**2 )    
+    return math.sqrt( (second_pt[0]-first_pt[0])**2 + (second_pt[2]-first_pt[2])**2 )
 
 def get_distance_vec3(first_pt, second_pt):
     return math.sqrt((second_pt[0] - first_pt[0])**2 + (second_pt[1] - first_pt[1])**2 + (second_pt[2] - first_pt[2])**2)
@@ -259,7 +261,7 @@ def is_in_triangle_vec2(check_vec2, a_vec2, b_vec2, c_vec2):
 #    name = None
 #    passive_bumper_command = None
 #    health_ratio = None
-    
+
 #    def __init__(self, bump="obtain"):
 #        health_ratio = 1.0
 #        passive_bumper_command = bump
@@ -279,7 +281,18 @@ class PyGlop:
     hit_radius = None
     item_dict = None
     bump_enable = None
+    reach_radius = None
+    is_out_of_range = None
+    physics_enable = None
+    x_velocity = None
+    y_velocity = None
+    z_velocity = None
+    _cached_floor_y = None
+    infinite_inventory_enable = None
+    bump_sounds = None
     #IF ADDING NEW VARIABLE here, remember to update any copy functions (such as get_kivyglop_from_pyglop) or copy constructors in your subclass or calling program
+
+
     vertex_format = None
     vertices = None
     indices = None
@@ -307,8 +320,16 @@ class PyGlop:
     #endregion calculated from vertex_format
 
     def __init__(self):
+        self.physics_enable = False
+        self.infinite_inventory_enable = True
+        self.is_out_of_range = True
         self.hit_radius = 0.1524  # .5' equals .1524m
+        self.reach_radius = 0.381 # 2.5' .381m
         self.bump_enable = False
+        self.x_velocity = 0.0
+        self.y_velocity = 0.0
+        self.z_velocity = 0.0
+        self.bump_sounds = []
         self.properties = {}
         self.properties["inventory_index"] = -1
         self.properties["inventory_items"] = []
@@ -351,7 +372,7 @@ class PyGlop:
             self.vertices[v_offset+self._POSITION_OFFSET+2] -= self._pivot_point[2]
             v_offset += self.vertex_depth
         self._pivot_point = (0.0, 0.0, 0.0)
-    
+
     def pop_glop_item(self, this_glop_index):
         try:
             #self.properties["inventory_items"].pop(this_glop_index)
@@ -363,29 +384,30 @@ class PyGlop:
         except:
             print("Could not finish pop_glop_item:")
             view_traceback()
-    
+
     def push_glop_item(self, this_glop, this_glop_index):
         result = False
         #item_dict = {}
         item_dict = this_glop.item_dict
-        
+
         #item_dict["glop_index"] = this_glop_index  #already done when set as itme
         #item_dict["glop_name"] = this_glop.name  #already done when set as itme
         for i in range(0,len(self.properties["inventory_items"])):
-            if self.properties["inventory_items"][i] == None:
+            if self.properties["inventory_items"][i] is None or self.properties["inventory_items"][i]["name"] == EMPTY_ITEM["name"]:
                 self.properties["inventory_items"][i] = item_dict
                 result = True
                 print("obtained item in slot "+str(i)+": "+str(item_dict))
                 break
-        if not result:
-            self.properties["inventory_items"].append(item_dict)
-            print("obtained item in new slot: "+str(item_dict))
-            result = True
+        if self.infinite_inventory_enable:
+            if not result:
+                self.properties["inventory_items"].append(item_dict)
+                print("obtained item in new slot: "+str(item_dict))
+                result = True
         if result:
             if self.properties["inventory_index"] < 0:
                 self.properties["inventory_index"] = 0
         return result
-    
+
     def select_next_inventory_slot(self, is_forward):
         delta = 1
         if not is_forward:
@@ -1224,18 +1246,26 @@ class PyGlops:
     camera_glop = None
     prev_inbounds_camera_translate = None
     _bumper_indices = None
-    _bumpee_indices = None
+    _bumpable_indices = None
+    _world_min_y = None
+    _world_grav_acceleration = None
+    frames_per_second = None
+    last_update_s = None
 
     def __init__(self):
+        self._world_grav_acceleration = 9.8
+        self.frames_per_second = 60.0
         self.camera_glop = PyGlop()  #should be remade to subclass of PyGlop in subclass of PyGlops
         self.camera_glop.eye_height = 1.7  # 1.7 since 5'10" person is ~1.77m, and eye down a bit
-        self.camera_glop.hit_radius = .1
+        self.camera_glop.hit_radius = .2
+        self.camera_glop.reach_radius = 2.5
+
         self.camera_glop.name = "camera_glop"
         self._walkmeshes = []
         self.glops = []
         self.materials = []
         self._bumper_indices = []
-        self._bumpee_indices = []
+        self._bumpable_indices = []
 
     def append_dump(self, thisList):
         tabString="  "

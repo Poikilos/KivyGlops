@@ -1,0 +1,13 @@
+
+crate*.wav based on:
+138308__tdude9000__small-wooden-crate-knocked-over
+December 19th, 2011
+by Tdude9000 on freesound.org
+License: Creative Commons 0
+
+barrel*.wav based on:
+66770__kevinkace__barrel-break-2.wav
+February 1st, 2009
+by kevinkace on freesound.org
+License: Creative Commons 0
+http://creativecommons.org/publicdomain/zero/1.0/

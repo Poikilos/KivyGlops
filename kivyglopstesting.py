@@ -53,21 +53,22 @@ class MainForm(KivyGlopsWindow):
         #self.load_obj("C:\\Users\\owner\\ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-minimal.obj")
         #self.load_obj("C:\\Users\\jgustafson\\ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-minimal.obj")
         #self.load_obj("C:\\Users\\owner\\ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-lowpoly.obj")
+        self.load_obj("C:\\Users\\owner\\ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-techdemo.obj")
         #self.load_obj("R:\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-lowpoly.obj")
-        self.load_obj("R:\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-minimal.obj")
+        #self.load_obj("R:\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-minimal.obj")
         #self.load_obj("etc\\problematic mesh files\\medseaport1b-floor_glrepeat.obj")
         #self.load_obj("medseaport1b-lowpoly.obj")
         #medseaport1b-lowpoly (including dependencies) is available from http://www.expertmultimedia.com/usingpython/resources/Environments,Outdoor-Manmade/seaport.zip
 
         #self.load_obj("medseaport1b-minimal.obj")
-        
+
         # If you already have existing walkmesh code,
         # keep that instead of typing this section.
         walkmesh_names = self.get_similar_names("walkmesh")
         for name in walkmesh_names:
             print("Using walkmesh: ")
             is_ok = self.use_walkmesh(name, hide=True)
-        
+
         item_dict = dict()
         item_dict["name"] = "barrel"
         item_dict["bump"] = "hide; obtain"
@@ -78,10 +79,27 @@ class MainForm(KivyGlopsWindow):
         for name in barrel_names:
             print("Preparing item: "+name)
             self.set_as_item(name, item_dict)
-    
-    #part 5 sound (for music part see load_glops)
-    def bump_glop(self, bumpee_name, bumper_name):
-        pass
+
+        self.play_music("music/edinburgh-loop.ogg")
+
+        item_dict["name"] = "crate"
+        item_dict["use_sound"] = "sounds/woosh-medium.wav"
+        for index in self.get_indices_of_similar_names("crate"):
+            self.set_as_item_by_index(index, item_dict)
+            self.add_bump_sound_by_index(index, "sounds/crate-drop2.wav")
+            self.add_bump_sound_by_index(index, "sounds/crate-drop3.wav")
+            self.add_bump_sound_by_index(index, "sounds/crate-drop4.wav")
+            self.add_bump_sound_by_index(index, "sounds/crate-drop5.wav")
+            self.add_bump_sound_by_index(index, "sounds/crate-drop6.wav")
+            self.add_bump_sound_by_index(index, "sounds/crate-drop7.wav")
+            self.add_bump_sound_by_index(index, "sounds/crate-drop8.wav")
+
+
+    def bump_glop(self, bumpable_name, bumper_name):
+        if "barrel" in bumpable_name.lower():
+            self.play_sound("sounds/barrel,wooden-pickup.wav")
+        if "crate" in bumpable_name.lower():
+            self.play_sound("sounds/crate-pickup.wav")
 
     def update_glops(self):
         if self.selected_glop is not None:
@@ -99,21 +117,21 @@ class MainForm(KivyGlopsWindow):
                 self.selected_glop.rotate_z_relative(-1)
 
             if self.get_pressed("left"):
-                self.selected_glop.translate_x_relative(-.1)
+                self.selected_glop.move_x_relative(-.1)
             elif self.get_pressed("right"):
-                self.selected_glop.translate_x_relative(.1)
+                self.selected_glop.move_x_relative(.1)
             elif self.get_pressed("up"):
-                self.selected_glop.translate_y_relative(.1)
+                self.selected_glop.move_y_relative(.1)
             elif self.get_pressed("down"):
-                self.selected_glop.translate_y_relative(-.1)
+                self.selected_glop.move_y_relative(-.1)
             elif self.get_pressed("-"):
-                self.selected_glop.translate_z_relative(-.1)
+                self.selected_glop.move_z_relative(-.1)
             elif self.get_pressed("="):
-                self.selected_glop.translate_z_relative(.1)
+                self.selected_glop.move_z_relative(.1)
         #else:
             #print("No glop selected.")
 
-        
+
         #this_index = get_index_by_name(self.scene.glops, "Suzanne")
         #if this_index>-1:
         #    if self.get_pressed("j"):

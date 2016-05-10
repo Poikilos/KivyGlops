@@ -28,6 +28,7 @@ Control 3D objects and the camera in your 3D Kivy app!
 * (2015-04-06) ran 2to3 (originally based on nskrypnik's kivy-rotation3d), which only had to change objloader (changes raise to function notation, and map(a,b) to map(list(a,b)) )
 
 ## Known Issues
+* should get self.scene.glops[bumped_index]._cached_floor_y from walkmesh underneath instead of self.scene._world_min_y
 * should only place unique points into glop when individuating objects in o file
 * fix glitch where walking into corner fights between walls (resolve by getting better pushed_angle that moves in same direction as walking instead of same direction as pushed back by boundary)
 * Implement lighting by improving shader (instead of only flat shading of textured objects being available)
