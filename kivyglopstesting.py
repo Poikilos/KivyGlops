@@ -95,7 +95,7 @@ class MainForm(KivyGlopsWindow):
             self.add_bump_sound_by_index(index, "sounds/crate-drop8.wav")
 
 
-    def bump_glop(self, bumpable_name, bumper_name):
+    def obtain_glop(self, bumpable_name, bumper_name):
         if "barrel" in bumpable_name.lower():
             self.play_sound("sounds/barrel,wooden-pickup.wav")
         if "crate" in bumpable_name.lower():

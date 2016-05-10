@@ -478,6 +478,7 @@ class KivyGlopsWindow(Widget):
                                 self.scene.glops[bumpable_index].bump_enable = False
                                 pass
                             elif command=="obtain":
+                                self.obtain_glop(bumpable_name, bumper_name)
                                 self.scene.camera_glop.push_glop_item(self.scene.glops[bumpable_index], bumpable_index)
                                 print(command+" "+self.scene.glops[bumpable_index].name)
                             else:
@@ -490,6 +491,9 @@ class KivyGlopsWindow(Widget):
             print("bumped object '"+str(self.scene.glops[bumpable_index].name)+"' is not an item")
 
     def bump_glop(self, bumpable_name, bumper_name):
+        return None
+
+    def obtain_glop(self, bumpable_name, bumper_name):
         return None
 
 
