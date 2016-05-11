@@ -252,11 +252,11 @@ def is_in_triangle_vec2(check_vec2, a_vec2, b_vec2, c_vec2):
 #    IsInTriangle_Barymetric
     kEpsilon = 1.0E-14 # adjust to suit.  If you use floats, you'll probably want something like 1E-7f (added by expertmm)
     Area = 1/2*(-b_vec2[1]*c_vec2[0] + a_vec2[1]*(-b_vec2[0] + c_vec2[0]) + a_vec2[0]*(b_vec2[1] - c_vec2[1]) + b_vec2[0]*c_vec2[1])
+    #if Area>kEpsilon and Area<-kEpsilon:
     s = 1/(2*Area)*(a_vec2[1]*c_vec2[0] - a_vec2[0]*c_vec2[1] + (c_vec2[1] - a_vec2[1])*check_vec2[0] + (a_vec2[0] - c_vec2[0])*check_vec2[1])
     t = 1/(2*Area)*(a_vec2[0]*b_vec2[1] - a_vec2[1]*b_vec2[0] + (a_vec2[1] - b_vec2[1])*check_vec2[0] + (b_vec2[0] - a_vec2[0])*check_vec2[1])
 #    #TODO: fix situation where it fails when clockwise (see discussion at http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle )
     return  s>kEpsilon and t>kEpsilon and 1-s-t>kEpsilon
-
 #class ItemData:  #changed to dict
 #    name = None
 #    passive_bumper_command = None

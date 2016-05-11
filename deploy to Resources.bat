@@ -4,6 +4,10 @@ copy /y *.* "%DESTDIR_FULLNAME%\"
 IF NOT ["%errorlevel%"]==["0"] GOTO EXIT_ERROR
 md "%DESTDIR_FULLNAME%\maps"
 copy /y maps\*.* "%DESTDIR_FULLNAME%\maps\"
+md "%DESTDIR_FULLNAME%\sounds"
+copy /y sounds\*.* "%DESTDIR_FULLNAME%\sounds\"
+md "%DESTDIR_FULLNAME%\music"
+copy /y music\*.* "%DESTDIR_FULLNAME%\music\"
 IF NOT ["%errorlevel%"]==["0"] GOTO EXIT_ERROR
 REM IF EXIST "%DESTDIR_FULLNAME%\deploy.bat" del "%DESTDIR_FULLNAME%\deploy.bat"
 del "%DESTDIR_FULLNAME%\deploy*.bat"
