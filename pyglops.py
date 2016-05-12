@@ -252,10 +252,10 @@ def is_in_triangle_vec2(check_vec2, a_vec2, b_vec2, c_vec2):
 #    IsInTriangle_Barymetric
     kEpsilon = 1.0E-14 # adjust to suit.  If you use floats, you'll probably want something like 1E-7f (added by expertmm)
     Area = 1/2*(-b_vec2[1]*c_vec2[0] + a_vec2[1]*(-b_vec2[0] + c_vec2[0]) + a_vec2[0]*(b_vec2[1] - c_vec2[1]) + b_vec2[0]*c_vec2[1])
-    #if Area>kEpsilon and Area<-kEpsilon:
-    s = 1/(2*Area)*(a_vec2[1]*c_vec2[0] - a_vec2[0]*c_vec2[1] + (c_vec2[1] - a_vec2[1])*check_vec2[0] + (a_vec2[0] - c_vec2[0])*check_vec2[1])
-    t = 1/(2*Area)*(a_vec2[0]*b_vec2[1] - a_vec2[1]*b_vec2[0] + (a_vec2[1] - b_vec2[1])*check_vec2[0] + (b_vec2[0] - a_vec2[0])*check_vec2[1])
-#    #TODO: fix situation where it fails when clockwise (see discussion at http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle )
+    if Area>kEpsilon or Area<-kEpsilon:
+        s = 1/(2*Area)*(a_vec2[1]*c_vec2[0] - a_vec2[0]*c_vec2[1] + (c_vec2[1] - a_vec2[1])*check_vec2[0] + (a_vec2[0] - c_vec2[0])*check_vec2[1])
+        t = 1/(2*Area)*(a_vec2[0]*b_vec2[1] - a_vec2[1]*b_vec2[0] + (a_vec2[1] - b_vec2[1])*check_vec2[0] + (b_vec2[0] - a_vec2[0])*check_vec2[1])
+    #    #TODO: fix situation where it fails when clockwise (see discussion at http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle )
     return  s>kEpsilon and t>kEpsilon and 1-s-t>kEpsilon
 #class ItemData:  #changed to dict
 #    name = None
@@ -374,19 +374,30 @@ class PyGlop:
         self._pivot_point = (0.0, 0.0, 0.0)
 
     def pop_glop_item(self, this_glop_index):
+        select_item_event_dict = None
+        #select_item_event_dict["is_possible"] = False
         try:
-            #self.properties["inventory_items"].pop(this_glop_index)
-            self.properties["inventory_items"][this_glop_index] = EMPTY_ITEM
-            if this_glop_index == 0:
-                self.select_next_inventory_slot(True)
-            else:
-                self.select_next_inventory_slot(False)
+            if this_glop_index < len(self.properties["inventory_items"]) and this_glop_index>=0:
+                #select_item_event_dict["is_possible"] = True
+                #self.properties["inventory_items"].pop(this_glop_index)
+                self.properties["inventory_items"][this_glop_index] = EMPTY_ITEM
+                if this_glop_index == 0:
+                    select_item_event_dict = self.select_next_inventory_slot(True)
+                else:
+                    select_item_event_dict = self.select_next_inventory_slot(False)
+                if select_item_event_dict is not None:
+                    if "calling_method" in select_item_event_dict:
+                        select_item_event_dict["calling_method"] += " from pop_glop_item"
+                    else:
+                        select_item_event_dict["calling_method"] = "from pop_glop_item"
         except:
             print("Could not finish pop_glop_item:")
             view_traceback()
+        return select_item_event_dict
 
     def push_glop_item(self, this_glop, this_glop_index):
-        result = False
+        select_item_event_dict = dict()
+        select_item_event_dict["is_possible"] = False
         #item_dict = {}
         item_dict = this_glop.item_dict
 
@@ -395,45 +406,69 @@ class PyGlop:
         for i in range(0,len(self.properties["inventory_items"])):
             if self.properties["inventory_items"][i] is None or self.properties["inventory_items"][i]["name"] == EMPTY_ITEM["name"]:
                 self.properties["inventory_items"][i] = item_dict
-                result = True
+                select_item_event_dict["is_possible"] = True
                 print("obtained item in slot "+str(i)+": "+str(item_dict))
                 break
         if self.infinite_inventory_enable:
-            if not result:
+            if not select_item_event_dict["is_possible"]:
                 self.properties["inventory_items"].append(item_dict)
                 print("obtained item in new slot: "+str(item_dict))
-                result = True
-        if result:
+                select_item_event_dict["is_possible"] = True
+        if select_item_event_dict["is_possible"]:
             if self.properties["inventory_index"] < 0:
                 self.properties["inventory_index"] = 0
-        return result
+            this_item_dict = self.properties["inventory_items"][self.properties["inventory_index"]]
+            name = ""
+            proper_name = ""
+            select_item_event_dict["inventory_index"] = self.properties["inventory_index"]
+            if "name" in this_item_dict:
+                name = this_item_dict["name"]
+            select_item_event_dict["name"] = name
+            if "glop_name" in this_item_dict:
+                proper_name = this_item_dict["glop_name"]
+            select_item_event_dict["proper_name"] = proper_name
+            select_item_event_dict["calling method"] = "push_glop_item"
+        return select_item_event_dict
 
     def select_next_inventory_slot(self, is_forward):
+        select_item_event_dict = dict()
         delta = 1
         if not is_forward:
             delta = -1
         if len(self.properties["inventory_items"]) > 0:
+            select_item_event_dict["is_possible"] = True
             self.properties["inventory_index"] += delta
             if self.properties["inventory_index"] < 0:
                 self.properties["inventory_index"] = len(self.properties["inventory_items"]) - 1
             elif self.properties["inventory_index"] >= len(self.properties["inventory_items"]):
                 self.properties["inventory_index"] = 0
             this_item_dict = self.properties["inventory_items"][self.properties["inventory_index"]]
+            name = ""
             proper_name = ""
+            select_item_event_dict["inventory_index"] = self.properties["inventory_index"]
             if "glop_name" in this_item_dict:
                 proper_name = this_item_dict["glop_name"]
-            print("Selected "+this_item_dict["name"]+" "+proper_name+" in slot "+str(self.properties["inventory_index"]))
+            select_item_event_dict["proper_name"] = proper_name
+            if "name" in this_item_dict:
+                name = this_item_dict["name"]
+            select_item_event_dict["name"] = name
+            #print("item event: "+str(select_item_event_dict))
+            select_item_event_dict["calling method"] = "select_next_inventory_slot"
+            #print("Selected "+this_item_dict["name"]+" "+proper_name+" in slot "+str(self.properties["inventory_index"]))
             item_count = 0
             for index in range(0, len(self.properties["inventory_items"])):
                 if self.properties["inventory_items"][index]["name"] != EMPTY_ITEM["name"]:
                     item_count += 1
-            print("You have "+str(item_count)+" item(s).")
+            #print("You have "+str(item_count)+" item(s).")
+            select_item_event_dict["item_count"] = item_count
         else:
+            select_item_event_dict["is_possible"] = False
             print("You have 0 items.")
+        return select_item_event_dict
 
     def _on_change_pivot(self):
         pass
-
+    
     def transform_pivot_to_geometry(self):
         self._pivot_point = self.get_center_average_of_vertices()
         self._on_change_pivot()

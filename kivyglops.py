@@ -20,6 +20,9 @@ from kivy.graphics.transformation import Matrix
 from kivy.graphics.opengl import *
 from kivy.graphics import *
 #from kivy.input.providers.mouse import MouseMotionEvent
+from kivy.factory import Factory
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.floatlayout import FloatLayout
 
 from kivy.logger import Logger
 from kivy.vector import Vector
@@ -292,8 +295,16 @@ class KivyGlops(PyGlops):
     def create_material(self):
         return KivyGlopsMaterial()
 
+class GLWidget(Widget):
+    pass
 
-class KivyGlopsWindow(Widget):
+class HudForm(BoxLayout):
+    pass
+
+class ContainerForm(BoxLayout):
+    pass
+
+class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
     IsVisualDebugMode = False
     scene = None
     camera_walk_units_per_second = None
@@ -319,8 +330,10 @@ class KivyGlopsWindow(Widget):
     world_boundary_min = None
     world_boundary_max = None
     _meshes = None # so gl operations can be added in realtime (after resetCallback is added, but so resetCallback is on the stack after them)
-
+    gl_widget = None
+    hud_form = None
     _sounds = None
+    use_button = None
 
     def load_glops(self):
         print("Warning: you should subclass KivyGlopsWindow and implement load_glops (and usually update_glops for changing objects each frame)")
@@ -329,6 +342,8 @@ class KivyGlopsWindow(Widget):
         pass
 
     def __init__(self, **kwargs):
+        self.gl_widget = GLWidget()
+        self.hud_form = HudForm()
         self.world_boundary_min = [None,None,None]
         self.world_boundary_max = [None,None,None]
         self.camera_walk_units_per_second = 12.0
@@ -350,20 +365,20 @@ class KivyGlopsWindow(Widget):
         #self.bind(on_touch_down=self.canvasTouchDown)
 
         self.scene = KivyGlops()
-        self.canvas = RenderContext(compute_normal_mat=True)
-        self.canvas["_world_light_dir"] = (0.0, 0.5, 1.0)
-        self.canvas["_world_light_dir_eye_space"] = (0.0, 0.5, 1.0) #rotated in update_glsl
-        self.canvas["camera_light_multiplier"] = (1.0, 1.0, 1.0, 1.0)
-        #self.canvas.shader.source = resource_find('simple1b.glsl')
-        #self.canvas.shader.source = resource_find('shade-kivyglops-standard.glsl')  # NOT working
-        #self.canvas.shader.source = resource_find('shade-normal-only.glsl') #partially working
-        #self.canvas.shader.source = resource_find('shade-texture-only.glsl')
-        #self.canvas.shader.source = resource_find('shade-kivyglops-minimal.glsl')  # NOT working
-        self.canvas.shader.source = resource_find('fresnel.glsl')
+        self.gl_widget.canvas = RenderContext(compute_normal_mat=True)
+        self.gl_widget.canvas["_world_light_dir"] = (0.0, 0.5, 1.0)
+        self.gl_widget.canvas["_world_light_dir_eye_space"] = (0.0, 0.5, 1.0) #rotated in update_glsl
+        self.gl_widget.canvas["camera_light_multiplier"] = (1.0, 1.0, 1.0, 1.0)
+        #self.gl_widget.canvas.shader.source = resource_find('simple1b.glsl')
+        #self.gl_widget.canvas.shader.source = resource_find('shade-kivyglops-standard.glsl')  # NOT working
+        #self.gl_widget.canvas.shader.source = resource_find('shade-normal-only.glsl') #partially working
+        #self.gl_widget.canvas.shader.source = resource_find('shade-texture-only.glsl')
+        #self.gl_widget.canvas.shader.source = resource_find('shade-kivyglops-minimal.glsl')  # NOT working
+        self.gl_widget.canvas.shader.source = resource_find('fresnel.glsl')
 
         #formerly, .obj was loaded here using load_obj (now calling program does that)
 
-        #print(self.canvas.shader)  #just prints type and memory address
+        #print(self.gl_widget.canvas.shader)  #just prints type and memory address
         if dump_enable:
             glopsYAMLLines = []
             self.scene.append_dump(glopsYAMLLines)
@@ -376,24 +391,37 @@ class KivyGlopsWindow(Widget):
                 print("Could not finish writing dump.")
         super(KivyGlopsWindow, self).__init__(**kwargs)
         self.cb = Callback(self.setup_gl_context)
-        self.canvas.add(self.cb)
+        self.gl_widget.canvas.add(self.cb)
 
-        self.canvas.add(PushMatrix())
+        self.gl_widget.canvas.add(PushMatrix())
 
-        #self.canvas.add(PushMatrix())
-        #self.canvas.add(this_texture)
-        #self.canvas.add(Color(1, 1, 1, 1))
+        #self.gl_widget.canvas.add(PushMatrix())
+        #self.gl_widget.canvas.add(this_texture)
+        #self.gl_widget.canvas.add(Color(1, 1, 1, 1))
         #for this_glop_index in range(0,len(self.scene.glops)):
         #    this_mesh_name = ""
         #    #thisMesh = KivyGlop()
         #    this_glop = self.scene.glops[this_glop_index]
         #    add_glop(this_glop)
-        #self.canvas.add(PopMatrix())
+        #self.gl_widget.canvas.add(PopMatrix())
         self._meshes = InstructionGroup() #RenderContext(compute_normal_mat=True)
-        self.canvas.add(self._meshes)
+        self.gl_widget.canvas.add(self._meshes)
 
-        self.finalize_scene()
-
+        self.finalize_canvas()
+        self.add_widget(self.gl_widget)
+        self.add_widget(self.hud_form)
+        self.hud_form.rows = 1
+        self.hud_form.orientation = "horizontal"
+        self.hud_form.size_hint = (1.0, 1.0)
+        self.inventory_prev_button = Factory.Button(text="<", id="inventory_prev_button", size_hint=(.2,.2), on_press=self.inventory_prev_button_press)
+        self.use_button = Factory.Button(text="0: Empty", id="use_button", size_hint=(.2,.2), on_press=self.inventory_use_button_press)
+        self.inventory_next_button = Factory.Button(text=">", id="inventory_next_button", size_hint=(.2,.2), on_press=self.inventory_next_button_press)
+        self.hud_form.add_widget(self.inventory_prev_button)
+        self.hud_form.add_widget(self.use_button)
+        self.hud_form.add_widget(self.inventory_next_button)
+        
+        #Window.bind(on_motion=self.on_motion)  #TODO: why doesn't this work?
+        
         #x,y,z where y is up:
         self.scene.camera_glop._translate_instruction.x = 0
         self.scene.camera_glop._translate_instruction.y = self.scene.camera_glop.eye_height
@@ -430,6 +458,40 @@ class KivyGlopsWindow(Widget):
             Keyboard.keycodes["="]=61
 
         self.load_glops()
+        
+    def inventory_prev_button_press(self, instance):
+        event_dict = self.scene.camera_glop.select_next_inventory_slot(False)
+        self.after_selected_item(event_dict)
+
+    def inventory_use_button_press(self, instance):
+        event_dict = self.use_selected(self.scene.camera_glop)
+        #self.after_selected_item(event_dict)
+
+    def inventory_next_button_press(self, instance):
+        event_dict = self.scene.camera_glop.select_next_inventory_slot(True)
+        self.after_selected_item(event_dict)
+        
+    def after_selected_item(self, select_item_event_dict):
+        name = None
+        #proper_name = None
+        inventory_index = None
+        if select_item_event_dict is not None:
+            calling_method_string = ""
+            if "calling_method" in select_item_event_dict:
+                calling_method_string = select_item_event_dict["calling_method"]
+            if "name" in select_item_event_dict:
+                name = select_item_event_dict["name"]
+            else:
+                print("ERROR in after_selected_item ("+calling_method_string+"): missing name in select_item_event_dict")
+            #if "proper_name" in select_item_event_dict:
+            #    proper_name = select_item_event_dict["proper_name"]
+            #else:
+            #    print("ERROR in after_selected_item ("+calling_method_string+"): missing proper_name in select_item_event_dict")
+            if "inventory_index" in select_item_event_dict:
+                inventory_index = select_item_event_dict["inventory_index"]
+            else:
+                print("ERROR in after_selected_item ("+calling_method_string+"): missing inventory_index in select_item_event_dict")
+        self.use_button.text=str(inventory_index)+": "+str(name)
 
     def preload_sound(self, path):
         if path is not None:
@@ -497,11 +559,11 @@ class KivyGlopsWindow(Widget):
         return None
 
 
-    def finalize_scene(self):
-        self.canvas.add(PopMatrix())
+    def finalize_canvas(self):
+        self.gl_widget.canvas.add(PopMatrix())
 
         self.resetCallback = Callback(self.reset_gl_context)
-        self.canvas.add(self.resetCallback)
+        self.gl_widget.canvas.add(self.resetCallback)
 
     def get_nearest_walkmesh_vec3_using_xz(self, pt):
         result = None
@@ -718,7 +780,7 @@ class KivyGlopsWindow(Widget):
         participle="initializing"
         try:
             #context = self._meshes
-            #context = self.canvas
+            #context = self.gl_widget.canvas
             #if self.selected_glop_index is None:
             #    self.selected_glop_index = this_glop_index
             #    self.selected_glop = this_glop
@@ -912,7 +974,8 @@ class KivyGlopsWindow(Widget):
 
                                                     self.scene.glops[item_glop.item_dict["glop_index"]].is_out_of_range = False
                                                     self.scene.glops[item_glop.item_dict["glop_index"]].bump_enable = True
-                                                    user_glop.pop_glop_item(user_glop.properties["inventory_index"])
+                                                    event_dict = user_glop.pop_glop_item(user_glop.properties["inventory_index"])
+                                                    self.after_selected_item(event_dict)
                                                     item_glop._translate_instruction.x = user_glop._translate_instruction.x
                                                     item_glop._translate_instruction.y = user_glop._translate_instruction.y
                                                     item_glop._translate_instruction.z = user_glop._translate_instruction.z
@@ -930,11 +993,15 @@ class KivyGlopsWindow(Widget):
                             view_traceback()
 
     def update_glsl(self, *largs):
+        #print("coords:"+str(Window.mouse_pos))
+        x_rad, y_rad = self.get_view_angles_by_pos_rad(Window.mouse_pos)
+        self.scene.camera_glop._rotate_instruction_y.angle = x_rad
+        self.scene.camera_glop._rotate_instruction_z.angle = y_rad
         got_frame_delay = 0.0
         if self.scene.last_update_s is not None:
             got_frame_delay = best_timer() - self.scene.last_update_s
         self.scene.last_update_s = best_timer()
-
+        
         self.update_glops()
         rotation_multiplier_y = 0.0  # 1.0 is maximum speed
         moving_x = 0.0  # 1.0 is maximum speed
@@ -943,15 +1010,15 @@ class KivyGlopsWindow(Widget):
         position_change = [0.0, 0.0, 0.0]
         # for keycode strings, see  http://kivy.org/docs/_modules/kivy/core/window.html
         if self.player1_controller.get_pressed(Keyboard.keycodes["a"]):
-            if self.player1_controller.get_pressed(Keyboard.keycodes["shift"]):
-                moving_x = 1.0
-            else:
-                rotation_multiplier_y = -1.0
+            #if self.player1_controller.get_pressed(Keyboard.keycodes["shift"]):
+            moving_x = 1.0
+            #else:
+            #    rotation_multiplier_y = -1.0
         if self.player1_controller.get_pressed(Keyboard.keycodes["d"]):
-            if self.player1_controller.get_pressed(Keyboard.keycodes["shift"]):
-                moving_x = -1.0
-            else:
-                rotation_multiplier_y = 1.0
+            #if self.player1_controller.get_pressed(Keyboard.keycodes["shift"]):
+            moving_x = -1.0
+            #else:
+            #    rotation_multiplier_y = 1.0
         if self.player1_controller.get_pressed(Keyboard.keycodes["w"]):
             moving_z = 1.0
         if self.player1_controller.get_pressed(Keyboard.keycodes["s"]):
@@ -1096,9 +1163,9 @@ class KivyGlopsWindow(Widget):
         #proj.view_clip(left, right, bottom, top, near, far, perspective)
         proj = proj.view_clip(-asp, asp, -1*field_of_view_factor, field_of_view_factor, self.projection_near, 100, 1)
 
-        self.canvas['projection_mat'] = proj
-        self.canvas['modelview_mat'] = modelViewMatrix
-        self.canvas["camera_world_pos"] = [self.scene.camera_glop._translate_instruction.x, self.scene.camera_glop._translate_instruction.y, self.scene.camera_glop._translate_instruction.z]
+        self.gl_widget.canvas['projection_mat'] = proj
+        self.gl_widget.canvas['modelview_mat'] = modelViewMatrix
+        self.gl_widget.canvas["camera_world_pos"] = [self.scene.camera_glop._translate_instruction.x, self.scene.camera_glop._translate_instruction.y, self.scene.camera_glop._translate_instruction.z]
         #if verbose_enable:
         #    Logger.debug("ok (update_glsl)")
 
@@ -1118,20 +1185,20 @@ class KivyGlopsWindow(Widget):
             #print ("position: "+str( (self.scene.camera_glop._translate_instruction.x, self.scene.camera_glop._translate_instruction.y, self.scene.camera_glop._translate_instruction.z) )+"; self.scene.camera_glop._rotate_instruction_y.angle:"+str(self.scene.camera_glop._rotate_instruction_y.angle) +"("+str(math.degrees(self.scene.camera_glop._rotate_instruction_y.angle))+"degrees); moving_theta:"+str(math.degrees(moving_theta))+" degrees")
 
         if (self._previous_world_light_dir is None
-            or self._previous_world_light_dir[0]!=self.canvas["_world_light_dir"][0]
-            or self._previous_world_light_dir[1]!=self.canvas["_world_light_dir"][1]
-            or self._previous_world_light_dir[2]!=self.canvas["_world_light_dir"][2]
+            or self._previous_world_light_dir[0]!=self.gl_widget.canvas["_world_light_dir"][0]
+            or self._previous_world_light_dir[1]!=self.gl_widget.canvas["_world_light_dir"][1]
+            or self._previous_world_light_dir[2]!=self.gl_widget.canvas["_world_light_dir"][2]
             or self._previous_camera_rotate_y_angle is None
             or self._previous_camera_rotate_y_angle != self.scene.camera_glop._rotate_instruction_y.angle
             ):
-            #self.canvas["_world_light_dir"] = (0.0,.5,1.0);
-            #self.canvas["_world_light_dir_eye_space"] = (0.0,.5,1.0);
-            world_light_theta = theta_radians_from_rectangular(self.canvas["_world_light_dir"][0], self.canvas["_world_light_dir"][2])
+            #self.gl_widget.canvas["_world_light_dir"] = (0.0,.5,1.0);
+            #self.gl_widget.canvas["_world_light_dir_eye_space"] = (0.0,.5,1.0);
+            world_light_theta = theta_radians_from_rectangular(self.gl_widget.canvas["_world_light_dir"][0], self.gl_widget.canvas["_world_light_dir"][2])
             light_theta = world_light_theta+self.scene.camera_glop._rotate_instruction_y.angle
-            light_r = math.sqrt((self.canvas["_world_light_dir"][0]*self.canvas["_world_light_dir"][0])+(self.canvas["_world_light_dir"][2]*self.canvas["_world_light_dir"][2]))
-            self.canvas["_world_light_dir_eye_space"] = light_r * math.cos(light_theta), self.canvas["_world_light_dir_eye_space"][1], light_r * math.sin(light_theta)
+            light_r = math.sqrt((self.gl_widget.canvas["_world_light_dir"][0]*self.gl_widget.canvas["_world_light_dir"][0])+(self.gl_widget.canvas["_world_light_dir"][2]*self.gl_widget.canvas["_world_light_dir"][2]))
+            self.gl_widget.canvas["_world_light_dir_eye_space"] = light_r * math.cos(light_theta), self.gl_widget.canvas["_world_light_dir_eye_space"][1], light_r * math.sin(light_theta)
             self._previous_camera_rotate_y_angle = self.scene.camera_glop._rotate_instruction_y.angle
-            self._previous_world_light_dir = self.canvas["_world_light_dir"][0], self.canvas["_world_light_dir"][1], self.canvas["_world_light_dir"][2]
+            self._previous_world_light_dir = self.gl_widget.canvas["_world_light_dir"][0], self.gl_widget.canvas["_world_light_dir"][1], self.gl_widget.canvas["_world_light_dir"][2]
 
         global missing_bumper_warning_enable
         global missing_bumpable_warning_enable
@@ -1191,9 +1258,20 @@ class KivyGlopsWindow(Widget):
 
     #end update_glsl
 
-    def define_rotate_angle(self, touch):
+    def get_view_angles_by_touch_deg(self, touch):
+        # formerly define_rotate_angle(self, touch):
         x_angle = (touch.dx/self.width)*360
         y_angle = -1*(touch.dy/self.height)*360
+        return x_angle, y_angle
+
+    def get_view_angles_by_pos_deg(self, pos):
+        x_angle = (pos[0]/self.width)*360
+        y_angle = -1*(pos[1]/self.height)*360
+        return x_angle, y_angle
+
+    def get_view_angles_by_pos_rad(self, pos):
+        x_angle = (pos[0]/self.width)*(2*math.pi)
+        y_angle = -1*(pos[1]/self.height)*(2*math.pi)
         return x_angle, y_angle
 
 #     def canvasTouchDown(self, touch, *largs):
@@ -1211,8 +1289,8 @@ class KivyGlopsWindow(Widget):
 #         thisTouch = MouseMotionEvent(touch)
 #         thisTouch.
 
-        #if touch.is_mouse_scrolling:
-        self.use_selected(self.scene.camera_glop)
+        if touch.is_mouse_scrolling:
+            self.inventory_next_button_press(True)
 
     def on_touch_up(self, touch):
         super(KivyGlopsWindow, self).on_touch_up(touch)
@@ -1270,16 +1348,18 @@ class KivyGlopsWindow(Widget):
             else:
                 print('Select glop failed (maybe there are no glops loaded.')
         elif keycode[1] == "x":
-            self.scene.camera_glop.select_next_inventory_slot(True)
+            event_dict = self.scene.camera_glop.select_next_inventory_slot(True)
+            self.after_selected_item(event_dict)
         elif keycode[1] == "z":
-            self.scene.camera_glop.select_next_inventory_slot(False)
+            event_dict = self.scene.camera_glop.select_next_inventory_slot(False)
+            self.after_selected_item(event_dict)
         # else:
         #     print('Pressed unused key: ' + str(keycode) + "; text:"+text)
 
         if verbose_enable:
             self.print_location()
             print("scene.camera_glop._rotate_instruction_y.angle:"+str(self.scene.camera_glop._rotate_instruction_y.angle))
-            print("modelview_mat:"+str(self.canvas['modelview_mat']))
+            print("modelview_mat:"+str(self.gl_widget.canvas['modelview_mat']))
         self.update_glsl()
         # Return True to accept the key. Otherwise, it will be used by
         # the system.
@@ -1307,7 +1387,13 @@ class KivyGlopsWindow(Widget):
         self._keyboard.unbind(on_key_down=self._on_keyboard_down)
         self._keyboard = None
 
+    #def on_motion(self, etype, motionevent):
+        #print("coords:"+str(motionevent.dx)+","+str(motionevent.dx))
+        # will receive all motion events.
+        #pass
+    
     def on_touch_move(self, touch):
+        #print("touch.dx:"+str(touch.dx)+" touch.dy:"+str(touch.dx))
         pass
 #         print ("on_touch_move")
 #         print (str(touch))

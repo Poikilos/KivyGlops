@@ -34,6 +34,5 @@ class KivyGlopsExampleApp(App):
         mainform = MainForm()
         return mainform
 
-
 if __name__ == "__main__":
     KivyGlopsExampleApp().run()

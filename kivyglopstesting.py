@@ -15,11 +15,24 @@ from kivy.core.window import Keyboard
 #from kivy.clock import Clock
 from kivy.input.providers.mouse import MouseMotionEvent
 
+from kivy.factory import Factory
+from kivy.uix.boxlayout import BoxLayout
+
 from kivyglops import *
 #from common import *
 
 import math
 import os
+
+profile_path = None
+
+if 'USERPROFILE' in os.environ:  # if os_name=="windows":
+    profile_path = os.environ['USERPROFILE']
+else:
+    profile_path = os.environ['HOME']
+    
+
+
 
 class MainForm(KivyGlopsWindow):
 
@@ -36,7 +49,7 @@ class MainForm(KivyGlopsWindow):
         #self.load_obj("WarehouseOfFruit_by_Expertmm.obj")
         #self.load_obj("pyramid.obj")
         #self.load_obj("testnurbs-all-textured.obj")
-        #self.load_obj("orion.obj")
+        #self.load_obj(finalize_scene"orion.obj")
         #self.load_obj("etc/problematic mesh files/4 Gold Rings.obj", centered=True)  # self.load_obj("4 Gold Rings.obj")
         #self.load_obj("KivyForest.obj")
         #self.load_obj("pedestal-suzanne.obj")
@@ -50,12 +63,12 @@ class MainForm(KivyGlopsWindow):
         #    print("Found possible walkmesh: "+name)
         #    is_ok = self.use_walkmesh(name, hide=True)
 
-        #self.load_obj("C:\\Users\\owner\\ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-minimal.obj")
-        self.load_obj("C:\\Users\\jgustafson\\ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-minimal.obj")
-        #self.load_obj("C:\\Users\\owner\\ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-lowpoly.obj")
-        #self.load_obj("C:\\Users\\owner\\ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-techdemo.obj")
+        #self.load_obj(os.path.join(profile_path,"ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-lowpoly.obj"))
+        #self.load_obj(os.path.join(profile_path,"ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-minimal.obj"))
+        #self.load_obj(os.path.join(profile_path,"ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-techdemo.obj"))
         #self.load_obj("R:\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-lowpoly.obj")
         #self.load_obj("R:\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-minimal.obj")
+        self.load_obj("R:\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-techdemo.obj")
         #self.load_obj("etc\\problematic mesh files\\medseaport1b-floor_glrepeat.obj")
         #self.load_obj("medseaport1b-lowpoly.obj")
         #medseaport1b-lowpoly (including dependencies) is available from http://www.expertmultimedia.com/usingpython/resources/Environments,Outdoor-Manmade/seaport.zip
@@ -93,7 +106,6 @@ class MainForm(KivyGlopsWindow):
             self.add_bump_sound_by_index(index, "sounds/crate-drop6.wav")
             self.add_bump_sound_by_index(index, "sounds/crate-drop7.wav")
             self.add_bump_sound_by_index(index, "sounds/crate-drop8.wav")
-
 
     def obtain_glop(self, bumpable_name, bumper_name):
         if "barrel" in bumpable_name.lower():
@@ -158,7 +170,15 @@ class KivyGlopsExampleApp(App):
     def build(self):
         mainform = MainForm()
         return mainform
-
+        #mainform = MainForm()
+        #boxlayout = TextForm()
+        #boxlayout.add_widget(mainform)
+        #boxlayout.cols = 1
+        #boxlayout.orientation = "vertical"
+        #boxlayout.useButton = Factory.Button(text="Use", id="useButton", size_hint=(.1,.1))
+        #boxlayout.add_widget(boxlayout.useButton)
+        #return boxlayout
+        
 
 if __name__ == "__main__":
     KivyGlopsExampleApp().run()
