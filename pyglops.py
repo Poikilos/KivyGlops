@@ -407,12 +407,12 @@ class PyGlop:
             if self.properties["inventory_items"][i] is None or self.properties["inventory_items"][i]["name"] == EMPTY_ITEM["name"]:
                 self.properties["inventory_items"][i] = item_dict
                 select_item_event_dict["is_possible"] = True
-                print("obtained item in slot "+str(i)+": "+str(item_dict))
+                #print("obtained item in slot "+str(i)+": "+str(item_dict))
                 break
         if self.infinite_inventory_enable:
             if not select_item_event_dict["is_possible"]:
                 self.properties["inventory_items"].append(item_dict)
-                print("obtained item in new slot: "+str(item_dict))
+                #print("obtained item in new slot: "+str(item_dict))
                 select_item_event_dict["is_possible"] = True
         if select_item_event_dict["is_possible"]:
             if self.properties["inventory_index"] < 0:

@@ -332,8 +332,10 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
     _meshes = None # so gl operations can be added in realtime (after resetCallback is added, but so resetCallback is on the stack after them)
     gl_widget = None
     hud_form = None
+    hud_buttons_form = None
     _sounds = None
     use_button = None
+    _visual_debug_enable = None
 
     def load_glops(self):
         print("Warning: you should subclass KivyGlopsWindow and implement load_glops (and usually update_glops for changing objects each frame)")
@@ -342,8 +344,10 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         pass
 
     def __init__(self, **kwargs):
+        self._visual_debug_enable = False
         self.gl_widget = GLWidget()
-        self.hud_form = HudForm()
+        self.hud_form = HudForm(orientation="vertical", size_hint=(1.0, 1.0))
+        self.hud_buttons_form = BoxLayout(orientation="horizontal", size_hint=(1.0, 0.1))
         self.world_boundary_min = [None,None,None]
         self.world_boundary_max = [None,None,None]
         self.camera_walk_units_per_second = 12.0
@@ -409,16 +413,20 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
 
         self.finalize_canvas()
         self.add_widget(self.gl_widget)
+        #self.hud_form.rows = 1
         self.add_widget(self.hud_form)
-        self.hud_form.rows = 1
-        self.hud_form.orientation = "horizontal"
-        self.hud_form.size_hint = (1.0, 1.0)
-        self.inventory_prev_button = Factory.Button(text="<", id="inventory_prev_button", size_hint=(.2,.2), on_press=self.inventory_prev_button_press)
-        self.use_button = Factory.Button(text="0: Empty", id="use_button", size_hint=(.2,.2), on_press=self.inventory_use_button_press)
-        self.inventory_next_button = Factory.Button(text=">", id="inventory_next_button", size_hint=(.2,.2), on_press=self.inventory_next_button_press)
-        self.hud_form.add_widget(self.inventory_prev_button)
-        self.hud_form.add_widget(self.use_button)
-        self.hud_form.add_widget(self.inventory_next_button)
+        self.debug_label = Factory.Label(text="...")
+        if not self._visual_debug_enable:
+            self.debug_label.opacity = 0.0
+        self.hud_form.add_widget(self.debug_label)
+        self.hud_form.add_widget(self.hud_buttons_form)
+        self.inventory_prev_button = Factory.Button(text="<", id="inventory_prev_button", size_hint=(.2,1.0), on_press=self.inventory_prev_button_press)
+        self.use_button = Factory.Button(text="0: Empty", id="use_button", size_hint=(.2,1.0), on_press=self.inventory_use_button_press)
+        self.inventory_next_button = Factory.Button(text=">", id="inventory_next_button", size_hint=(.2,1.0), on_press=self.inventory_next_button_press)
+        self.hud_buttons_form.add_widget(self.inventory_prev_button)
+        self.hud_buttons_form.add_widget(self.use_button)
+        self.hud_buttons_form.add_widget(self.inventory_next_button)
+        
         
         #Window.bind(on_motion=self.on_motion)  #TODO: why doesn't this work?
         
@@ -504,7 +512,8 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         if path is not None:
             self.preload_sound(path)
             if self._sounds[path]:
-                print("playing "+path)
+                if verbose_enable:
+                    print("playing "+path)
                 self._sounds[path]["loader"].play()
             else:
                 print("Failed to play "+path)
@@ -538,11 +547,13 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                             if command=="hide":
                                 self._meshes.remove(self.scene.glops[bumpable_index].get_context())
                                 self.scene.glops[bumpable_index].bump_enable = False
-                                pass
                             elif command=="obtain":
                                 self.obtain_glop(bumpable_name, bumper_name)
-                                self.scene.camera_glop.push_glop_item(self.scene.glops[bumpable_index], bumpable_index)
-                                print(command+" "+self.scene.glops[bumpable_index].name)
+                                item_event = self.scene.camera_glop.push_glop_item(self.scene.glops[bumpable_index], bumpable_index)
+                                #process item event so selected inventory slot gets updated in case obtained item ends up in it:
+                                self.after_selected_item(item_event)
+                                if verbose_enable:
+                                    print(command+" "+self.scene.glops[bumpable_index].name)
                             else:
                                 print("Glop named "+str(self.scene.glops[bumpable_index].name)+" attempted an unknown glop command (in bump event): "+str(command))
                     else:
@@ -962,10 +973,17 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                                                 if "throw_" in item_glop.item_dict["use"]:  # such as item_dict["throw_arc"]
 
                                                     self.scene.glops[item_glop.item_dict["glop_index"]].physics_enable = True
-                                                    throw_speed = 3.0  # meters/sec
+                                                    throw_speed = 1.0 # meters/sec
                                                     try:
-                                                        self.scene.glops[item_glop.item_dict["glop_index"]].x_velocity = throw_speed * math.cos(user_glop._rotate_instruction_y.angle)
-                                                        self.scene.glops[item_glop.item_dict["glop_index"]].z_velocity = throw_speed * math.sin(user_glop._rotate_instruction_y.angle)
+                                                        
+                                                        x_angle = user_glop._rotate_instruction_x.angle + math.radians(30)
+                                                        if x_angle > math.radians(90):
+                                                            x_angle = math.radians(90)
+                                                        self.scene.glops[item_glop.item_dict["glop_index"]].y_velocity = throw_speed * math.sin(x_angle)
+                                                        horizontal_throw_speed = throw_speed * math.cos(x_angle)
+                                                        self.scene.glops[item_glop.item_dict["glop_index"]].x_velocity = horizontal_throw_speed * math.cos(user_glop._rotate_instruction_y.angle)
+                                                        self.scene.glops[item_glop.item_dict["glop_index"]].z_velocity = horizontal_throw_speed * math.sin(user_glop._rotate_instruction_y.angle)
+                                                        
                                                     except:
                                                         self.scene.glops[item_glop.item_dict["glop_index"]].x_velocity = 0
                                                         self.scene.glops[item_glop.item_dict["glop_index"]].z_velocity = 0
@@ -996,7 +1014,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         #print("coords:"+str(Window.mouse_pos))
         x_rad, y_rad = self.get_view_angles_by_pos_rad(Window.mouse_pos)
         self.scene.camera_glop._rotate_instruction_y.angle = x_rad
-        self.scene.camera_glop._rotate_instruction_z.angle = y_rad
+        self.scene.camera_glop._rotate_instruction_x.angle = y_rad
         got_frame_delay = 0.0
         if self.scene.last_update_s is not None:
             got_frame_delay = best_timer() - self.scene.last_update_s
@@ -1023,7 +1041,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             moving_z = 1.0
         if self.player1_controller.get_pressed(Keyboard.keycodes["s"]):
             moving_z = -1.0
-
+            
         if self.player1_controller.get_pressed(Keyboard.keycodes["enter"]):
             self.use_selected(self.scene.camera_glop)
 
@@ -1142,7 +1160,8 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         self.look_point[0] = self.focal_distance * math.cos(self.scene.camera_glop._rotate_instruction_y.angle)
         self.look_point[2] = self.focal_distance * math.sin(self.scene.camera_glop._rotate_instruction_y.angle)
 
-        self.look_point[1] = 0.0  #(changed in "for" loop below) since y is up, and 1 is y, ignore index 1 when we are rotating on that axis
+        #self.look_point[1] = 0.0  #(changed in "for" loop below) since y is up, and 1 is y, ignore index 1 when we are rotating on that axis
+        self.look_point[1] = self.focal_distance * math.sin(self.scene.camera_glop._rotate_instruction_x.angle)
 
 
         #modelViewMatrix = modelViewMatrix.look_at(0,self.scene.camera_glop._translate_instruction.y,0, self.look_point[0], self.look_point[1], self.look_point[2], 0, 1, 0)
@@ -1216,9 +1235,9 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                         if distance <= total_hit_radius:
                             if self.scene.glops[bumpable_index].is_out_of_range:  # only run if ever moved away from it
                                 if self.scene.glops[bumpable_index].bump_enable:
-                                    print("distance:"+str(total_hit_radius)+" <= total_hit_radius:"+str(total_hit_radius))
-                                    print("bumper:"+str( (self.scene.glops[bumper_index]._translate_instruction.x, self.scene.glops[bumper_index]._translate_instruction.y, self.scene.glops[bumper_index]._translate_instruction.z) ) +
-                                          "; bumped:"+str( (self.scene.glops[bumpable_index]._translate_instruction.x, self.scene.glops[bumpable_index]._translate_instruction.y, self.scene.glops[bumpable_index]._translate_instruction.z) ))
+                                    #print("distance:"+str(total_hit_radius)+" <= total_hit_radius:"+str(total_hit_radius))
+                                    #print("bumper:"+str( (self.scene.glops[bumper_index]._translate_instruction.x, self.scene.glops[bumper_index]._translate_instruction.y, self.scene.glops[bumper_index]._translate_instruction.z) ) +
+                                    #      "; bumped:"+str( (self.scene.glops[bumpable_index]._translate_instruction.x, self.scene.glops[bumpable_index]._translate_instruction.y, self.scene.glops[bumpable_index]._translate_instruction.z) ))
                                     self._internal_bump_glop(bumpable_index, bumper_index)
                         else:
                             self.scene.glops[bumpable_index].is_out_of_range = True
@@ -1238,40 +1257,41 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                         self.scene.glops[bumpable_index]._translate_instruction.y += self.scene.glops[bumpable_index].y_velocity
                         self.scene.glops[bumpable_index]._translate_instruction.z += self.scene.glops[bumpable_index].z_velocity
                         if got_frame_delay > 0.0:
-                            print("  GRAVITY AFFECTED:"+str(self.scene.glops[bumpable_index]._translate_instruction.y)+" += "+str(self.scene.glops[bumpable_index].y_velocity))
+                            #print("  GRAVITY AFFECTED:"+str(self.scene.glops[bumpable_index]._translate_instruction.y)+" += "+str(self.scene.glops[bumpable_index].y_velocity))
                             self.scene.glops[bumpable_index].y_velocity -= self.scene._world_grav_acceleration * got_frame_delay
-                            print("  THEN VELOCITY CHANGED TO:"+str(self.scene.glops[bumpable_index].y_velocity))
+                            #print("  THEN VELOCITY CHANGED TO:"+str(self.scene.glops[bumpable_index].y_velocity))
                             #print("  FRAME INTERVAL:"+str(got_frame_delay))
                         else:
                             print("missing delay")
                     else:
+                        #if self.scene.glops[bumpable_index].z_velocity > kEpsilon:
                         if (self.scene.glops[bumpable_index].y_velocity < 0.0 - (kEpsilon + self.scene.glops[bumpable_index].hit_radius)):
-                            print("  HIT GROUND Y:"+str(self.scene.glops[bumpable_index]._cached_floor_y))
-                        self.scene.glops[bumpable_index]._translate_instruction.y = self.scene.glops[bumpable_index]._cached_floor_y + self.scene.glops[bumpable_index].hit_radius
-                        self.scene.glops[bumpable_index].x_velocity = 0.0
-                        self.scene.glops[bumpable_index].y_velocity = 0.0
-                        if self.scene.glops[bumpable_index].z_velocity > kEpsilon:
+                            #print("  HIT GROUND Y:"+str(self.scene.glops[bumpable_index]._cached_floor_y))
                             if self.scene.glops[bumpable_index].bump_sounds is not None and len(self.scene.glops[bumpable_index].bump_sounds) > 0:
                                 rand_i = random.randrange(0,len(self.scene.glops[bumpable_index].bump_sounds))
                                 self.play_sound(self.scene.glops[bumpable_index].bump_sounds[rand_i])
+                        self.scene.glops[bumpable_index]._translate_instruction.y = self.scene.glops[bumpable_index]._cached_floor_y + self.scene.glops[bumpable_index].hit_radius
+                        self.scene.glops[bumpable_index].x_velocity = 0.0
+                        self.scene.glops[bumpable_index].y_velocity = 0.0
                         self.scene.glops[bumpable_index].z_velocity = 0.0
 
     #end update_glsl
 
-    def get_view_angles_by_touch_deg(self, touch):
-        # formerly define_rotate_angle(self, touch):
-        x_angle = (touch.dx/self.width)*360
-        y_angle = -1*(touch.dy/self.height)*360
-        return x_angle, y_angle
+    #def get_view_angles_by_touch_deg(self, touch):
+    #    # formerly define_rotate_angle(self, touch):
+    #    x_angle = (touch.dx/self.width)*360
+    #    y_angle = -1*(touch.dy/self.height)*360
+    #    return x_angle, y_angle
 
-    def get_view_angles_by_pos_deg(self, pos):
-        x_angle = (pos[0]/self.width)*360
-        y_angle = -1*(pos[1]/self.height)*360
-        return x_angle, y_angle
+    #def get_view_angles_by_pos_deg(self, pos):
+    #    x_angle = (pos[0]/self.width)*360
+    #    y_angle = -1*(pos[1]/self.height)*360
+    #    return x_angle, y_angle
 
     def get_view_angles_by_pos_rad(self, pos):
-        x_angle = (pos[0]/self.width)*(2*math.pi)
-        y_angle = -1*(pos[1]/self.height)*(2*math.pi)
+        x_angle = -math.pi + (float(pos[0])/float(self.width-1))*(2.0*math.pi)
+        y_angle = -(math.pi/2.0) + (float(pos[1])/float(self.height-1))*(math.pi)
+        self.debug_label.text = "View:"+"\n  pos:" + str(pos) + "\n  size:" + str( (self.width, self.height) ) + "\n  angles:" + str( (int(math.degrees(x_angle)), int(math.degrees(y_angle))) )
         return x_angle, y_angle
 
 #     def canvasTouchDown(self, touch, *largs):
@@ -1288,9 +1308,15 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
 
 #         thisTouch = MouseMotionEvent(touch)
 #         thisTouch.
-
         if touch.is_mouse_scrolling:
-            self.inventory_next_button_press(True)
+            event_dict = None
+            if touch.button == "scrolldown":
+                event_dict = self.scene.camera_glop.select_next_inventory_slot(True)
+            else:
+                event_dict = self.scene.camera_glop.select_next_inventory_slot(False)
+            self.after_selected_item(event_dict)
+        else:
+            event_dict = self.use_selected(self.scene.camera_glop)
 
     def on_touch_up(self, touch):
         super(KivyGlopsWindow, self).on_touch_up(touch)
@@ -1304,6 +1330,15 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
 
     def get_pressed(self, key_name):
         return self.player1_controller.get_pressed(Keyboard.keycodes[key_name])
+        
+    def toggle_visual_debug(self):
+        if not self._visual_debug_enable:
+            self._visual_debug_enable = True
+            self.debug_label.opacity = 1.0
+        else:
+            self._visual_debug_enable = False
+            self.debug_label.opacity = 0.0
+        
 
     def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
 #         print('The key' + str(keycode) + ' pressed')
@@ -1353,6 +1388,8 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         elif keycode[1] == "z":
             event_dict = self.scene.camera_glop.select_next_inventory_slot(False)
             self.after_selected_item(event_dict)
+        elif keycode[1] == "f3":
+            self.toggle_visual_debug()
         # else:
         #     print('Pressed unused key: ' + str(keycode) + "; text:"+text)
 
