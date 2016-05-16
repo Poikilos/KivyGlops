@@ -68,7 +68,7 @@ class MainForm(KivyGlopsWindow):
         #self.load_obj(os.path.join(profile_path,"ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-techdemo.obj"))
         #self.load_obj("R:\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-lowpoly.obj")
         #self.load_obj("R:\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-minimal.obj")
-        self.load_obj("R:\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-techdemo.obj")
+        #self.load_obj("R:\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-techdemo.obj")
         #self.load_obj("etc\\problematic mesh files\\medseaport1b-floor_glrepeat.obj")
         #self.load_obj("medseaport1b-lowpoly.obj")
         #medseaport1b-lowpoly (including dependencies) is available from http://www.expertmultimedia.com/usingpython/resources/Environments,Outdoor-Manmade/seaport.zip
@@ -77,35 +77,40 @@ class MainForm(KivyGlopsWindow):
 
         # If you already have existing walkmesh code,
         # keep that instead of typing this section.
-        walkmesh_names = self.get_similar_names("walkmesh")
-        for name in walkmesh_names:
-            print("Using walkmesh: ")
-            is_ok = self.use_walkmesh(name, hide=True)
+        #walkmesh_names = self.get_similar_names("walkmesh")
+        #for name in walkmesh_names:
+        #    print("Using walkmesh: ")
+        #    is_ok = self.use_walkmesh(name, hide=True)
 
-        item_dict = dict()
-        item_dict["name"] = "barrel"
-        item_dict["bump"] = "hide; obtain"
-        item_dict["use"] = "throw_arc"
-        item_dict["cooldown"] = .7
+        #item_dict = dict()
+        #item_dict["name"] = "barrel"
+        #item_dict["bump"] = "hide; obtain"
+        #item_dict["use"] = "throw_arc"
+        #item_dict["cooldown"] = .7
 
-        barrel_names = self.get_similar_names("barrel")
-        for name in barrel_names:
-            print("Preparing item: "+name)
-            self.set_as_item(name, item_dict)
+        #barrel_names = self.get_similar_names("barrel")
+        #for name in barrel_names:
+        #    print("Preparing item: "+name)
+        #    self.set_as_item(name, item_dict)
 
-        self.play_music("music/edinburgh-loop.ogg")
+        #self.play_music("music/edinburgh-loop.ogg")
 
-        item_dict["name"] = "crate"
-        item_dict["use_sound"] = "sounds/woosh-medium.wav"
-        for index in self.get_indices_of_similar_names("crate"):
-            self.set_as_item_by_index(index, item_dict)
-            self.add_bump_sound_by_index(index, "sounds/crate-drop2.wav")
-            self.add_bump_sound_by_index(index, "sounds/crate-drop3.wav")
-            self.add_bump_sound_by_index(index, "sounds/crate-drop4.wav")
-            self.add_bump_sound_by_index(index, "sounds/crate-drop5.wav")
-            self.add_bump_sound_by_index(index, "sounds/crate-drop6.wav")
-            self.add_bump_sound_by_index(index, "sounds/crate-drop7.wav")
-            self.add_bump_sound_by_index(index, "sounds/crate-drop8.wav")
+        #item_dict["name"] = "crate"
+        #item_dict["use_sound"] = "sounds/woosh-medium.wav"
+        #for index in self.get_indices_of_similar_names("crate"):
+        #    self.set_as_item_by_index(index, item_dict)
+        #    self.add_bump_sound_by_index(index, "sounds/crate-drop2.wav")
+        #    self.add_bump_sound_by_index(index, "sounds/crate-drop3.wav")
+        #    self.add_bump_sound_by_index(index, "sounds/crate-drop4.wav")
+        #    self.add_bump_sound_by_index(index, "sounds/crate-drop5.wav")
+        #    self.add_bump_sound_by_index(index, "sounds/crate-drop6.wav")
+        #    self.add_bump_sound_by_index(index, "sounds/crate-drop7.wav")
+        #    self.add_bump_sound_by_index(index, "sounds/crate-drop8.wav")
+        
+        self.set_fly(True)
+        self.set_hud_background("hud.png")
+        self.set_background_cylmap("starfield_cylindrical_map.png")
+        self.load_obj("spaceship,simple-denapes.obj")
 
     def obtain_glop(self, bumpable_name, bumper_name):
         if "barrel" in bumpable_name.lower():

@@ -256,7 +256,9 @@ def is_in_triangle_vec2(check_vec2, a_vec2, b_vec2, c_vec2):
         s = 1/(2*Area)*(a_vec2[1]*c_vec2[0] - a_vec2[0]*c_vec2[1] + (c_vec2[1] - a_vec2[1])*check_vec2[0] + (a_vec2[0] - c_vec2[0])*check_vec2[1])
         t = 1/(2*Area)*(a_vec2[0]*b_vec2[1] - a_vec2[1]*b_vec2[0] + (a_vec2[1] - b_vec2[1])*check_vec2[0] + (b_vec2[0] - a_vec2[0])*check_vec2[1])
     #    #TODO: fix situation where it fails when clockwise (see discussion at http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle )
-    return  s>kEpsilon and t>kEpsilon and 1-s-t>kEpsilon
+        return  s>kEpsilon and t>kEpsilon and 1-s-t>kEpsilon
+    else:
+        return False
 #class ItemData:  #changed to dict
 #    name = None
 #    passive_bumper_command = None
@@ -1279,6 +1281,7 @@ class PyGlops:
     lastCreatedMesh = None
     _walkmeshes = None
     camera_glop = None
+    #player_glop = None
     prev_inbounds_camera_translate = None
     _bumper_indices = None
     _bumpable_indices = None
@@ -1286,11 +1289,14 @@ class PyGlops:
     _world_grav_acceleration = None
     frames_per_second = None
     last_update_s = None
+    _fly_enable = None
 
     def __init__(self):
+        self._fly_enable = False
         self._world_grav_acceleration = 9.8
         self.frames_per_second = 60.0
         self.camera_glop = PyGlop()  #should be remade to subclass of PyGlop in subclass of PyGlops
+        #self.player_glop = camera_glop  # TODO: implement this
         self.camera_glop.eye_height = 1.7  # 1.7 since 5'10" person is ~1.77m, and eye down a bit
         self.camera_glop.hit_radius = .2
         self.camera_glop.reach_radius = 2.5
@@ -1313,6 +1319,12 @@ class PyGlops:
 
     def create_mesh(self):
         return PyGlop()
+        
+    def set_fly(self, fly_enable):
+        if fly_enable==True:
+            self._fly_enable = True
+        else:
+            self._fly_enable = False
 
     def create_material(self):
         return PyGlopsMaterial()

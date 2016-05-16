@@ -23,6 +23,7 @@ from kivy.graphics import *
 from kivy.factory import Factory
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
+from kivy.graphics import Color, Rectangle
 
 from kivy.logger import Logger
 from kivy.vector import Vector
@@ -122,7 +123,7 @@ class KivyGlop(PyGlop, Widget):
     _pushmatrix = None
     _updatenormalmatrix = None
     _popmatrix = None
-
+    
 
 
     def __init__(self):
@@ -228,10 +229,9 @@ class KivyGlop(PyGlop, Widget):
             self._translate_instruction.z = 0.0
             v_offset += self.vertex_depth
         self.apply_pivot()
-
-    def generate_kivy_mesh(self):
-        participle = "checking for texture"
-        self.last_loaded_path = self.get_texture_diffuse_path()
+        
+    def set_texture_diffuse(self, path):
+        self.last_loaded_path = path
         this_texture_image = None
         if self.last_loaded_path is not None:
             participle = "getting image filename"
@@ -257,6 +257,14 @@ class KivyGlop(PyGlop, Widget):
                         Logger.debug("(material with no name)")
                 else:
                     Logger.debug("(no material)")
+        if self._mesh is not None and this_texture_image is not None:
+            self._mesh.texture = this_texture_image.texture
+        return this_texture_image
+            
+    def generate_kivy_mesh(self):
+        participle = "checking for texture"
+        self._mesh = None
+        this_texture_image = self.set_texture_diffuse(self.get_texture_diffuse_path())
         participle = "assembling kivy Mesh"
         this_texture = None
         if len(self.vertices)>0:
@@ -336,12 +344,45 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
     _sounds = None
     use_button = None
     _visual_debug_enable = None
+    hud_bg_rect = None
 
     def load_glops(self):
         print("Warning: you should subclass KivyGlopsWindow and implement load_glops (and usually update_glops for changing objects each frame)")
 
     def update_glops(self):
         pass
+        
+    def set_fly(self, fly_enable):
+        self.scene.set_fly(fly_enable)
+    
+    def set_hud_background(self, path):
+        if path is not None:
+            original_path = path
+            if not os.path.isfile(path):
+                path = resource_find(path)
+            if path is not None:
+                self.hud_form.canvas.before.clear()
+                #self.hud_form.canvas.before.add(Color(1.0,1.0,1.0,1.0))
+                self.hud_bg_rect = Rectangle(size=self.hud_form.size,
+                                             pos=self.hud_form.pos,
+                                             source=path)
+                self.hud_form.canvas.before.add(self.hud_bg_rect)
+                self.hud_form.source = path
+            else:
+                print("ERROR in set_hud_image: could not find "+original_path)
+        else:
+            print("ERROR in set_hud_image: path is None")
+            
+    def set_background_cylmap(self, path):
+        print("NOT YET IMPLEMENTED: set_background_cylmap")
+        self.load_obj("env_sphere.obj")
+        #self.load_obj("maps/gi/etc/sky_sphere.obj")
+        env_indices = self.get_indices_by_source_path("env_sphere.obj")
+        for i in range(0,len(env_indices)):
+            index = env_indices[i]
+            print("Preparing sky object "+str(index))
+            self.scene.glops[index].set_texture_diffuse(path)
+            
 
     def __init__(self, **kwargs):
         self._visual_debug_enable = False
@@ -707,6 +748,22 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                         results.append(this_glop.name)
         #print("checked "+str(checked_count))
         return results
+        
+    def get_indices_by_source_path(self, source_path):
+        results = None
+        checked_count = 0
+        if source_path is not None and len(source_path)>0:
+            results = list()
+            for index in range(0,len(self.scene.glops)):
+                this_glop = self.scene.glops[index]
+                checked_count += 1
+                #print("checked "+this_glop.name.lower())
+                if this_glop.source_path is not None:
+                    if source_path == this_glop.source_path:
+                        results.append(index)
+        #print("checked "+str(checked_count))
+        return results
+        
 
     def get_indices_of_similar_names(self, partial_name):
         results = None
@@ -801,7 +858,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             this_mesh_name = ""
             if this_glop.name is not None:
                 this_mesh_name = this_glop.name
-            this_glop._pushmatrix=PushMatrix()
+            this_glop._pushmatrix = PushMatrix()
             context.add(this_glop._pushmatrix)
             context.add(this_glop._translate_instruction)
             context.add(this_glop._rotate_instruction_x)
@@ -1012,6 +1069,12 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
 
     def update_glsl(self, *largs):
         #print("coords:"+str(Window.mouse_pos))
+        self.hud_form.pos = 0.0, 0.0
+        self.hud_form.size = Window.size
+        if self.hud_bg_rect is not None:
+            self.hud_bg_rect.size = self.hud_form.size
+            self.hud_bg_rect.pos=self.hud_form.pos
+        
         x_rad, y_rad = self.get_view_angles_by_pos_rad(Window.mouse_pos)
         self.scene.camera_glop._rotate_instruction_y.angle = x_rad
         self.scene.camera_glop._rotate_instruction_x.angle = y_rad
@@ -1023,6 +1086,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         self.update_glops()
         rotation_multiplier_y = 0.0  # 1.0 is maximum speed
         moving_x = 0.0  # 1.0 is maximum speed
+        moving_y = 0.0  # 1.0 is maximum speed
         moving_z = 0.0  # 1.0 is maximum speed; NOTE: increased z should move object closer to viewer in right-handed coordinate system
         moving_theta = 0.0
         position_change = [0.0, 0.0, 0.0]
@@ -1038,9 +1102,20 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             #else:
             #    rotation_multiplier_y = 1.0
         if self.player1_controller.get_pressed(Keyboard.keycodes["w"]):
-            moving_z = 1.0
+            if self.scene._fly_enable:
+                #intentionally use z,y:
+                moving_z, moving_y = get_rect_from_polar_rad(1.0, self.scene.camera_glop._rotate_instruction_x.angle)
+            else:
+                moving_z = 1.0
+                
         if self.player1_controller.get_pressed(Keyboard.keycodes["s"]):
-            moving_z = -1.0
+            if self.scene._fly_enable:
+                #intentionally use z,y:
+                moving_z, moving_y = get_rect_from_polar_rad(1.0, self.scene.camera_glop._rotate_instruction_x.angle)
+                moving_z *= -1.0
+                moving_y *= -1.0
+            else:
+                moving_z = -1.0
             
         if self.player1_controller.get_pressed(Keyboard.keycodes["enter"]):
             self.use_selected(self.scene.camera_glop)
@@ -1055,7 +1130,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         #xz coords of edges of 16x16 square are:
         # move in the direction you are facing
         moving_theta = 0.0
-        if moving_x != 0.0 or moving_z != 0.0:
+        if moving_x != 0.0 or moving_y != 0.0 or moving_z != 0.0:
             #makes movement relative to rotation (which alaso limits speed when moving diagonally):
             moving_theta = theta_radians_from_rectangular(moving_x, moving_z)
             moving_r_multiplier = math.sqrt((moving_x*moving_x)+(moving_z*moving_z))
@@ -1065,6 +1140,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
 
             #TODO: reprogram so adding math.radians(-90) is not needed (?)
             position_change[0] = self.camera_walk_units_per_frame*moving_r_multiplier * math.cos(self.scene.camera_glop._rotate_instruction_y.angle+moving_theta+math.radians(-90))
+            position_change[1] = self.camera_walk_units_per_frame*moving_y
             position_change[2] = self.camera_walk_units_per_frame*moving_r_multiplier * math.sin(self.scene.camera_glop._rotate_instruction_y.angle+moving_theta+math.radians(-90))
 
             # if (self.scene.camera_glop._translate_instruction.x + move_by_x > self._world_cube.get_max_x()):
