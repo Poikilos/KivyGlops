@@ -30,7 +30,7 @@ if 'USERPROFILE' in os.environ:  # if os_name=="windows":
     profile_path = os.environ['USERPROFILE']
 else:
     profile_path = os.environ['HOME']
-    
+
 
 
 
@@ -106,7 +106,7 @@ class MainForm(KivyGlopsWindow):
         #    self.add_bump_sound_by_index(index, "sounds/crate-drop6.wav")
         #    self.add_bump_sound_by_index(index, "sounds/crate-drop7.wav")
         #    self.add_bump_sound_by_index(index, "sounds/crate-drop8.wav")
-        
+
         self.set_fly(True)
         self.set_hud_background("hud.png")
         self.set_background_cylmap("starfield_cylindrical_map.png")
@@ -183,7 +183,7 @@ class KivyGlopsExampleApp(App):
         #boxlayout.useButton = Factory.Button(text="Use", id="useButton", size_hint=(.1,.1))
         #boxlayout.add_widget(boxlayout.useButton)
         #return boxlayout
-        
+
 
 if __name__ == "__main__":
     KivyGlopsExampleApp().run()

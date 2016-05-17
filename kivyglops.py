@@ -123,7 +123,7 @@ class KivyGlop(PyGlop, Widget):
     _pushmatrix = None
     _updatenormalmatrix = None
     _popmatrix = None
-    
+
 
 
     def __init__(self):
@@ -229,7 +229,7 @@ class KivyGlop(PyGlop, Widget):
             self._translate_instruction.z = 0.0
             v_offset += self.vertex_depth
         self.apply_pivot()
-        
+
     def set_texture_diffuse(self, path):
         self.last_loaded_path = path
         this_texture_image = None
@@ -260,7 +260,7 @@ class KivyGlop(PyGlop, Widget):
         if self._mesh is not None and this_texture_image is not None:
             self._mesh.texture = this_texture_image.texture
         return this_texture_image
-            
+
     def generate_kivy_mesh(self):
         participle = "checking for texture"
         self._mesh = None
@@ -345,16 +345,19 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
     use_button = None
     _visual_debug_enable = None
     hud_bg_rect = None
+    env_rectangle = None
+    screen_w_arc_theta = None
+    screen_h_arc_theta = None
 
     def load_glops(self):
         print("Warning: you should subclass KivyGlopsWindow and implement load_glops (and usually update_glops for changing objects each frame)")
 
     def update_glops(self):
         pass
-        
+
     def set_fly(self, fly_enable):
         self.scene.set_fly(fly_enable)
-    
+
     def set_hud_background(self, path):
         if path is not None:
             original_path = path
@@ -372,23 +375,40 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                 print("ERROR in set_hud_image: could not find "+original_path)
         else:
             print("ERROR in set_hud_image: path is None")
-            
+
     def set_background_cylmap(self, path):
         print("NOT YET IMPLEMENTED: set_background_cylmap")
-        self.load_obj("env_sphere.obj")
+        #self.load_obj("env_sphere.obj")
         #self.load_obj("maps/gi/etc/sky_sphere.obj")
-        env_indices = self.get_indices_by_source_path("env_sphere.obj")
-        for i in range(0,len(env_indices)):
-            index = env_indices[i]
-            print("Preparing sky object "+str(index))
-            self.scene.glops[index].set_texture_diffuse(path)
-            
+        #env_indices = self.get_indices_by_source_path("env_sphere.obj")
+        #for i in range(0,len(env_indices)):
+        #    index = env_indices[i]
+        #    print("Preparing sky object "+str(index))
+        #    self.scene.glops[index].set_texture_diffuse(path)
+        if self.env_rectangle is not None:
+            self.canvas.before.remove(self.env_rectangle)
+        original_path = path
+        if path is not None:
+            if not os.path.isfile(path):
+                path = resource_find(path)
+            if path is not None:
+                #texture = CoreImage(path).texture
+                #texture.wrap = repeat
+                #self.env_rectangle = Rectangle(texture=texture)
+                self.env_rectangle = Rectangle(source=path)
+                self.env_rectangle.texture.wrap = "repeat"
+                self.canvas.before.add(self.env_rectangle)
+            else:
+                print("ERROR in set_background_cylmap: "+original_path+" not found in search path")
+        else:
+            print("ERROR in set_background_cylmap: path is None")
 
     def __init__(self, **kwargs):
         self._visual_debug_enable = False
         self.gl_widget = GLWidget()
         self.hud_form = HudForm(orientation="vertical", size_hint=(1.0, 1.0))
-        self.hud_buttons_form = BoxLayout(orientation="horizontal", size_hint=(1.0, 0.1))
+        self.hud_buttons_form = BoxLayout(orientation="horizontal",
+                                          size_hint=(1.0, 0.1))
         self.world_boundary_min = [None,None,None]
         self.world_boundary_max = [None,None,None]
         self.camera_walk_units_per_second = 12.0
@@ -405,7 +425,8 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             self._keyboard.bind(on_key_down=self._on_keyboard_down)
             self._keyboard.bind(on_key_up=self._on_keyboard_up)
         except:
-            print("Could not finish loading keyboard (keyboard may not be present).")
+            print("Could not finish loading keyboard" +
+                  "(keyboard may not be present).")
 
         #self.bind(on_touch_down=self.canvasTouchDown)
 
@@ -467,10 +488,10 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         self.hud_buttons_form.add_widget(self.inventory_prev_button)
         self.hud_buttons_form.add_widget(self.use_button)
         self.hud_buttons_form.add_widget(self.inventory_next_button)
-        
-        
+
+
         #Window.bind(on_motion=self.on_motion)  #TODO: why doesn't this work?
-        
+
         #x,y,z where y is up:
         self.scene.camera_glop._translate_instruction.x = 0
         self.scene.camera_glop._translate_instruction.y = self.scene.camera_glop.eye_height
@@ -507,7 +528,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             Keyboard.keycodes["="]=61
 
         self.load_glops()
-        
+
     def inventory_prev_button_press(self, instance):
         event_dict = self.scene.camera_glop.select_next_inventory_slot(False)
         self.after_selected_item(event_dict)
@@ -519,7 +540,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
     def inventory_next_button_press(self, instance):
         event_dict = self.scene.camera_glop.select_next_inventory_slot(True)
         self.after_selected_item(event_dict)
-        
+
     def after_selected_item(self, select_item_event_dict):
         name = None
         #proper_name = None
@@ -748,7 +769,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                         results.append(this_glop.name)
         #print("checked "+str(checked_count))
         return results
-        
+
     def get_indices_by_source_path(self, source_path):
         results = None
         checked_count = 0
@@ -763,7 +784,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                         results.append(index)
         #print("checked "+str(checked_count))
         return results
-        
+
 
     def get_indices_of_similar_names(self, partial_name):
         results = None
@@ -1032,7 +1053,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                                                     self.scene.glops[item_glop.item_dict["glop_index"]].physics_enable = True
                                                     throw_speed = 1.0 # meters/sec
                                                     try:
-                                                        
+
                                                         x_angle = user_glop._rotate_instruction_x.angle + math.radians(30)
                                                         if x_angle > math.radians(90):
                                                             x_angle = math.radians(90)
@@ -1040,7 +1061,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                                                         horizontal_throw_speed = throw_speed * math.cos(x_angle)
                                                         self.scene.glops[item_glop.item_dict["glop_index"]].x_velocity = horizontal_throw_speed * math.cos(user_glop._rotate_instruction_y.angle)
                                                         self.scene.glops[item_glop.item_dict["glop_index"]].z_velocity = horizontal_throw_speed * math.sin(user_glop._rotate_instruction_y.angle)
-                                                        
+
                                                     except:
                                                         self.scene.glops[item_glop.item_dict["glop_index"]].x_velocity = 0
                                                         self.scene.glops[item_glop.item_dict["glop_index"]].z_velocity = 0
@@ -1069,12 +1090,43 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
 
     def update_glsl(self, *largs):
         #print("coords:"+str(Window.mouse_pos))
+        #see also asp and clip_top in init
+        #screen_w_arc_theta = 32.0  # actual number is from proj matrix
+        #screen_h_arc_theta = 18.0  # actual number is from proj matrix
+        if self.env_rectangle is not None:
+            if self.screen_w_arc_theta is not None and self.screen_h_arc_theta is not None:
+                #region old way (does not repeat)
+                #env_h_ratio = (2 * math.pi) / self.screen_h_arc_theta
+                #env_w_ratio = env_h_ratio * math.pi
+                #self.env_rectangle.size = (Window.size[0]*env_w_ratio,
+                                           #Window.size[1]*env_h_ratio)
+                #self.env_rectangle.pos = (-(self.scene.camera_glop._rotate_instruction_y.angle/(2*math.pi)*self.env_rectangle.size[0]),
+                                          #-(self.scene.camera_glop._rotate_instruction_x.angle/(2*math.pi)*self.env_rectangle.size[1]))
+                #engregion old way (does not repeat)
+                self.env_rectangle.size = Window.size
+                self.env_rectangle.pos = 0.0, 0.0
+                view_right = self.screen_w_arc_theta / 2.0 + self.scene.camera_glop._rotate_instruction_y.angle
+                view_left = view_right - self.screen_w_arc_theta
+                view_top = self.screen_h_arc_theta / 2.0 + self.scene.camera_glop._rotate_instruction_x.angle
+                view_bottom = view_top - self.screen_h_arc_theta
+                circle_theta = 2*math.pi
+                view_right_ratio = view_right / circle_theta
+                view_left_ratio = view_left / circle_theta
+                view_top_ratio = view_top / circle_theta
+                view_bottom_ratio = view_bottom / circle_theta
+                #tex_coords order: u,      v,      u + w,  v,
+                #                  u + w,  v + h,  u,      v + h
+                # as per https://kivy.org/planet/2014/02/using-tex_coords-in-kivy-for-fun-and-profit/
+                self.env_rectangle.tex_coords = view_left_ratio, view_bottom_ratio, view_right_ratio, view_bottom_ratio, \
+                                                view_right_ratio, view_top_ratio, view_left_ratio, view_top_ratio
+
+
         self.hud_form.pos = 0.0, 0.0
         self.hud_form.size = Window.size
         if self.hud_bg_rect is not None:
             self.hud_bg_rect.size = self.hud_form.size
             self.hud_bg_rect.pos=self.hud_form.pos
-        
+
         x_rad, y_rad = self.get_view_angles_by_pos_rad(Window.mouse_pos)
         self.scene.camera_glop._rotate_instruction_y.angle = x_rad
         self.scene.camera_glop._rotate_instruction_x.angle = y_rad
@@ -1082,7 +1134,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         if self.scene.last_update_s is not None:
             got_frame_delay = best_timer() - self.scene.last_update_s
         self.scene.last_update_s = best_timer()
-        
+
         self.update_glops()
         rotation_multiplier_y = 0.0  # 1.0 is maximum speed
         moving_x = 0.0  # 1.0 is maximum speed
@@ -1107,7 +1159,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                 moving_z, moving_y = get_rect_from_polar_rad(1.0, self.scene.camera_glop._rotate_instruction_x.angle)
             else:
                 moving_z = 1.0
-                
+
         if self.player1_controller.get_pressed(Keyboard.keycodes["s"]):
             if self.scene._fly_enable:
                 #intentionally use z,y:
@@ -1116,7 +1168,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                 moving_y *= -1.0
             else:
                 moving_z = -1.0
-            
+
         if self.player1_controller.get_pressed(Keyboard.keycodes["enter"]):
             self.use_selected(self.scene.camera_glop)
 
@@ -1216,9 +1268,13 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         #if verbose_enable:
         #    print("update_glsl...")
         asp = float(self.width) / float(self.height)
-        #was .3 when projection_near was 1
-        field_of_view_factor = 0.03
-        asp = asp*field_of_view_factor
+
+        clip_top = 0.06  #NOTE: 0.03 is ~1.72 degrees, if that matters
+        # formerly field_of_view_factor
+        # was changed to .03 when projection_near was changed from 1 to .1
+        # was .3 when projection_near was 1
+
+        clip_right = asp*clip_top  # formerly overwrote asp
         proj = Matrix()
         modelViewMatrix = Matrix()
 
@@ -1256,7 +1312,17 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
 
 
         #proj.view_clip(left, right, bottom, top, near, far, perspective)
-        proj = proj.view_clip(-asp, asp, -1*field_of_view_factor, field_of_view_factor, self.projection_near, 100, 1)
+        #"In OpenGL, a 3D point in eye space is projected onto the near plane (projection plane)"
+        # -http://www.songho.ca/opengl/gl_projectionmatrix.html
+        #The near plane and far plane distances are in the -z direction but are
+        # expressed as positive values since they are distances from the camera
+        # then they are compressed to -1 to 1
+        # -https://www.youtube.com/watch?v=frtzb2WWECg
+        proj = proj.view_clip(-clip_right, clip_right, -1*clip_top, clip_top, self.projection_near, 100, 1)
+        top_theta = theta_radians_from_rectangular(self.projection_near, clip_right)
+        right_theta = theta_radians_from_rectangular(self.projection_near, clip_top)
+        self.screen_w_arc_theta = top_theta*2
+        self.screen_h_arc_theta = right_theta*2
 
         self.gl_widget.canvas['projection_mat'] = proj
         self.gl_widget.canvas['modelview_mat'] = modelViewMatrix
@@ -1367,7 +1433,14 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
     def get_view_angles_by_pos_rad(self, pos):
         x_angle = -math.pi + (float(pos[0])/float(self.width-1))*(2.0*math.pi)
         y_angle = -(math.pi/2.0) + (float(pos[1])/float(self.height-1))*(math.pi)
-        self.debug_label.text = "View:"+"\n  pos:" + str(pos) + "\n  size:" + str( (self.width, self.height) ) + "\n  angles:" + str( (int(math.degrees(x_angle)), int(math.degrees(y_angle))) )
+        self.debug_label.text = "View:" + "\n  pos:" + str(pos) + \
+            "\n  size:" + str( (self.width, self.height) ) + \
+            "\n  pitch,yaw:" + str( (int(math.degrees(x_angle)),
+                                  int(math.degrees(y_angle))) )
+        if self.screen_w_arc_theta is not None and self.screen_h_arc_theta is not None:
+            self.debug_label.text += "\n field of view: " + \
+                str( (int(math.degrees(self.screen_w_arc_theta)),
+                    int(math.degrees(self.screen_h_arc_theta))) )
         return x_angle, y_angle
 
 #     def canvasTouchDown(self, touch, *largs):
@@ -1406,7 +1479,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
 
     def get_pressed(self, key_name):
         return self.player1_controller.get_pressed(Keyboard.keycodes[key_name])
-        
+
     def toggle_visual_debug(self):
         if not self._visual_debug_enable:
             self._visual_debug_enable = True
@@ -1414,7 +1487,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         else:
             self._visual_debug_enable = False
             self.debug_label.opacity = 0.0
-        
+
 
     def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
 #         print('The key' + str(keycode) + ' pressed')
@@ -1504,7 +1577,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         #print("coords:"+str(motionevent.dx)+","+str(motionevent.dx))
         # will receive all motion events.
         #pass
-    
+
     def on_touch_move(self, touch):
         #print("touch.dx:"+str(touch.dx)+" touch.dy:"+str(touch.dx))
         pass
