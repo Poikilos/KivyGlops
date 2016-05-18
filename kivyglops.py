@@ -1107,7 +1107,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                 self.env_rectangle.pos = 0.0, 0.0
                 view_right = self.screen_w_arc_theta / 2.0 + self.scene.camera_glop._rotate_instruction_y.angle
                 view_left = view_right - self.screen_w_arc_theta
-                view_top = self.screen_h_arc_theta / 2.0 + self.scene.camera_glop._rotate_instruction_x.angle
+                view_top = self.screen_h_arc_theta / 2.0 + self.scene.camera_glop._rotate_instruction_x.angle + 90.0
                 view_bottom = view_top - self.screen_h_arc_theta
                 circle_theta = 2*math.pi
                 view_right_ratio = view_right / circle_theta
@@ -1319,10 +1319,10 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         # then they are compressed to -1 to 1
         # -https://www.youtube.com/watch?v=frtzb2WWECg
         proj = proj.view_clip(-clip_right, clip_right, -1*clip_top, clip_top, self.projection_near, 100, 1)
-        top_theta = theta_radians_from_rectangular(self.projection_near, clip_right)
-        right_theta = theta_radians_from_rectangular(self.projection_near, clip_top)
-        self.screen_w_arc_theta = top_theta*2
-        self.screen_h_arc_theta = right_theta*2
+        top_theta = theta_radians_from_rectangular(self.projection_near, clip_top)
+        right_theta = theta_radians_from_rectangular(self.projection_near, clip_right)
+        self.screen_w_arc_theta = right_theta*2.0
+        self.screen_h_arc_theta = top_theta*2.0
 
         self.gl_widget.canvas['projection_mat'] = proj
         self.gl_widget.canvas['modelview_mat'] = modelViewMatrix

@@ -106,10 +106,11 @@ class MainForm(KivyGlopsWindow):
         #    self.add_bump_sound_by_index(index, "sounds/crate-drop6.wav")
         #    self.add_bump_sound_by_index(index, "sounds/crate-drop7.wav")
         #    self.add_bump_sound_by_index(index, "sounds/crate-drop8.wav")
+        #self.set_background_cylmap("starfield_cylindrical_map.png")
 
         self.set_fly(True)
         self.set_hud_background("hud.png")
-        self.set_background_cylmap("starfield_cylindrical_map.png")
+        self.set_background_cylmap("starfield1-coryg89.jpg")
         self.load_obj("spaceship,simple-denapes.obj")
 
     def obtain_glop(self, bumpable_name, bumper_name):
