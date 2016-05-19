@@ -79,6 +79,7 @@ def get_kivyglop_from_pyglop(this_pyglop):
     this_kivyglop.eye_height = this_pyglop.eye_height
     this_kivyglop.hit_radius = this_pyglop.hit_radius
     this_kivyglop.item_dict = this_pyglop.item_dict
+    this_kivyglop.actor_dict = this_pyglop.actor_dict
     this_kivyglop.bump_enable = this_pyglop.bump_enable
     this_kivyglop.reach_radius = this_pyglop.reach_radius
     this_kivyglop.is_out_of_range = this_pyglop.is_out_of_range
@@ -293,7 +294,10 @@ class KivyGlops(PyGlops):
     def __init__(self):
         super(KivyGlops, self).__init__()
         self.camera_glop = get_kivyglop_from_pyglop(self.camera_glop)
+        self.player_glop = self.camera_glop  # TODO: separate into two objects and make camera follow player
         self.glops.append(self.camera_glop)
+        self.glops.append(self.player_glop)
+        self.player_glop_index = len(self.glops)        
         self._bumper_indices.append(len(self.glops)-1)
 
     def create_mesh(self):
@@ -357,6 +361,24 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
 
     def set_fly(self, fly_enable):
         self.scene.set_fly(fly_enable)
+        
+    def add_actor_weapon(self, glop_index, weapon_dict):
+        print("add_actor_weapon NOT YET IMPLEMENTED")
+    
+    def get_player_glop_index(self, player_number):
+        result = None
+        if self.scene.player_glop_index is not None:
+            result = self.scene.player_glop_index
+        else:
+            if self.scene.player_glop is not None:
+                for i in range(0, len(self.scene.glops)):
+                    #TODO: check player_number instead
+                    if self.scene.glops[i] is self.scene.player_glop:
+                        result = i
+                        print("WARNING: scene.player_glop_index is not set," +
+                            "but player_glop was found in glops")
+                        break
+        return result
 
     def set_hud_background(self, path):
         if path is not None:
@@ -977,18 +999,27 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         return result
 
 
-
     def set_as_item(self, glop_name, template_dict):
         result = False
         if glop_name is not None:
             for i in range(0,len(self.scene.glops)):
                 if self.scene.glops[i].name == glop_name:
-                    self.set_as_item_by_index(i, template_dict)
+                    return self.set_as_item_by_index(i, template_dict)
                     break
 
     def add_bump_sound_by_index(self, i, path):
         if path not in self.scene.glops[i].bump_sounds:
             self.scene.glops[i].bump_sounds.append(path)
+
+    def set_as_actor_by_index(self, index, template_dict):
+        result = False
+        actor_dict = get_dict_deepcopy(template_dict)
+        self.scene.glops[index].actor_dict = actor_dict
+        if self.scene.glops[index].hit_radius is None:
+            if "hit_radius" in actor_dict:
+                self.scene.glops[index].hit_radius = actor_dict["hit_radius"]
+            else:
+                self.scene.glops[index].hit_radius = .5
 
     def set_as_item_by_index(self, i, template_dict):
         result = False

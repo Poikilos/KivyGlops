@@ -282,6 +282,7 @@ class PyGlop:
     eye_height = None  # distance from floor
     hit_radius = None
     item_dict = None
+    actor_dict = None
     bump_enable = None
     reach_radius = None
     is_out_of_range = None
@@ -1281,7 +1282,8 @@ class PyGlops:
     lastCreatedMesh = None
     _walkmeshes = None
     camera_glop = None
-    #player_glop = None
+    player_glop = None
+    player_glop_index = None
     prev_inbounds_camera_translate = None
     _bumper_indices = None
     _bumpable_indices = None
@@ -1296,7 +1298,6 @@ class PyGlops:
         self._world_grav_acceleration = 9.8
         self.frames_per_second = 60.0
         self.camera_glop = PyGlop()  #should be remade to subclass of PyGlop in subclass of PyGlops
-        #self.player_glop = camera_glop  # TODO: implement this
         self.camera_glop.eye_height = 1.7  # 1.7 since 5'10" person is ~1.77m, and eye down a bit
         self.camera_glop.hit_radius = .2
         self.camera_glop.reach_radius = 2.5
