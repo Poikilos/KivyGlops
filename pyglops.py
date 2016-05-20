@@ -67,7 +67,7 @@ def angle_trunc(a):
 def getAngleBetweenPoints(x_orig, y_orig, x_landmark, y_landmark):
     deltaY = y_landmark - y_orig
     deltaX = x_landmark - x_orig
-    return angle_trunc(atan2(deltaY, deltaX))
+    return angle_trunc(math.atan2(deltaY, deltaX))
 
 #get angle between two points (from a to b), swizzled to 2d on xz plane; based on getAngleBetweenPoints
 def get_angle_between_two_vec3_xz(a, b):
@@ -282,6 +282,7 @@ class PyGlop:
     eye_height = None  # distance from floor
     hit_radius = None
     item_dict = None
+    projectile_dict = None
     actor_dict = None
     bump_enable = None
     reach_radius = None
@@ -293,6 +294,7 @@ class PyGlop:
     _cached_floor_y = None
     infinite_inventory_enable = None
     bump_sounds = None
+    look_target_glop = None
     #IF ADDING NEW VARIABLE here, remember to update any copy functions (such as get_kivyglop_from_pyglop) or copy constructors in your subclass or calling program
 
 
@@ -375,37 +377,13 @@ class PyGlop:
             self.vertices[v_offset+self._POSITION_OFFSET+2] -= self._pivot_point[2]
             v_offset += self.vertex_depth
         self._pivot_point = (0.0, 0.0, 0.0)
+        
+    def look_at(self, this_glop):
+        print("WARNING: look_at should be implemented by subclass which has rotation angle(s) or matr(ix/ices)")
 
-    def pop_glop_item(self, this_glop_index):
-        select_item_event_dict = None
-        #select_item_event_dict["is_possible"] = False
-        try:
-            if this_glop_index < len(self.properties["inventory_items"]) and this_glop_index>=0:
-                #select_item_event_dict["is_possible"] = True
-                #self.properties["inventory_items"].pop(this_glop_index)
-                self.properties["inventory_items"][this_glop_index] = EMPTY_ITEM
-                if this_glop_index == 0:
-                    select_item_event_dict = self.select_next_inventory_slot(True)
-                else:
-                    select_item_event_dict = self.select_next_inventory_slot(False)
-                if select_item_event_dict is not None:
-                    if "calling_method" in select_item_event_dict:
-                        select_item_event_dict["calling_method"] += " from pop_glop_item"
-                    else:
-                        select_item_event_dict["calling_method"] = "from pop_glop_item"
-        except:
-            print("Could not finish pop_glop_item:")
-            view_traceback()
-        return select_item_event_dict
-
-    def push_glop_item(self, this_glop, this_glop_index):
+    def push_item(self, item_dict):
         select_item_event_dict = dict()
         select_item_event_dict["is_possible"] = False
-        #item_dict = {}
-        item_dict = this_glop.item_dict
-
-        #item_dict["glop_index"] = this_glop_index  #already done when set as itme
-        #item_dict["glop_name"] = this_glop.name  #already done when set as itme
         for i in range(0,len(self.properties["inventory_items"])):
             if self.properties["inventory_items"][i] is None or self.properties["inventory_items"][i]["name"] == EMPTY_ITEM["name"]:
                 self.properties["inventory_items"][i] = item_dict
@@ -432,6 +410,7 @@ class PyGlop:
             select_item_event_dict["proper_name"] = proper_name
             select_item_event_dict["calling method"] = "push_glop_item"
         return select_item_event_dict
+
 
     def select_next_inventory_slot(self, is_forward):
         select_item_event_dict = dict()
@@ -475,7 +454,6 @@ class PyGlop:
     def transform_pivot_to_geometry(self):
         self._pivot_point = self.get_center_average_of_vertices()
         self._on_change_pivot()
-        pass
 
     def get_texture_diffuse_path(self):  #formerly getTextureFileName(self):
         result = None
@@ -493,7 +471,6 @@ class PyGlop:
         except:
             print("Could not finish get_texture_diffuse_path:")
             view_traceback()
-            #pass  #don't care
         if result is None:
             if verbose_enable:
                 print("NOTE: no diffuse texture specified in Glop named '"+str(self.name)+"'")

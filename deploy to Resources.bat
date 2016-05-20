@@ -13,6 +13,9 @@ copy /y "sounds\*.*" "%DESTDIR_FULLNAME%\sounds\"
 md "%DESTDIR_FULLNAME%\music"
 copy /y "music\*.*" "%DESTDIR_FULLNAME%\music\"
 
+md "%DESTDIR_FULLNAME%\meshes"
+copy /y "meshes\*.*" "%DESTDIR_FULLNAME%\meshes\"
+
 md "%DESTDIR_FULLNAME%\more credits"
 copy /y "more credits\*.*" "%DESTDIR_FULLNAME%\more credits\"
 

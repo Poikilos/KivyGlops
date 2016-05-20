@@ -110,7 +110,7 @@ class MainForm(KivyGlopsWindow):
 
         self.set_fly(True)
         self.set_hud_background("hud.png")
-        self.set_background_cylmap("starfield_cylindrical_map.png")
+        self.set_background_cylmap("starfield_cylindrical_map.jpg")
         self.load_obj("spaceship,simple-denapes.obj")
         
         ship_info = dict()
@@ -133,8 +133,8 @@ class MainForm(KivyGlopsWindow):
             self.set_as_actor_by_index(index, ship_info)
             self.add_actor_weapon(index, weapon)
         
-        
-    def attacked_glop(self, attacked_index, attacker_index):
+    def attacked_glop(self, attacked_index, attacker_index, weapon_dict):
+        self.scene.glops[attacked_index].actor_dict["hp"] -= weapon_dict["hit_damage"]
         if self.scene.glops[attacked_index].actor_dict["hp"] <= 0:
             self.explode_glop_by_index(attacked_index)
 
