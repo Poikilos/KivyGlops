@@ -17,3 +17,6 @@ copy "%SOURCE_DIR%\meshes\*.*" "%DEST_DIR%\meshes\"
 
 md "%DEST_DIR%\more credits"
 copy "%SOURCE_DIR%\more credits\*.*" "%DEST_DIR%\more credits"
+
+md "%DEST_DIR%\maps\"
+copy "%SOURCE_DIR%\maps\*.*" "%DEST_DIR%\maps\"

@@ -27,6 +27,7 @@ IF NOT ["%errorlevel%"]==["0"] GOTO EXIT_ERROR
 REM IF EXIST "%DESTDIR_FULLNAME%\deploy.bat" del "%DESTDIR_FULLNAME%\deploy.bat"
 del "%DESTDIR_FULLNAME%\deploy*.bat"
 del "%DESTDIR_FULLNAME%\*.bak"
+del "%DESTDIR_FULLNAME%\opengl*.py*"
 IF EXIST "%DESTDIR_FULLNAME%\.gitattributes" del "%DESTDIR_FULLNAME%\.gitattributes"
 IF EXIST "%DESTDIR_FULLNAME%\.gitignore" del "%DESTDIR_FULLNAME%\.gitignore"
 IF EXIST "%DESTDIR_FULLNAME%\screenshot01.png" del "%DESTDIR_FULLNAME%\screenshot01.png"

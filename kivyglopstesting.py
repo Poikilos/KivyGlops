@@ -75,8 +75,8 @@ class MainForm(KivyGlopsWindow):
 
         #self.load_obj("medseaport1b-minimal.obj")
 
-        # If you already have existing walkmesh code,
-        # keep that instead of typing this section.
+        # If you already have existing walkmesh code, keep that instead of
+        # typing this section, but change "floor" to "walkmesh"
         #walkmesh_names = self.get_similar_names("walkmesh")
         #for name in walkmesh_names:
         #    print("Using walkmesh: ")
@@ -137,6 +137,7 @@ class MainForm(KivyGlopsWindow):
         self.scene.glops[attacked_index].actor_dict["hp"] -= weapon_dict["hit_damage"]
         if self.scene.glops[attacked_index].actor_dict["hp"] <= 0:
             self.explode_glop_by_index(attacked_index)
+        print("HP: "+str(self.scene.glops[attacked_index].actor_dict["hp"]))
 
     def obtain_glop(self, bumpable_name, bumper_name):
         if "barrel" in bumpable_name.lower():

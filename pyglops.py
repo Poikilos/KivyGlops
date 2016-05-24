@@ -269,6 +269,19 @@ def is_in_triangle_vec2(check_vec2, a_vec2, b_vec2, c_vec2):
 #        passive_bumper_command = bump
 
 # PyGlop defines a single OpenGL-ready object. PyGlops should be used for importing, since one mesh file (such as obj) can contain several meshes. PyGlops handles the 3D scene.
+
+class PyGlopHitBox:
+    minimums = None
+    maximums = None
+    
+    def __init__(self):
+        self.minimums = [-0.25, -0.25, -0.25]
+        self.maximums = [0.25, 0.25, 0.25]
+        
+    def to_string(self):
+        return str(self.minimums[0])+" to "+str(self.maximums[0])+",  "+str(self.minimums[1])+" to "+str(self.maximums[1])+",  "+str(self.minimums[2])+" to "+str(self.maximums[2])
+
+
 class PyGlop:
     name = None #object name such as from OBJ's 'o' statement
     source_path = None  #required so that meshdata objects can be uniquely identified (where more than one file has same object name)
@@ -295,8 +308,12 @@ class PyGlop:
     infinite_inventory_enable = None
     bump_sounds = None
     look_target_glop = None
+    hitbox = None
     #IF ADDING NEW VARIABLE here, remember to update any copy functions (such as get_kivyglop_from_pyglop) or copy constructors in your subclass or calling program
 
+    #region runtime variables
+    index = None  # set by add_glop
+    #endregion runtime variables
 
     vertex_format = None
     vertices = None
@@ -325,6 +342,7 @@ class PyGlop:
     #endregion calculated from vertex_format
 
     def __init__(self):
+        self.hitbox = PyGlopHitBox()
         self.physics_enable = False
         self.infinite_inventory_enable = True
         self.is_out_of_range = True
@@ -367,14 +385,50 @@ class PyGlop:
         #if result is None:
         #    print("WARNING: no material for Glop named '"+str(self.name)+"' (NOT YET IMPLEMENTED)")
         #return result
+        
+        
+    def calculate_hit_range():
+        print("calculate_hit_range...")
+        vertex_count = int(len(self.vertices)/self.vertex_depth)
+        v_offset = 0
+        self.hit_radius = 0.0
+        for i in range(0,3):
+            #intentionally set to rediculously far in opposite direction:
+            self.hitbox.minimums[i] = sys.maxsize
+            self.hitbox.maximums[i] = -sys.maxsize
+        for v_number in range(0, vertex_count):
+            for i in range(0,3):
+                if self.vertices[v_offset+self._POSITION_OFFSET+i] < self.hitbox.minimums[i]:
+                    self.hitbox.minimums[i] = self.vertices[v_offset+self._POSITION_OFFSET+i]
+                if self.vertices[v_offset+self._POSITION_OFFSET+i] > self.hitbox.maximums[i]:
+                    self.hitbox.maximums[i] = self.vertices[v_offset+self._POSITION_OFFSET+i]
+            this_vertex_relative_distance = get_distance_vec3(self.vertices[v_offset+self._POSITION_OFFSET:v_offset+self._POSITION_OFFSET+3], self._pivot_point)
+            if this_vertex_relative_distance > self.hit_radius:
+                self.hit_radius = this_vertex_relative_distance
+            v_offset += self.vertex_depth
+        print("  done.")
 
     def apply_pivot(self):
         vertex_count = int(len(self.vertices)/self.vertex_depth)
         v_offset = 0
+        for i in range(0,3):
+            #intentionally set to rediculously far in opposite direction:
+            self.hitbox.minimums[i] = sys.maxsize
+            self.hitbox.maximums[i] = -sys.maxsize
         for v_number in range(0, vertex_count):
-            self.vertices[v_offset+self._POSITION_OFFSET+0] -= self._pivot_point[0]
-            self.vertices[v_offset+self._POSITION_OFFSET+1] -= self._pivot_point[1]
-            self.vertices[v_offset+self._POSITION_OFFSET+2] -= self._pivot_point[2]
+            for i in range(0,3):
+                self.vertices[v_offset+self._POSITION_OFFSET+i] -= self._pivot_point[i]
+                if self.vertices[v_offset+self._POSITION_OFFSET+i] < self.hitbox.minimums[i]:
+                    self.hitbox.minimums[i] = self.vertices[v_offset+self._POSITION_OFFSET+i]
+                if self.vertices[v_offset+self._POSITION_OFFSET+i] > self.hitbox.maximums[i]:
+                    self.hitbox.maximums[i] = self.vertices[v_offset+self._POSITION_OFFSET+i]
+            this_vertex_relative_distance = get_distance_vec3(self.vertices[v_offset+self._POSITION_OFFSET:], self._pivot_point)
+            if this_vertex_relative_distance > self.hit_radius:
+                self.hit_radius = this_vertex_relative_distance
+            #self.vertices[v_offset+self._POSITION_OFFSET+0] -= self._pivot_point[0]
+            #self.vertices[v_offset+self._POSITION_OFFSET+1] -= self._pivot_point[1]
+            #self.vertices[v_offset+self._POSITION_OFFSET+2] -= self._pivot_point[2]
+            
             v_offset += self.vertex_depth
         self._pivot_point = (0.0, 0.0, 0.0)
         
