@@ -49,6 +49,9 @@ EMPTY_ITEM["name"] = "Empty"
 
 kEpsilon = 1.0E-14 # adjust to suit.  If you use floats, you'll probably want something like 1E-7f
 
+def get_vec3_from_point(point):
+    return (point.x, point.y, point.z)
+
 def get_rect_from_polar_deg(r, theta):
     x = r * math.cos(math.radians(theta))
     y = r * math.sin(math.radians(theta))
@@ -273,13 +276,20 @@ def is_in_triangle_vec2(check_vec2, a_vec2, b_vec2, c_vec2):
 class PyGlopHitBox:
     minimums = None
     maximums = None
-    
+
     def __init__(self):
         self.minimums = [-0.25, -0.25, -0.25]
         self.maximums = [0.25, 0.25, 0.25]
-        
+
+    def contains_vec3(self, pos):
+        return pos[0]>=self.minimums[0] and pos[0]<=self.maximums[0] \
+            and pos[1]>=self.minimums[1] and pos[1]<=self.maximums[1] \
+            and pos[2]>=self.minimums[2] and pos[2]<=self.maximums[2]
+
     def to_string(self):
-        return str(self.minimums[0])+" to "+str(self.maximums[0])+",  "+str(self.minimums[1])+" to "+str(self.maximums[1])+",  "+str(self.minimums[2])+" to "+str(self.maximums[2])
+        return str(self.minimums[0]) + " to " + str(self.maximums[0]) + \
+            ",  "+str(self.minimums[1]) + " to " + str(self.maximums[1]) + \
+            ",  " + str(self.minimums[2])+" to "+str(self.maximums[2])
 
 
 class PyGlop:
@@ -385,8 +395,8 @@ class PyGlop:
         #if result is None:
         #    print("WARNING: no material for Glop named '"+str(self.name)+"' (NOT YET IMPLEMENTED)")
         #return result
-        
-        
+
+
     def calculate_hit_range():
         print("calculate_hit_range...")
         vertex_count = int(len(self.vertices)/self.vertex_depth)
@@ -428,10 +438,10 @@ class PyGlop:
             #self.vertices[v_offset+self._POSITION_OFFSET+0] -= self._pivot_point[0]
             #self.vertices[v_offset+self._POSITION_OFFSET+1] -= self._pivot_point[1]
             #self.vertices[v_offset+self._POSITION_OFFSET+2] -= self._pivot_point[2]
-            
+
             v_offset += self.vertex_depth
         self._pivot_point = (0.0, 0.0, 0.0)
-        
+
     def look_at(self, this_glop):
         print("WARNING: look_at should be implemented by subclass which has rotation angle(s) or matr(ix/ices)")
 
@@ -504,7 +514,7 @@ class PyGlop:
 
     def _on_change_pivot(self):
         pass
-    
+
     def transform_pivot_to_geometry(self):
         self._pivot_point = self.get_center_average_of_vertices()
         self._on_change_pivot()
@@ -1351,7 +1361,7 @@ class PyGlops:
 
     def create_mesh(self):
         return PyGlop()
-        
+
     def set_fly(self, fly_enable):
         if fly_enable==True:
             self._fly_enable = True

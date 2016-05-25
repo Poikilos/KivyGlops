@@ -112,10 +112,10 @@ class MainForm(KivyGlopsWindow):
         self.set_hud_background("hud.png")
         self.set_background_cylmap("starfield_cylindrical_map.jpg")
         self.load_obj("spaceship,simple-denapes.obj")
-        
+
         ship_info = dict()
         ship_info["hp"] = 1.0
-        
+
         player1_index = self.get_player_glop_index(1)
         self.set_as_actor_by_index(player1_index, ship_info)
 
@@ -126,17 +126,17 @@ class MainForm(KivyGlopsWindow):
         weapon["fire_type"] = "throw_linear"
         weapon["hit_damage"] = .3
         self.add_actor_weapon(player1_index, weapon)
-        
+
         enemy_indices = self.get_indices_by_source_path("spaceship,simple-denapes.obj")
         for i in range(0,len(enemy_indices)):
             index = enemy_indices[i]
             self.set_as_actor_by_index(index, ship_info)
             self.add_actor_weapon(index, weapon)
-        
+
     def attacked_glop(self, attacked_index, attacker_index, weapon_dict):
         self.scene.glops[attacked_index].actor_dict["hp"] -= weapon_dict["hit_damage"]
         if self.scene.glops[attacked_index].actor_dict["hp"] <= 0:
-            self.explode_glop_by_index(attacked_index)
+            self.explode_glop_by_index(attacked_index, weapon_dict)
         print("HP: "+str(self.scene.glops[attacked_index].actor_dict["hp"]))
 
     def obtain_glop(self, bumpable_name, bumper_name):
@@ -144,6 +144,9 @@ class MainForm(KivyGlopsWindow):
             self.play_sound("sounds/barrel,wooden-pickup.wav")
         if "crate" in bumpable_name.lower():
             self.play_sound("sounds/crate-pickup.wav")
+
+    def display_explosion(self, pos, radius, attacked_index, weapon):
+        pass
 
     def update_glops(self):
         if self.selected_glop is not None:

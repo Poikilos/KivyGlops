@@ -189,7 +189,7 @@ class KivyGlop(PyGlop, Widget):
         result._pushmatrix = PushMatrix()
         result._updatenormalmatrix = UpdateNormalMatrix()
         result._popmatrix = PopMatrix()
-        
+
         context.add(result._pushmatrix)
         context.add(result._translate_instruction)
         context.add(result._rotate_instruction_x)
@@ -203,9 +203,9 @@ class KivyGlop(PyGlop, Widget):
         else:
             print("WARNING in copy_as_mesh_instance: meshless glop '"+str(self.name)+"'")
         context.add(result._popmatrix)
-        
+
         return result
-        
+
     def calculate_hit_range(self):
         pass
         #TODO: re-implement this, changing hit box taking rotation into account
@@ -318,7 +318,7 @@ class KivyGlop(PyGlop, Widget):
         if self._mesh is not None and this_texture_image is not None:
             self._mesh.texture = this_texture_image.texture
         return this_texture_image
-            
+
     def push_glop_item(self, this_glop, this_glop_index):
         #item_dict = {}
         item_dict = this_glop.item_dict
@@ -348,7 +348,7 @@ class KivyGlop(PyGlop, Widget):
             print("Could not finish pop_glop_item:")
             view_traceback()
         return select_item_event_dict
-         
+
     def generate_kivy_mesh(self):
         participle = "checking for texture"
         self._mesh = None
@@ -386,7 +386,7 @@ class KivyGlops(PyGlops):
         self.glops.append(self.camera_glop)
         self.player_glop.name = "Player 1"
         self.glops.append(self.player_glop)
-        self.player_glop_index = len(self.glops)-1        
+        self.player_glop_index = len(self.glops)-1
         self._bumper_indices.append(self.player_glop_index)
 
     def create_mesh(self):
@@ -450,8 +450,8 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
 
     def set_fly(self, fly_enable):
         self.scene.set_fly(fly_enable)
-        
-    
+
+
     def get_player_glop_index(self, player_number):
         result = None
         if self.scene.player_glop_index is not None:
@@ -771,21 +771,38 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                     self.remove_glop(self.scene.glops[indices[i]])
             else:
                 print("ERROR: got 0 objects from fired_sprite_path '"+str(weapon_dict["fired_sprite_path"]+"'"))
-        
+
         print("add_actor_weapon NOT YET IMPLEMENTED")
         return result
 
-    def explode_glop_by_index(self, index):
+    def killed_glop(self, index, weapon_dict):
+        print("subclass should implement killed_glop" + \
+            " (variables other than pos may be None)")
+
+    def kill_glop_by_index(self, index, weapon_dict=None):
+        self.killed_glop(index, weapon_dict)
         self.remove_glop(self.scene.glops[index])
         self.scene.glops[index].bump_enable = False
-        print("NOT YET IMPLEMENTED: visuals for explode_glop_by_index")
+
+    def explode_glop_by_index(self, index, weapon_dict=None):
+        self.display_explosion( \
+            get_vec3_from_point(self.scene.glops[index]._translate_instruction), \
+            self.scene.glops[index].hit_radius, \
+            index,
+            weapon_dict)
+        self.kill_glop_by_index(index, weapon_dict)
+
+    def display_explosion(self, pos, radius, attacked_index, weapon_dict):
+        print("subclass should implement display_explosion" + \
+            " (variables other than pos may be None)")
 
     def bump_glop(self, bumpable_name, bumper_name):
         return None
-        
+
     def attacked_glop(self, attacked_index, attacker_index, weapon_dict):
-        #this should be implemented by the program which would know how to 
-        #damage or calculate defense or other properties
+        print("attacked_glop should be implemented by the subclass" + \
+            "which would know how to damage or calculate defense" + \
+            "or other properties")
         #trivial example:
         #self.scene.glops[attacked_index].actor_dict["hp"] -= weapon_dict["hit_damage"]
         #if self.scene.glops[attacked_index].actor_dict["hp"] <= 0:
@@ -1032,10 +1049,10 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         else:
             print("ERROR: source_path is None for load_obj")
         return results
-        
+
     def remove_glop(self, this_glop):
         self._meshes.remove(this_glop.get_context())
-        
+
     def add_glop(self, this_glop):
         participle="initializing"
         try:
@@ -1054,7 +1071,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             this_glop._pushmatrix = PushMatrix()
             this_glop._updatenormalmatrix = UpdateNormalMatrix()
             this_glop._popmatrix = PopMatrix()
-            
+
             context.add(this_glop._pushmatrix)
             context.add(this_glop._translate_instruction)
             context.add(this_glop._rotate_instruction_x)
@@ -1079,8 +1096,8 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             context.add(this_glop._popmatrix)
             if self.scene.glops is None:
                 self.scene.glops = list()
-                
-            
+
+
             self.scene.glops.append(this_glop)
             this_glop.index = len(self.scene.glops) - 1
             self._meshes.add(context)  # _meshes is a visible instruction group
@@ -1317,7 +1334,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                                         fired_glop._translate_instruction.y += fired_glop.y_velocity*2
                                         fired_glop._translate_instruction.z += fired_glop.z_velocity*2
                                         fired_glop._translate_instruction.y -= user_glop.eye_height/2
-                                        
+
                         except:
                             print("user_glop.name:"+str(user_glop.name))
                             print('user_glop.properties["inventory_index"]:'+str(user_glop.properties["inventory_index"]))
@@ -1371,7 +1388,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         if self.scene.last_update_s is not None:
             got_frame_delay = best_timer() - self.scene.last_update_s
         self.scene.last_update_s = best_timer()
-        
+
         for i in range(0,len(self.scene.glops)):
             if self.scene.glops[i].look_target_glop is not None:
                 self.scene.glops[i].look_at(self.scene.camera_glop)
@@ -1608,7 +1625,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         global missing_bumpable_warning_enable
         global missing_radius_warning_enable
         for bumpable_index_index in range(0, len(self.scene._bumpable_indices)):
-            
+
             bumpable_index = self.scene._bumpable_indices[bumpable_index_index]
             bumpable_name = self.scene.glops[bumpable_index].name
             bumpable_name = self.scene.glops[bumpable_index]._temp_bumpable_enable = True
@@ -1618,24 +1635,30 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                     bumper_name = self.scene.glops[bumper_index].name
                     distance = get_distance_kivyglops(self.scene.glops[bumpable_index], self.scene.glops[bumper_index])
                     if self.scene.glops[bumpable_index].hit_radius is not None and self.scene.glops[bumpable_index].hit_radius is not None:
-                        total_hit_radius = self.scene.glops[bumpable_index].hit_radius+self.scene.glops[bumper_index].reach_radius
+                        total_hit_radius = 0.0
+                        if self.scene.glops[bumpable_index].projectile_dict is not None:
+                            total_hit_radius = self.scene.glops[bumpable_index].hit_radius+self.scene.glops[bumper_index].hit_radius
+                        else:
+                            total_hit_radius = self.scene.glops[bumpable_index].hit_radius+self.scene.glops[bumper_index].reach_radius
                         if distance <= total_hit_radius:
                             if self.scene.glops[bumpable_index].is_out_of_range:  # only run if ever moved away from it
                                 if self.scene.glops[bumper_index].bump_enable:
-                                    #NOTE: already checked
-                                    # bumpable_index bump_enable above
-                                    #print("distance:"+str(total_hit_radius)+" <= total_hit_radius:"+str(total_hit_radius))
-                                    if self.scene.glops[bumpable_index].projectile_dict is None or ("owner" not in self.scene.glops[bumpable_index].projectile_dict) or (self.scene.glops[bumpable_index].projectile_dict["owner"] != self.scene.glops[bumper_index].name):
-                                        self._internal_bump_glop(bumpable_index, bumper_index)
-                                        if self.scene.glops[bumpable_index].projectile_dict is not None:
-                                            self.attacked_glop(bumper_index, self.scene.glops[bumpable_index].projectile_dict["owner_index"], self.scene.glops[bumpable_index].projectile_dict)
-                                            self.scene.glops[bumpable_index].bump_enable = False
-                                        else:
-                                            pass
-                                            #print("bumper:"+str( (self.scene.glops[bumper_index]._translate_instruction.x, self.scene.glops[bumper_index]._translate_instruction.y, self.scene.glops[bumper_index]._translate_instruction.z) ) +
-                                            #      "; bumped:"+str( (self.scene.glops[bumpable_index]._translate_instruction.x, self.scene.glops[bumpable_index]._translate_instruction.y, self.scene.glops[bumpable_index]._translate_instruction.z) ))
-                                    #else:
-                                        #print("VERBOSE MESSAGE: cannot bump own projectile")
+                                    if self.scene.glops[bumper_index].hitbox is None or self.scene.glops[bumper_index].hitbox.contains_vec3(get_vec3_from_point(self.scene.glops[bumpable_index]._translate_instruction)):
+                                        #NOTE: already checked
+                                        # bumpable_index bump_enable above
+                                        #print("distance:"+str(total_hit_radius)+" <= total_hit_radius:"+str(total_hit_radius))
+                                        if self.scene.glops[bumpable_index].projectile_dict is None or ("owner" not in self.scene.glops[bumpable_index].projectile_dict) or (self.scene.glops[bumpable_index].projectile_dict["owner"] != self.scene.glops[bumper_index].name):
+                                            self._internal_bump_glop(bumpable_index, bumper_index)
+                                            print("  this_distance: "+str(distance))
+                                            if self.scene.glops[bumpable_index].projectile_dict is not None:
+                                                self.attacked_glop(bumper_index, self.scene.glops[bumpable_index].projectile_dict["owner_index"], self.scene.glops[bumpable_index].projectile_dict)
+                                                self.scene.glops[bumpable_index].bump_enable = False
+                                            else:
+                                                pass
+                                                #print("bumper:"+str( (self.scene.glops[bumper_index]._translate_instruction.x, self.scene.glops[bumper_index]._translate_instruction.y, self.scene.glops[bumper_index]._translate_instruction.z) ) +
+                                                #      "; bumped:"+str( (self.scene.glops[bumpable_index]._translate_instruction.x, self.scene.glops[bumpable_index]._translate_instruction.y, self.scene.glops[bumpable_index]._translate_instruction.z) ))
+                                        #else:
+                                            #print("VERBOSE MESSAGE: cannot bump own projectile")
                         else:
                             self.scene.glops[bumpable_index].is_out_of_range = True
                             #print("did not bump "+str(bumpable_name)+" (bumper is at "+str( (self.scene.camera_glop._translate_instruction.x,self.scene.camera_glop._translate_instruction.y,self.scene.camera_glop._translate_instruction.z) )+")")
@@ -1676,7 +1699,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                     self.scene.glops[bumpable_index]._translate_instruction.x += self.scene.glops[bumpable_index].x_velocity
                     self.scene.glops[bumpable_index]._translate_instruction.y += self.scene.glops[bumpable_index].y_velocity
                     self.scene.glops[bumpable_index]._translate_instruction.z += self.scene.glops[bumpable_index].z_velocity
-                    
+
     #end update_glsl
 
     #def get_view_angles_by_touch_deg(self, touch):
