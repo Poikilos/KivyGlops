@@ -1,0 +1,16 @@
+2016-05-26
+CC0 (Creative Commons Zero) license
+by expertmm
+
+Steps:
+11in run , 7in rise(0.2794, 0.1778 m)
+
+Seats:
+18in deep + 12in foot area for 30in total, 18in rise,  (0.762, 0.4572 m)
+
+Arena:
+200'x300'  (60.96 x 91.44 m)
+
+Extrude for wall (steps) was 1m, but left gap from -15.57583 to -15.24
+with 258 extrusion count
+So was filled manually
