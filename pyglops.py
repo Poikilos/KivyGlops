@@ -319,6 +319,7 @@ class PyGlop:
     bump_sounds = None
     look_target_glop = None
     hitbox = None
+    visible_enable = None
     #IF ADDING NEW VARIABLE here, remember to update any copy functions (such as get_kivyglop_from_pyglop) or copy constructors in your subclass or calling program
 
     #region runtime variables
@@ -352,6 +353,7 @@ class PyGlop:
     #endregion calculated from vertex_format
 
     def __init__(self):
+        self.visible_enable = True
         self.hitbox = PyGlopHitBox()
         self.physics_enable = False
         self.infinite_inventory_enable = True
@@ -397,26 +399,14 @@ class PyGlop:
         #return result
 
 
-    def calculate_hit_range():
-        print("calculate_hit_range...")
-        vertex_count = int(len(self.vertices)/self.vertex_depth)
-        v_offset = 0
-        self.hit_radius = 0.0
-        for i in range(0,3):
-            #intentionally set to rediculously far in opposite direction:
-            self.hitbox.minimums[i] = sys.maxsize
-            self.hitbox.maximums[i] = -sys.maxsize
-        for v_number in range(0, vertex_count):
-            for i in range(0,3):
-                if self.vertices[v_offset+self._POSITION_OFFSET+i] < self.hitbox.minimums[i]:
-                    self.hitbox.minimums[i] = self.vertices[v_offset+self._POSITION_OFFSET+i]
-                if self.vertices[v_offset+self._POSITION_OFFSET+i] > self.hitbox.maximums[i]:
-                    self.hitbox.maximums[i] = self.vertices[v_offset+self._POSITION_OFFSET+i]
-            this_vertex_relative_distance = get_distance_vec3(self.vertices[v_offset+self._POSITION_OFFSET:v_offset+self._POSITION_OFFSET+3], self._pivot_point)
-            if this_vertex_relative_distance > self.hit_radius:
-                self.hit_radius = this_vertex_relative_distance
-            v_offset += self.vertex_depth
-        print("  done.")
+    def calculate_hit_range(self):
+        print("Calculate hit range should be implemented by subclass.")
+        print("  (setting hitbox to None to avoid using default hitbox)")
+        self.hitbox = None
+    
+    def process_ai(self, glop_index):
+        #this should be implemented in the subclass
+        pass
 
     def apply_pivot(self):
         vertex_count = int(len(self.vertices)/self.vertex_depth)
@@ -444,6 +434,15 @@ class PyGlop:
 
     def look_at(self, this_glop):
         print("WARNING: look_at should be implemented by subclass which has rotation angle(s) or matr(ix/ices)")
+        
+    def has_item(self, name):
+        result = False
+        for i in range(0,len(self.properties["inventory_items"])):
+            if (self.properties["inventory_items"][i] is not None) and \
+               (self.properties["inventory_items"][i]["name"] == name):
+                result = True
+                break
+        return result
 
     def push_item(self, item_dict):
         select_item_event_dict = dict()
@@ -1358,6 +1357,43 @@ class PyGlops:
         thisList.append("GlopsMaterials:")
         for i in range(0,len(self.materials)):
             self.materials[i].append_dump(thisList, tabString)
+
+    def set_as_actor_by_index(self, index, template_dict):
+        #result = False
+        if index is not None:
+            if index>=0:
+                if index<len(self.glops):
+                    actor_dict = get_dict_deepcopy(template_dict)
+                    self.glops[index].actor_dict = actor_dict
+                    if self.glops[index].hit_radius is None:
+                        if "hit_radius" in actor_dict:
+                            self.glops[index].hit_radius = actor_dict["hit_radius"]
+                        else:
+                            self.glops[index].hit_radius = .5
+                    if "target_index" not in self.glops[index].actor_dict:
+                        self.glops[index].actor_dict["target_index"] = None
+                    if "moveto_index" not in self.glops[index].actor_dict:
+                        self.glops[index].actor_dict["moveto_index"] = None
+                    if "target_pos" not in self.glops[index].actor_dict:
+                        self.glops[index].actor_dict["target_pos"] = None
+                    if "walk_units_per_second" not in self.glops[index].actor_dict:
+                        self.glops[index].actor_dict["walk_units_per_second"] = 1.0
+                            
+                    self.glops[index].calculate_hit_range()
+                    self._bumper_indices.append(index)
+                    self.glops[index].bump_enable = True
+                    print("Set "+str(index)+" as bumper")
+                    if self.glops[index].hitbox is None:
+                        print("  hitbox: None")
+                    else:
+                        print("  hitbox: "+self.glops[index].hitbox.to_string())
+                else:
+                    print("ERROR in set_as_actor_by_index: index "+str(index)+" is out of range")
+            else:
+                print("ERROR in set_as_actor_by_index: index is "+str(index))
+        else:
+            print("ERROR in set_as_actor_by_index: index is None")
+        #return result
 
     def create_mesh(self):
         return PyGlop()
