@@ -521,13 +521,17 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         else:
             print("ERROR in set_hud_image: path is None")
 
-    def spawn_pex_particles(self, path, pos, radius=1.0):
+    def spawn_pex_particles(self, path, pos, radius=1.0, duration_seconds=None):
         if path is not None:
             if os.path.isfile(path):
-                print("found " + path)
+                print("found '" + path + "'")
                 print("  (not yet implemented)")
+                #Range is 0 to 250px for size, so therefore translate to meters:
+                # divide by 125 to get meters, then multiply by radius,
+                # so that pex file can determine "extra" (>125)
+                # or "reduced" (<125) size while retaining pixel-based sizing.
             else:
-                print("missing " + path)
+                print("missing '" + path + "'")
         else:
             print("ERROR in spawn_pex_particles: path is None")
 
