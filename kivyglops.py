@@ -1797,18 +1797,37 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
     #    x_angle = (pos[0]/self.width)*360
     #    y_angle = -1*(pos[1]/self.height)*360
     #    return x_angle, y_angle
+    
+    
+    def update_debug_label(self):
+        yaml = ""
+        indent = ""
+        for key in debug_dict.keys():
+            yaml = push_yaml_text(yaml, key, debug_dict[key], indent)
+            #if debug_dict[key] is None:
+            #    self.debug_label.text = key + ": None"
+            #elif type(debug_dict[key]) is dict:
+        self.debug_label.text = yaml
+        
 
     def get_view_angles_by_pos_rad(self, pos):
+        global debug_dict
         x_angle = -math.pi + (float(pos[0])/float(self.width-1))*(2.0*math.pi)
         y_angle = -(math.pi/2.0) + (float(pos[1])/float(self.height-1))*(math.pi)
-        self.debug_label.text = "View:" + "\n  pos:" + str(pos) + \
-            "\n  size:" + str( (self.width, self.height) ) + \
-            "\n  pitch,yaw:" + str( (int(math.degrees(x_angle)),
-                                  int(math.degrees(y_angle))) )
+        if "View" not in debug_dict:
+            debug_dict["View"] = dict()
+        debug_dict["View"]["pos"] = str(pos)
+        debug_dict["View"]["size"] = str( (self.width, self.height) )
+        debug_dict["View"]["pitch,yaw"] = str((int(math.degrees(x_angle)),
+                                                    int(math.degrees(y_angle))))
         if self.screen_w_arc_theta is not None and self.screen_h_arc_theta is not None:
-            self.debug_label.text += "\n field of view: " + \
-                str( (int(math.degrees(self.screen_w_arc_theta)),
-                    int(math.degrees(self.screen_h_arc_theta))) )
+            debug_dict["View"]["field of view"] = \
+                str((int(math.degrees(self.screen_w_arc_theta)),
+                     int(math.degrees(self.screen_h_arc_theta))))
+        else:
+            if "field of view" in debug_dict["View"]:
+                debug_dict["View"]["field of view"] = None
+        self.update_debug_label()
         return x_angle, y_angle
 
 #     def canvasTouchDown(self, touch, *largs):

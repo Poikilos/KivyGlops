@@ -3,6 +3,7 @@ import traceback
 import copy
 
 verbose_enable = False
+debug_dict = dict()  # constantly-changing variables, for visual debug
 
 #from  github.com/expertmm/minetest/chunkymap/expertmm.py, but modified for python2
 def get_dict_deepcopy(old_dict):
@@ -50,3 +51,18 @@ def get_index_by_name(object_list, needle):
             view_traceback()
     return result
 
+def push_yaml_text(yaml, name, val, indent):
+    if type(val) is dict:
+        for key in val.keys():
+            yaml = push_yaml_text(yaml, key, val[key], indent+"  ")
+    else: #if val is None:
+        if yaml is not None:
+            if len(yaml)>0:
+                yaml += "\n"
+        else:
+            yaml = ""
+        if val is None:
+            yaml += indent + name + ": ~"
+        else:
+            yaml += indent + name + ": " + str(val)
+    return yaml
