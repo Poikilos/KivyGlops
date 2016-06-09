@@ -334,7 +334,7 @@ class KivyGlop(PyGlop, Widget):
                     this_texture_image = Image(resource_find(self.last_loaded_path))
                 print("Loaded texture '"+str(self.last_loaded_path)+"'")
             except:
-                print("Could not finish loading texture: " + self.last_loaded_path)
+                print("Could not finish loading texture: " + str(self.last_loaded_path))
                 view_traceback()
         else:
             if verbose_enable:

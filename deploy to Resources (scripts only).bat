@@ -1,6 +1,7 @@
 @echo off
 SET DESTDIR_FULLNAME=R:\Classes\ComputerProgramming\Examples\KivyGlops
-copy /y *.py "%DESTDIR_FULLNAME%\"
+echo Copying py files...
+copy /y "%~dp0\*.py" "%DESTDIR_FULLNAME%\"
 IF NOT ["%errorlevel%"]==["0"] GOTO EXIT_ERROR
 
 REM md "%DESTDIR_FULLNAME%\maps"
@@ -20,11 +21,15 @@ REM md "%DESTDIR_FULLNAME%\more credits"
 REM copy /y "more credits\*.*" "%DESTDIR_FULLNAME%\more credits\"
 
 REM see also:
-copy /y etc\update-kivyglops.bat "%DESTDIR_FULLNAME%\"
+echo Copying updater script...
+copy /y "%~dp0\etc\update-kivyglops.bat" "%DESTDIR_FULLNAME%\"
+echo Copying script updater script...
+copy /y "%~dp0\etc\update-kivyglops (scripts only).bat" "%DESTDIR_FULLNAME%\"
 
 
 IF NOT ["%errorlevel%"]==["0"] GOTO EXIT_ERROR
 REM IF EXIST "%DESTDIR_FULLNAME%\deploy.bat" del "%DESTDIR_FULLNAME%\deploy.bat"
+del "%DESTDIR_FULLNAME%\update-kivyglops (py files only).bat"
 del "%DESTDIR_FULLNAME%\deploy*.bat"
 del "%DESTDIR_FULLNAME%\*.bak"
 del "%DESTDIR_FULLNAME%\opengl*.py*"

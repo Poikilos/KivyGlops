@@ -21,10 +21,12 @@ copy /y "more credits\*.*" "%DESTDIR_FULLNAME%\more credits\"
 
 REM see also:
 copy /y etc\update-kivyglops.bat "%DESTDIR_FULLNAME%\"
+copy /y "etc\update-kivyglops (scripts only).bat" "%DESTDIR_FULLNAME%\"
 
 
 IF NOT ["%errorlevel%"]==["0"] GOTO EXIT_ERROR
 REM IF EXIST "%DESTDIR_FULLNAME%\deploy.bat" del "%DESTDIR_FULLNAME%\deploy.bat"
+del "%DESTDIR_FULLNAME%\update-kivyglops (py files only).bat"
 del "%DESTDIR_FULLNAME%\deploy*.bat"
 del "%DESTDIR_FULLNAME%\*.bak"
 del "%DESTDIR_FULLNAME%\opengl*.py*"

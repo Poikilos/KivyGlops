@@ -64,7 +64,7 @@ class MainForm(KivyGlopsWindow):
             print("Preparing item: "+name)
             self.set_as_item(name, item_dict)
 
-        self.set_background_cylmap("maps/sky-texture-seemless.jpg")
+        self.set_background_cylmap("maps/sky-texture-seamless.jpg")
 
         human_info = dict()
         human_info["hp"] = 1.0
