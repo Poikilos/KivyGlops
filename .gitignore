@@ -105,3 +105,8 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+/LIZARD-MAN.mtl
+/LIZARD-MAN.obj
+/LIZARD-MAN.obj
+/opengl2.py
+/rpg (Rocket Propelled Grenade, perrymeichon at turbosquid).obj

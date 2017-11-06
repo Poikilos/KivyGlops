@@ -1954,6 +1954,46 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         else:
             self.selected_glop = None
             self.selected_glop_index = None
+    
+    def index_of_mesh(self, name):
+        result = -1
+        name_lower = name.lower()
+        for i in range(0,len(self.scene.glops)):
+            source_name = None
+            source_name_lower = None
+            if self.scene.glops[i].source_path is not None:
+                source_name = os.path.basename(os.path.normpath(self.scene.glops[i].source_path))
+                source_name_lower = source_name.lower()
+            if self.scene.glops[i].name==name:
+                result = i
+                break
+            elif self.scene.glops[i].name.lower()==name_lower:
+                print("WARNING: object with different capitalization was not considered a match: " + self.scene.glops[i].name)
+            elif (source_name_lower is not None) and (source_name_lower==name_lower
+                  or os.path.splitext(source_name_lower)[0]==name_lower):
+                result = i
+                name_msg = "filename: '" + source_name + "'"
+                if os.path.splitext(source_name_lower)[0]==name_lower:
+                    name_msg = "part of filename: '" + os.path.splitext(source_name)[0] + "'"
+                print("WARNING: mesh was named '" + self.scene.glops[i].name + "' but found using " + name_msg)
+                if (i+1<len(self.scene.glops)):
+                    for j in range(i+1,len(self.scene.glops)):
+                        sub_source_name_lower = None
+                        if self.scene.glops[j].source_path is not None:
+                            sub_source_name_lower = os.path.basename(os.path.normpath(self.scene.glops[i].source_path)).lower()
+                        if (source_name_lower is not None) and (source_name_lower==name_lower
+                            or os.path.splitext(source_name_lower)[0]==name_lower):
+                            print("  * could also be mesh named '" + self.scene.glops[j].name+"'")
+                break
+        return result
+    
+    def select_mesh_by_name(self, name):
+        found = False
+        index = self.index_of_mesh(name)
+        if index > -1:
+            self.select_mesh_by_index(index)
+            found = True
+        return found
 
     def _keyboard_closed(self):
         print('Keyboard disconnected!')

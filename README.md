@@ -11,6 +11,7 @@ Control 3D objects and the camera in your 3D Kivy app!
 * Triangulates (tesselates) obj input manually
 
 ## Changes
+* (2017-11-06) Your KivyGlopsWindow implementation can now select mesh by name: self.select_mesh_by_name("some_named_mesh") (or filename but shows warning in stdout: self.select_mesh_by_name("somefilename") or self.select_mesh_by_name("somefilename.obj"))
 * (2016-04-29) Switched to using only graphics that are public domain (changed license of modified resources to CC-BY-SA 4.0); such as, removed graphics based on cinder block wall from photoshoptextures.com due to quirky custom license
 * (2016-02-12) Change the PyGlops ObjFile and objfile.py to WObjFile and wobjfile.py (to avoid naming conflict with ObjFile and objfile.py in Kivy examples)
 * (2016-02-04) Finish separating (native) PyGlop from (Wavefront(R)) WObject for many reasons including: avoid storing redundant data; keep track of what format of data is stored in list members; allow storage of strict obj format; allow conversion back&forth or to other formats being sure of what o3d contains
@@ -70,7 +71,7 @@ Resources are provided under Creative Commons Attribution Share-Alike (CC-BY-SA)
 
 ## Kivy Notes
 * Kivy has no default vertex format, so pyglops.py provides OpenGL with vertex format (& names the variables)--see:
-	PyGlop's __init__ method
+    PyGlop's __init__ method
 position is vec4 as per https://en.wikipedia.org/wiki/Homogeneous_coordinates
 * Kivy has no default model view matrix, so main window provides:
 uniform mat4 modelview_mat;  //derived from self.canvas["modelview_mat"] = modelViewMatrix
