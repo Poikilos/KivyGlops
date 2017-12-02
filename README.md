@@ -29,6 +29,8 @@ Control 3D objects and the camera in your 3D Kivy app!
 * (2015-04-06) ran 2to3 (originally based on nskrypnik's kivy-rotation3d), which only had to change objloader (changes raise to function notation, and map(a,b) to map(list(a,b)) )
 
 ## Known Issues
+* should behave as though you have 1 crate when you have 1 (instead of when you have 2)
+* application crash during play_music internal methods if file does not exist
 * should get self.scene.glops[bumped_index]._cached_floor_y from walkmesh underneath instead of self.scene._world_min_y
 * should only place unique points into glop when individuating objects in o file
 * fix glitch where walking into corner fights between walls (resolve by getting better pushed_angle that moves in same direction as walking instead of same direction as pushed back by boundary)
@@ -41,6 +43,7 @@ Control 3D objects and the camera in your 3D Kivy app!
     _map_reflection = None  # refl; can be -type sphere
 
 ## Planned Features
+* show selected item in hand
 * Use Z Buffer as parameter for effects such as desaturate by inverse normalized Z Buffer value so far away objects are less saturated1
 * Implement thorough gamma correction (convert textures to linear space, then convert output back to sRGB) such as http://www.panda3d.org/blog/the-new-opengl-features-in-panda3d-1-9/
 * Implement standard shader inputs and Nodes with Blender as a standard
