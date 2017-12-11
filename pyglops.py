@@ -513,7 +513,11 @@ class PyGlop:
 
     def _on_change_pivot(self):
         pass
-
+    
+    def get_context(self):
+        print("WARNING: get_context should be defined by a subclass since it involves the graphics implementation")
+        return False
+    
     def transform_pivot_to_geometry(self):
         self._pivot_point = self.get_center_average_of_vertices()
         self._on_change_pivot()
@@ -1321,6 +1325,7 @@ class PyGlops:
     lastCreatedMaterial = None
     lastCreatedMesh = None
     _walkmeshes = None
+    window = None
     camera_glop = None
     player_glop = None
     player_glop_index = None
@@ -1332,6 +1337,7 @@ class PyGlops:
     frames_per_second = None
     last_update_s = None
     _fly_enable = None
+    _meshes = None  # this is a list of any implementation-specific type
 
     def __init__(self):
         self._fly_enable = False
@@ -1348,6 +1354,197 @@ class PyGlops:
         self.materials = []
         self._bumper_indices = []
         self._bumpable_indices = []
+    
+    def _run_command(self, command, bumpable_index, bumper_index, bypass_handlers_enable=False):
+        print("WARNING: _run_command should be implemented by a subclass since it requires using the graphics implementation") 
+        return False
+        
+   # This method overrides object bump code, and gives the item to the player (mimics "obtain" event)
+    # cause player to obtain the item found first by keyword, then hide the item (overrides object bump code)
+    def give_item_by_keyword_to_player_number(self, player_number, keyword, allow_owned_enable=False):
+        indices = get_indices_of_similar_names(keyword, allow_owned_enable=allow_owned_enable)
+        result = False
+        if indices is not None and len(indices)>0:
+            item_glop_index = indices[0]
+            result = self.give_item_by_index_to_player_number(player_number, item_glop_index, "hide")
+        return result
+
+    # This method overrides object bump code, and gives the item to the player (mimics "obtain" command).
+    # pre_commands can be either None (to imply default "hide") or a string containing semicolon-separated commands that will occur before obtain
+    def give_item_by_index_to_player_number(self, player_number, item_glop_index, pre_commands=None, bypass_handlers_enable=True):
+        result = False
+        bumpable_index = item_glop_index
+        bumper_index = self.get_player_glop_index(player_number)
+        if verbose_enable:
+            print("give_item_by_index_to_player_number; item_name:"+self.glops[bumpable_index]+"; player_name:"+self.glops[bumper_index].name+"")
+        if pre_commands is None:
+            pre_commands = "hide"  # default behavior is to hold item in inventory invisibly
+        if pre_commands is not None:
+            command_list = pre_commands.split(";")
+            for command_original in command_list:
+                command = command_original.strip()
+                if command != "obtain":
+                    self._run_command(command, bumpable_index, bumper_index, bypass_handlers_enable=bypass_handlers_enable)
+                else:
+                    print("  warning: skipped redundant 'obtain' command in post_commands param given to give_item_by_index_to_player_number")
+
+        self._run_command("obtain", bumpable_index, bumper_index, bypass_handlers_enable=bypass_handlers_enable)
+        result = True
+        return result
+        
+    def _run_semicolon_separated_commands(self, semicolon_separated_commands, bumpable_index, bumper_index, bypass_handlers_enable=False):
+        if semicolon_separated_commands is not None:
+            command_list = semicolon_separated_commands.split(";")
+            self._run_commands(command_list, bumpable_index, bumper_index, bypass_handlers_enable=bypass_handlers_enable)
+    
+    def _run_commands(self, command_list, bumpable_index, bumper_index, bypass_handlers_enable=False):
+        for command_original in command_list:
+            command = command_original.strip()
+            self._run_command(command, bumpable_index, bumper_index, bypass_handlers_enable=bypass_handlers_enable)
+
+    def _run_command(self, command, bumpable_index, bumper_index, bypass_handlers_enable=False):
+        if command=="hide":
+            self.hide_glop(self.glops[bumpable_index])
+            #self._meshes.remove(self.glops[bumpable_index].get_context())  # hide does self._meshes.remove(this_glop.get_context())
+            self.glops[bumpable_index].bump_enable = False
+            #self.glops[bumpable_index].visible_enable = False  # hide does this_glop.visible_enable = False
+        elif command=="obtain":
+            #first, fire the (blank) overridable event handlers:
+            self.obtain_glop(bumpable_name, bumper_name)
+            self.obtain_glop_by_index(bumpable_index, bumper_index)
+            #then manually transfer the glop to the player:
+            self.glops[bumpable_index].item_dict["owner"] = self.glops[bumper_index].name
+            item_event = self.glops[bumper_index].push_glop_item(self.glops[bumpable_index], bumpable_index)
+            #process item event so selected inventory slot gets updated in case that is the found slot for the item:
+            self.after_selected_item(item_event)
+            if verbose_enable:
+                print(command+" "+self.glops[bumpable_index].name)
+        else:
+            print("Glop named "+str(self.glops[bumpable_index].name)+" attempted an unknown glop command (in bump event): "+str(command))
+
+    def hide_glop(self, this_glop):
+        print("WARNING: hide_glop should be implemented by a sub-class since it is specific to graphics implementation")
+        return False
+        
+    def show_glop(self, this_glop_index):
+        print("WARNING: show_glop should be implemented by a sub-class since it is specific to graphics implementation")
+        return False
+
+   def after_selected_item(self, select_item_event_dict):
+        name = None
+        #proper_name = None
+        inventory_index = None
+        if select_item_event_dict is not None:
+            calling_method_string = ""
+            if "calling_method" in select_item_event_dict:
+                calling_method_string = select_item_event_dict["calling_method"]
+            if "name" in select_item_event_dict:
+                name = select_item_event_dict["name"]
+            else:
+                print("ERROR in after_selected_item ("+calling_method_string+"): missing name in select_item_event_dict")
+            #if "proper_name" in select_item_event_dict:
+            #    proper_name = select_item_event_dict["proper_name"]
+            #else:
+            #    print("ERROR in after_selected_item ("+calling_method_string+"): missing proper_name in select_item_event_dict")
+            if "inventory_index" in select_item_event_dict:
+                inventory_index = select_item_event_dict["inventory_index"]
+            else:
+                print("ERROR in after_selected_item ("+calling_method_string+"): missing inventory_index in select_item_event_dict")
+        self.use_button.text=str(inventory_index)+": "+str(name)
+
+    def add_actor_weapon(self, glop_index, weapon_dict):
+        result = False
+        #item_event = self.player_glop.push_glop_item(self.glops[bumpable_index], bumpable_index)
+        #process item event so selected inventory slot gets updated in case obtained item ends up in it:
+        #self.after_selected_item(item_event)
+        #if verbose_enable:
+        #    print(command+" "+self.glops[bumpable_index].name)
+        if "fired_sprite_path" in weapon_dict:
+            indices = self.load_obj("meshes/sprite-square.obj")
+            weapon_dict["fires_glops"] = list()
+            if "name" not in weapon_dict or weapon_dict["name"] is None:
+                weapon_dict["name"] = "Primary Weapon"
+            if indices is not None:
+                for i in range(0,len(indices)):
+                    weapon_dict["fires_glops"].append(self.glops[indices[i]])
+                    self.glops[indices[i]].set_texture_diffuse(weapon_dict["fired_sprite_path"])
+                    self.glops[indices[i]].look_target_glop = self.camera_glop
+                    item_event = self.player_glop.push_item(weapon_dict)
+                    if (item_event is not None) and ("is_possible" in item_event) and (item_event["is_possible"]):
+                        result = True
+                        #process item event so selected inventory slot gets updated in case obtained item ends up in it:
+                        self.after_selected_item(item_event)
+                    #print("add_actor_weapon: using "+str(self.glops[indices[i]].name)+" as sprite.")
+                for i in range(0,len(indices)):
+                    self.hide_glop(self.glops[indices[i]])
+            else:
+                print("ERROR: got 0 objects from fired_sprite_path '"+str(weapon_dict["fired_sprite_path"]+"'"))
+        #print("add_actor_weapon OK")
+        return result
+
+    def _internal_bump_glop(self, bumpable_index, bumper_index):
+        bumpable_name = self.glops[bumpable_index].name
+        bumper_name = self.glops[bumper_index].name
+        #result =
+        if (self.window != None) self.window.bump_glop(bumpable_name, bumper_name)
+        #if result is not None:
+            #if "bumpable_name" in result:
+            #    bumpable_name = result["bumpable_name"]
+            #if "bumper_name" in result:
+            #    bumper_name = result["bumper_name"]
+        #asdf remove if bumpable_glop.item_dict.
+
+        #if bumpable_name is not None and bumper_name is not None:
+        if self.glops[bumpable_index].item_dict is not None:
+            if "bump" in self.glops[bumpable_index].item_dict:
+                self.glops[bumpable_index].is_out_of_range = False  #prevents repeated bumping until out of range again
+                if self.glops[bumpable_index].bump_enable:
+                    if self.glops[bumpable_index].item_dict["bump"] is not None:
+                        _run_semicolon_separated_commands(self.glops[bumpable_index].item_dict["bump"], bumpable_index, bumper_index);
+                        commands = self.glops[bumpable_index].item_dict["bump"].split(";")
+                        for command in commands:
+                            command = command.strip()
+                            print("  bump "+self.glops[bumpable_index].name+": "+command+" by "+self.glops[bumper_index].name)
+                            self._run_command(command, bumpable_index, bumper_index)
+                    else:
+                        print("self.glops[bumpable_index].item_dict['bump'] is None")
+            else:
+                print("self.glops[bumpable_index].item_dict does not contain 'bump'")
+        elif self.glops[bumpable_index].projectile_dict is not None:
+            #print("  this_distance: "+str(distance))
+            if self.glops[bumpable_index].projectile_dict is not None:
+                self.attacked_glop(bumper_index, self.glops[bumpable_index].projectile_dict["owner_index"], self.glops[bumpable_index].projectile_dict)
+                self.glops[bumpable_index].bump_enable = False
+            else:
+                pass
+                #print("bumper:"+str( (self.glops[bumper_index]._translate_instruction.x, self.glops[bumper_index]._translate_instruction.y, self.glops[bumper_index]._translate_instruction.z) ) +
+                #      "; bumped:"+str( (self.glops[bumpable_index]._translate_instruction.x, self.glops[bumpable_index]._translate_instruction.y, self.glops[bumpable_index]._translate_instruction.z) ))
+            #if "bump" in self.glops[bumpable_index].item_dict:
+            #NOTE ignore self.glops[bumpable_index].is_out_of_range
+            # since firing at point blank range is ok.
+            print("projectile bumped by object "+str(bumper_name))
+            print("  hit_radius:"+str(self.glops[bumper_index].hit_radius))
+            if self.glops[bumper_index].hitbox is not None:
+                print("  hitbox: "+self.glops[bumper_index].hitbox.to_string())
+            #else:
+            #    print("self.glops[bumpable_index].item_dict does not contain 'bump'")
+        else:
+            print("bumped object '"+str(self.glops[bumpable_index].name)+"' is not an item")
+    
+    def get_player_glop_index(self):
+        result = None
+        if self.player_glop_index is not None:
+            result = self.player_glop_index
+        else:
+            if self.player_glop is not None:
+                for i in range(0, len(self.glops)):
+                    #TODO: check player_number instead
+                    if self.glops[i] is self.player_glop:
+                        result = i
+                        print("WARNING: player_glop_index is not set," +
+                            "but player_glop was found in glops")
+                        break
+        return result
 
     def append_dump(self, thisList):
         tabString="  "

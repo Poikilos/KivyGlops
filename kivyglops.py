@@ -432,14 +432,26 @@ class KivyGlops(PyGlops):
     def create_material(self):
         return KivyGlopsMaterial()
 
+    def hide_glop(self, this_glop):
+        self._meshes.remove(this_glop.get_context())
+        this_glop.visible_enable = False
+
+    def show_glop(self, this_glop_index):
+        self._meshes.add(self.scene.glops[this_glop_index].get_context())
+        this_glop.visible_enable = True
+
+
 class GLWidget(Widget):
     pass
+
 
 class HudForm(BoxLayout):
     pass
 
+
 class ContainerForm(BoxLayout):
     pass
+
 
 class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
     IsVisualDebugMode = False
@@ -487,79 +499,10 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
     def set_fly(self, fly_enable):
         self.scene.set_fly(fly_enable)
 
+    #def get_player_glop_index(self, player_number):
+    #    result = self.scene.get_player_glop_index(self, player_number)
 
-    def get_player_glop_index(self, player_number):
-        result = None
-        if self.scene.player_glop_index is not None:
-            result = self.scene.player_glop_index
-        else:
-            if self.scene.player_glop is not None:
-                for i in range(0, len(self.scene.glops)):
-                    #TODO: check player_number instead
-                    if self.scene.glops[i] is self.scene.player_glop:
-                        result = i
-                        print("WARNING: scene.player_glop_index is not set," +
-                            "but player_glop was found in glops")
-                        break
-        return result
 
-    def set_hud_background(self, path):
-        if path is not None:
-            original_path = path
-            if not os.path.isfile(path):
-                path = resource_find(path)
-            if path is not None:
-                self.hud_form.canvas.before.clear()
-                #self.hud_form.canvas.before.add(Color(1.0,1.0,1.0,1.0))
-                self.hud_bg_rect = Rectangle(size=self.hud_form.size,
-                                             pos=self.hud_form.pos,
-                                             source=path)
-                self.hud_form.canvas.before.add(self.hud_bg_rect)
-                self.hud_form.source = path
-            else:
-                print("ERROR in set_hud_image: could not find "+original_path)
-        else:
-            print("ERROR in set_hud_image: path is None")
-
-    def spawn_pex_particles(self, path, pos, radius=1.0, duration_seconds=None):
-        if path is not None:
-            if os.path.isfile(path):
-                print("found '" + path + "'")
-                print("  (not yet implemented)")
-                #Range is 0 to 250px for size, so therefore translate to meters:
-                # divide by 125 to get meters, then multiply by radius,
-                # so that pex file can determine "extra" (>125)
-                # or "reduced" (<125) size while retaining pixel-based sizing.
-            else:
-                print("missing '" + path + "'")
-        else:
-            print("ERROR in spawn_pex_particles: path is None")
-
-    def set_background_cylmap(self, path):
-        #self.load_obj("env_sphere.obj")
-        #self.load_obj("maps/gi/etc/sky_sphere.obj")
-        #env_indices = self.get_indices_by_source_path("env_sphere.obj")
-        #for i in range(0,len(env_indices)):
-        #    index = env_indices[i]
-        #    print("Preparing sky object "+str(index))
-        #    self.scene.glops[index].set_texture_diffuse(path)
-        if self.env_rectangle is not None:
-            self.canvas.before.remove(self.env_rectangle)
-        original_path = path
-        if path is not None:
-            if not os.path.isfile(path):
-                path = resource_find(path)
-            if path is not None:
-                #texture = CoreImage(path).texture
-                #texture.wrap = repeat
-                #self.env_rectangle = Rectangle(texture=texture)
-                self.env_rectangle = Rectangle(source=path)
-                self.env_rectangle.texture.wrap = "repeat"
-                self.canvas.before.add(self.env_rectangle)
-            else:
-                print("ERROR in set_background_cylmap: "+original_path+" not found in search path")
-        else:
-            print("ERROR in set_background_cylmap: path is None")
 
     def __init__(self, **kwargs):
         self._visual_debug_enable = False
@@ -589,6 +532,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         #self.bind(on_touch_down=self.canvasTouchDown)
 
         self.scene = KivyGlops()
+        self.scene.parent = self
         self.gl_widget.canvas = RenderContext(compute_normal_mat=True)
         self.gl_widget.canvas["_world_light_dir"] = (0.0, 0.5, 1.0)
         self.gl_widget.canvas["_world_light_dir_eye_space"] = (0.0, 0.5, 1.0) #rotated in update_glsl
@@ -687,40 +631,77 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
 
         self.load_glops()
 
+    def set_hud_background(self, path):
+        if path is not None:
+            original_path = path
+            if not os.path.isfile(path):
+                path = resource_find(path)
+            if path is not None:
+                self.hud_form.canvas.before.clear()
+                #self.hud_form.canvas.before.add(Color(1.0,1.0,1.0,1.0))
+                self.hud_bg_rect = Rectangle(size=self.hud_form.size,
+                                             pos=self.hud_form.pos,
+                                             source=path)
+                self.hud_form.canvas.before.add(self.hud_bg_rect)
+                self.hud_form.source = path
+            else:
+                print("ERROR in set_hud_image: could not find "+original_path)
+        else:
+            print("ERROR in set_hud_image: path is None")
+
+    def spawn_pex_particles(self, path, pos, radius=1.0, duration_seconds=None):
+        if path is not None:
+            if os.path.isfile(path):
+                print("found '" + path + "'")
+                print("  (not yet implemented)")
+                #Range is 0 to 250px for size, so therefore translate to meters:
+                # divide by 125 to get meters, then multiply by radius,
+                # so that pex file can determine "extra" (>125)
+                # or "reduced" (<125) size while retaining pixel-based sizing.
+            else:
+                print("missing '" + path + "'")
+        else:
+            print("ERROR in spawn_pex_particles: path is None")
+
+    def set_background_cylmap(self, path):
+        #self.load_obj("env_sphere.obj")
+        #self.load_obj("maps/gi/etc/sky_sphere.obj")
+        #env_indices = self.get_indices_by_source_path("env_sphere.obj")
+        #for i in range(0,len(env_indices)):
+        #    index = env_indices[i]
+        #    print("Preparing sky object "+str(index))
+        #    self.scene.glops[index].set_texture_diffuse(path)
+        if self.env_rectangle is not None:
+            self.canvas.before.remove(self.env_rectangle)
+        original_path = path
+        if path is not None:
+            if not os.path.isfile(path):
+                path = resource_find(path)
+            if path is not None:
+                #texture = CoreImage(path).texture
+                #texture.wrap = repeat
+                #self.env_rectangle = Rectangle(texture=texture)
+                self.env_rectangle = Rectangle(source=path)
+                self.env_rectangle.texture.wrap = "repeat"
+                self.canvas.before.add(self.env_rectangle)
+            else:
+                print("ERROR in set_background_cylmap: "+original_path+" not found in search path")
+        else:
+            print("ERROR in set_background_cylmap: path is None")
+
     def inventory_prev_button_press(self, instance):
         event_dict = self.scene.camera_glop.select_next_inventory_slot(False)
-        self.after_selected_item(event_dict)
+        self.scene.after_selected_item(event_dict)
 
     def inventory_use_button_press(self, instance):
         event_dict = self.use_selected(self.scene.camera_glop)
-        #self.after_selected_item(event_dict)
+        #self.scene.after_selected_item(event_dict)
 
     def inventory_next_button_press(self, instance):
         event_dict = self.scene.camera_glop.select_next_inventory_slot(True)
-        self.after_selected_item(event_dict)
+        self.scene.after_selected_item(event_dict)
 
-    def after_selected_item(self, select_item_event_dict):
-        name = None
-        #proper_name = None
-        inventory_index = None
-        if select_item_event_dict is not None:
-            calling_method_string = ""
-            if "calling_method" in select_item_event_dict:
-                calling_method_string = select_item_event_dict["calling_method"]
-            if "name" in select_item_event_dict:
-                name = select_item_event_dict["name"]
-            else:
-                print("ERROR in after_selected_item ("+calling_method_string+"): missing name in select_item_event_dict")
-            #if "proper_name" in select_item_event_dict:
-            #    proper_name = select_item_event_dict["proper_name"]
-            #else:
-            #    print("ERROR in after_selected_item ("+calling_method_string+"): missing proper_name in select_item_event_dict")
-            if "inventory_index" in select_item_event_dict:
-                inventory_index = select_item_event_dict["inventory_index"]
-            else:
-                print("ERROR in after_selected_item ("+calling_method_string+"): missing inventory_index in select_item_event_dict")
-        self.use_button.text=str(inventory_index)+": "+str(name)
-
+ 
     def preload_sound(self, path):
         if path is not None:
             if path not in self._sounds:
@@ -742,88 +723,6 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
 
     def play_music(self, path, loop=True):
         self.play_sound(path, loop=loop)  #TODO: handle on_stop and play again if loop=True
-
-    def _internal_bump_glop(self, bumpable_index, bumper_index):
-        bumpable_name = self.scene.glops[bumpable_index].name
-        bumper_name = self.scene.glops[bumper_index].name
-        #result =
-        self.bump_glop(bumpable_name, bumper_name)
-        #if result is not None:
-            #if "bumpable_name" in result:
-            #    bumpable_name = result["bumpable_name"]
-            #if "bumper_name" in result:
-            #    bumper_name = result["bumper_name"]
-        #asdf remove if bumpable_glop.item_dict.
-
-        #if bumpable_name is not None and bumper_name is not None:
-        if self.scene.glops[bumpable_index].item_dict is not None:
-            if "bump" in self.scene.glops[bumpable_index].item_dict:
-                self.scene.glops[bumpable_index].is_out_of_range = False  #prevents repeated bumping until out of range again
-                if self.scene.glops[bumpable_index].bump_enable:
-                    if self.scene.glops[bumpable_index].item_dict["bump"] is not None:
-                        commands = self.scene.glops[bumpable_index].item_dict["bump"].split(";")
-                        for command in commands:
-                            command = command.strip()
-                            print("  bump "+self.scene.glops[bumpable_index].name+": "+command+" by "+self.scene.glops[bumper_index].name)
-                            if command=="hide":
-                                self._meshes.remove(self.scene.glops[bumpable_index].get_context())
-                                self.scene.glops[bumpable_index].bump_enable = False
-                                self.scene.glops[bumpable_index].visible_enable = False
-                            elif command=="obtain":
-                                self.obtain_glop(bumpable_name, bumper_name)
-                                item_event = self.scene.glops[bumper_index].push_glop_item(self.scene.glops[bumpable_index], bumpable_index)
-                                #process item event so selected inventory slot gets updated in case obtained item ends up in it:
-                                self.after_selected_item(item_event)
-                                if verbose_enable:
-                                    print(command+" "+self.scene.glops[bumpable_index].name)
-                            else:
-                                print("Glop named "+str(self.scene.glops[bumpable_index].name)+" attempted an unknown glop command (in bump event): "+str(command))
-                    else:
-                        print("self.scene.glops[bumpable_index].item_dict['bump'] is None")
-            else:
-                print("self.scene.glops[bumpable_index].item_dict does not contain 'bump'")
-        elif self.scene.glops[bumpable_index].projectile_dict is not None:
-            #if "bump" in self.scene.glops[bumpable_index].item_dict:
-            #NOTE ignore self.scene.glops[bumpable_index].is_out_of_range
-            # since firing at point blank range is ok.
-            print("projectile bumped by object "+str(bumper_name))
-            print("  hit_radius:"+str(self.scene.glops[bumper_index].hit_radius))
-            if self.scene.glops[bumper_index].hitbox is not None:
-                print("  hitbox: "+self.scene.glops[bumper_index].hitbox.to_string())
-            #else:
-            #    print("self.scene.glops[bumpable_index].item_dict does not contain 'bump'")
-        else:
-            print("bumped object '"+str(self.scene.glops[bumpable_index].name)+"' is not an item")
-
-    def add_actor_weapon(self, glop_index, weapon_dict):
-        result = False
-        #item_event = self.scene.player_glop.push_glop_item(self.scene.glops[bumpable_index], bumpable_index)
-        #process item event so selected inventory slot gets updated in case obtained item ends up in it:
-        #self.after_selected_item(item_event)
-        #if verbose_enable:
-        #    print(command+" "+self.scene.glops[bumpable_index].name)
-        if "fired_sprite_path" in weapon_dict:
-            indices = self.load_obj("meshes/sprite-square.obj")
-            weapon_dict["fires_glops"] = list()
-            if "name" not in weapon_dict or weapon_dict["name"] is None:
-                weapon_dict["name"] = "Primary Weapon"
-            if indices is not None:
-                for i in range(0,len(indices)):
-                    weapon_dict["fires_glops"].append(self.scene.glops[indices[i]])
-                    self.scene.glops[indices[i]].set_texture_diffuse(weapon_dict["fired_sprite_path"])
-                    self.scene.glops[indices[i]].look_target_glop = self.scene.camera_glop
-                    item_event = self.scene.player_glop.push_item(weapon_dict)
-                    if (item_event is not None) and ("is_possible" in item_event) and (item_event["is_possible"]):
-                        result = True
-                        #process item event so selected inventory slot gets updated in case obtained item ends up in it:
-                        self.after_selected_item(item_event)
-                    #print("add_actor_weapon: using "+str(self.scene.glops[indices[i]].name)+" as sprite.")
-                for i in range(0,len(indices)):
-                    self.hide_glop(self.scene.glops[indices[i]])
-            else:
-                print("ERROR: got 0 objects from fired_sprite_path '"+str(weapon_dict["fired_sprite_path"]+"'"))
-        #print("add_actor_weapon OK")
-        return result
 
     def killed_glop(self, index, weapon_dict):
         print("subclass should implement killed_glop" + \
@@ -860,6 +759,9 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         return None
 
     def obtain_glop(self, bumpable_name, bumper_name):
+        return None
+
+    def obtain_glop_by_index(self, bumpable_index, bumper_index):
         return None
 
 
@@ -1018,7 +920,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         return results
 
 
-    def get_indices_of_similar_names(self, partial_name):
+    def get_indices_of_similar_names(self, partial_name, allow_owned_enable=True):
         results = None
         checked_count = 0
         if partial_name is not None and len(partial_name)>0:
@@ -1028,7 +930,10 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                 this_glop = self.scene.glops[index]
                 checked_count += 1
                 #print("checked "+this_glop.name.lower())
-                if this_glop.name is not None:
+                if this_glop.name is not None and \
+                   ( allow_owned_enable or \
+                     this_glop.item_dict is None or \
+                     "owner" not in this_glop.item_dict ):
                     if partial_name_lower in this_glop.name.lower():
                         results.append(index)
         #print("checked "+str(checked_count))
@@ -1102,12 +1007,10 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         return results
 
     def hide_glop(self, this_glop):
-        self._meshes.remove(this_glop.get_context())
-        this_glop.visible_enable = False
+        self.scene.hide_glop(this_glop)
     
     def show_glop(self, this_glop_index):
-        self._meshes.add(self.scene.glops[this_glop_index].get_context())
-        this_glop.visible_enable = True
+        self.scene.show_glop(this_glop_index)
 
     def add_glop(self, this_glop):
         participle="initializing"
@@ -1303,6 +1206,9 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                                                         item_glop.projectile_dict = item_glop.item_dict["as_projectile"]
                                                         item_glop.projectile_dict["owner"] = user_glop.name
                                                         item_glop.projectile_dict["owner_index"] = user_glop.index
+                                                    if "owner" in item_glop.item_dict:
+                                                        del item_glop.item_dict["owner"]  # ok since still in projectile_dict if matters
+                                                    #or useless_string = my_dict.pop('key', None)  # where None causes to return None instead of throwing KeyError if not found
                                                     self.scene.glops[item_glop.item_dict["glop_index"]].physics_enable = True
                                                     throw_speed = 1.0 # meters/sec
                                                     try:
@@ -1720,14 +1626,6 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                                         #print("distance:"+str(total_hit_radius)+" <= total_hit_radius:"+str(total_hit_radius))
                                         if self.scene.glops[bumpable_index].projectile_dict is None or ("owner" not in self.scene.glops[bumpable_index].projectile_dict) or (self.scene.glops[bumpable_index].projectile_dict["owner"] != self.scene.glops[bumper_index].name):
                                             self._internal_bump_glop(bumpable_index, bumper_index)
-                                            print("  this_distance: "+str(distance))
-                                            if self.scene.glops[bumpable_index].projectile_dict is not None:
-                                                self.attacked_glop(bumper_index, self.scene.glops[bumpable_index].projectile_dict["owner_index"], self.scene.glops[bumpable_index].projectile_dict)
-                                                self.scene.glops[bumpable_index].bump_enable = False
-                                            else:
-                                                pass
-                                                #print("bumper:"+str( (self.scene.glops[bumper_index]._translate_instruction.x, self.scene.glops[bumper_index]._translate_instruction.y, self.scene.glops[bumper_index]._translate_instruction.z) ) +
-                                                #      "; bumped:"+str( (self.scene.glops[bumpable_index]._translate_instruction.x, self.scene.glops[bumpable_index]._translate_instruction.y, self.scene.glops[bumpable_index]._translate_instruction.z) ))
                                         #else:
                                             #print("VERBOSE MESSAGE: cannot bump own projectile")
                                     else:
