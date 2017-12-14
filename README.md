@@ -34,7 +34,7 @@ Control 3D objects and the camera in your 3D Kivy app!
 
 
 ## Known Issues
-* Develop a spec for the Window that is a part PyGlops somehow (without having to inherit from it, since window must inherit from OS or framewokr Window). Must include:
+* Develop a spec for the Window that is a part PyGlops (such as more examples beyond KivyGlopsWindow) or readme (without having to inherit from the spec itself, since window must inherit from OS or framework Window). Must include:
     * 
 * Music loop option is not actually handled
 * move event handlers and any other methods starting with underscore from kivyglops.py to pyglops.py where possible
