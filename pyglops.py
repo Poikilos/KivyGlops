@@ -1325,7 +1325,7 @@ class PyGlops:
     lastCreatedMaterial = None
     lastCreatedMesh = None
     _walkmeshes = None
-    window = None
+    ui = None
     camera_glop = None
     player_glop = None
     player_glop_index = None
@@ -1430,7 +1430,7 @@ class PyGlops:
         print("WARNING: show_glop should be implemented by a sub-class since it is specific to graphics implementation")
         return False
 
-   def after_selected_item(self, select_item_event_dict):
+    def after_selected_item(self, select_item_event_dict):
         name = None
         #proper_name = None
         inventory_index = None
@@ -1486,7 +1486,8 @@ class PyGlops:
         bumpable_name = self.glops[bumpable_index].name
         bumper_name = self.glops[bumper_index].name
         #result =
-        if (self.window != None) self.window.bump_glop(bumpable_name, bumper_name)
+        if self.ui is not None:
+            self.ui.bump_glop(bumpable_name, bumper_name)
         #if result is not None:
             #if "bumpable_name" in result:
             #    bumpable_name = result["bumpable_name"]
@@ -1531,9 +1532,10 @@ class PyGlops:
         else:
             print("bumped object '"+str(self.glops[bumpable_index].name)+"' is not an item")
     
-    def get_player_glop_index(self):
+    def get_player_glop_index(self, player_number):
         result = None
         if self.player_glop_index is not None:
+            #TODO: check player_number instead
             result = self.player_glop_index
         else:
             if self.player_glop is not None:

@@ -11,6 +11,10 @@ Control 3D objects and the camera in your 3D Kivy app!
 * Triangulates (tesselates) obj input manually
 
 ## Changes
+* (2017-12-11) Began developing a platform-independent spec for the ui object so that PyGlops can specify more platform-independent methods (such as _internal_bump_glop) that push ui directly (ui being the platform-DEPENDENT object such as KivyGlopsWindow, which must inherit from some kind of OS Window or framework Window).
+    * so far, ui must include:
+        * ui.bump_glop (bumpable_name, bumper_name)
+        * and in the future, potentially anything else in KivyGlopsWindow (KivyGlopsWindow is the only full spec at this time)
 * (2017-12-11) _internal_bump_glop now calls the new _run_semicolon_separated_commands which calls the new _run_command method, so that these new methods are available to other methods
 * (2017-12-11) give_item_by_keyword_to_player_number and give_item_by_index_to_player_number methods for manual item transfers without bumping or manually calling _internal_bump_glop
 * (2017-12-11) moved projectile handling to _internal_bump_glop (formerly was directly after the _internal_bump_glop call)
@@ -34,8 +38,6 @@ Control 3D objects and the camera in your 3D Kivy app!
 
 
 ## Known Issues
-* Develop a spec for the Window that is a part PyGlops (such as more examples beyond KivyGlopsWindow) or readme (without having to inherit from the spec itself, since window must inherit from OS or framework Window). Must include:
-    * 
 * Music loop option is not actually handled
 * move event handlers and any other methods starting with underscore from kivyglops.py to pyglops.py where possible
     * moved from KivyGlopsWindow to PyGlops [new ones in brackets]:
