@@ -320,7 +320,7 @@ class PyGlop:
     look_target_glop = None
     hitbox = None
     visible_enable = None
-    #IF ADDING NEW VARIABLE here, remember to update any copy functions (such as get_kivyglop_from_pyglop) or copy constructors in your subclass or calling program
+    #IF ADDING NEW VARIABLE here, remember to update any copy constructors in your subclass or calling program
 
     #region runtime variables
     index = None  # set by add_glop
@@ -849,6 +849,7 @@ class PyGlopsMaterial:
     specular_exponent = None  # float
     #endregion vars based on OpenGL ES 1.1
 
+
     def __init__(self):
         self.properties = {}
         self.ambient_color = (0.0, 0.0, 0.0, 1.0)
@@ -964,10 +965,10 @@ class PyGlopsLight:
        self.compute_distance_attenuation = False
 
 
-def get_pyglop_from_wobject(this_wobject):  #formerly set_from_wobject formerly import_wobject; based on _finalize_obj_data
+def get_glop_from_wobject(this_wobject):  #formerly set_from_wobject formerly import_wobject; based on _finalize_obj_data
     this_pyglop = None
     if (this_wobject.faces is not None):
-        this_pyglop = PyGlop()
+        this_pyglop = self.new_glop()
         this_pyglop.source_path = this_wobject.source_path
         #from vertex_format above:
         #self.vertex_format = [
@@ -1041,8 +1042,8 @@ def get_pyglop_from_wobject(this_wobject):  #formerly set_from_wobject formerly 
             else:
                 print("WARNING: this_wobject.wmaterial is None")
         except:  # Exception as e:
-            #print("Could not finish "+participle+" in get_pyglop_from_wobject: "+str(e))
-            print("Could not finish "+participle+" in get_pyglop_from_wobject: ")
+            #print("Could not finish "+participle+" in get_glop_from_wobject: "+str(e))
+            print("Could not finish "+participle+" in get_glop_from_wobject: ")
             view_traceback()
 
         if this_pyglop.vertices is None:
@@ -1293,8 +1294,8 @@ def get_pyglop_from_wobject(this_wobject):  #formerly set_from_wobject formerly 
                     print("ERROR: can't use pyglop since already has vertices (len(this_pyglop.indices)>=1)")
 
             except:  # Exception as e:
-                #print("Could not finish "+participle+" at source_face_index "+str(source_face_index)+" in get_pyglop_from_wobject: "+str(e))
-                print("Could not finish "+participle+" at source_face_index "+str(source_face_index)+" in get_pyglop_from_wobject: ")
+                #print("Could not finish "+participle+" at source_face_index "+str(source_face_index)+" in get_glop_from_wobject: "+str(e))
+                print("Could not finish "+participle+" at source_face_index "+str(source_face_index)+" in get_glop_from_wobject: ")
                 view_traceback()
 
                     #print("vertices after extending: "+str(this_wobject.vertices))
@@ -1310,11 +1311,11 @@ def get_pyglop_from_wobject(this_wobject):  #formerly set_from_wobject formerly 
         #         if (len(this_wobject.normals)<1):
         #             this_wobject.calculate_normals()  #this does not work. The call to calculate_normals is even commented out at <https://github.com/kivy/kivy/blob/master/examples/3Drendering/objloader.py> 20 Mar 2014. 16 Apr 2015.
         else:
-            print("ERROR in get_pyglop_from_wobject: existing vertices found {this_pyglop.name:'"+str(this_name)+"'}")
+            print("ERROR in get_glop_from_wobject: existing vertices found {this_pyglop.name:'"+str(this_name)+"'}")
     else:
-        print("WARNING in get_pyglop_from_wobject: ignoring wobject where faces list is None.")
+        print("WARNING in get_glop_from_wobject: ignoring wobject where faces list is None.")
     return this_pyglop
-#end def get_pyglop_from_wobject
+#end def get_glop_from_wobject
 
 
 
@@ -1343,7 +1344,7 @@ class PyGlops:
         self._fly_enable = False
         self._world_grav_acceleration = 9.8
         self.frames_per_second = 60.0
-        self.camera_glop = PyGlop()  #should be remade to subclass of PyGlop in subclass of PyGlops
+        self.camera_glop = self.new_glop()
         self.camera_glop.eye_height = 1.7  # 1.7 since 5'10" person is ~1.77m, and eye down a bit
         self.camera_glop.hit_radius = .2
         self.camera_glop.reach_radius = 2.5
@@ -1358,6 +1359,300 @@ class PyGlops:
     def _run_command(self, command, bumpable_index, bumper_index, bypass_handlers_enable=False):
         print("WARNING: _run_command should be implemented by a subclass since it requires using the graphics implementation") 
         return False
+        
+    def update(self):
+        #print("coords:"+str(Window.mouse_pos))
+        #see also asp and clip_top in init
+        #screen_w_arc_theta = 32.0  # actual number is from proj matrix
+        #screen_h_arc_theta = 18.0  # actual number is from proj matrix
+        if self.env_rectangle is not None:
+            if self.screen_w_arc_theta is not None and self.screen_h_arc_theta is not None:
+                #region old way (does not repeat)
+                #env_h_ratio = (2 * math.pi) / self.screen_h_arc_theta
+                #env_w_ratio = env_h_ratio * math.pi
+                #self.env_rectangle.size = (Window.size[0]*env_w_ratio,
+                                           #Window.size[1]*env_h_ratio)
+                #self.env_rectangle.pos = (-(self.camera_glop._rotate_instruction_y.angle/(2*math.pi)*self.env_rectangle.size[0]),
+                                          #-(self.camera_glop._rotate_instruction_x.angle/(2*math.pi)*self.env_rectangle.size[1]))
+                #engregion old way (does not repeat)
+                self.env_rectangle.size = Window.size
+                self.env_rectangle.pos = 0.0, 0.0
+                view_right = self.screen_w_arc_theta / 2.0 + self.camera_glop._rotate_instruction_y.angle
+                view_left = view_right - self.screen_w_arc_theta
+                view_top = self.screen_h_arc_theta / 2.0 + self.camera_glop._rotate_instruction_x.angle + 90.0
+                view_bottom = view_top - self.screen_h_arc_theta
+                circle_theta = 2*math.pi
+                view_right_ratio = view_right / circle_theta
+                view_left_ratio = view_left / circle_theta
+                view_top_ratio = view_top / circle_theta
+                view_bottom_ratio = view_bottom / circle_theta
+                #tex_coords order: u,      v,      u + w,  v,
+                #                  u + w,  v + h,  u,      v + h
+                # as per https://kivy.org/planet/2014/02/using-tex_coords-in-kivy-for-fun-and-profit/
+                self.env_rectangle.tex_coords = view_left_ratio, view_bottom_ratio, view_right_ratio, view_bottom_ratio, \
+                                                view_right_ratio, view_top_ratio, view_left_ratio, view_top_ratio
+
+
+
+        x_rad, y_rad = self.get_view_angles_by_pos_rad(Window.mouse_pos)
+        self.camera_glop._rotate_instruction_y.angle = x_rad
+        self.camera_glop._rotate_instruction_x.angle = y_rad
+        got_frame_delay = 0.0
+        if self.last_update_s is not None:
+            got_frame_delay = best_timer() - self.last_update_s
+        self.last_update_s = best_timer()
+
+        for i in range(0,len(self.glops)):
+            if self.glops[i].look_target_glop is not None:
+                self.glops[i].look_at(self.camera_glop)
+                #print(str(self.glops[i].name)+" looks at "+str(self.glops[i].look_target_glop.name))
+                #print("  at "+str((self.camera_glop._translate_instruction.x, self.camera_glop._translate_instruction.y, self.camera_glop._translate_instruction.z)))
+
+        self.update_glops()
+        
+        rotation_multiplier_y = 0.0  # 1.0 is maximum speed
+        moving_x = 0.0  # 1.0 is maximum speed
+        moving_y = 0.0  # 1.0 is maximum speed
+        moving_z = 0.0  # 1.0 is maximum speed; NOTE: increased z should move object closer to viewer in right-handed coordinate system
+        moving_theta = 0.0
+        position_change = [0.0, 0.0, 0.0]
+        # for keycode strings, see  http://kivy.org/docs/_modules/kivy/core/window.html
+        if self.player1_controller.get_pressed(Keyboard.keycodes["a"]):
+            #if self.player1_controller.get_pressed(Keyboard.keycodes["shift"]):
+            moving_x = 1.0
+            #else:
+            #    rotation_multiplier_y = -1.0
+        if self.player1_controller.get_pressed(Keyboard.keycodes["d"]):
+            #if self.player1_controller.get_pressed(Keyboard.keycodes["shift"]):
+            moving_x = -1.0
+            #else:
+            #    rotation_multiplier_y = 1.0
+        if self.player1_controller.get_pressed(Keyboard.keycodes["w"]):
+            if self._fly_enable:
+                #intentionally use z,y:
+                moving_z, moving_y = get_rect_from_polar_rad(1.0, self.camera_glop._rotate_instruction_x.angle)
+            else:
+                moving_z = 1.0
+
+        if self.player1_controller.get_pressed(Keyboard.keycodes["s"]):
+            if self._fly_enable:
+                #intentionally use z,y:
+                moving_z, moving_y = get_rect_from_polar_rad(1.0, self.camera_glop._rotate_instruction_x.angle)
+                moving_z *= -1.0
+                moving_y *= -1.0
+            else:
+                moving_z = -1.0
+
+        if self.player1_controller.get_pressed(Keyboard.keycodes["enter"]):
+            self.use_selected(self.camera_glop)
+
+        if rotation_multiplier_y != 0.0:
+            delta_y = self.camera_turn_radians_per_frame * rotation_multiplier_y
+            self.camera_glop._rotate_instruction_y.angle += delta_y
+            #origin_distance = math.sqrt(self.camera_glop._translate_instruction.x*self.camera_glop._translate_instruction.x + self.camera_glop._translate_instruction.z*self.camera_glop._translate_instruction.z)
+            #self.camera_glop._translate_instruction.x -= origin_distance * math.cos(delta_y)
+            #self.camera_glop._translate_instruction.z -= origin_distance * math.sin(delta_y)
+
+        #xz coords of edges of 16x16 square are:
+        # move in the direction you are facing
+        moving_theta = 0.0
+        if moving_x != 0.0 or moving_y != 0.0 or moving_z != 0.0:
+            #makes movement relative to rotation (which alaso limits speed when moving diagonally):
+            moving_theta = theta_radians_from_rectangular(moving_x, moving_z)
+            moving_r_multiplier = math.sqrt((moving_x*moving_x)+(moving_z*moving_z))
+            if moving_r_multiplier > 1.0:
+                moving_r_multiplier = 1.0  # Limited so that you can't move faster when moving diagonally
+
+
+            #TODO: reprogram so adding math.radians(-90) is not needed (?)
+            position_change[0] = self.camera_walk_units_per_frame*moving_r_multiplier * math.cos(self.camera_glop._rotate_instruction_y.angle+moving_theta+math.radians(-90))
+            position_change[1] = self.camera_walk_units_per_frame*moving_y
+            position_change[2] = self.camera_walk_units_per_frame*moving_r_multiplier * math.sin(self.camera_glop._rotate_instruction_y.angle+moving_theta+math.radians(-90))
+
+            # if (self.camera_glop._translate_instruction.x + move_by_x > self._world_cube.get_max_x()):
+            #     move_by_x = self._world_cube.get_max_x() - self.camera_glop._translate_instruction.x
+            #     print(str(self.camera_glop._translate_instruction.x)+" of max_x:"+str(self._world_cube.get_max_x()))
+            # if (self.camera_glop._translate_instruction.z + move_by_z > self._world_cube.get_max_z()):
+            #     move_by_z = self._world_cube.get_max_z() - self.camera_glop._translate_instruction.z
+            #     print(str(self.camera_glop._translate_instruction.z)+" of max_z:"+str(self._world_cube.get_max_z()))
+            # if (self.camera_glop._translate_instruction.x + move_by_x < self._world_cube.get_min_x()):
+            #     move_by_x = self._world_cube.get_min_x() - self.camera_glop._translate_instruction.x
+            #     print(str(self.camera_glop._translate_instruction.x)+" of max_x:"+str(self._world_cube.get_max_x()))
+            # if (self.camera_glop._translate_instruction.z + move_by_z < self._world_cube.get_min_z()):
+            #     move_by_z = self._world_cube.get_min_z() - self.camera_glop._translate_instruction.z
+            #     print(str(self.camera_glop._translate_instruction.z)+" of max_z:"+str(self._world_cube.get_max_z()))
+
+            #print(str(self.camera_glop._translate_instruction.x)+","+str(self.camera_glop._translate_instruction.z)+" each coordinate should be between matching one in "+str(self._world_cube.get_min_x())+","+str(self._world_cube.get_min_z())+" and "+str(self._world_cube.get_max_x())+","+str(self._world_cube.get_max_z()))
+            #print(str( (self.camera_glop._translate_instruction.x, self.camera_glop._translate_instruction.y, self.camera_glop._translate_instruction.z) )+" each coordinate should be between matching one in "+str(self.world_boundary_min)+" and "+str(self.world_boundary_max))
+
+        #for axis_index in range(0,3):
+        if position_change[0] is not None:
+            self.camera_glop._translate_instruction.x += position_change[0]
+        if position_change[1] is not None:
+            self.camera_glop._translate_instruction.y += position_change[1]
+        if position_change[2] is not None:
+            self.camera_glop._translate_instruction.z += position_change[2]
+
+        if len(self._walkmeshes)>0:
+            walkmesh_result = self.get_container_walkmesh_and_poly_index_xz( (self.camera_glop._translate_instruction.x, self.camera_glop._translate_instruction.y, self.camera_glop._translate_instruction.z) )
+            if walkmesh_result is None:
+                #print("Out of bounds")
+                corrected_pos = None
+                #if self.prev_inbounds_camera_translate is not None:
+                #    self.camera_glop._translate_instruction.x = self.prev_inbounds_camera_translate[0]
+                #    self.camera_glop._translate_instruction.y = self.prev_inbounds_camera_translate[1]
+                #    self.camera_glop._translate_instruction.z = self.prev_inbounds_camera_translate[2]
+                #else:
+                corrected_pos = self.get_nearest_walkmesh_vec3_using_xz( (self.camera_glop._translate_instruction.x, self.camera_glop._translate_instruction.y, self.camera_glop._translate_instruction.z) )
+                if corrected_pos is not None:
+                    pushed_angle = get_angle_between_two_vec3_xz( (self.camera_glop._translate_instruction.x, self.camera_glop._translate_instruction.y, self.camera_glop._translate_instruction.z), corrected_pos)
+                    corrected_pos = get_pushed_vec3_xz_rad(corrected_pos, self.camera_glop.hit_radius, pushed_angle)
+                    self.camera_glop._translate_instruction.x = corrected_pos[0]
+                    self.camera_glop._translate_instruction.y = corrected_pos[1]   # TODO: check y (vertical) axis against eye height and jump height etc
+                    #+ self.camera_glop.eye_height #no longer needed since swizzled to xz (get_nearest_walkmesh_vec3_using_xz returns original's y in return's y)
+                    self.camera_glop._translate_instruction.z = corrected_pos[2]
+                #else:
+                #    print("ERROR: could not find point to bring player in bounds.")
+            else:
+                #print("In bounds")
+                result_glop = self._walkmeshes[walkmesh_result["walkmesh_index"]]
+                X_i = result_glop._POSITION_OFFSET + 0
+                Y_i = result_glop._POSITION_OFFSET + 1
+                Z_i = result_glop._POSITION_OFFSET + 2
+                ground_tri = list()
+                ground_tri.append( (result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]]*result_glop.vertex_depth+X_i], result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]]*result_glop.vertex_depth+Y_i], result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]]*result_glop.vertex_depth+Z_i]) )
+                ground_tri.append( (result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]+1]*result_glop.vertex_depth+X_i], result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]+1]*result_glop.vertex_depth+Y_i], result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]+1]*result_glop.vertex_depth+Z_i]) )
+                ground_tri.append( (result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]+2]*result_glop.vertex_depth+X_i], result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]+2]*result_glop.vertex_depth+Y_i], result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]+2]*result_glop.vertex_depth+Z_i]) )
+                #self.camera_glop._translate_instruction.y = ground_tri[0][1] + self.camera_glop.eye_height
+                ground_y = get_y_from_xz(ground_tri[0], ground_tri[1], ground_tri[2], self.camera_glop._translate_instruction.x, self.camera_glop._translate_instruction.z)
+                self.camera_glop._translate_instruction.y = ground_y + self.camera_glop.eye_height
+                if self._world_min_y is None or ground_y < self._world_min_y:
+                    self._world_min_y = ground_y
+                #if self.prev_inbounds_camera_translate is None or self.camera_glop._translate_instruction.y != self.prev_inbounds_camera_translate[1]:
+                    #print("y:"+str(self.camera_glop._translate_instruction.y))
+        else:
+            #print("No bounds")
+            pass
+        self.prev_inbounds_camera_translate = self.camera_glop._translate_instruction.x, self.camera_glop._translate_instruction.y, self.camera_glop._translate_instruction.z
+
+        # else:
+        #     self.camera_glop._translate_instruction.x += self.camera_walk_units_per_frame * moving_x
+        #     self.camera_glop._translate_instruction.z += self.camera_walk_units_per_frame * moving_z
+
+        global missing_bumper_warning_enable
+        global missing_bumpable_warning_enable
+        global missing_radius_warning_enable
+        for bumper_index_index in range(0,len(self._bumper_indices)):
+            bumper_index = self._bumper_indices[bumper_index_index]
+            if self.glops[bumper_index].actor_dict is not None and \
+               "ai_enable" in self.glops[bumper_index].actor_dict and \
+               self.glops[bumper_index].actor_dict["ai_enable"]:
+                self.process_ai(bumper_index)
+                if self.glops[bumper_index].actor_dict["target_index"] is not None:
+                    self.glops[bumper_index].actor_dict["target_pos"] = get_vec3_from_point(self.glops[self.glops[bumper_index].actor_dict["target_index"]]._translate_instruction)
+                elif self.glops[bumper_index].actor_dict["moveto_index"] is not None:
+                    if not self.glops[self.glops[bumper_index].actor_dict["moveto_index"]].visible_enable:
+                        self.glops[bumper_index].actor_dict["moveto_index"] = None
+                    else:
+                        self.glops[bumper_index].actor_dict["target_pos"] = get_vec3_from_point(self.glops[self.glops[bumper_index].actor_dict["moveto_index"]]._translate_instruction)
+                if self.glops[bumper_index].actor_dict["target_pos"] is not None:
+                    src_pos = get_vec3_from_point(self.glops[bumper_index]._translate_instruction)
+                    dest_pos = self.glops[bumper_index].actor_dict["target_pos"]
+                    r = self.glops[bumper_index].actor_dict["walk_units_per_second"] / self.frames_per_second
+                    distance = get_distance_vec3_xz(src_pos, dest_pos)
+                    if distance > self.glops[bumper_index].reach_radius:
+                        theta = get_angle_between_two_vec3_xz(src_pos, dest_pos)
+                        self.glops[bumper_index]._rotate_instruction_y.angle = theta
+                        delta_x, delta_z = get_rect_from_polar_rad(r, theta)
+                        self.glops[bumper_index]._translate_instruction.x += delta_x
+                        self.glops[bumper_index]._translate_instruction.z += delta_z
+            bumper_name = self.glops[bumper_index].name
+            
+        
+        for bumpable_index_index in range(0, len(self._bumpable_indices)):
+
+            bumpable_index = self._bumpable_indices[bumpable_index_index]
+            bumpable_name = self.glops[bumpable_index].name
+            bumpable_name = self.glops[bumpable_index]._temp_bumpable_enable = True
+            if self.glops[bumpable_index].bump_enable is True:
+                for bumper_index_index in range(0,len(self._bumper_indices)):
+                    bumper_index = self._bumper_indices[bumper_index_index]
+                    bumper_name = self.glops[bumper_index].name
+                    distance = get_distance_kivyglops(self.glops[bumpable_index], self.glops[bumper_index])
+                    if self.glops[bumpable_index].hit_radius is not None and self.glops[bumpable_index].hit_radius is not None:
+                        total_hit_radius = 0.0
+                        if self.glops[bumpable_index].projectile_dict is not None:
+                            total_hit_radius = self.glops[bumpable_index].hit_radius+self.glops[bumper_index].hit_radius
+                        else:
+                            total_hit_radius = self.glops[bumpable_index].hit_radius+self.glops[bumper_index].reach_radius
+                        if distance <= total_hit_radius:
+                            #print("total_hit_radius:"+str(total_hit_radius))
+                            if self.glops[bumpable_index].is_out_of_range:  # only run if ever moved away from it
+                                if self.glops[bumper_index].bump_enable:
+                                    if (self.glops[bumpable_index].projectile_dict is None) or (self.glops[bumper_index].hitbox is None) or self.glops[bumper_index].hitbox.contains_vec3(get_vec3_from_point(self.glops[bumpable_index]._translate_instruction)):
+                                        #NOTE: already checked
+                                        # bumpable_index bump_enable above
+                                        #print("distance:"+str(total_hit_radius)+" <= total_hit_radius:"+str(total_hit_radius))
+                                        if self.glops[bumpable_index].projectile_dict is None or ("owner" not in self.glops[bumpable_index].projectile_dict) or (self.glops[bumpable_index].projectile_dict["owner"] != self.glops[bumper_index].name):
+                                            self._internal_bump_glop(bumpable_index, bumper_index)
+                                        #else:
+                                            #print("VERBOSE MESSAGE: cannot bump own projectile")
+                                    else:
+                                        global out_of_hitbox_note_enable
+                                        if out_of_hitbox_note_enable:
+                                            print("Bumped, but bumpable is not in bumper's hitbox: "+self.glops[bumper_index].hitbox.to_string())
+                                            out_of_hitbox_note_enable = False
+                            #else:
+                                #print("not out of range yet")
+                        else:
+                            self.glops[bumpable_index].is_out_of_range = True
+                            #print("did not bump "+str(bumpable_name)+" (bumper is at "+str( (self.camera_glop._translate_instruction.x,self.camera_glop._translate_instruction.y,self.camera_glop._translate_instruction.z) )+")")
+                            pass
+                    else:
+                        if missing_radius_warning_enable:
+                            print("WARNING: Missing radius while checking bumped named "+str(bumpable_name))
+                            missing_radius_warning_enable = False
+            if self.glops[bumpable_index]._cached_floor_y is None:
+                self.glops[bumpable_index]._cached_floor_y = self._world_min_y
+                #TODO: get from walkmesh instead
+            if self.glops[bumpable_index].physics_enable:
+                if self.glops[bumpable_index]._cached_floor_y is not None:
+                    if self.glops[bumpable_index]._translate_instruction.y - self.glops[bumpable_index].hit_radius - kEpsilon > self.glops[bumpable_index]._cached_floor_y:
+                        self.glops[bumpable_index]._translate_instruction.x += self.glops[bumpable_index].x_velocity
+                        self.glops[bumpable_index]._translate_instruction.y += self.glops[bumpable_index].y_velocity
+                        self.glops[bumpable_index]._translate_instruction.z += self.glops[bumpable_index].z_velocity
+                        if got_frame_delay > 0.0:
+                            #print("  GRAVITY AFFECTED:"+str(self.glops[bumpable_index]._translate_instruction.y)+" += "+str(self.glops[bumpable_index].y_velocity))
+                            self.glops[bumpable_index].y_velocity -= self._world_grav_acceleration * got_frame_delay
+                            #print("  THEN VELOCITY CHANGED TO:"+str(self.glops[bumpable_index].y_velocity))
+                            #print("  FRAME INTERVAL:"+str(got_frame_delay))
+                        else:
+                            print("missing delay")
+                    else:
+                        #if self.glops[bumpable_index].z_velocity > kEpsilon:
+                        if (self.glops[bumpable_index].y_velocity < 0.0 - (kEpsilon + self.glops[bumpable_index].hit_radius)):
+                            #print("  HIT GROUND Y:"+str(self.glops[bumpable_index]._cached_floor_y))
+                            if self.glops[bumpable_index].bump_sounds is not None and len(self.glops[bumpable_index].bump_sounds) > 0:
+                                rand_i = random.randrange(0,len(self.glops[bumpable_index].bump_sounds))
+                                self.play_sound(self.glops[bumpable_index].bump_sounds[rand_i])
+                        if self.glops[bumpable_index].projectile_dict is not None:
+                            if self.glops[bumpable_index].item_dict is not None and ("as_projectile" not in self.glops[bumpable_index].item_dict):
+                                #save projectile settings before setting projectile_dict to to None:
+                                self.glops[bumpable_index].item_dict["as_projectile"] = self.glops[bumpable_index].projectile_dict
+                            if self.glops[bumpable_index].projectile_dict is not None:
+                                self.glops[bumpable_index].projectile_dict = None
+                        
+                        self.glops[bumpable_index]._translate_instruction.y = self.glops[bumpable_index]._cached_floor_y + self.glops[bumpable_index].hit_radius
+                        self.glops[bumpable_index].x_velocity = 0.0
+                        self.glops[bumpable_index].y_velocity = 0.0
+                        self.glops[bumpable_index].z_velocity = 0.0
+                else:
+                    #no gravity
+                    self.glops[bumpable_index]._translate_instruction.x += self.glops[bumpable_index].x_velocity
+                    self.glops[bumpable_index]._translate_instruction.y += self.glops[bumpable_index].y_velocity
+                    self.glops[bumpable_index]._translate_instruction.z += self.glops[bumpable_index].z_velocity
+
+    #end update        
         
    # This method overrides object bump code, and gives the item to the player (mimics "obtain" event)
     # cause player to obtain the item found first by keyword, then hide the item (overrides object bump code)
@@ -1405,9 +1700,7 @@ class PyGlops:
     def _run_command(self, command, bumpable_index, bumper_index, bypass_handlers_enable=False):
         if command=="hide":
             self.hide_glop(self.glops[bumpable_index])
-            #self._meshes.remove(self.glops[bumpable_index].get_context())  # hide does self._meshes.remove(this_glop.get_context())
             self.glops[bumpable_index].bump_enable = False
-            #self.glops[bumpable_index].visible_enable = False  # hide does this_glop.visible_enable = False
         elif command=="obtain":
             #first, fire the (blank) overridable event handlers:
             self.obtain_glop(bumpable_name, bumper_name)
@@ -1594,7 +1887,8 @@ class PyGlops:
             print("ERROR in set_as_actor_by_index: index is None")
         #return result
 
-    def create_mesh(self):
+    #always reimplement this so the camera is correct subclass 
+    def new_glop(self):
         return PyGlop()
 
     def set_fly(self, fly_enable):
@@ -1615,7 +1909,7 @@ class PyGlops:
                         result=self.glops[index]
         return result
 
-    def get_pyglops_list_from_obj(self, source_path):  # load_obj(self, source_path): #TODO: ? swapyz=False):
+    def get_glop_list_from_obj(self, source_path):  # load_obj(self, source_path): #TODO: ? swapyz=False):
         participle = "(before initializing)"
         linePlus1 = 1
         #firstMeshIndex = len(self.glops)
@@ -1635,7 +1929,7 @@ class PyGlops:
                             participle = "getting wobject"
                             this_wobject = this_objfile.wobjects[i]
                             participle = "converting wobject..."
-                            this_pyglop = get_pyglop_from_wobject(this_wobject)
+                            this_pyglop = get_glop_from_wobject(this_wobject)
                             if this_pyglop is not None:
                                 participle = "appending pyglop to scene"
                                 #if results is None:
@@ -1660,4 +1954,540 @@ class PyGlops:
             view_traceback()
         return results
 
+    def rotate_view_relative(self, angle, axis_index):
+        #TODO: delete this method and see solutions from http://stackoverflow.com/questions/10048018/opengl-camera-rotation
+        #such as set_view method of https://github.com/sgolodetz/hesperus2/blob/master/Shipwreck/MapEditor/GUI/Camera.java
+        self.rotate_view_relative_around_point(angle, axis_index, self.camera_glop._translate_instruction.x, self.camera_glop._translate_instruction.y, self.camera_glop._translate_instruction.z)
 
+    def rotate_view_relative_around_point(self, angle, axis_index, around_x, around_y, around_z):
+        if axis_index == 0:  #x
+            # += around_y * math.tan(angle)
+            self.camera_glop._rotate_instruction_x.angle += angle
+            # origin_distance = math.sqrt(around_z*around_z + around_y*around_y)
+            # self.camera_glop._translate_instruction.z += origin_distance * math.cos(-1*angle)
+            # self.camera_glop._translate_instruction.y += origin_distance * math.sin(-1*angle)
+        elif axis_index == 1:  #y
+            self.camera_glop._rotate_instruction_y.angle += angle
+            # origin_distance = math.sqrt(around_x*around_x + around_z*around_z)
+            # self.camera_glop._translate_instruction.x += origin_distance * math.cos(-1*angle)
+            # self.camera_glop._translate_instruction.z += origin_distance * math.sin(-1*angle)
+        else:  #z
+            #self.camera_glop._translate_instruction.z += around_y * math.tan(angle)
+            self.camera_glop._rotate_instruction_z.angle += angle
+            # origin_distance = math.sqrt(around_x*around_x + around_y*around_y)
+            # self.camera_glop._translate_instruction.x += origin_distance * math.cos(-1*angle)
+            # self.camera_glop._translate_instruction.y += origin_distance * math.sin(-1*angle)
+
+    def axis_index_to_string(self,index):
+        result = "unknown axis"
+        if (index==0):
+            result = "x"
+        elif (index==1):
+            result = "y"
+        elif (index==2):
+            result = "z"
+        return result
+
+    def set_as_item(self, glop_name, template_dict):
+        result = False
+        if glop_name is not None:
+            for i in range(0,len(self.glops)):
+                if self.glops[i].name == glop_name:
+                    return self.set_as_item_by_index(i, template_dict)
+                    break
+
+    def add_bump_sound_by_index(self, i, path):
+        if path not in self.glops[i].bump_sounds:
+            self.glops[i].bump_sounds.append(path)
+
+    def set_as_item_by_index(self, i, template_dict):
+        result = False
+        item_dict = get_dict_deepcopy(template_dict)  #prevents every item template from being the one
+        self.glops[i].item_dict = item_dict
+        self.glops[i].item_dict["glop_name"] = self.glops[i].name
+        self.glops[i].item_dict["glop_index"] = i
+        self.glops[i].bump_enable = True
+        self.glops[i].is_out_of_range = True  # allows item to be obtained instantly at start of main event loop
+        self.glops[i].hit_radius = 0.1
+
+        this_glop = self.glops[i]
+        vertex_count = int(len(this_glop.vertices)/this_glop.vertex_depth)
+        v_offset = 0
+        min_y = None
+        for v_number in range(0, vertex_count):
+            if min_y is None or this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+1] < min_y:
+                min_y = this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+1]
+            v_offset += this_glop.vertex_depth
+        if min_y is not None:
+            self.glops[i].hit_radius = min_y
+            if self.glops[i].hit_radius < 0.0:
+                self.glops[i].hit_radius = 0.0 - self.glops[i].hit_radius
+        else:
+            print("ERROR: could not read any y values from glop named "+str(this_glop.name))
+        #self.glops[i].hit_radius = 1.0
+        self._bumpable_indices.append(i)
+        return result
+
+    def use_selected(self, user_glop):
+        if user_glop is not None:
+            if user_glop.properties is not None:
+                if "inventory_items" in user_glop.properties:
+                    if "inventory_index" in user_glop.properties:
+                        try:
+                            if user_glop.properties["inventory_index"] > -1:
+                                user_glop.properties["inventory_items"][user_glop.properties["inventory_index"]]
+                                this_item = user_glop.properties["inventory_items"][user_glop.properties["inventory_index"]]
+                                glop_index = None
+                                item_glop = None
+                                if "glop_index" in this_item:
+                                    glop_index = this_item["glop_index"]
+                                    if glop_index is not None:
+                                        item_glop = self.glops[glop_index]
+                                if item_glop is not None:
+                                    if item_glop.item_dict is not None:
+                                        if "use" in item_glop.item_dict:
+                                            is_ready = True
+                                            if "cooldown" in item_glop.item_dict:
+                                                is_ready = False
+                                                if ("RUNTIME_last_used_time" not in item_glop.item_dict) or (time.time() - item_glop.item_dict["RUNTIME_last_used_time"]):
+                                                    if ("RUNTIME_last_used_time" in item_glop.item_dict):
+                                                        is_ready = True
+                                                    #else Don't assume cooled down when obtained, otherwise rapid firing items will be allowed
+                                                    item_glop.item_dict["RUNTIME_last_used_time"] = time.time()
+                                            if is_ready:
+                                                if "use_sound" in item_glop.item_dict:
+                                                    self.play_sound(item_glop.item_dict["use_sound"])
+                                                print(item_glop.item_dict["use"]+" "+item_glop.name)
+                                                if "throw_" in item_glop.item_dict["use"]:  # such as item_dict["throw_arc"]
+                                                    if "as_projectile" in item_glop.item_dict:
+                                                        item_glop.projectile_dict = item_glop.item_dict["as_projectile"]
+                                                        item_glop.projectile_dict["owner"] = user_glop.name
+                                                        item_glop.projectile_dict["owner_index"] = user_glop.index
+                                                    if "owner" in item_glop.item_dict:
+                                                        del item_glop.item_dict["owner"]  # ok since still in projectile_dict if matters
+                                                    #or useless_string = my_dict.pop('key', None)  # where None causes to return None instead of throwing KeyError if not found
+                                                    self.glops[item_glop.item_dict["glop_index"]].physics_enable = True
+                                                    throw_speed = 1.0 # meters/sec
+                                                    try:
+                                                        x_angle = user_glop._rotate_instruction_x.angle + math.radians(30)
+                                                        if x_angle > math.radians(90):
+                                                            x_angle = math.radians(90)
+                                                        self.glops[item_glop.item_dict["glop_index"]].y_velocity = throw_speed * math.sin(x_angle)
+                                                        horizontal_throw_speed = throw_speed * math.cos(x_angle)
+                                                        self.glops[item_glop.item_dict["glop_index"]].x_velocity = horizontal_throw_speed * math.cos(user_glop._rotate_instruction_y.angle)
+                                                        self.glops[item_glop.item_dict["glop_index"]].z_velocity = horizontal_throw_speed * math.sin(user_glop._rotate_instruction_y.angle)
+
+                                                    except:
+                                                        self.glops[item_glop.item_dict["glop_index"]].x_velocity = 0
+                                                        self.glops[item_glop.item_dict["glop_index"]].z_velocity = 0
+                                                        print("Could not finish getting throw x,,z values")
+                                                        view_traceback()
+
+                                                    self.glops[item_glop.item_dict["glop_index"]].is_out_of_range = False
+                                                    self.glops[item_glop.item_dict["glop_index"]].bump_enable = True
+                                                    event_dict = user_glop.pop_glop_item(user_glop.properties["inventory_index"])
+                                                    self.after_selected_item(event_dict)
+                                                    item_glop.visible_enable = True
+                                                    item_glop._translate_instruction.x = user_glop._translate_instruction.x
+                                                    item_glop._translate_instruction.y = user_glop._translate_instruction.y
+                                                    item_glop._translate_instruction.z = user_glop._translate_instruction.z
+                                                    self._meshes.add(item_glop.get_context())  # TODO: show_glop instead for consistency? how was it hidden?
+                                        else:
+                                            print(item_glop.name+" has no use.")
+                                    else:
+                                        print("ERROR: tried to use a glop that is not an item (this should not be in "+str(user_glop.name)+"'s inventory)")
+                                elif "fire_type" in this_item:
+                                    if this_item["fire_type"] != "throw_linear":
+                                        print("WARNING: "+this_item["fire_type"]+" not implemented, so using throw_linear")
+                                    weapon_dict = this_item
+                                    favorite_pivot = None
+                                    for fires_glop in weapon_dict["fires_glops"]:
+                                        if "subscript" not in weapon_dict:
+                                            weapon_dict["subscript"] = 0
+                                        fired_glop = fires_glop.copy_as_mesh_instance()
+                                        fired_glop.bump_enable = True
+                                        fired_glop.projectile_dict = get_dict_deepcopy(weapon_dict)
+                                        fired_glop.projectile_dict["owner"] = user_glop.name
+                                        fired_glop.projectile_dict["owner_index"] = user_glop.index
+                                        if favorite_pivot is None:
+                                            #favorite_pivot = [0.0, 0.0, 0.0]
+                                            favorite_pivot = (fired_glop._translate_instruction.x, fired_glop._translate_instruction.y, fired_glop._translate_instruction.z)
+                                        fired_glop._translate_instruction.x += fired_glop._translate_instruction.x - favorite_pivot[0]
+                                        fired_glop._translate_instruction.y += fired_glop._translate_instruction.y - favorite_pivot[1]
+                                        fired_glop._translate_instruction.z += fired_glop._translate_instruction.z - favorite_pivot[2]
+                                        fired_glop._translate_instruction.x = user_glop._translate_instruction.x
+                                        fired_glop._translate_instruction.y = user_glop._translate_instruction.y
+                                        fired_glop._translate_instruction.z = user_glop._translate_instruction.z
+                                        fired_glop.name = fires_glop.name + "." + str(weapon_dict["subscript"])
+                                        projectile_speed = 1.0
+                                        if "projectile_speed" in weapon_dict:
+                                            projectile_speed = weapon_dict["projectile_speed"]
+                                        x_off, z_off = get_rect_from_polar_rad(projectile_speed, user_glop._rotate_instruction_y.angle)
+                                        fired_glop.x_velocity = x_off
+                                        fired_glop.z_velocity = z_off
+                                        x_off, y_off = get_rect_from_polar_rad(projectile_speed, user_glop._rotate_instruction_x.angle)
+                                        fired_glop.y_velocity = y_off
+                                        #print("projectile velocity x,y,z:"+str((fired_glop.x_velocity, fired_glop.y_velocity, fired_glop.z_velocity)))
+                                        fired_glop.visible_enable = True
+                                        self.glops.append(fired_glop)
+                                        fired_glop.physics_enable = True
+                                        fired_glop.bump_enable = True
+                                        self._meshes.add(fired_glop.get_context())  # _meshes is a visible instruction group
+                                        weapon_dict["subscript"] += 1
+                                        self._bumpable_indices.append(len(self.glops)-1)
+                                        #start off a ways away:
+                                        fired_glop._translate_instruction.x += fired_glop.x_velocity*2
+                                        fired_glop._translate_instruction.y += fired_glop.y_velocity*2
+                                        fired_glop._translate_instruction.z += fired_glop.z_velocity*2
+                                        fired_glop._translate_instruction.y -= user_glop.eye_height/2
+
+                        except:
+                            print("user_glop.name:"+str(user_glop.name))
+                            print('user_glop.properties["inventory_index"]:'+str(user_glop.properties["inventory_index"]))
+                            print('len(user_glop.properties["inventory_items"]):'+str(len(user_glop.properties["inventory_items"])))
+                            print("Could not finish use_selected:")
+                            view_traceback()
+
+
+    def load_glops(self):
+        print("WARNING: subclass of KivyGlopsWindow should implement load_glops (and usually update_glops which will be called before each frame is drawn)")
+
+    def update_glops(self):
+        # subclass of KivyGlopsWindow can implement load_glops
+        pass
+
+    #def get_player_glop_index(self, player_number):
+    #    result = self.get_player_glop_index(self, player_number)
+
+    def killed_glop(self, index, weapon_dict):
+        print("subclass should implement killed_glop" + \
+            " (allowing variables other than pos to be None)")
+
+    def kill_glop_by_index(self, index, weapon_dict=None):
+        self.killed_glop(index, weapon_dict)
+        self.hide_glop(self.glops[index])
+        self.glops[index].bump_enable = False
+        
+    def bump_glop(self, bumpable_name, bumper_name):
+        return None
+
+    def attacked_glop(self, attacked_index, attacker_index, weapon_dict):
+        print("attacked_glop should be implemented by the subclass" + \
+            "which would know how to damage or calculate defense" + \
+            "or other properties")
+        #trivial example:
+        #self.glops[attacked_index].actor_dict["hp"] -= weapon_dict["hit_damage"]
+        #if self.glops[attacked_index].actor_dict["hp"] <= 0:
+        #    self.explode_glop_by_index(attacked_index)
+        return None
+
+    def obtain_glop(self, bumpable_name, bumper_name):
+        return None
+
+    def obtain_glop_by_index(self, bumpable_index, bumper_index):
+        return None
+
+    def get_nearest_walkmesh_vec3_using_xz(self, pt):
+        result = None
+        closest_distance = None
+        poly_sides_count = 3
+        #corners = list()
+        #for i in range(0,poly_sides_count):
+        #    corners.append( (0.0, 0.0, 0.0) )
+        for this_glop in self._walkmeshes:
+            face_i = 0
+            indices_count = len(this_glop.indices)
+            while (face_i<indices_count):
+                v_offset = this_glop.indices[face_i]*this_glop.vertex_depth
+                a_vertex = this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+0], this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+1], this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+2]
+                v_offset = this_glop.indices[face_i+1]*this_glop.vertex_depth
+                b_vertex = this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+0], this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+1], this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+2]
+                v_offset = this_glop.indices[face_i+2]*this_glop.vertex_depth
+                c_vertex = this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+0], this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+1], this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+2]
+                #side_a_distance = get_distance_vec3_xz(pt, a_vertex, b_vertex)
+                #side_b_distance = get_distance_vec3_xz(pt, b_vertex, c_vertex)
+                #side_c_distance = get_distance_vec3_xz(pt, c_vertex, a_vertex)
+                this_point = get_nearest_vec3_on_vec3line_using_xz(pt, a_vertex, b_vertex)
+                this_distance = this_point[3] #4th index of returned tuple is distance
+                tri_distance = this_distance
+                tri_point = this_point
+
+                this_point = get_nearest_vec3_on_vec3line_using_xz(pt, b_vertex, c_vertex)
+                this_distance = this_point[3] #4th index of returned tuple is distance
+                if this_distance < tri_distance:
+                    tri_distance = this_distance
+                    tri_point = this_point
+
+                this_point = get_nearest_vec3_on_vec3line_using_xz(pt, c_vertex, a_vertex)
+                this_distance = this_point[3] #4th index of returned tuple is distance
+                if this_distance < tri_distance:
+                    tri_distance = this_distance
+                    tri_point = this_point
+
+                if (closest_distance is None) or (tri_distance<closest_distance):
+                    result = tri_point[0], tri_point[1], tri_point[2]  # ok to return y since already swizzled (get_nearest_vec3_on_vec3line_using_xz copies source's y to return's y)
+                    closest_distance = tri_distance
+                face_i += poly_sides_count
+        return result
+
+    def get_nearest_walkmesh_vertex_using_xz(self, pt):
+        result = None
+        second_nearest_pt = None
+        for this_glop in self._walkmeshes:
+            X_i = this_glop._POSITION_OFFSET + 0
+            Y_i = this_glop._POSITION_OFFSET + 1
+            Z_i = this_glop._POSITION_OFFSET + 2
+            X_abs_i = X_i
+            Y_abs_i = Y_i
+            Z_abs_i = Z_i
+            v_len = len(this_glop.vertices)
+            distance_min = None
+            while X_abs_i < v_len:
+                distance = math.sqrt( (pt[0]-this_glop.vertices[X_abs_i+0])**2 + (pt[2]-this_glop.vertices[X_abs_i+2])**2 )
+                if (result is None) or (distance_min) is None or (distance<distance_min):
+                    #if result is not None:
+                        #second_nearest_pt = result[0],result[1],result[2]
+                    result = this_glop.vertices[X_abs_i+0], this_glop.vertices[X_abs_i+1], this_glop.vertices[X_abs_i+2]
+                    distance_min = distance
+                X_abs_i += this_glop.vertex_depth
+
+            #DOESN'T WORK since second_nearest_pt may not be on edge
+            #if second_nearest_pt is not None:
+            #    distance1 = get_distance_vec3_xz(pt, result)
+            #    distance2 = get_distance_vec3_xz(pt, second_nearest_pt)
+            #    distance_total=distance1+distance2
+            #    distance1_weight = distance1/distance_total
+            #    distance2_weight = distance2/distance_total
+            #    result = result[0]*distance1_weight+second_nearest_pt[0]*distance2_weight, result[1]*distance1_weight+second_nearest_pt[1]*distance2_weight, result[2]*distance1_weight+second_nearest_pt[2]*distance2_weight
+                #TODO: use second_nearest_pt to get nearest location along the edge instead of warping to a vertex
+        return result
+
+    def is_in_any_walkmesh_xz(self, check_vec3):
+        return get_container_walkmesh_and_poly_index_xz(check_vec3) is not None
+
+    def get_container_walkmesh_and_poly_index_xz(self, check_vec3):
+        result = None
+        X_i = 0
+        second_i = 2  # actually z since ignoring y
+        check_vec2 = check_vec3[X_i], check_vec3[second_i]
+        walkmesh_i = 0
+        while walkmesh_i < len(self._walkmeshes):
+            this_glop = self._walkmeshes[walkmesh_i]
+            X_i = this_glop._POSITION_OFFSET + 0
+            second_i = this_glop._POSITION_OFFSET + 2
+            poly_side_count = 3
+            poly_count = int(len(this_glop.indices)/poly_side_count)
+            poly_offset = 0
+            for poly_index in range(0,poly_count):
+                if (  is_in_triangle_vec2( check_vec2, (this_glop.vertices[this_glop.indices[poly_offset]*this_glop.vertex_depth+X_i],this_glop.vertices[this_glop.indices[poly_offset]*this_glop.vertex_depth+second_i]), (this_glop.vertices[this_glop.indices[poly_offset+1]*this_glop.vertex_depth+X_i],this_glop.vertices[this_glop.indices[poly_offset+1]*this_glop.vertex_depth+second_i]), (this_glop.vertices[this_glop.indices[poly_offset+2]*this_glop.vertex_depth+X_i],this_glop.vertices[this_glop.indices[poly_offset+2]*this_glop.vertex_depth+second_i]) )  ):
+                    result = dict()
+                    result["walkmesh_index"] = walkmesh_i
+                    result["polygon_offset"] = poly_offset
+                    break
+                poly_offset += poly_side_count
+            walkmesh_i += 1
+        return result
+
+    def use_walkmesh(self, name, hide=True):
+        result = False
+        #for this_glop in self.glops:
+        for index in range(0, len(self.glops)):
+            if self.glops[index].name == name:
+                result = True
+                if self.glops[index] not in self._walkmeshes:
+                    self._walkmeshes.append(self.glops[index])
+                    print("Applying walkmesh translate "+translate_to_string(self.glops[index]._translate_instruction))
+                    self.glops[index].apply_translate()
+                    print("  pivot:"+str(self.glops[index]._pivot_point))
+                    if hide:
+                        self.hide_glop(self.glops[index])
+                break
+        return result
+
+    def get_similar_names(self, partial_name):
+        results = None
+        checked_count = 0
+        if partial_name is not None and len(partial_name)>0:
+            partial_name_lower = partial_name.lower()
+            results = list()
+            for this_glop in self.glops:
+                checked_count += 1
+                #print("checked "+this_glop.name.lower())
+                if this_glop.name is not None:
+                    if partial_name_lower in this_glop.name.lower():
+                        results.append(this_glop.name)
+        #print("checked "+str(checked_count))
+        return results
+
+    def get_indices_by_source_path(self, source_path):
+        results = None
+        checked_count = 0
+        if source_path is not None and len(source_path)>0:
+            results = list()
+            for index in range(0,len(self.glops)):
+                this_glop = self.glops[index]
+                checked_count += 1
+                #print("checked "+this_glop.name.lower())
+                if this_glop.source_path is not None:
+                    if source_path == this_glop.source_path:
+                        results.append(index)
+        #print("checked "+str(checked_count))
+        return results
+
+
+    def get_indices_of_similar_names(self, partial_name, allow_owned_enable=True):
+        results = None
+        checked_count = 0
+        if partial_name is not None and len(partial_name)>0:
+            partial_name_lower = partial_name.lower()
+            results = list()
+            for index in range(0,len(self.glops)):
+                this_glop = self.glops[index]
+                checked_count += 1
+                #print("checked "+this_glop.name.lower())
+                if this_glop.name is not None and \
+                   ( allow_owned_enable or \
+                     this_glop.item_dict is None or \
+                     "owner" not in this_glop.item_dict ):
+                    if partial_name_lower in this_glop.name.lower():
+                        results.append(index)
+        #print("checked "+str(checked_count))
+        return results
+
+    #Find list of similar names slightly faster than multiple calls
+    # to get_indices_of_similar_names: the more matches earlier in
+    # the given partial_names array, the faster this method returns
+    # (therefore overlapping sets are sacrificed).
+    #Returns: list that is always the length of partial_names + 1,
+    # as each item is a list of indicies where name contains the
+    # corresponding partial name, except last index which is all others.
+    def get_index_lists_by_similar_names(self, partial_names, allow_owned_enable=True):
+        results = None
+        checked_count = 0
+        if len(partial_names)>0:
+            results_len = len(partial_names)
+            results = [list() for i in range(results_len + 1)]
+            for index in range(0,len(self.glops)):
+                this_glop = self.glops[index]
+                checked_count += 1
+                #print("checked "+this_glop.name.lower())
+                match_indices = list(results_len)
+                match = False
+                for i in range(0, results_len):
+                    partial_name_lower = partial_names[i].lower()
+                    if this_glop.name is not None and \
+                       ( allow_owned_enable or \
+                         this_glop.item_dict is None or \
+                         "owner" not in this_glop.item_dict ):
+                        if partial_name_lower in this_glop.name.lower():
+                            results[i].append(index)
+                            match = True
+                            break
+                if not match:
+                    results[results_len].append(index)
+        #print("checked "+str(checked_count))
+        return results
+
+
+    def set_world_boundary_by_object(self, thisGlopsMesh, use_x, use_y, use_z):
+        self._world_cube = thisGlopsMesh
+        if (self._world_cube is not None):
+            self.world_boundary_min = [self._world_cube.get_min_x(), None, self._world_cube.get_min_z()]
+            self.world_boundary_max = [self._world_cube.get_max_x(), None, self._world_cube.get_max_z()]
+
+            for axis_index in range(0,3):
+                if self.world_boundary_min[axis_index] is not None:
+                    self.world_boundary_min[axis_index] += self.projection_near + 0.1
+                if self.world_boundary_max[axis_index] is not None:
+                    self.world_boundary_max[axis_index] -= self.projection_near + 0.1
+        else:
+            self.world_boundary_min = [None,None,None]
+            self.world_boundary_max = [None,None,None]
+
+    def get_view_angles_by_pos_rad(self, pos):
+        global debug_dict
+        x_angle = -math.pi + (float(pos[0])/float(self.width-1))*(2.0*math.pi)
+        y_angle = -(math.pi/2.0) + (float(pos[1])/float(self.height-1))*(math.pi)
+        if "View" not in debug_dict:
+            debug_dict["View"] = dict()
+        debug_dict["View"]["pos"] = str(pos)
+        debug_dict["View"]["size"] = str( (self.width, self.height) )
+        debug_dict["View"]["pitch,yaw"] = str((int(math.degrees(x_angle)),
+                                                    int(math.degrees(y_angle))))
+        if self.screen_w_arc_theta is not None and self.screen_h_arc_theta is not None:
+            debug_dict["View"]["field of view"] = \
+                str((int(math.degrees(self.screen_w_arc_theta)),
+                     int(math.degrees(self.screen_h_arc_theta))))
+        else:
+            if "field of view" in debug_dict["View"]:
+                debug_dict["View"]["field of view"] = None
+        self.update_debug_label()
+        return x_angle, y_angle
+
+    def print_location(self):
+        if verbose_enable:
+            Logger.debug("self.camera_walk_units_per_second:"+str(self.camera_walk_units_per_second)+"; location:"+str( (self.camera_glop._translate_instruction.x, self.camera_glop._translate_instruction.y, self.camera_glop._translate_instruction.z) ))
+
+    def get_pressed(self, key_name):
+        return self.player1_controller.get_pressed(Keyboard.keycodes[key_name])
+
+    def toggle_visual_debug(self):
+        if not self._visual_debug_enable:
+            self._visual_debug_enable = True
+            self.debug_label.opacity = 1.0
+        else:
+            self._visual_debug_enable = False
+            self.debug_label.opacity = 0.0
+
+    def select_mesh_by_index(self, index):
+        glops_count = len(self.glops)
+        if (index>=glops_count):
+            index=0
+        if verbose_enable:
+            Logger.debug("trying to select index "+str(index)+" (count is "+str(glops_count)+")...")
+        if (glops_count > 0):
+            self.selected_glop_index = index
+            self.selected_glop = self.glops[index]
+        else:
+            self.selected_glop = None
+            self.selected_glop_index = None
+    
+    def index_of_mesh(self, name):
+        result = -1
+        name_lower = name.lower()
+        for i in range(0,len(self.glops)):
+            source_name = None
+            source_name_lower = None
+            if self.glops[i].source_path is not None:
+                source_name = os.path.basename(os.path.normpath(self.glops[i].source_path))
+                source_name_lower = source_name.lower()
+            if self.glops[i].name==name:
+                result = i
+                break
+            elif self.glops[i].name.lower()==name_lower:
+                print("WARNING: object with different capitalization was not considered a match: " + self.glops[i].name)
+            elif (source_name_lower is not None) and (source_name_lower==name_lower
+                  or os.path.splitext(source_name_lower)[0]==name_lower):
+                result = i
+                name_msg = "filename: '" + source_name + "'"
+                if os.path.splitext(source_name_lower)[0]==name_lower:
+                    name_msg = "part of filename: '" + os.path.splitext(source_name)[0] + "'"
+                print("WARNING: mesh was named '" + self.glops[i].name + "' but found using " + name_msg)
+                if (i+1<len(self.glops)):
+                    for j in range(i+1,len(self.glops)):
+                        sub_source_name_lower = None
+                        if self.glops[j].source_path is not None:
+                            sub_source_name_lower = os.path.basename(os.path.normpath(self.glops[i].source_path)).lower()
+                        if (source_name_lower is not None) and (source_name_lower==name_lower
+                            or os.path.splitext(source_name_lower)[0]==name_lower):
+                            print("  * could also be mesh named '" + self.glops[j].name+"'")
+                break
+        return result
+    
+    def select_mesh_by_name(self, name):
+        found = False
+        index = self.index_of_mesh(name)
+        if index > -1:
+            self.select_mesh_by_index(index)
+            found = True
+        return found

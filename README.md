@@ -11,6 +11,11 @@ Control 3D objects and the camera in your 3D Kivy app!
 * Triangulates (tesselates) obj input manually
 
 ## Changes
+* (2017-12-16) complete shift of most methods from KivyGlopsWindow to PyGlops, or at least KivyGlops if kivy-specific; same for lines from init; same for lines from update_glsl (moved to new PyGlops `update` method)
+* (2017-12-16) renamed create_mesh to new_glop for clarity, and use new_glop to create camera so conversion is not needed (eliminate get_kivyglop_from_pyglop)
+	* rename get_pyglops_list_from_obj to get_glop_list_from_obj
+	* rename get_pyglop_from_wobject to get_glop_from_wobject
+* (2017-12-16) Changed recipe for game so that you subclass KivyGlops instead of KivyGlopsWindow (removes arbitrary border between ui and scene, and changes self.scene. to self. in projects which utilize KivyGlops)
 * (2017-12-11) Began developing a platform-independent spec for the ui object so that PyGlops can specify more platform-independent methods (such as _internal_bump_glop) that push ui directly (ui being the platform-DEPENDENT object such as KivyGlopsWindow, which must inherit from some kind of OS Window or framework Window).
     * so far, ui must include:
         * ui.bump_glop (bumpable_name, bumper_name)

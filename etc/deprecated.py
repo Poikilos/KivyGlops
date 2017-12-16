@@ -1,5 +1,58 @@
+* formerly from __init__ in KivyGlops (formerly in KivyGlopsWindow)
+```
+        self.camera_ax = 0
+        self.camera_ay = 0
+```
 
+* instead, use new_glop method (never use `= PyGlop(`) to avoid needing this
+```
+def get_kivyglop_from_pyglop(this_pyglop):
+    this_kivyglop = KivyGlop()
+    this_kivyglop.name = this_pyglop.name
+    this_kivyglop.source_path = this_pyglop.source_path
+    this_kivyglop.properties = this_pyglop.properties
+    this_kivyglop.vertex_depth = this_pyglop.vertex_depth
+    this_kivyglop.material = this_pyglop.material
+    this_kivyglop._min_coords = this_pyglop._min_coords
+    this_kivyglop._max_coords = this_pyglop._max_coords
+    this_kivyglop._pivot_point = this_pyglop._pivot_point
+    this_kivyglop.eye_height = this_pyglop.eye_height
+    this_kivyglop.hit_radius = this_pyglop.hit_radius
+    this_kivyglop.item_dict = this_pyglop.item_dict
+    this_kivyglop.projectile_dict = this_pyglop.projectile_dict
+    this_kivyglop.actor_dict = this_pyglop.actor_dict
+    this_kivyglop.bump_enable = this_pyglop.bump_enable
+    this_kivyglop.reach_radius = this_pyglop.reach_radius
+    this_kivyglop.is_out_of_range = this_pyglop.is_out_of_range
+    this_kivyglop.physics_enable = this_pyglop.physics_enable
+    this_kivyglop.x_velocity = this_pyglop.x_velocity
+    this_kivyglop.y_velocity = this_pyglop.y_velocity
+    this_kivyglop.z_velocity = this_pyglop.z_velocity
+    this_kivyglop._cached_floor_y = this_pyglop._cached_floor_y
+    this_kivyglop.infinite_inventory_enable = this_pyglop.infinite_inventory_enable
+    this_kivyglop.bump_sounds = this_pyglop.bump_sounds
+    this_kivyglop.look_target_glop = this_pyglop.look_target_glop
+    this_kivyglop.hitbox = this_pyglop.hitbox
+    this_kivyglop.visible_enable = this_pyglop.visible_enable
 
+    this_kivyglop.vertex_format = this_pyglop.vertex_format
+    this_kivyglop.vertices = this_pyglop.vertices
+    this_kivyglop.indices = this_pyglop.indices
+    this_kivyglop.look_target_glop = this_pyglop.look_target_glop
+    #region vars moved to material
+    #this_kivyglop.ambient_color = this_pyglop.ambient_color
+    #this_kivyglop.diffuse_color = this_pyglop.diffuse_color
+    #this_kivyglop.specular_color = this_pyglop.specular_color
+    ##emissive_color = None  # vec4
+    #this_kivyglop.specular_coefficent = this_pyglop.specular_coefficent
+    #endregion vars moved to material
+    #this_kivyglop.opacity = this_pyglop.opacity # use diffuse color 4th channel instead
+
+    return this_kivyglop
+```
+
+* no longer needed
+```
 def get_wmaterial_list_from_mtl(filename):
     print("get_wmaterial_list_from_mtl (formerly get_wmaterials_from_mtl) IS DEPRECTATED: use get_wmaterial_dict_from_mtl instead)")
     results = None
@@ -124,3 +177,4 @@ def get_wmaterial_list_from_mtl(filename):
         print("Could not finish get_wmaterial_list_from_mtl:")
         view_traceback()
     return results
+```
