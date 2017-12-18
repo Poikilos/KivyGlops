@@ -11,6 +11,7 @@ Control 3D objects and the camera in your 3D Kivy app!
 * Triangulates (tesselates) obj input manually
 
 ## Changes
+* (2017-12-17) frames_per_second moved from KivyGlops to KivyGlops window since is implementation specific (and so KivyGlops instance doesn't need to exist during KivyGlopsWindow constructor)
 * (2017-12-16) complete shift of most methods from KivyGlopsWindow to PyGlops, or at least KivyGlops if kivy-specific; same for lines from init; same for lines from update_glsl (moved to new PyGlops `update` method)
 * (2017-12-16) renamed create_mesh to new_glop for clarity, and use new_glop to create camera so conversion is not needed (eliminate get_kivyglop_from_pyglop)
 	* rename get_pyglops_list_from_obj to get_glop_list_from_obj
@@ -19,7 +20,7 @@ Control 3D objects and the camera in your 3D Kivy app!
 * (2017-12-11) Began developing a platform-independent spec for the ui object so that PyGlops can specify more platform-independent methods (such as _internal_bump_glop) that push ui directly (ui being the platform-DEPENDENT object such as KivyGlopsWindow, which must inherit from some kind of OS Window or framework Window).
     * so far, ui must include:
         * ui.bump_glop (bumpable_name, bumper_name)
-        * and in the future, potentially anything else in KivyGlopsWindow (KivyGlopsWindow is the only full spec at this time)
+        * and in the future, potentially anything else in KivyGlopsWindow (KivyGlopsWindow is the only tested spec at this time, however see Developer Notes section of this file, which should be maintained well)
 * (2017-12-11) _internal_bump_glop now calls the new _run_semicolon_separated_commands which calls the new _run_command method, so that these new methods are available to other methods
 * (2017-12-11) give_item_by_keyword_to_player_number and give_item_by_index_to_player_number methods for manual item transfers without bumping or manually calling _internal_bump_glop
 * (2017-12-11) moved projectile handling to _internal_bump_glop (formerly was directly after the _internal_bump_glop call)
@@ -43,6 +44,9 @@ Control 3D objects and the camera in your 3D Kivy app!
 
 
 ## Known Issues
+* fix issues introduced by refactoring:
+	* throw_arc has no gravity
+	* walkmesh is ignored
 * Music loop option is not actually handled
 * move event handlers and any other methods starting with underscore from kivyglops.py to pyglops.py where possible
     * moved from KivyGlopsWindow to PyGlops [new ones in brackets]:
@@ -104,6 +108,17 @@ uniform mat4 modelview_mat;  //derived from self.canvas["modelview_mat"] = model
 uniform mat4 projection_mat;  //derived from self.canvas["projection_mat"] = projectionMatrix
 
 ## Developer Notes
+* ui is usually a KivyGlopsWindow but could be other frameworks. Must have:
+	width
+	height
+	frames_per_second
+	def get_keycode(self, key_name)  # param such as 'a' (allow lowercase only), 'enter' or 'shift'
+	def set_primary_item_caption(self, name)  # param such as "hammer"
+	def add_glop(self, this_glop)
+	def play_sound(self, path, loop=False)
+	* in the case of KivyGlops:
+		_meshes
+		_meshes.remove(this_glop.get_context())
 * each program you make should be a subclass of KivyGlops or other PyGlops subclass (representing framework you are using other than Kivy)
 * All subclasses of PyGlops should overload __init__, call super at beginning of it, and glops_init at end of it, like KivyGlops does.
 * pymesher module (which does not require Kivy) loads obj files using intermediate WObjFile class (planned: save&load native PyMesher files), and provides base classes for all classes in kivymesher module
