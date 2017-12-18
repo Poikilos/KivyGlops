@@ -47,6 +47,7 @@ Control 3D objects and the camera in your 3D Kivy app!
 * fix issues introduced by refactoring:
 	* throw_arc has no gravity
 	* walkmesh is ignored
+	* cylinder map doesn't work (is loaded at bottom left under 3D scene?)
 * Music loop option is not actually handled
 * move event handlers and any other methods starting with underscore from kivyglops.py to pyglops.py where possible
     * moved from KivyGlopsWindow to PyGlops [new ones in brackets]:
