@@ -290,7 +290,7 @@ class KivyGlop(PyGlop, Widget):
                 print("Could not finish loading texture: " + str(self.last_loaded_path))
                 view_traceback()
         else:
-            if verbose_enable:
+            if get_verbose_enable():
                 Logger.debug("Warning: no texture specified for glop named '"+this_mesh_name+"'")
                 this_material_name = ""
                 if self.material is not None:
@@ -353,7 +353,7 @@ class KivyGlop(PyGlop, Widget):
                     mode='triangles',
                     texture=this_texture,
                 )
-            if verbose_enable:
+            if get_verbose_enable():
                 print(str(len(self.vertices))+" vert(ex/ices)")
 
         else:
@@ -373,6 +373,7 @@ class KivyGlops(PyGlops):
     selected_glop = None
     selected_glop_index = None
     mode = None
+    env_rectangle = None
     # moving_x = 0.0
     # moving_z = 0.0
     # _turning_y = 0.0
@@ -460,6 +461,33 @@ class KivyGlops(PyGlops):
         self.ui._meshes.add(self.glops[this_glop_index].get_context())
         this_glop.visible_enable = True
         
+    def set_background_cylmap(self, path):
+        #self.load_obj("env_sphere.obj")
+        #self.load_obj("maps/gi/etc/sky_sphere.obj")
+        #env_indices = self.get_indices_by_source_path("env_sphere.obj")
+        #for i in range(0,len(env_indices)):
+        #    index = env_indices[i]
+        #    print("Preparing sky object "+str(index))
+        #    self.scene.glops[index].set_texture_diffuse(path)
+        if self.env_rectangle is not None:
+            self.scene.canvas.before.remove(self.env_rectangle)
+            self.env_rectangle = None
+        original_path = path
+        if path is not None:
+            if not os.path.isfile(path):
+                path = resource_find(path)
+            if path is not None:
+                #texture = CoreImage(path).texture
+                #texture.wrap = repeat
+                #self.env_rectangle = Rectangle(texture=texture)
+                self.env_rectangle = Rectangle(source=path)
+                self.env_rectangle.texture.wrap = "repeat"
+                self.ui.canvas.before.add(self.env_rectangle)
+            else:
+                print("ERROR in set_background_cylmap: "+original_path+" not found in search path")
+        else:
+            print("ERROR in set_background_cylmap: path is None")
+    
     def preload_sound(self, path):
         if path is not None:
             if path not in self._sounds:
@@ -471,7 +499,7 @@ class KivyGlops(PyGlops):
         if path is not None:
             self.preload_sound(path)
             if self._sounds[path]:
-                if verbose_enable:
+                if get_verbose_enable():
                     print("playing "+path)
                 self._sounds[path]["loader"].play()
             else:
@@ -510,7 +538,7 @@ class KivyGlops(PyGlops):
                                 #self.glops.append(this_glop)
                             #else:
                                 #self.glops[index]=this_glop
-                            print("")
+                            #print("")
                             if (favorite_pivot_point is None):
                                 favorite_pivot_point = new_glops[index]._pivot_point
 
@@ -531,15 +559,19 @@ class KivyGlops(PyGlops):
                         if centered:
                             #TODO: apply pivot point instead (change vertices as if pivot point were 0,0,0) to ensure translate 0 is world 0; instead of:
                             #center it (use only one pivot point, so all objects in obj file remain aligned with each other):
+                            
                             for index in range(0,len(new_glops)):
-                                print("  centering from "+str(favorite_pivot_point))
+                                if index==0:
+                                    print("  centering from "+str(favorite_pivot_point))
+                                    print("  (this is the last centering message that will be shown)")
+                                    print("")
                                 new_glops[index].move_x_relative(-1.0*favorite_pivot_point[0])
                                 new_glops[index].move_y_relative(-1.0*favorite_pivot_point[1])
                                 new_glops[index].move_z_relative(-1.0*favorite_pivot_point[2])
                                 #TODO: new_glops[index].apply_translate()
                                 #TODO: new_glops[index].reset_translate()
 
-                        print("")
+                        #print("")
                 else:
                     print("missing '"+source_path+"'")
             else:
@@ -813,8 +845,9 @@ class KivyGlops(PyGlops):
         
         #endregion tried to move to pyglops but didn't work well
 
-        #if verbose_enable:
-        #    print("update_glsl...")
+        if get_verbose_enable():
+            #print("update_glsl...")
+            print("update matrices...")
         asp = float(self.ui.width) / float(self.ui.height)
 
         clip_top = 0.06  #NOTE: 0.03 is ~1.72 degrees, if that matters
@@ -876,7 +909,7 @@ class KivyGlops(PyGlops):
         self.ui.gl_widget.canvas['projection_mat'] = proj
         self.ui.gl_widget.canvas['modelview_mat'] = modelViewMatrix
         self.ui.gl_widget.canvas["camera_world_pos"] = [self.camera_glop._translate_instruction.x, self.camera_glop._translate_instruction.y, self.camera_glop._translate_instruction.z]
-        #if verbose_enable:
+        #if get_verbose_enable():
         #    Logger.debug("ok (update_glsl)")
 
         #is_look_point_changed = False
@@ -927,14 +960,12 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
     
     scene = None  # only use for drawing frames and sending input
     frames_per_second = None
-    _visual_debug_enable = None
     _meshes = None # InstructionGroup so gl operations can be added in realtime (after resetCallback is added, but so resetCallback is on the stack after them)
     #region Window TODO: rename to _*
     use_button = None  
     screen_w_arc_theta = None
     screen_h_arc_theta = None
     hud_bg_rect = None
-    env_rectangle = None
     #endregion Window TODO: rename to _*
     #region Window
     hud_form = None
@@ -945,7 +976,6 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
     def __init__(self, **kwargs):
         #self.scene = KivyGlops()
         #self.scene.ui = self
-        self._visual_debug_enable = False
         self.frames_per_second = 60.0
         self.gl_widget = GLWidget()
         self.hud_form = HudForm(orientation="vertical", size_hint=(1.0, 1.0))
@@ -1070,34 +1100,6 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         else:
             print("ERROR in spawn_pex_particles: path is None")
 
-    def set_background_cylmap(self, path):
-        #self.load_obj("env_sphere.obj")
-        #self.load_obj("maps/gi/etc/sky_sphere.obj")
-        #env_indices = self.get_indices_by_source_path("env_sphere.obj")
-        #for i in range(0,len(env_indices)):
-        #    index = env_indices[i]
-        #    print("Preparing sky object "+str(index))
-        #    self.scene.glops[index].set_texture_diffuse(path)
-        if self.env_rectangle is not None:
-            self.canvas.before.remove(self.env_rectangle)
-        original_path = path
-        if path is not None:
-            if not os.path.isfile(path):
-                path = resource_find(path)
-            if path is not None:
-                #texture = CoreImage(path).texture
-                #texture.wrap = repeat
-                #self.env_rectangle = Rectangle(texture=texture)
-                self.env_rectangle = Rectangle(source=path)
-                self.env_rectangle.texture.wrap = "repeat"
-                self.canvas.before.add(self.env_rectangle)
-            else:
-                print("ERROR in set_background_cylmap: "+original_path+" not found in search path")
-        else:
-            print("ERROR in set_background_cylmap: path is None")
-
-
-
     def explode_glop_by_index(self, index, weapon_dict=None):
         self.display_explosion( \
             get_vec3_from_point(self.scene.glops[index]._translate_instruction), \
@@ -1182,12 +1184,12 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             if this_glop._mesh is None:
                 this_glop.generate_kivy_mesh()
                 print("WARNING: glop had no mesh, so was generated when added to render context. Please ensure it is a KivyGlop and not a PyGlop (however, vertex indices misread could also lead to missing Mesh object).")
-            print("_color_instruction.r,.g,.b,.a: "+str( [this_glop._color_instruction.r, this_glop._color_instruction.g, this_glop._color_instruction.b, this_glop._color_instruction.a] ))
-            print("u_color: "+str(this_glop.material.diffuse_color))
+            #print("_color_instruction.r,.g,.b,.a: "+str( [this_glop._color_instruction.r, this_glop._color_instruction.g, this_glop._color_instruction.b, this_glop._color_instruction.a] ))
+            #print("u_color: "+str(this_glop.material.diffuse_color))
 
             if this_glop._mesh is not None:
                 context.add(this_glop._mesh)
-                if verbose_enable:
+                if get_verbose_enable():
                     print("Added mesh to render context.")
             else:
                 print("NOT adding mesh.")
@@ -1202,7 +1204,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             self._meshes.add(self.scene.glops[len(self.scene.glops)-1].get_context())  # _meshes is a visible instruction group
             self.scene.glops[len(self.scene.glops)-1].visible_enable = True
 
-            if verbose_enable:
+            if get_verbose_enable():
                 print("Appended Glop (count:"+str(len(self.scene.glops))+").")
 
         except:
@@ -1222,21 +1224,23 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         self.gl_widget.canvas.add(self.resetCallback)
 
     def update_glsl(self, *largs):
-        if not self._visual_debug_enable:
+        if not self.scene._visual_debug_enable:
             self.debug_label.opacity = 0.0
+        else:
+            self.debug_label.opacity = 1.0
 
-        if self.env_rectangle is not None:
+        if self.scene.env_rectangle is not None:
             if self.screen_w_arc_theta is not None and self.screen_h_arc_theta is not None:
                 #region old way (does not repeat)
                 #env_h_ratio = (2 * math.pi) / self.screen_h_arc_theta
                 #env_w_ratio = env_h_ratio * math.pi
-                #self.env_rectangle.size = (Window.size[0]*env_w_ratio,
+                #self.scene.env_rectangle.size = (Window.size[0]*env_w_ratio,
                                            #Window.size[1]*env_h_ratio)
-                #self.env_rectangle.pos = (-(self.camera_glop._rotate_instruction_y.angle/(2*math.pi)*self.env_rectangle.size[0]),
-                                          #-(self.camera_glop._rotate_instruction_x.angle/(2*math.pi)*self.env_rectangle.size[1]))
+                #self.scene.env_rectangle.pos = (-(self.camera_glop._rotate_instruction_y.angle/(2*math.pi)*self.scene.env_rectangle.size[0]),
+                                          #-(self.camera_glop._rotate_instruction_x.angle/(2*math.pi)*self.scene.env_rectangle.size[1]))
                 #engregion old way (does not repeat)
-                self.env_rectangle.size = Window.size
-                self.env_rectangle.pos = 0.0, 0.0
+                self.scene.env_rectangle.size = Window.size
+                self.scene.env_rectangle.pos = 0.0, 0.0
                 view_right = self.screen_w_arc_theta / 2.0 + self.camera_glop._rotate_instruction_y.angle
                 view_left = view_right - self.screen_w_arc_theta
                 view_top = self.screen_h_arc_theta / 2.0 + self.camera_glop._rotate_instruction_x.angle + 90.0
@@ -1249,7 +1253,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                 #tex_coords order: u,      v,      u + w,  v,
                 #                  u + w,  v + h,  u,      v + h
                 # as per https://kivy.org/planet/2014/02/using-tex_coords-in-kivy-for-fun-and-profit/
-                self.env_rectangle.tex_coords = view_left_ratio, view_bottom_ratio, view_right_ratio, view_bottom_ratio, \
+                self.scene.env_rectangle.tex_coords = view_left_ratio, view_bottom_ratio, view_right_ratio, view_bottom_ratio, \
                                                 view_right_ratio, view_top_ratio, view_left_ratio, view_top_ratio
 
         x_rad, y_rad = self.get_view_angles_by_pos_rad(Window.mouse_pos)
@@ -1261,7 +1265,6 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         if self.hud_bg_rect is not None:
             self.hud_bg_rect.size = self.hud_form.size
             self.hud_bg_rect.pos=self.hud_form.pos
-            
         self.scene.update()
 
     #def get_view_angles_by_touch_deg(self, touch):
@@ -1276,12 +1279,14 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
     #    return x_angle, y_angle
     
     def toggle_visual_debug(self):
-        if not self._visual_debug_enable:
-            self._visual_debug_enable = True
+        if not self.scene._visual_debug_enable:
+            self.scene._visual_debug_enable = True
             self.debug_label.opacity = 1.0
+            print("_visual_debug_enable: True")
         else:
-            self._visual_debug_enable = False
+            self.scene._visual_debug_enable = False
             self.debug_label.opacity = 0.0
+            print("_visual_debug_enable: False")
 
     def update_debug_label(self):
         yaml = ""
@@ -1356,7 +1361,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
 #             pass
         elif keycode[1] == "tab":
             self.select_mesh_by_index(self.selected_glop_index+1)
-            #if verbose_enable:
+            #if get_verbose_enable():
             this_name = None
             if self.selected_glop_index is not None:
                 this_name = "["+str(self.selected_glop_index)+"]"
@@ -1377,7 +1382,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         # else:
         #     print('Pressed unused key: ' + str(keycode) + "; text:"+text)
 
-        if verbose_enable:
+        if get_verbose_enable():
             self.print_location()
             print("scene.camera_glop._rotate_instruction_y.angle: " + str(self.scene.camera_glop._rotate_instruction_y.angle))
             print("modelview_mat: " + str(self.gl_widget.canvas['modelview_mat']))

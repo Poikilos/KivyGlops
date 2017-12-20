@@ -11,11 +11,16 @@ Control 3D objects and the camera in your 3D Kivy app!
 * Triangulates (tesselates) obj input manually
 
 ## Changes
+* (2017-12-19) wobjfile.py: elimintated smoothing_group in favor of this_face_group_type and this_face_group_name (this_face_group_type "s" is a smoothing group)
+* (2017-12-19) wobjfile.py: always use face groups, to accomodate face groups feature of OBJ spec; added more fault-tolerance to by creating vertex list whenever first vertex of a list is declared, and creating face groups whenever first face of a list is declared
+* (2017-12-19) standardized append_dump methods (and use standard_append_dump when necessary) for consistent yaml and consistent coding: (list, tab, name [, data | self])
+* (2017-12-19) store vertex_group_type in WObject (for future implementation)
+* (2017-12-19) added ability to load non-standard obj file using commands without params; leave WObject name as None if not specified, & added ability to load non-standard object signaling (AND naming) in obj file AFTER useless g command, (such as, name WObject `some_name` if has `# object some_name then useless comments` on any line before data but after line with just `g` or `o` command but only if no name follows those commands)
 * (2017-12-17) frames_per_second moved from KivyGlops to KivyGlops window since is implementation specific (and so KivyGlops instance doesn't need to exist during KivyGlopsWindow constructor)
 * (2017-12-16) complete shift of most methods from KivyGlopsWindow to PyGlops, or at least KivyGlops if kivy-specific; same for lines from init; same for lines from update_glsl (moved to new PyGlops `update` method)
 * (2017-12-16) renamed create_mesh to new_glop for clarity, and use new_glop to create camera so conversion is not needed (eliminate get_kivyglop_from_pyglop)
-	* rename get_pyglops_list_from_obj to get_glop_list_from_obj
-	* rename get_pyglop_from_wobject to get_glop_from_wobject
+        * rename get_pyglops_list_from_obj to get_glop_list_from_obj
+        * rename get_pyglop_from_wobject to get_glop_from_wobject
 * (2017-12-16) Changed recipe for game so that you subclass KivyGlops instead of KivyGlopsWindow (removes arbitrary border between ui and scene, and changes self.scene. to self. in projects which utilize KivyGlops)
 * (2017-12-11) Began developing a platform-independent spec for the ui object so that PyGlops can specify more platform-independent methods (such as _internal_bump_glop) that push ui directly (ui being the platform-DEPENDENT object such as KivyGlopsWindow, which must inherit from some kind of OS Window or framework Window).
     * so far, ui must include:
@@ -44,10 +49,14 @@ Control 3D objects and the camera in your 3D Kivy app!
 
 
 ## Known Issues
+* vertex normals should supercede smoothing groups (which are based on faces) according to the obj format spec, but I'm not sure why since that would accomplish nothing since normals are blended across faces on OpenGL ES 2+
+* implement vendor-specific commands at end of OBJ file (see wobjfile.py vs "Vendor specific alterations" section of <https://en.wikipedia.org/wiki/Wavefront_.obj_file>)
+* implement Clara.io PBR extensions to OBJ format (see wobjfile.py vs "Physically-based Rendering" section of <https://en.wikipedia.org/wiki/Wavefront_.obj_file>)
+* `texcoord_number` is always None during `this_face.append([vertex_number,texcoord_number,normal_number])` in wobjfile.py; see also stated_texcoord_number from which texcoord_number is derived when stated_texcoord_number is good
 * fix issues introduced by refactoring:
-	* throw_arc has no gravity
-	* walkmesh is ignored
-	* cylinder map doesn't work (is loaded at bottom left under 3D scene?)
+        * throw_arc has no gravity
+        * walkmesh is ignored
+        * cylinder map doesn't work (is loaded at bottom left under 3D scene?)
 * Music loop option is not actually handled
 * move event handlers and any other methods starting with underscore from kivyglops.py to pyglops.py where possible
     * moved from KivyGlopsWindow to PyGlops [new ones in brackets]:
@@ -98,7 +107,7 @@ Software is copyright Jake Gustafson and provided under GNU Lesser General Publi
 Resources are provided under Creative Commons Attribution Share-Alike (CC-BY-SA) license: http://creativecommons.org/licenses/by-sa/4.0/
 
 #### With the following caveats:
-*testnurbs-all-textured.obj was derived from testnurbs by nskrypnik
+* testnurbs-all-textured.obj was derived from testnurbs by nskrypnik
 
 ## Kivy Notes
 * Kivy has no default vertex format, so pyglops.py provides OpenGL with vertex format (& names the variables)--see:
@@ -110,16 +119,17 @@ uniform mat4 projection_mat;  //derived from self.canvas["projection_mat"] = pro
 
 ## Developer Notes
 * ui is usually a KivyGlopsWindow but could be other frameworks. Must have:
-	width
-	height
-	frames_per_second
-	def get_keycode(self, key_name)  # param such as 'a' (allow lowercase only), 'enter' or 'shift'
-	def set_primary_item_caption(self, name)  # param such as "hammer"
-	def add_glop(self, this_glop)
-	def play_sound(self, path, loop=False)
-	* in the case of KivyGlops:
-		_meshes
-		_meshes.remove(this_glop.get_context())
+        width
+        height
+        frames_per_second
+        def get_keycode(self, key_name)  # param such as 'a' (allow lowercase only), 'enter' or 'shift'
+        def set_primary_item_caption(self, name)  # param such as "hammer"
+        def add_glop(self, this_glop)
+        def play_sound(self, path, loop=False)
+        - and more for Kivy version (as used by KivyGlops):
+                _meshes
+                _meshes.remove(this_glop.get_context())
+                canvas
 * each program you make should be a subclass of KivyGlops or other PyGlops subclass (representing framework you are using other than Kivy)
 * All subclasses of PyGlops should overload __init__, call super at beginning of it, and glops_init at end of it, like KivyGlops does.
 * pymesher module (which does not require Kivy) loads obj files using intermediate WObjFile class (planned: save&load native PyMesher files), and provides base classes for all classes in kivymesher module

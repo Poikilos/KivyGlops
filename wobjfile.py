@@ -19,6 +19,8 @@ import sys  # exception etc
 import math
 import traceback
 
+tab_string = "  "
+
 #from common import view_traceback
 #from common import get_by_name
 from common import *
@@ -184,6 +186,28 @@ color_arg_type_strings.append(WColorArgInfo("texres","resizes texture before usi
 #   -texres value
 
 
+class WFaceGroup:
+    def __init__(self):
+        self.faces = None
+        #NOTE: no self.name since name is key, since WFaceGroup is in a dict (however, do not save g or s command [discard key] if self.face_group_type is None)
+        self.face_group_type = None  # `g` or `s`
+    
+    def append_dump(self, thisList, this_min_tab, this_list_name):
+        thisList.append(this_min_tab+this_list_name+":")
+        name_line = "name: "
+        if self.name is not None:
+            name_line += self.name
+        else:
+            name_line += "~"
+        thisList.append(this_min_tab+tab_string+name_line)
+        if self.faces is not None:
+            thisList.append(this_min_tab+tab_string+"faces:")
+            for face in faces:
+                thisList.append(this_min_tab+tab_string+tab_string+"- ")
+                for vertex_i in face:
+                    thisList.append(this_min_tab+tab_string+tab_string+tab_string+"- "+str(vertex_i))
+        else:
+            thisList.append(this_min_tab+tab_string+"faces: ~")
 
 
 class WMaterial:
@@ -228,11 +252,10 @@ class WMaterial:
 
 
 #Also in pyglops.py; formerly dumpAsYAMLArray
-def append_dump_as_yaml_array(thisList, thisName, sourceList, this_min_tab):
-    tabString="  "
-    thisList.append(this_min_tab+thisName+":")
+def standard_append_dump(thisList, this_min_tab, this_name, sourceList):
+    thisList.append(this_min_tab+this_name+":")
     for i in range(0,len(sourceList)):
-        thisList.append(this_min_tab+tabString+"- "+str(sourceList[i]))
+        thisList.append(this_min_tab+tab_string+"- "+str(sourceList[i]))
 
 
 class WObject:
@@ -255,29 +278,33 @@ class WObject:
     vertices = None  # v
     texcoords = None  # vt (uv point in texture where each coord is from 0.0 to 1.0); aka vertex_uvs
     normals = None  # vn
-    faces = None  # f; vertex#/texcoord#/normal# were *# is a counting number starting at 0 (BUT saved as 1)-- only vertex# is required (but // is used if texcoord# is not present but normal# is).
+    face_groups = None  # f; vertex#/texcoord#/normal# were *# is a counting number starting at 0 (BUT saved as 1)-- only vertex# is required (but // is used if texcoord# is not present but normal# is).
     wmaterial = None
     name = None
+    has_any_data_enable = None
 
     _opening_comments = None
 
     def __init__(self, name=None):
         self.name = name
+        self.has_any_data_enable = False
 
     def append_opening_comment(self, text):
         if self._opening_comments is None:
             self._opening_comments = list()
         self._opening_comments.append(text)
 
-    def append_dump(self, thisList, this_min_tab):
+    def append_dump(self, thisList, this_min_tab, this_name):
         if self.source_path is not None:
-            thisList.append(this_min_tab+tabString+"source_path: "+self.source_path)
-        thisList = append_dump_as_yaml_array(thisList, "vertices",self.vertices,this_min_tab+tabString)
-        thisList = append_dump_as_yaml_array(thisList, "texcoords",self.texcoords,this_min_tab+tabString)
-        thisList = append_dump_as_yaml_array(thisList, "normals",self.normals,this_min_tab+tabString)
-        thisList = append_dump_as_yaml_array(thisList, "_vertex_strings",self._vertex_strings,this_min_tab+tabString)
-        thisList = append_dump_as_yaml_array(thisList, "parameter_space_vertices",self.parameter_space_vertices,this_min_tab+tabString)
-        thisList = append_dump_as_yaml_array(thisList, "faces",self.faces,this_min_tab+tabString)
+            thisList.append(this_min_tab+tab_string+"source_path: "+self.source_path)
+        standard_append_dump(thisList, this_min_tab+tab_string, "vertices", self.vertices)
+        standard_append_dump(thisList, this_min_tab+tab_string, "texcoords", self.texcoords)
+        standard_append_dump(thisList, this_min_tab+tab_string, "normals", self.normals)
+        standard_append_dump(thisList, this_min_tab+tab_string, "_vertex_strings", self._vertex_strings)
+        standard_append_dump(thisList, this_min_tab+tab_string, "parameter_space_vertices", self.parameter_space_vertices)
+        thisList.append(this_min_tab+tab_string+"face_groups:")
+        for key in self.face_groups:
+            self.face_groups[key].append_dump(thisList, this_min_tab+tab_string+tab_string, key)
 
 
 ILLUMINATIONMODEL_DESCRIPTION_STRINGS = ["Color on and Ambient off","Color on and Ambient on","Highlight on","Reflection on and Ray trace on","Transparency: Glass on, Reflection: Ray trace on","Reflection: Fresnel on and Ray trace on","Transparency: Refraction on, Reflection: Fresnel off and Ray trace on","Transparency: Refraction on, Reflection: Fresnel on and Ray trace on","Reflection on and Ray trace off","Transparency: Glass on, Reflection: Ray trace off","Casts shadows onto invisible surfaces"]
@@ -299,7 +326,6 @@ def get_wmaterial_dict_from_mtl(filename):
             line_counting_number = 1
             this_mtl_name = None
             for line in open(filename, "r"):
-
                 line_strip = line.strip()
                 while ("\t" in line_strip):
                     line_strip = line_strip.replace("\t", " ")
@@ -433,6 +459,7 @@ def get_wmaterial_dict_from_mtl(filename):
 
 texcoords_not_2_warning_enable = True
 NYI_s_enable = True
+short_name_in_messages_enable = True
 
 class WObjFile:
     wobjects = None
@@ -441,11 +468,19 @@ class WObjFile:
         self.wobjects = self.get_wobjects_list(filename)
 
     def get_wobjects_list(self, filename):  # formerly import_obj formerly get_wobjects_from_obj
+        added_face_msg_enable = True
+        name_msg = filename
+        if short_name_in_messages_enable:
+            name_msg = os.path.basename(os.path.normpath(filename))
+        texcoord_number_warning_enable = True
         global texcoords_not_2_warning_enable
         global NYI_s_enable
         results = None
         try:
             if os.path.exists(filename):
+                command = None
+                prev_command = None
+                prev_usable_command = None
                 results = list()
                 result_index = -1
                 comments = list()
@@ -453,7 +488,6 @@ class WObjFile:
                 line_counting_number = 1
                 this_mtl_filename = None
                 materials = None
-                smoothing_group = None
                 #start offsets at 1 since obj file uses counting numbers
                 #v_offset = 1
                 #vt_offset = 1
@@ -471,280 +505,343 @@ class WObjFile:
                 v_map = None
                 vt_map = None
                 vn_map = None
+                this_g_name = None
+                this_o_name = None
+                untitled_number = 1  # for non-spec objects that also have no non-spec name (such as `# object object_name`) specified
+                unused_g_number = 1  # collisions should be detected before use
+                g_names = []  # just for detecting duplicates
+                this_face_group = None
+                this_face_group_type = None  # s or g
+                this_face_group_name = None  # name property of this_face_group
+                this_face_group_key = None
                 for line in open(filename, "r"):
                     line_strip = line.strip()
                     while ("\t" in line_strip):
                         line_strip = line_strip.replace("\t", " ")
                     while ("  " in line):
                         line = line.replace("  ", " ")
-                    if line_strip == "g":
-                        line_strip = "g default"
-                    #nonstandard_o_signal_string = "# object "
-                    #if line_strip[0:len(nonstandard_o_signal_string)]==nonstandard_o_signal_string:
-                    #    line_strip = "o "+line_strip[len(nonstandard_o_signal_string):]
                     if (len(line_strip)>0) and (line_strip[0]!="#"):
+                        if this_object is not None:
+                            this_object.has_any_data_enable = True
                         space_index = line_strip.find(" ")
+                        args_string = ""
                         if space_index>-1:
-                            args_string = ""
+                            command = line_strip[:space_index]
                             if len(line_strip) >= (space_index+1):  #TODO: audit this weird check
                                 args_string = line_strip[space_index+1:].strip()
-                            if len(args_string)>0:
-                                command = line_strip[:space_index]
-                                params = args_string.split(" ")  # line_strip[space_index+1:].strip()
-                                if command=="mtllib":
-                                    this_mtl_filename = args_string
-                                    if (this_mtl_filename[:2]=="./") or (this_mtl_filename[:2]==".\\"):
-                                        this_mtl_filename = this_mtl_filename[2:]
-                                    this_mesh_folder_path = os.path.dirname(os.path.abspath(filename))
-                                    this_mtl_path = this_mtl_filename
-                                    if (len(this_mesh_folder_path)>0):
-                                        this_mtl_path = os.path.join(this_mesh_folder_path, this_mtl_filename)
-                                    materials = get_wmaterial_dict_from_mtl(this_mtl_path)
-                                elif command=="o":
-                                    if this_object is not None:
-                                        results.append(this_object)
-                                        result_index += 1  # ok since starts at -1
-                                        this_object = None
-                                        #v_offset += len(this_object.vertices)
-                                        #vt_offset += len(this_object.texcoords)
-                                        #vn_offset += len(this_object.normals)
-                                    smoothing_group = None
-                                    v_map = dict()
-                                    vt_map = dict()
-                                    vn_map = dict()
-                                    this_object = WObject(name=args_string)
-                                    this_object.source_path = filename
-                                    this_object.mtl_filename = this_mtl_filename
-                                    this_wobject_v_count = 0
-                                    this_wobject_vt_count = 0
-                                    this_wobject_vn_count = 0
-                                    if len(comments)>0:
-                                        for i in range(0,len(comments)):
-                                            this_object.append_opening_comment(comments[i])
-                                        #comments[:] = []
-                                        del comments[:]
-                                        #comments.clear()  # requires python 3.3 or later
-                                elif command=="g":  # TODO: implement groups better
-                                    if this_object is not None:
-                                        results.append(this_object)
-                                        result_index += 1  # ok since starts at -1
-                                        this_object = None
-                                        #v_offset += len(this_object.vertices)
-                                        #vt_offset += len(this_object.texcoords)
-                                        #vn_offset += len(this_object.normals)
-                                    smoothing_group = None
-                                    v_map = dict()
-                                    vt_map = dict()
-                                    vn_map = dict()
-                                    this_object = WObject(name=args_string)
-                                    this_object.source_path = filename
-                                    this_object.mtl_filename = this_mtl_filename
-                                    this_wobject_v_count = 0
-                                    this_wobject_vt_count = 0
-                                    this_wobject_vn_count = 0
-                                    if len(comments)>0:
-                                        for i in range(0,len(comments)):
-                                            this_object.append_opening_comment(comments[i])
-                                        #comments[:] = []
-                                        del comments[:]
-                                        #comments.clear()  # requires python 3.3 or later
-                                elif this_object is not None:
-                                    if command=="v":
-                                        #NOTE: references a v by vertex# are relative to file instead of 'o', but this is detected & fixed at end of this method (for each object discovered) since file may not match spec
+                        else:
+                            command = line_strip
+                        if len(args_string)>0:
+                            params = args_string.split(" ")  # line_strip[space_index+1:].strip()
+                        else:
+                            params = []
+                        if command=="mtllib":
+                            this_mtl_filename = args_string
+                            if (this_mtl_filename[:2]=="./") or (this_mtl_filename[:2]==".\\"):
+                                this_mtl_filename = this_mtl_filename[2:]
+                            this_mesh_folder_path = os.path.dirname(os.path.abspath(filename))
+                            this_mtl_path = this_mtl_filename
+                            if (len(this_mesh_folder_path)>0):
+                                this_mtl_path = os.path.join(this_mesh_folder_path, this_mtl_filename)
+                            materials = get_wmaterial_dict_from_mtl(this_mtl_path)
+                        elif command=="o":
+                            if len(params) > 0:
+                                this_o_name = params[0]  # this_object.name = params[0]
+                        elif command=="g":
+                            this_face_group_type = "g"
+                            if len(params) > 0:
+                                this_g_name = params[0]  # this_object.name = params[0]
+                        elif command=="v":
+                            if prev_usable_command != command:
+                                #this is non-spec to account for non-spec v commands that aren't preceded by `o` command
+                                if this_object is not None:
+                                    results.append(this_object)
+                                    result_index += 1  # ok since starts at -1
+                                    this_object = None
+                                    #v_offset += len(this_object.vertices)
+                                    #vt_offset += len(this_object.texcoords)
+                                    #vn_offset += len(this_object.normals)
+                                v_map = dict()
+                                vt_map = dict()
+                                vn_map = dict()
+                                this_object = WObject()
+                                if this_o_name is None:
+                                    this_o_name = "untitled_" + str(untitled_number)
+                                    untitled_number += 1
+                                this_object.name = this_o_name
+                                this_o_name = None
+                                this_vertex_group_type = None
+                                this_object.source_path = filename
+                                this_object.mtl_filename = this_mtl_filename
+                                this_wobject_v_count = 0
+                                this_wobject_vt_count = 0
+                                this_wobject_vn_count = 0
+                                if len(comments)>0:
+                                    for i in range(0,len(comments)):
+                                        this_object.append_opening_comment(comments[i])
+                                    #comments[:] = []
+                                    del comments[:]
+                                    #comments.clear()  # requires python 3.3 or later
+                            #NOTE: references a v by vertex# are relative to file instead of 'o', but this is detected & fixed at end of this method (for each object discovered) since file may not match spec
+                            if this_object.vertices is None:
+                                this_object.vertices = list()
+                            args = args_string.split(" ")
+                            result_v = (0.0, 0.0, 0.0)
+                            if len(args)>=7:
+                                result_v = get_fvec7(args)  #allow nonstandard x,y,z,r,g,b,a (position then color) format
+                            elif len(args)>=6:
+                                result_v = get_fvec6(args)  #allow nonstandard x,y,z,r,g,b (position then color) format
+                            elif len(args)>=3:
+                                result_v = get_fvec3(args)
+                            if len(args)!=3 and len(args)!=6 and len(args)!=7:
+                                print(name_msg+" ("+str(line_counting_number)+",0): (INPUT WARNING) vertex must have 3 total coordinate values (or 3 followed by 3 to 4 color channels for 6 to 7 total): '"+args_string+"'")
+                                if len(args)>=2:
+                                    result_v = get_fvec3( (args[0], 0.0, args[1]) )  #assume x,z for 2d vert
+                                if len(args)>=1:
+                                    result_v = get_fvec3( (args[0], 0.0, 0.0) )  #assume x,z for 2d vert
+                            #this_object.vertices.append(result_v)
+                            absolute_v_list.append(result_v)
+                            absolute_v_count += 1
+                            #v_offset += 1                            
+                        elif this_object is not None:
+                            if command=="vt":
+                                args = args_string.split(" ")
+                                result_vt = (0.0, 0.0)
+                                if len(args)>=2:
+                                    result_vt = get_fvec2(args)
+                                if (texcoords_not_2_warning_enable):
+                                    if (len(args)!=2):
+                                        if (len(args)<2):
+                                            print(name_msg+" ("+str(line_counting_number)+",0): (INPUT ERROR) texcoord missing coordinate (expected u v after vt but only got one param) so texture may not be applied correctly: '"+args_string+"'")
+                                        else:
+                                            if len(args)!=3:
+                                                print(name_msg+" ("+str(line_counting_number)+",0): (INPUT ERROR) texcoords must have 2 (vt u v) or 3 (vt u v w) coordinates: '"+args_string+"'")
+                                            else:
+                                                print(name_msg+" ("+str(line_counting_number)+",0): (INPUT WARNING / NOT YET IMPLEMENTED) texcoord with 3 coordinates (vt u v w) so w may be ignored: '"+args_string+"'")
+                                        print("(this is the last texcoords input warning that will be shown)")
+                                        print("")
+                                        texcoords_not_2_warning_enable = False
+                                #this_object.texcoords.append(result_vt)
+                                absolute_vt_list.append(result_vt)
+                                absolute_vt_count += 1
+                                #still increment since is reference to index obj file:
+                                #vt_offset += 1
+
+                            elif command=="vn":
+                                #NOTE: presence of normals supercedes smoothing groups
+                                args = args_string.split(" ")
+                                result_vn = (0.0, 0.0, 0.0)
+                                if len(args)>=3:
+                                    result_vn = get_fvec3(args)
+                                if len(args)!=3:
+                                    print(name_msg+" ("+str(line_counting_number)+",0): (INPUT ERROR) normal must have 3 coordinates: '"+args_string+"'")
+                                #this_object.normals.append(result_vn)
+                                absolute_vn_list.append(result_vn)
+                                absolute_vn_count += 1
+                                #vn_offset += 1
+                            elif command=="f":
+                                if prev_usable_command != command:
+                                    #if this_object.faces is None:
+                                    #    this_object.faces = []
+                                    if this_object.face_groups is None:
+                                        this_object.face_groups = {}
+                                    this_face_group = WFaceGroup()
+                                    this_face_group.faces = []
+                                    if this_face_group_name is None:
+                                        this_face_group_name = str(unused_g_number)
+                                        while this_face_group_name in this_object.face_groups:
+                                            unused_g_number += 1
+                                            this_face_group_name = str(unused_g_number)
+                                    this_face_group.face_group_type = this_face_group_type
+                                    this_face_group_type = None
+                                    this_object.face_groups[this_face_group_name] = this_face_group
+                                    this_face_group_key = this_face_group_name
+                                    this_face_group_name = None                                    
+                                
+                                args = args_string.split(" ")
+                                this_face = []
+                                for i in range(0,len(args)):
+                                    absolute_v_index = None
+                                    absolute_vt_index = None
+                                    absolute_vn_index = None
+                                    vertex_number = None
+                                    texcoord_number = None
+                                    normal_number = None
+                                    values = args[i].split("/")
+                                    #subtract offsets from values since obj file not only uses counting numbers but also numbers unique in entire file (as opposed to starting over for each object):
+                                    if len(values)>=1:
+                                        values[FACE_V] = values[FACE_V].strip()
+                                        if len(values[FACE_V])>0:  # if not blank string
+                                            stated_v_number = int(values[FACE_V])
+                                            if stated_v_number>=1:
+                                                absolute_v_index = stated_v_number - 1
+                                                vertex_number = this_wobject_v_count  # ok since adding it below
+                                            elif stated_v_number<0:  # negative index is relative in obj standard
+                                                absolute_v_index = absolute_v_count + stated_v_number  # + since negative
+                                                vertex_number = this_wobject_v_count  # ok since adding it below
+                                            else:
+                                                print("  WARNING: vertex number 0 on obj is nonstandard and will be skipped")
+                                            if absolute_v_index is not None:
+                                                abs_v_i_s = str(absolute_v_index)
+                                                if abs_v_i_s in v_map:
+                                                    absolute_v_index = None  # prevents copying same one to wobject again below
+                                                    vertex_number = v_map[abs_v_i_s]
+                                                else:
+                                                    v_map[abs_v_i_s] = vertex_number
+                                    if len(values)>=2:
+                                        values[FACE_TC] = values[FACE_TC].strip()
+                                        if len(values[FACE_TC])>0:  # if not blank string
+                                            #texcoord_number = int(values[FACE_TC])-vt_offset
+                                            stated_texcoord_number = int(values[FACE_TC])
+                                            if stated_texcoord_number>=1:
+                                                absolute_vt_index = stated_texcoord_number - 1
+                                                texcoord_number = this_wobject_vt_count  # ok since adding it below
+                                            elif stated_texcoord_number<0:  # negative index is relative in obj standard
+                                                absolute_vt_index = absolute_v_count + stated_v_number  # + since negative
+                                                texcoord_number = this_wobject_vt_count  # ok since adding it below
+                                            else:
+                                                print("  WARNING: texcoord number 0 on obj is nonstandard and will be skipped")
+                                            if absolute_vt_index is not None:
+                                                abs_vt_i_s = str(absolute_vt_index)
+                                                if abs_vt_i_s in vt_map:
+                                                    absolute_vt_index = None  # prevents copying same one to wobject again below
+                                                    texcoord_number = vt_map[abs_vt_i_s]
+                                                else:
+                                                    vt_map[abs_vt_i_s] = texcoord_number
+                                    if len(values)>=3:
+                                        values[FACE_VN] = values[FACE_VN].strip()
+                                        if len(values[FACE_VN])>0:  # if not blank string
+                                            #normal_number = int(values[FACE_VN])-vn_offset
+                                            stated_normal_number = int(values[FACE_VN])
+                                            if stated_normal_number>=1:
+                                                absolute_vn_index = stated_normal_number - 1
+                                                normal_number = this_wobject_vn_count  # ok since adding it below
+                                            elif stated_normal_number<0:  # negative index is relative in obj standard
+                                                absolute_vn_index = absolute_vn_count + stated_normal_number  # + since negative
+                                                normal_number = this_wobject_vn_count  # ok since adding it below
+                                            else:
+                                                print("  WARNING: normal number 0 on obj is nonstandard and will be skipped")
+                                            if absolute_vn_index is not None:
+                                                abs_vn_i_s = str(absolute_vn_index)
+                                                if abs_vn_i_s in vn_map:
+                                                    absolute_vn_index = None  # prevents copying same one to wobject again below
+                                                    normal_number = vn_map[abs_vn_i_s]
+                                                else:
+                                                    vn_map[abs_vn_i_s] = normal_number
+                                    if absolute_v_index is not None:
                                         if this_object.vertices is None:
                                             this_object.vertices = list()
-                                        args = args_string.split(" ")
-                                        result_v = (0.0, 0.0, 0.0)
-                                        if len(args)>=7:
-                                            result_v = get_fvec7(args)  #allow nonstandard x,y,z,r,g,b,a (position then color) format
-                                        elif len(args)>=6:
-                                            result_v = get_fvec6(args)  #allow nonstandard x,y,z,r,g,b (position then color) format
-                                        elif len(args)>=3:
-                                            result_v = get_fvec3(args)
-                                        if len(args)!=3 and len(args)!=6 and len(args)!=7:
-                                            print(filename+" ("+str(line_counting_number)+",0): (INPUT WARNING) vertex must have 3 total coordinate values (or 3 followed by 3 to 4 color channels for 6 to 7 total): '"+args_string+"'")
-                                            if len(args)>=2:
-                                                result_v = get_fvec3( (args[0], 0.0, args[1]) )  #assume x,z for 2d vert
-                                            if len(args)>=1:
-                                                result_v = get_fvec3( (args[0], 0.0, 0.0) )  #assume x,z for 2d vert
-                                        #this_object.vertices.append(result_v)
-                                        absolute_v_list.append(result_v)
-                                        absolute_v_count += 1
-                                        #v_offset += 1
-                                    elif command=="vt":
-                                        args = args_string.split(" ")
-                                        result_vt = (0.0, 0.0)
-                                        if len(args)>=2:
-                                            result_vt = get_fvec2(args)
-                                        if (texcoords_not_2_warning_enable):
-                                            if (len(args)<2):
-                                                print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) texcoord missing coordinate (expected u v after vt but only got one param) so texture may not be applied correctly: '"+args_string+"'")
-                                            elif len(args)!=2:
-                                                if len(args)!=3:
-                                                    print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) texcoords must have 2 (vt u v) or 3 (vt u v w) coordinates: '"+args_string+"'")
-                                                else:
-                                                    print(filename+" ("+str(line_counting_number)+",0): (NOT YET IMPLEMENTED) texcoord with 3 coordinates (vt u v w) so w may be ignored: '"+args_string+"'")
-                                            texcoords_not_2_warning_enable = False
-                                        #this_object.texcoords.append(result_vt)
-                                        absolute_vt_list.append(result_vt)
-                                        absolute_vt_count += 1
-                                        #still increment since is reference to index obj file:
-                                        #vt_offset += 1
-
-                                    elif command=="vn":
-                                        #NOTE: presence of normals supercedes smoothing groups
-                                        args = args_string.split(" ")
-                                        result_vn = (0.0, 0.0, 0.0)
-                                        if len(args)>=3:
-                                            result_vn = get_fvec3(args)
-                                        if len(args)!=3:
-                                            print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) normal must have 3 coordinates: '"+args_string+"'")
-                                        #this_object.normals.append(result_vn)
-                                        absolute_vn_list.append(result_vn)
-                                        absolute_vn_count += 1
-                                        #vn_offset += 1
-                                    elif command=="f":
-                                        if this_object.faces is None:
-                                            this_object.faces = list()
-                                        args = args_string.split(" ")
-                                        this_face = list()
-                                        for i in range(0,len(args)):
-                                            absolute_v_index = None
-                                            absolute_vt_index = None
-                                            absolute_vn_index = None
-                                            vertex_number = None
-                                            texcoord_number = None
-                                            normal_number = None
-                                            values = args[i].split("/")
-                                            #subtract offsets from values since obj file not only uses counting numbers but also numbers unique in entire file (as opposed to starting over for each object):
-                                            if len(values)>=1:
-                                                values[FACE_V] = values[FACE_V].strip()
-                                                if len(values[FACE_V])>0:  # if not blank string
-                                                    stated_v_number = int(values[FACE_V])
-                                                    if stated_v_number>=1:
-                                                        absolute_v_index = stated_v_number - 1
-                                                        vertex_number = this_wobject_v_count  # ok since adding it below
-                                                    elif stated_v_number<0:  # negative index is relative in obj standard
-                                                        absolute_v_index = absolute_v_count + stated_v_number  # + since negative
-                                                        vertex_number = this_wobject_v_count  # ok since adding it below
-                                                    else:
-                                                        print("  WARNING: vertex number 0 on obj is nonstandard and will be skipped")
-                                                    if absolute_v_index is not None:
-                                                        abs_v_i_s = str(absolute_v_index)
-                                                        if abs_v_i_s in v_map:
-                                                            absolute_v_index = None  # prevents copying same one to wobject again below
-                                                            vertex_number = v_map[abs_v_i_s]
-                                                        else:
-                                                            v_map[abs_v_i_s] = vertex_number
-                                            if len(values)>=2:
-                                                values[FACE_TC] = values[FACE_TC].strip()
-                                                if len(values[FACE_TC])>0:  # if not blank string
-                                                    #texcoord_number = int(values[FACE_TC])-vt_offset
-                                                    stated_texcoord_number = int(values[FACE_TC])
-                                                    if stated_texcoord_number>=1:
-                                                        absolute_vt_index = stated_texcoord_number - 1
-                                                        texcoord_number = this_wobject_vt_count  # ok since adding it below
-                                                    elif stated_texcoord_number<0:  # negative index is relative in obj standard
-                                                        absolute_vt_index = absolute_v_count + stated_v_number  # + since negative
-                                                        texcoord_number = this_wobject_vt_count  # ok since adding it below
-                                                    else:
-                                                        print("  WARNING: texcoord number 0 on obj is nonstandard and will be skipped")
-                                                    if absolute_vt_index is not None:
-                                                        abs_vt_i_s = str(absolute_vt_index)
-                                                        if abs_vt_i_s in vt_map:
-                                                            absolute_vt_index = None  # prevents copying same one to wobject again below
-                                                            texcoord_number = vt_map[abs_vt_i_s]
-                                                        else:
-                                                            vt_map[abs_vt_i_s] = texcoord_number
-                                            if len(values)>=3:
-                                                values[FACE_VN] = values[FACE_VN].strip()
-                                                if len(values[FACE_VN])>0:  # if not blank string
-                                                    #normal_number = int(values[FACE_VN])-vn_offset
-                                                    stated_normal_number = int(values[FACE_VN])
-                                                    if stated_normal_number>=1:
-                                                        absolute_vn_index = stated_normal_number - 1
-                                                        normal_number = this_wobject_vn_count  # ok since adding it below
-                                                    elif stated_normal_number<0:  # negative index is relative in obj standard
-                                                        absolute_vn_index = absolute_vn_count + stated_normal_number  # + since negative
-                                                        normal_number = this_wobject_vn_count  # ok since adding it below
-                                                    else:
-                                                        print("  WARNING: normal number 0 on obj is nonstandard and will be skipped")
-                                                    if absolute_vn_index is not None:
-                                                        abs_vn_i_s = str(absolute_vn_index)
-                                                        if abs_vn_i_s in vn_map:
-                                                            absolute_vn_index = None  # prevents copying same one to wobject again below
-                                                            normal_number = vn_map[abs_vn_i_s]
-                                                        else:
-                                                            vn_map[abs_vn_i_s] = normal_number
-                                            if absolute_v_index is not None:
-                                                if this_object.vertices is None:
-                                                    this_object.vertices = list()
-                                                v_num_s = str(vertex_number)
-                                                this_object.vertices.append(absolute_v_list[absolute_v_index])
-                                                individuated_v_count += 1
-                                                this_wobject_v_count += 1
-                                            if absolute_vt_index is not None:
-                                                if this_object.texcoords is None:
-                                                    this_object.texcoords = list()
-                                                vt_num_s = str(texcoord_number)
-                                                this_object.texcoords.append(absolute_vt_list[absolute_vt_index])
-                                                this_wobject_vt_count += 1
-                                            if absolute_vn_index is not None:
-                                                if this_object.normals is None:
-                                                    this_object.normals = list()
-                                                vn_num_s = str(normal_number)
-                                                this_object.normals.append(absolute_vn_list[absolute_vn_index])
-                                                this_wobject_vn_count += 1
-
-                                            this_face.append([vertex_number,texcoord_number,normal_number])
-                                        this_object.faces.append( this_face )
-                                    elif command=="usemtl":
-                                        if materials is not None:
-                                            if args_string in materials.keys():
-                                                this_object.wmaterial = materials[args_string]  # get_by_name(materials,args_string)
-                                                if this_object.wmaterial is None:
-                                                    print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) wmaterial named '"+args_string+"' is None")
-                                            else:
-                                                print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) unknown wmaterial name '"+args_string+"'")
-                                        else:
-                                            print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) usemtl '"+args_string+"' is impossible since a material was not loaded with mtllib command first.")
-                                    elif command=="s":
-                                        if args_string=="off":
-                                            smoothing_group = None
-                                        else:
-                                            smoothing_group = args_string
-                                        if NYI_s_enable:
-                                            print(filename+" ("+str(line_counting_number)+",0): (NOT YET IMPLEMENTED) smoothing group command '"+command+"'")
-                                            NYI_s_enable = False
-                                        #NOTE: vertex normals supercede smoothing groups (which are based on faces) according to the obj format spec
+                                        v_num_s = str(vertex_number)
+                                        this_object.vertices.append(absolute_v_list[absolute_v_index])
+                                        individuated_v_count += 1
+                                        this_wobject_v_count += 1
+                                    if absolute_vt_index is not None:
+                                        if this_object.texcoords is None:
+                                            this_object.texcoords = list()
+                                        vt_num_s = str(texcoord_number)
+                                        this_object.texcoords.append(absolute_vt_list[absolute_vt_index])
+                                        this_wobject_vt_count += 1
+                                    if absolute_vn_index is not None:
+                                        if this_object.normals is None:
+                                            this_object.normals = list()
+                                        vn_num_s = str(normal_number)
+                                        this_object.normals.append(absolute_vn_list[absolute_vn_index])
+                                        this_wobject_vn_count += 1
+                                    if texcoord_number_warning_enable:
+                                        if texcoord_number is None:
+                                            print(name_msg+" ("+str(line_counting_number)+",0): (PARSER WARNING) vertex texcoord_number is None when adding to face")
+                                            print("(this is the last texcoord_number warning that will be shown for this input file)")
+                                            print("")
+                                            texcoord_number_warning_enable = False
+                                    this_face.append([vertex_number,texcoord_number,normal_number])
+                                this_object.face_groups[this_face_group_key].faces.append( this_face )
+                                added_face_msg_enable = True  # debug only
+                                if added_face_msg_enable:
+                                    print("added face to '"+str(this_object.name)+"' group '"+this_face_group_key+"': "+str(this_face))
+                                    print("(this is the last face message that will be shown for this input file)")
+                                    print("")
+                                    added_face_msg_enable = False
+                            elif command=="usemtl":
+                                if materials is not None:
+                                    if args_string in materials.keys():
+                                        this_object.wmaterial = materials[args_string]  # get_by_name(materials,args_string)
+                                        if this_object.wmaterial is None:
+                                            print(name_msg+" ("+str(line_counting_number)+",0): (INPUT ERROR) wmaterial named '"+args_string+"' is None")
                                     else:
-                                        print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) unknown object command '"+command+"'")
+                                        print(name_msg+" ("+str(line_counting_number)+",0): (INPUT ERROR) unknown wmaterial name '"+args_string+"'")
                                 else:
-                                    print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) object command before 'o'")
+                                    print(name_msg+" ("+str(line_counting_number)+",0): (INPUT ERROR) usemtl '"+args_string+"' is impossible since a material was not loaded with mtllib command first.")
+                            elif command=="s":
+                                if args_string=="off":
+                                    this_face_group_type = None
+                                    this_face_group_name = None
+                                else:
+                                    this_face_group_type = "s"
+                                    this_face_group_name = args_string
                             else:
-                                print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) no arguments after command")
+                                print(name_msg+" ("+str(line_counting_number)+",0): (INPUT ERROR) unknown object command '"+command+"'")
                         else:
-                            print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) no space after command")
+                            print(name_msg+" ("+str(line_counting_number)+",0): (INPUT ERROR) object command '"+command+"' before 'o'")
+                        #else:
+                        #    print(name_msg+" ("+str(line_counting_number)+",0): (INPUT ERROR) no arguments after command")
+                        #else:
+                        #    print(name_msg+" ("+str(line_counting_number)+",0): (INPUT ERROR) no space after command")
+                        prev_command = command
+                        prev_usable_command = command
+                        
                     else:
                         if len(line_strip)>0:
                             comment_notag = line_strip[1:].strip()
                             if len(comment_notag) > 0:
                                 if this_object is not None:
                                     this_object.append_opening_comment(comment_notag)
+                                    if not this_object.has_any_data_enable:
+                                        chunks = comment_notag.split(" ")
+                                        if (chunks is not None) and (len(chunks) > 1):
+                                            if chunks[0].lower() == "object":
+                                                if this_object.name is None:
+                                                    this_object.name = chunks[1]
+                                                else:
+                                                    print("NOTICE: skipping non-standard commented name '"+chunks[1]+"' since object is already named '" + this_object.name + "'")
                                 else:
                                     comments.append(comment_notag)
+                        prev_command = None
                     line_counting_number += 1
                 #end for lines in file
                 #NOTE: "finalize_obj" code is no longer needed since offsets were already applied above and original format is kept intact (indices instead of opengl-style vertex info array)
                 if this_object is not None:
                     results.append(this_object)
-                    print(str(len(absolute_v_list))+" vertices loaded as "+str(individuated_v_count)+" vertices")
+                    faces_msg = "...WARNING: got None for this_object.face_groups!"
+                    if this_object.face_groups is not None:
+                        key_count = 0
+                        face_count = 0
+                        faces_msg = "...WARNING: this_object face groups contain 0 faces!"
+                        group_err = None
+                        for key in this_object.face_groups:
+                            if this_object.face_groups[key] != None:
+                                if this_object.face_groups[key].faces is not None:
+                                    face_count += len(this_object.face_groups[key].faces)
+                                else:
+                                    print(name_msg+" ERROR: object named '"+str(this_object.name)+"' resulted in a group with a faces list that is None")
+                            else:
+                                print(name_msg+" ERROR: object named '"+str(this_object.name)+"' resulted in a group that is None")
+                            key_count += 1
+                        if face_count == 0:
+                            faces_msg = "...WARNING: 0 FACES!"
+                        else:
+                            faces_msg = "..."+str(face_count)+" face(s)"
+                    print(name_msg+": object named "+str(this_object.name)+" has "+str(len(absolute_v_list))+" vertices loaded as "+str(individuated_v_count)+" vertices"+faces_msg)
                     this_object = None
             else:
                 print("ERROR in get_wobjects_from_obj: missing file or cannot access '"+filename+"'")
         except:
-            print("Could not finish get_wobjects_from_obj '"+filename+"':")
+            print("ERROR: Could not finish get_wobjects_from_obj '"+filename+"':")
             view_traceback()
+        if results is not None:
+            if len(results)<1:
+                print("WARNING: get_wobjects_list (usually called by wobjfile.load) got 0 objects from '" + filename + "'")
+        #else ignore since already has file does not exist error
+            
         return results
 
 
