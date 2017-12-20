@@ -31,10 +31,7 @@ if 'USERPROFILE' in os.environ:  # if os_name=="windows":
 else:
     profile_path = os.environ['HOME']
 
-
-
-
-class MainForm(KivyGlopsWindow):
+class MainScene(KivyGlops):
 
     #def __init__(self, **kwargs):
     def load_glops(self):
@@ -109,7 +106,7 @@ class MainForm(KivyGlopsWindow):
         self.set_background_cylmap("starfield1-coryg89.jpg")
 
         self.set_fly(True)
-        self.set_hud_background("hud.png")
+        self.ui.set_hud_background("example_hud.png")
         self.set_background_cylmap("starfield_cylindrical_map.jpg")
         self.load_obj("spaceship,simple-denapes.obj")
 
@@ -126,12 +123,15 @@ class MainForm(KivyGlopsWindow):
         weapon["fire_type"] = "throw_linear"
         weapon["hit_damage"] = .3
         self.add_actor_weapon(player1_index, weapon)
+        self.player1 = self.glops[player1_index]
+        #test_deepcopy_weapon = self.player1.get_dict_deepcopy_except_my_type(weapon)
 
         enemy_indices = self.get_indices_by_source_path("spaceship,simple-denapes.obj")
         for i in range(0,len(enemy_indices)):
             index = enemy_indices[i]
             self.set_as_actor_by_index(index, ship_info)
             self.add_actor_weapon(index, weapon)
+        #test_deepcopy_weapon = self.player1.get_dict_deepcopy_except_my_type(weapon)
 
     def attacked_glop(self, attacked_index, attacker_index, weapon_dict):
         self.scene.glops[attacked_index].actor_dict["hp"] -= weapon_dict["hit_damage"]
@@ -200,11 +200,12 @@ class MainForm(KivyGlopsWindow):
         #else:
         #    print("Not found.")
 
+scene = MainScene(KivyGlopsWindow())
 
 class KivyGlopsExampleApp(App):
     def build(self):
-        mainform = MainForm()
-        return mainform
+        #mainform = MainForm()
+        return scene.ui
         #mainform = MainForm()
         #boxlayout = TextForm()
         #boxlayout.add_widget(mainform)

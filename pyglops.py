@@ -408,6 +408,25 @@ class PyGlop:
         #    print("WARNING: no material for Glop named '"+str(self.name)+"' (NOT YET IMPLEMENTED)")
         #return result
 
+    def get_dict_deepcopy_except_my_type(self, old_dict):
+        new_dict = None
+        if type(old_dict) is dict:
+            new_dict = {}
+            for this_key in old_dict.keys():
+                if isinstance(old_dict[this_key], PyGlop):
+                    #prevent pickling failure by cheating since it doesn't matter
+                    new_dict[this_key] = old_dict[this_key]
+                elif isinstance(old_dict[this_key], list):
+                    new_dict[this_key] = []
+                    for i in range(0, len(old_dict[this_key])):
+                        if isinstance(old_dict[this_key][i], PyGlop):
+                            #prevent pickling failure by cheating since it doesn't matter
+                            new_dict[this_key].append(old_dict[this_key][i])
+                        else:
+                            new_dict[this_key].append(copy.deepcopy(old_dict[this_key][i]))
+                else:
+                    new_dict[this_key] = copy.deepcopy(old_dict[this_key])
+        return new_dict
 
     def calculate_hit_range(self):
         print("Calculate hit range should be implemented by subclass.")
@@ -1574,12 +1593,13 @@ class PyGlops:
         for i in range(0,len(self.materials)):
             self.materials[i].append_dump(thisList, this_min_tab+tab_string+tab_string, "-")
 
+
     def set_as_actor_by_index(self, index, template_dict):
         #result = False
         if index is not None:
             if index>=0:
                 if index<len(self.glops):
-                    actor_dict = get_dict_deepcopy(template_dict)
+                    actor_dict = self.glops[index].get_dict_deepcopy_except_my_type(template_dict)
                     self.glops[index].actor_dict = actor_dict
                     if self.glops[index].hit_radius is None:
                         if "hit_radius" in actor_dict:
@@ -1731,7 +1751,7 @@ class PyGlops:
 
     def set_as_item_by_index(self, i, template_dict):
         result = False
-        item_dict = get_dict_deepcopy(template_dict)  #prevents every item template from being the one
+        item_dict = self.glops[i].get_dict_deepcopy_except_my_type(template_dict)  #prevents every item template from being the one
         self.glops[i].item_dict = item_dict
         self.glops[i].item_dict["glop_name"] = self.glops[i].name
         self.glops[i].item_dict["glop_index"] = i
@@ -1834,9 +1854,9 @@ class PyGlops:
                                         if "subscript" not in weapon_dict:
                                             weapon_dict["subscript"] = 0
                                         fired_glop = fires_glop.copy_as_mesh_instance()
-                                        fired_glop.name = "fired[" + self.fired_count + "]"
+                                        fired_glop.name = "fired[" + str(self.fired_count) + "]"
                                         fired_glop.bump_enable = True
-                                        fired_glop.projectile_dict = get_dict_deepcopy(weapon_dict)
+                                        fired_glop.projectile_dict = fired_glop.get_dict_deepcopy_except_my_type(weapon_dict)
                                         fired_glop.projectile_dict["owner"] = user_glop.name
                                         fired_glop.projectile_dict["owner_index"] = user_glop.index
                                         if favorite_pivot is None:

@@ -1,0 +1,19 @@
+# Simple Spaceship
+
+## File List
+* spaceship,simple-denapes.obj
+* spaceship,simple-denapes.mtl
+* spaceship,simple-denapes-diffuse.png
+
+August 24, 2014
+DeNapes
+Creative Commons 0
+<https://www.blendswap.com/blends/view/75404>
+
+expertmm manifold version:
+(edited in Blender)
+* baked cycles material to new UV texture spaceship,simple-denapes-diffuse.png
+* remove doubles
+* reworked mesh manually to make manifold (using 3D Printing plugin, Solid check each time I made a change [then select "Non Manifold Edges" to highlight])
+* fixed UVs for new (tiny) faces at ends of light bars
+* remove doubles within .6 for body, .4 for accessories (only saved obj, not blend)

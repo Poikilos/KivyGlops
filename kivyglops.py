@@ -56,7 +56,6 @@ def translate_to_string(_translate_instruction):
         result = str([_translate_instruction.x, _translate_instruction.y, _translate_instruction.z])
     return result
 
-
 class KivyGlopsMaterial(PyGlopsMaterial):
 
     def __init__(self):
@@ -110,6 +109,27 @@ class KivyGlop(PyGlop, Widget):
         #self._scale_instruction.origin = self._pivot_point
         self._translate_instruction = Translate(0, 0, 0)
         self._color_instruction = Color(Color(1.0, 1.0, 1.0, 1.0))  # TODO: eliminate this in favor of canvas["mat_diffuse_color"]
+
+    def get_dict_deepcopy_except_my_type(self, old_dict):
+        new_dict = None
+        if type(old_dict) is dict:
+            new_dict = {}
+            for this_key in old_dict.keys():
+                if isinstance(old_dict[this_key], KivyGlop):
+                    #prevent pickling failure by cheating since it doesn't matter
+                    new_dict[this_key] = old_dict[this_key]
+                elif isinstance(old_dict[this_key], list):
+                    new_dict[this_key] = []
+                    for i in range(0, len(old_dict[this_key])):
+                        if isinstance(old_dict[this_key][i], KivyGlop):
+                            #prevent pickling failure by cheating since it doesn't matter
+                            new_dict[this_key].append(old_dict[this_key][i])
+                        else:
+                            new_dict[this_key].append(copy.deepcopy(old_dict[this_key][i]))
+                else:
+                    new_dict[this_key] = copy.deepcopy(old_dict[this_key])
+        return new_dict
+
 
     def look_at(self, target_glop):
         if target_glop is not None:
@@ -460,7 +480,7 @@ class KivyGlops(PyGlops):
 
     def show_glop(self, this_glop_index):
         self.ui._meshes.add(self.glops[this_glop_index].get_context())
-        this_glop.visible_enable = True
+        self.glops[this_glop_index].visible_enable = True
         
     def set_background_cylmap(self, path):
         #self.load_obj("env_sphere.obj")
@@ -581,6 +601,9 @@ class KivyGlops(PyGlops):
             print("ERROR: source_path is None for load_obj")
         return results
 
+    def get_pressed(self, key_name):
+        #WARNING: this is for backward compatibility only
+        return self.player1_controller.get_pressed(self.ui.get_keycode(key_name))
         
     def update(self):
         #this is in KivyGlops, but is called by KivyGlopsWindow.*update
