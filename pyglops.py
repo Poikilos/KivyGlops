@@ -182,7 +182,7 @@ def get_distance_vec2(first_pt, second_pt):
 #halfplane check (which half) formerly sign
 def get_halfplane_sign(p1, p2, p3):
     #return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
-    return (p1[0] - p3[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p3[1]);
+    return (p1[0] - p3[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p3[1])
 #PointInTriangle and sign are from http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle
 #edited Oct 18 '14 at 18:52 by msrd0
 #answered Jan 12 '10 at 14:27 by Kornel Kisielewicz
@@ -222,13 +222,13 @@ def is_in_triangle_HALFPLANES_xz(check_pt,v0, v1, v2):
 # as per http://stackoverflow.com/questions/5507762/how-to-find-z-by-arbitrary-x-y-coordinates-within-triangle-if-you-have-triangle
 #  edited Jan 21 '15 at 15:07 josh2112 answered Apr 1 '11 at 0:02 Martin Beckett
 def get_y_from_xz(p1, p2, p3, x, z):
-    det = (p2[2] - p3[2]) * (p1[0] - p3[0]) + (p3[0] - p2[0]) * (p1[2] - p3[2]);
+    det = (p2[2] - p3[2]) * (p1[0] - p3[0]) + (p3[0] - p2[0]) * (p1[2] - p3[2])
 
-    l1 = ((p2[2] - p3[2]) * (x - p3[0]) + (p3[0] - p2[0]) * (z - p3[2])) / det;
-    l2 = ((p3[2] - p1[2]) * (x - p3[0]) + (p1[0] - p3[0]) * (z - p3[2])) / det;
-    l3 = 1.0 - l1 - l2;
+    l1 = ((p2[2] - p3[2]) * (x - p3[0]) + (p3[0] - p2[0]) * (z - p3[2])) / det
+    l2 = ((p3[2] - p1[2]) * (x - p3[0]) + (p1[0] - p3[0]) * (z - p3[2])) / det
+    l3 = 1.0 - l1 - l2
 
-    return l1 * p1[1] + l2 * p2[1] + l3 * p3[1];
+    return l1 * p1[1] + l2 * p2[1] + l3 * p3[1]
 
 #Did not yet read article: http://totologic.blogspot.fr/2014/01/accurate-point-in-triangle-test.html
 
@@ -1349,12 +1349,12 @@ class PyGlops:
     
     fired_count = None
 
-    def __init__(self):
+    def __init__(self, new_glop_method):
         self._visual_debug_enable = False
         self.fired_count = 0
         self._fly_enable = False
         self._world_grav_acceleration = 9.8
-        self.camera_glop = self.new_glop()
+        self.camera_glop = new_glop_method()
         self.camera_glop.eye_height = 1.7  # 1.7 since 5'10" person is ~1.77m, and eye down a bit
         self.camera_glop.hit_radius = .2
         self.camera_glop.reach_radius = 2.5
@@ -1613,6 +1613,7 @@ class PyGlops:
 
     #always reimplement this so the camera is correct subclass 
     def new_glop(self):
+        print("ERROR: new_glop for PyGlop should never be used")
         return PyGlop()
 
     def set_fly(self, fly_enable):

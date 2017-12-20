@@ -43,6 +43,7 @@ def usage():
     print("")
     print("")
 
+force_mode = None
 
 if (sys.argv is not None) and (len(sys.argv)>0):
     for i in range(0, len(sys.argv)):
@@ -50,9 +51,14 @@ if (sys.argv is not None) and (len(sys.argv)>0):
             #print("(running " + __file__ + ")")
             pass
         elif sys.argv[i][0:2]=="--":
-            print("STOPPED before processing since found unknown option " + sys.argv[i])
-            usage()
-            exit(1)
+            if sys.argv[i][2:] == "clear":
+                force_mode = "clear"
+            elif sys.argv[i][2:] == "force":
+                force_mode = "force"
+            else:
+                print("STOPPED before processing since found unknown option " + sys.argv[i])
+                usage()
+                exit(1)
         else:
             if target_path is None:
                 target_path = sys.argv[i]
@@ -65,6 +71,10 @@ class SyncOptions:
         self.copied_count = 0
         self.removed_count = 0
         self.leave_out_dot_git_enable = True
+        self.verbose_enable = False
+        self.ignore_caches_enable = True
+        
+cache_names = "__pycache__"
 
 def sync_recursively(master_path, target_path, options):
     if os.path.isdir(master_path):
@@ -80,27 +90,33 @@ def sync_recursively(master_path, target_path, options):
                    ((options.mode=="update") and ((try_mtime==None)or(try_mtime<master_mtime))):
                     if try_mtime is not None:
                         if try_mtime>=master_mtime:
-                            print('#override "'+try_path+'"')
+                            if options.verbose_enable:
+                                print('#override "'+try_path+'"')
                         else:
-                            print('#update "'+try_path+'"')
+                            if options.verbose_enable:
+                                print('#update "'+try_path+'"')
                     else:
-                        print('#add "'+try_path+'"')
+                        if options.verbose_enable:
+                            print('#add "'+try_path+'"')
                     if not os.path.isdir(target_path):
                         os.makedirs(target_path)
                     shutil.copy2(my_path, try_path)
                     options.copied_count += 1
                 if options.mode=="clear":
                     if try_mtime is not None:
-                        print('rm "'+try_path+'"')
+                        if options.verbose_enable:
+                            print('rm "'+try_path+'"')
                         os.remove(try_path)
                         options.removed_count += 1
             else:
                 if options.scan_dot_folders_enable or (master_name[:1]!="."):
-                    if (options.mode=="clear") or not (options.leave_out_dot_git_enable and (master_name==".git")):
-                        sync_recursively(my_path, try_path, options)
-            if os.path.isdir(try_path):
-                if not os.listdir(try_path):  # if empty
-                    os.rmdir(try_path)
+                    if (options.mode=="clear") or ((not options.ignore_caches_enable) or (master_name not in cache_names)):
+                        if (options.mode=="clear") or not (options.leave_out_dot_git_enable and (master_name==".git")):
+                            sync_recursively(my_path, try_path, options)
+                if options.mode=="clear":
+                    if os.path.isdir(try_path):
+                        if len(os.listdir(try_path)) < 1:  # if empty
+                            os.rmdir(try_path)
     else:
         print("ERROR: non-directory sent to sync_recursively: '"+master_path+"'")
 
@@ -108,7 +124,8 @@ if target_path is not None:
     print("target_path: " + target_path)
     if os.path.isdir(target_path):
         options = SyncOptions()
-        #options.mode = "clear"
+        if force_mode is not None:
+            options.mode = force_mode
         sync_recursively(original_project_path, target_path, options)
         print("sync_recursively ("+options.mode+") result:")
         print("  copied: "+str(options.copied_count))

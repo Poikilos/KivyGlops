@@ -386,6 +386,7 @@ class KivyGlops(PyGlops):
     world_boundary_max = None
     _sounds = None
     #endregion moved from ui    
+    #camera_glop = None  # inherited from PyGlops (so are many other member variables)
 
     def __init__(self, new_ui):
         self.ui = new_ui
@@ -393,7 +394,7 @@ class KivyGlops(PyGlops):
             print("FATAL ERROR: KivyGlops cannot init without a ui")
             exit(1)
         self.ui.scene = self
-        super(KivyGlops, self).__init__()
+        super(KivyGlops, self).__init__(self.new_glop)
         self.controllers = list()
         #region moved from ui
         self.world_boundary_min = [None,None,None]
@@ -468,9 +469,9 @@ class KivyGlops(PyGlops):
         #for i in range(0,len(env_indices)):
         #    index = env_indices[i]
         #    print("Preparing sky object "+str(index))
-        #    self.scene.glops[index].set_texture_diffuse(path)
+        #    self.ui.glops[index].set_texture_diffuse(path)
         if self.env_rectangle is not None:
-            self.scene.canvas.before.remove(self.env_rectangle)
+            self.ui.canvas.before.remove(self.env_rectangle)
             self.env_rectangle = None
         original_path = path
         if path is not None:
@@ -582,6 +583,7 @@ class KivyGlops(PyGlops):
 
         
     def update(self):
+        #this is in KivyGlops, but is called by KivyGlopsWindow.*update
         #super(KivyGlops, self).update()
         #region tried to move to pyglops but didn't work well
         #print("coords:"+str(Window.mouse_pos))
@@ -813,10 +815,10 @@ class KivyGlops(PyGlops):
                         self.glops[bumpable_index]._translate_instruction.y += self.glops[bumpable_index].y_velocity
                         self.glops[bumpable_index]._translate_instruction.z += self.glops[bumpable_index].z_velocity
                         if got_frame_delay > 0.0:
-                            #print("  GRAVITY AFFECTED:"+str(self.glops[bumpable_index]._translate_instruction.y)+" += "+str(self.glops[bumpable_index].y_velocity))
+                            print("  GRAVITY AFFECTED:"+str(self.glops[bumpable_index]._translate_instruction.y)+" += "+str(self.glops[bumpable_index].y_velocity))
                             self.glops[bumpable_index].y_velocity -= self._world_grav_acceleration * got_frame_delay
-                            #print("  THEN VELOCITY CHANGED TO:"+str(self.glops[bumpable_index].y_velocity))
-                            #print("  FRAME INTERVAL:"+str(got_frame_delay))
+                            print("  THEN VELOCITY CHANGED TO:"+str(self.glops[bumpable_index].y_velocity))
+                            print("  FRAME INTERVAL:"+str(got_frame_delay))
                         else:
                             print("missing delay")
                     else:
@@ -903,8 +905,8 @@ class KivyGlops(PyGlops):
         proj = proj.view_clip(-clip_right, clip_right, -1*clip_top, clip_top, self.projection_near, 100, 1)
         top_theta = theta_radians_from_rectangular(self.projection_near, clip_top)
         right_theta = theta_radians_from_rectangular(self.projection_near, clip_right)
-        self.screen_w_arc_theta = right_theta*2.0
-        self.screen_h_arc_theta = top_theta*2.0
+        self.ui.screen_w_arc_theta = right_theta*2.0
+        self.ui.screen_h_arc_theta = top_theta*2.0
 
         self.ui.gl_widget.canvas['projection_mat'] = proj
         self.ui.gl_widget.canvas['modelview_mat'] = modelViewMatrix
@@ -963,9 +965,9 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
     _meshes = None # InstructionGroup so gl operations can be added in realtime (after resetCallback is added, but so resetCallback is on the stack after them)
     #region Window TODO: rename to _*
     use_button = None  
+    hud_bg_rect = None
     screen_w_arc_theta = None
     screen_h_arc_theta = None
-    hud_bg_rect = None
     #endregion Window TODO: rename to _*
     #region Window
     hud_form = None
@@ -1158,11 +1160,11 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             this_glop.visible_enable = True
             #context = self._meshes
             #context = self.gl_widget.canvas
-            #if self.selected_glop_index is None:
-            #    self.selected_glop_index = this_glop_index
-            #    self.selected_glop = this_glop
-            self.selected_glop_index = len(self.scene.glops)
-            self.selected_glop = this_glop
+            #if self.scene.selected_glop_index is None:
+            #    self.scene.selected_glop_index = this_glop_index
+            #    self.scene.selected_glop = this_glop
+            self.scene.selected_glop_index = len(self.scene.glops)
+            self.scene.selected_glop = this_glop
             context = this_glop.get_context()
             this_mesh_name = ""
             if this_glop.name is not None:
@@ -1241,9 +1243,9 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                 #engregion old way (does not repeat)
                 self.scene.env_rectangle.size = Window.size
                 self.scene.env_rectangle.pos = 0.0, 0.0
-                view_right = self.screen_w_arc_theta / 2.0 + self.camera_glop._rotate_instruction_y.angle
+                view_right = self.screen_w_arc_theta / 2.0 + self.scene.camera_glop._rotate_instruction_y.angle
                 view_left = view_right - self.screen_w_arc_theta
-                view_top = self.screen_h_arc_theta / 2.0 + self.camera_glop._rotate_instruction_x.angle + 90.0
+                view_top = self.screen_h_arc_theta / 2.0 + self.scene.camera_glop._rotate_instruction_x.angle + 90.0
                 view_bottom = view_top - self.screen_h_arc_theta
                 circle_theta = 2*math.pi
                 view_right_ratio = view_right / circle_theta
@@ -1360,13 +1362,13 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
 #         elif keycode[1] == 'numpadsubtract' or keycode[1] == 'numpadsubstract':  #since is mispelled as numpadsubstract in kivy
 #             pass
         elif keycode[1] == "tab":
-            self.select_mesh_by_index(self.selected_glop_index+1)
+            self.select_mesh_by_index(self.scene.selected_glop_index+1)
             #if get_verbose_enable():
             this_name = None
-            if self.selected_glop_index is not None:
-                this_name = "["+str(self.selected_glop_index)+"]"
-            if self.selected_glop is not None and self.selected_glop.name is not None:
-                this_name = self.selected_glop.name
+            if self.scene.selected_glop_index is not None:
+                this_name = "["+str(self.scene.selected_glop_index)+"]"
+            if self.scene.selected_glop is not None and self.scene.selected_glop.name is not None:
+                this_name = self.scene.selected_glop.name
             if this_name is not None:
                 print('Selected glop: '+this_name)
             else:

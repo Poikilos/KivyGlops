@@ -1,0 +1,18 @@
+#!/bin/sh
+#if [ -f etc/quality ]; then
+#  cd etc
+#fi
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$DIR"
+cd ..
+if [ -f etc/quality.tmp ]; then
+  rm etc/quality.tmp
+fi
+#touch etc/quality.tmp
+if [ -f err.txt ]; then
+  rm err.txt
+fi
+touch err.txt
+python etc/lintthatpython.py *.py >> err.txt
+outputinspector etc/quality.tmp &

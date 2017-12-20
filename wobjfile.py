@@ -461,6 +461,29 @@ texcoords_not_2_warning_enable = True
 NYI_s_enable = True
 short_name_in_messages_enable = True
 
+def show_object_faces_msg(this_object, name_msg):
+    faces_msg = "...WARNING: got None for this_object.face_groups!"
+    if this_object.face_groups is not None:
+        key_count = 0
+        face_count = 0
+        faces_msg = "...WARNING: this_object face groups contain 0 faces!"
+        group_err = None
+        for key in this_object.face_groups:
+            if this_object.face_groups[key] != None:
+                if this_object.face_groups[key].faces is not None:
+                    face_count += len(this_object.face_groups[key].faces)
+                else:
+                    print(name_msg+" ERROR: object named '"+str(this_object.name)+"' resulted in a group with a faces list that is None")
+            else:
+                print(name_msg+" ERROR: object named '"+str(this_object.name)+"' resulted in a group that is None")
+            key_count += 1
+        if face_count == 0:
+            faces_msg = "...WARNING: 0 FACES!"
+        else:
+            faces_msg = "..."+str(face_count)+" face(s)"
+    print(name_msg+": object named "+str(this_object.name)+""+faces_msg)
+    
+
 class WObjFile:
     wobjects = None
 
@@ -556,6 +579,7 @@ class WObjFile:
                                 #this is non-spec to account for non-spec v commands that aren't preceded by `o` command
                                 if this_object is not None:
                                     results.append(this_object)
+                                    show_object_faces_msg(this_object, name_msg)
                                     result_index += 1  # ok since starts at -1
                                     this_object = None
                                     #v_offset += len(this_object.vertices)
@@ -755,12 +779,12 @@ class WObjFile:
                                             texcoord_number_warning_enable = False
                                     this_face.append([vertex_number,texcoord_number,normal_number])
                                 this_object.face_groups[this_face_group_key].faces.append( this_face )
-                                added_face_msg_enable = True  # debug only
                                 if added_face_msg_enable:
-                                    print("added face to '"+str(this_object.name)+"' group '"+this_face_group_key+"': "+str(this_face))
-                                    print("(this is the last face message that will be shown for this input file)")
-                                    print("")
-                                    added_face_msg_enable = False
+                                    #print("added face to '"+str(this_object.name)+"' group '"+this_face_group_key+"': "+str(this_face))
+                                    #added_face_msg_enable = False  # commented for debug only
+                                    if not added_face_msg_enable:
+                                        print("(this is the last face message that will be shown for this input file)")
+                                        print("")
                             elif command=="usemtl":
                                 if materials is not None:
                                     if args_string in materials.keys():
@@ -795,14 +819,15 @@ class WObjFile:
                             if len(comment_notag) > 0:
                                 if this_object is not None:
                                     this_object.append_opening_comment(comment_notag)
-                                    if not this_object.has_any_data_enable:
-                                        chunks = comment_notag.split(" ")
-                                        if (chunks is not None) and (len(chunks) > 1):
-                                            if chunks[0].lower() == "object":
-                                                if this_object.name is None:
-                                                    this_object.name = chunks[1]
-                                                else:
-                                                    print("NOTICE: skipping non-standard commented name '"+chunks[1]+"' since object is already named '" + this_object.name + "'")
+                                #if (this_object is None) or (not this_object.has_any_data_enable):
+                                if this_o_name is None:
+                                    chunks = comment_notag.split(" ")
+                                    if (chunks is not None) and (len(chunks) > 1):
+                                        if chunks[0].lower() == "object":
+                                            if this_o_name is None:
+                                                this_o_name = chunks[1]
+                                            else:
+                                                print("NOTICE: skipping non-standard commented name '"+chunks[1]+"' since object is already named '" + this_object.name + "'")
                                 else:
                                     comments.append(comment_notag)
                         prev_command = None
@@ -811,26 +836,8 @@ class WObjFile:
                 #NOTE: "finalize_obj" code is no longer needed since offsets were already applied above and original format is kept intact (indices instead of opengl-style vertex info array)
                 if this_object is not None:
                     results.append(this_object)
-                    faces_msg = "...WARNING: got None for this_object.face_groups!"
-                    if this_object.face_groups is not None:
-                        key_count = 0
-                        face_count = 0
-                        faces_msg = "...WARNING: this_object face groups contain 0 faces!"
-                        group_err = None
-                        for key in this_object.face_groups:
-                            if this_object.face_groups[key] != None:
-                                if this_object.face_groups[key].faces is not None:
-                                    face_count += len(this_object.face_groups[key].faces)
-                                else:
-                                    print(name_msg+" ERROR: object named '"+str(this_object.name)+"' resulted in a group with a faces list that is None")
-                            else:
-                                print(name_msg+" ERROR: object named '"+str(this_object.name)+"' resulted in a group that is None")
-                            key_count += 1
-                        if face_count == 0:
-                            faces_msg = "...WARNING: 0 FACES!"
-                        else:
-                            faces_msg = "..."+str(face_count)+" face(s)"
-                    print(name_msg+": object named "+str(this_object.name)+" has "+str(len(absolute_v_list))+" vertices loaded as "+str(individuated_v_count)+" vertices"+faces_msg)
+                    show_object_faces_msg(this_object, name_msg)
+                    print(name_msg+": has a total of "+str(len(absolute_v_list))+" vertices loaded as "+str(individuated_v_count)+" vertices")
                     this_object = None
             else:
                 print("ERROR in get_wobjects_from_obj: missing file or cannot access '"+filename+"'")
