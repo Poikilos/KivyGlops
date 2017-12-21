@@ -1,3 +1,43 @@
+* formerly from kivyglops.py, but (PROBABLY) not needed since pyglops.py version of this method checks for type(self) instead of PyGlops now:
+```
+def get_dict_deepcopy_with_my_type(self, old_dict, copy_my_type_by_reference_enable=False):
+        new_dict = None
+        #if type(old_dict) is dict:
+        new_dict = None
+        keys = None
+        if isinstance(old_dict, list):
+            new_dict = []
+            keys = range(0, len(old_dict))
+        elif isinstance(old_dict, dict):
+            new_dict = {}
+            keys = old_dict.keys()
+        #if keys is not None:
+        #will fail if neither dict nor list (let it fail)
+        for this_key in keys:
+            if isinstance(old_dict[this_key], KivyGlop):
+                if copy_my_type_by_reference_enable:
+                    if isinstance(new_dict, dict):
+                        new_dict[this_key] = old_dict[this_key]
+                    else:
+                        new_dict.append(old_dict[this_key])
+                else:
+                    copy_of_var = None
+                    if self.material is not None:
+                        copy_of_var = old_dict[this_key].copy(self.new_glop, self.material.new_material)
+                    else:
+                        copy_of_var = old_dict[this_key].copy(self.new_glop, None)
+                    if isinstance(new_dict, dict):
+                        new_dict[this_key] = copy_of_var
+                    else:
+                        new_dict.append(copy_of_var)
+            #TODO?: elif isinstance(old_dict[this_key], KivyGlopsMaterial)
+            elif isinstance(old_dict[this_key], list):
+                new_dict[this_key] = get_dict_deepcopy_with_my_type(old_dict[this_key], copy_my_type_by_reference_enable)
+            else:
+                new_dict[this_key] = copy.deepcopy(old_dict[this_key])
+        return new_dict
+``` 
+
 * formerly from __init__ in KivyGlops (formerly in KivyGlopsWindow)
 ```
         self.camera_ax = 0

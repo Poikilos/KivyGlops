@@ -192,22 +192,22 @@ class WFaceGroup:
         #NOTE: no self.name since name is key, since WFaceGroup is in a dict (however, do not save g or s command [discard key] if self.face_group_type is None)
         self.face_group_type = None  # `g` or `s`
     
-    def append_dump(self, thisList, this_min_tab, this_list_name):
-        thisList.append(this_min_tab+this_list_name+":")
+    def emit_yaml(self, thisList, min_tab_string):
+        #thisList.append(min_tab_string+this_list_name+":")
         name_line = "name: "
         if self.name is not None:
             name_line += self.name
         else:
             name_line += "~"
-        thisList.append(this_min_tab+tab_string+name_line)
+        thisList.append(min_tab_string+name_line)
         if self.faces is not None:
-            thisList.append(this_min_tab+tab_string+"faces:")
+            thisList.append(min_tab_string+"faces:")
             for face in faces:
-                thisList.append(this_min_tab+tab_string+tab_string+"- ")
+                thisList.append(min_tab_string+tab_string+"- ")
                 for vertex_i in face:
-                    thisList.append(this_min_tab+tab_string+tab_string+tab_string+"- "+str(vertex_i))
+                    thisList.append(min_tab_string+tab_string+tab_string+"- "+str(vertex_i))
         else:
-            thisList.append(this_min_tab+tab_string+"faces: ~")
+            thisList.append(min_tab_string+"faces: ~")
 
 
 class WMaterial:
@@ -252,10 +252,24 @@ class WMaterial:
 
 
 #Also in pyglops.py; formerly dumpAsYAMLArray
-def standard_append_dump(thisList, this_min_tab, this_name, sourceList):
-    thisList.append(this_min_tab+this_name+":")
-    for i in range(0,len(sourceList)):
-        thisList.append(this_min_tab+tab_string+"- "+str(sourceList[i]))
+def standard_emit_yaml(thisList, min_tab_string, sourceList):
+    if isinstance(sourceList, list):
+        for key in range(0,len(sourceList)):
+            if isinstance(sourceList[key], list) or isinstance(sourceList[key], dict):
+                thisList.append(min_tab_string+"-")
+                standard_emit_yaml(thisList, min_tab_string+tab_string, sourceList[key])
+            else:
+                thisList.append(min_tab_string+"- "+str(sourceList[key]))
+    elif isinstance(sourceList, dict):
+        for key in sourceList:
+            if isinstance(sourceList[key], list) or isinstance(sourceList[key], dict):
+                thisList.append(min_tab_string+key+":")
+                standard_emit_yaml(thisList, min_tab_string+tab_string, sourceList[key])
+            else:
+                thisList.append(min_tab_string+key+": "+str(sourceList[key]))
+    else:
+        print("WARNING in standard_emit_yaml: type '" + type(sourceList) + "' was not implemented and so was converted by plain str function")
+        thisList.append(min_tab_string+str(sourceList))
 
 
 class WObject:
@@ -294,17 +308,23 @@ class WObject:
             self._opening_comments = list()
         self._opening_comments.append(text)
 
-    def append_dump(self, thisList, this_min_tab, this_name):
+    def emit_yaml(self, thisList, min_tab_string):
         if self.source_path is not None:
-            thisList.append(this_min_tab+tab_string+"source_path: "+self.source_path)
-        standard_append_dump(thisList, this_min_tab+tab_string, "vertices", self.vertices)
-        standard_append_dump(thisList, this_min_tab+tab_string, "texcoords", self.texcoords)
-        standard_append_dump(thisList, this_min_tab+tab_string, "normals", self.normals)
-        standard_append_dump(thisList, this_min_tab+tab_string, "_vertex_strings", self._vertex_strings)
-        standard_append_dump(thisList, this_min_tab+tab_string, "parameter_space_vertices", self.parameter_space_vertices)
-        thisList.append(this_min_tab+tab_string+"face_groups:")
+            thisList.append(min_tab_string+"source_path: "+self.source_path)
+        thisList.append(min_tab_string+"vertices:")
+        standard_emit_yaml(thisList, min_tab_string+tab_string, self.vertices)
+        thisList.append(min_tab_string+"texcoords:")
+        standard_emit_yaml(thisList, min_tab_string+tab_string, self.texcoords)
+        thisList.append(min_tab_string+"normals:")
+        standard_emit_yaml(thisList, min_tab_string+tab_string, self.normals)
+        thisList.append(min_tab_string+"_vertex_strings:")
+        standard_emit_yaml(thisList, min_tab_string+tab_string, self._vertex_strings)
+        thisList.append(min_tab_string+"parameter_space_vertices:")
+        standard_emit_yaml(thisList, min_tab_string+tab_string, self.parameter_space_vertices)
+        thisList.append(min_tab_string+"face_groups:")
         for key in self.face_groups:
-            self.face_groups[key].append_dump(thisList, this_min_tab+tab_string+tab_string, key)
+            thisList.append(min_tab_string+tab_string+"key:")
+            self.face_groups[key].emit_yaml(thisList, min_tab_string+tab_string+tab_string)
 
 
 ILLUMINATIONMODEL_DESCRIPTION_STRINGS = ["Color on and Ambient off","Color on and Ambient on","Highlight on","Reflection on and Ray trace on","Transparency: Glass on, Reflection: Ray trace on","Reflection: Fresnel on and Ray trace on","Transparency: Refraction on, Reflection: Fresnel off and Ray trace on","Transparency: Refraction on, Reflection: Fresnel on and Ray trace on","Reflection on and Ray trace off","Transparency: Glass on, Reflection: Ray trace off","Casts shadows onto invisible surfaces"]

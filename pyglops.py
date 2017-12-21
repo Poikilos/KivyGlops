@@ -291,6 +291,12 @@ class PyGlopHitBox:
         self.minimums = [-0.25, -0.25, -0.25]
         self.maximums = [0.25, 0.25, 0.25]
 
+    def copy(self):
+        target = PyGlopHitBox()
+        target.minimums = copy.deepcopy(self.minimums)
+        target.maximums = copy.deepcopy(self.maximums)
+        return target
+
     def contains_vec3(self, pos):
         return pos[0]>=self.minimums[0] and pos[0]<=self.maximums[0] \
             and pos[1]>=self.minimums[1] and pos[1]<=self.maximums[1] \
@@ -303,6 +309,7 @@ class PyGlopHitBox:
 
 
 class PyGlop:
+    #update copy constructor if adding/changing copyable members
     name = None #object name such as from OBJ's 'o' statement
     source_path = None  #required so that meshdata objects can be uniquely identified (where more than one file has same object name)
     properties = None #dictionary of properties--has indices such as usemtl
@@ -326,20 +333,19 @@ class PyGlop:
     z_velocity = None
     _cached_floor_y = None
     infinite_inventory_enable = None
-    bump_sounds = None
+    bump_sound_paths = None
     look_target_glop = None
     hitbox = None
     visible_enable = None
-    #IF ADDING NEW VARIABLE here, remember to update any copy constructors in your subclass or calling program
+    vertex_format = None
+    vertices = None
+    indices = None
+    #opacity = None  moved to material.diffuse_color 4th channel
 
     #region runtime variables
     index = None  # set by add_glop
     #endregion runtime variables
 
-    vertex_format = None
-    vertices = None
-    indices = None
-    #opacity = None  moved to material.diffuse_color 4th channel
 
     #region vars based on OpenGL ES 1.1 MOVED TO material
     #ambient_color = None  # vec4
@@ -361,6 +367,49 @@ class PyGlop:
     TEXCOORD1_INDEX = None
     COLOR_INDEX = None
     #endregion calculated from vertex_format
+    
+    def copy_as_subclass(self, new_glop_method, new_material_method, copy_verts_by_ref_enable=False):
+        target = new_glop_method()
+        target.name = self.name #object name such as from OBJ's 'o' statement
+        target.source_path = self.source_path  #required so that meshdata objects can be uniquely identified (where more than one file has same object name)
+        if self.properties is not None:
+            target.properties = copy.deepcopy(self.properties) #dictionary of properties--has indices such as usemtl
+        target.vertex_depth = self.vertex_depth
+        if self.material is not None:
+            if new_material_method is not None:
+                target.material = self.material.copy_as_subclass(new_material_method)
+            else:
+                print("WARNING in PyGlop copy: skipped material during copy since no new_material_method was specified")
+        target._min_coords = self._min_coords  #bounding cube minimums in local coordinates
+        target._max_coords = self._max_coords  #bounding cube maximums in local coordinates
+        target._pivot_point = self._pivot_point  #TODO: asdf eliminate this--instead always use 0,0,0 and move vertices to change pivot; currently calculated from average of vertices if was imported from obj
+        target.foot_reach = self.foot_reach  # distance from center (such as root bone) to floor
+        target.eye_height = self.eye_height  # distance from floor
+        target.hit_radius = self.hit_radius
+        target.item_dict = self.deepcopy_with_my_type(self.item_dict)  # DOES return None if sent None
+        target.projectile_dict = self.deepcopy_with_my_type(self.projectile_dict)
+        target.actor_dict = self.deepcopy_with_my_type(self.actor_dict)
+        target.bump_enable = self.bump_enable
+        target.reach_radius = self.reach_radius
+        #target.is_out_of_range = self.is_out_of_range
+        target.physics_enable = self.physics_enable
+        target.x_velocity = self.x_velocity
+        target.y_velocity = self.y_velocity
+        target.z_velocity = self.z_velocity
+        #target._cached_floor_y = self._cached_floor_y
+        target.infinite_inventory_enable = self.infinite_inventory_enable
+        target.bump_sound_paths = copy.deepcopy(self.bump_sound_paths)
+        target.look_target_glop = self.look_target_glop # by reference since is a reference to begin with
+        target.hitbox = self.hitbox.copy()
+        target.visible_enable = self.visible_enable
+        target.vertex_format = self.vertex_format
+        if copy_verts_by_ref_enable:
+            target.vertices = self.vertices
+            target.indices = self.indices
+        else:
+            target.vertices = copy.deepcopy(self.vertices)
+            target.indices = copy.deepcopy(self.indices)
+        return target
 
     def __init__(self):
         self.visible_enable = True
@@ -374,7 +423,7 @@ class PyGlop:
         self.x_velocity = 0.0
         self.y_velocity = 0.0
         self.z_velocity = 0.0
-        self.bump_sounds = []
+        self.bump_sound_paths = []
         self.properties = {}
         self.properties["inventory_index"] = -1
         self.properties["inventory_items"] = []
@@ -408,22 +457,45 @@ class PyGlop:
         #    print("WARNING: no material for Glop named '"+str(self.name)+"' (NOT YET IMPLEMENTED)")
         #return result
 
-    def get_dict_deepcopy_except_my_type(self, old_dict):
+    #prevent pickling failure by using this to copy dicts AND lists that contain members that are my type
+    def deepcopy_with_my_type(self, old_dict, copy_my_type_by_reference_enable=False):
         new_dict = None
-        if type(old_dict) is dict:
-            new_dict = {}
-            for this_key in old_dict.keys():
-                if isinstance(old_dict[this_key], PyGlop):
-                    #prevent pickling failure by cheating since it doesn't matter
-                    new_dict[this_key] = old_dict[this_key]
-                elif isinstance(old_dict[this_key], list):
-                    new_dict[this_key] = []
-                    for i in range(0, len(old_dict[this_key])):
-                        if isinstance(old_dict[this_key][i], PyGlop):
-                            #prevent pickling failure by cheating since it doesn't matter
-                            new_dict[this_key].append(old_dict[this_key][i])
+        #if type(old_dict) is dict:
+        new_dict = None
+        keys = None
+        if old_dict is not None:
+            if isinstance(old_dict, list):
+                new_dict = []
+                keys = range(0, len(old_dict))
+            elif isinstance(old_dict, dict):
+                new_dict = {}
+                keys = old_dict.keys()
+            #if keys is not None:
+            #will fail if neither dict nor list (let it fail)
+            for this_key in keys:
+                if type(old_dict[this_key]) == type(self):
+                    #NOTE: the type for both sides of the check above are always the subclass if running this from a subclass as demonstrated by: print("the type of old dict " + str(type(old_dict[this_key])) + " == " + str(type(self)))
+                    if copy_my_type_by_reference_enable:
+                        if isinstance(new_dict, dict):
+                            new_dict[this_key] = old_dict[this_key]
                         else:
-                            new_dict[this_key].append(copy.deepcopy(old_dict[this_key][i]))
+                            new_dict.append(old_dict[this_key])
+                    else:
+                        copy_of_var = None
+                        #NOTE: self.material would always be a PyGlopsMaterial, not subclass, in the case below
+                        new_material_method = None
+                        if old_dict[this_key].material is not None:
+                            new_material_method = old_dict[this_key].material.new_material
+                        copy_of_var = old_dict[this_key].copy_as_subclass(old_dict[this_key].new_glop, new_material_method)
+                        if isinstance(new_dict, dict):
+                            new_dict[this_key] = copy_of_var
+                        else:
+                            new_dict.append(copy_of_var)
+                #TODO?: elif isinstance(old_dict[this_key], type(self.material))
+                elif isinstance(old_dict[this_key], list):
+                    new_dict[this_key] = self.deepcopy_with_my_type(old_dict[this_key], copy_my_type_by_reference_enable=copy_my_type_by_reference_enable)
+                elif isinstance(old_dict[this_key], dict):
+                    new_dict[this_key] = self.deepcopy_with_my_type(old_dict[this_key], copy_my_type_by_reference_enable=copy_my_type_by_reference_enable)
                 else:
                     new_dict[this_key] = copy.deepcopy(old_dict[this_key])
         return new_dict
@@ -735,24 +807,24 @@ class PyGlop:
                 #self.vertices[v2i + 3 + k] = n[k]
                 #self.vertices[v3i + 3 + k] = n[k]
 
-    def append_dump(self, thisList, this_min_tab, this_name):
-        thisList.append(this_min_tab+this_name+":")
+    def emit_yaml(self, thisList, min_tab_string):
+        #thisList.append(min_tab_string+this_name+":")
         if self.name is not None:
-            thisList.append(this_min_tab+tab_string+"name: "+self.name)
+            thisList.append(min_tab_string+"name: "+self.name)
         if self.vertices is not None:
             if add_dump_comments_enable:
-                thisList.append(this_min_tab+tab_string+"#len(self.vertices)/self.vertex_depth:")
-            thisList.append(this_min_tab+tab_string+"vertices_count: "+str(len(self.vertices)/self.vertex_depth))
+                thisList.append(min_tab_string+"#len(self.vertices)/self.vertex_depth:")
+            thisList.append(min_tab_string+"vertices_count: "+str(len(self.vertices)/self.vertex_depth))
         if self.indices is not None:
-            thisList.append(this_min_tab+tab_string+"indices_count:"+str(len(self.indices)))
-        thisList.append(this_min_tab+tab_string+"vertex_depth: "+str(self.vertex_depth))
+            thisList.append(min_tab_string+"indices_count:"+str(len(self.indices)))
+        thisList.append(min_tab_string+"vertex_depth: "+str(self.vertex_depth))
         if self.vertices is not None:
             if add_dump_comments_enable:
-                thisList.append(this_min_tab+tab_string+"#len(self.vertices):")
-            thisList.append(this_min_tab+tab_string+"vertices_info_len: "+str(len(self.vertices)))
-        thisList.append(this_min_tab+tab_string+"POSITION_INDEX:"+str(self.POSITION_INDEX))
-        thisList.append(this_min_tab+tab_string+"NORMAL_INDEX:"+str(self.NORMAL_INDEX))
-        thisList.append(this_min_tab+tab_string+"COLOR_INDEX:"+str(self.COLOR_INDEX))
+                thisList.append(min_tab_string+"#len(self.vertices):")
+            thisList.append(min_tab_string+"vertices_info_len: "+str(len(self.vertices)))
+        thisList.append(min_tab_string+"POSITION_INDEX:"+str(self.POSITION_INDEX))
+        thisList.append(min_tab_string+"NORMAL_INDEX:"+str(self.NORMAL_INDEX))
+        thisList.append(min_tab_string+"COLOR_INDEX:"+str(self.COLOR_INDEX))
 
         component_index = 0
         component_offset = 0
@@ -761,61 +833,61 @@ class PyGlop:
             vertex_format_component = self.vertex_format[component_index]
             component_name_bytestring, component_len, component_type = vertex_format_component
             component_name = component_name_bytestring.decode("utf-8")
-            thisList.append(this_min_tab+tab_string+component_name+".len:"+str(component_len))
-            thisList.append(this_min_tab+tab_string+component_name+".type:"+str(component_type))
-            thisList.append(this_min_tab+tab_string+component_name+".index:"+str(component_index))
-            thisList.append(this_min_tab+tab_string+component_name+".offset:"+str(component_offset))
+            thisList.append(min_tab_string+component_name+".len:"+str(component_len))
+            thisList.append(min_tab_string+component_name+".type:"+str(component_type))
+            thisList.append(min_tab_string+component_name+".index:"+str(component_index))
+            thisList.append(min_tab_string+component_name+".offset:"+str(component_offset))
             component_index += 1
             component_offset += component_len
 
-        #thisList.append(this_min_tab+tab_string+"POSITION_LEN:"+str(self.vertex_format[self.POSITION_INDEX][VFORMAT_VECTOR_LEN_INDEX]))
+        #thisList.append(min_tab_string+"POSITION_LEN:"+str(self.vertex_format[self.POSITION_INDEX][VFORMAT_VECTOR_LEN_INDEX]))
 
         if add_dump_comments_enable:
-            #thisList.append(this_min_tab+tab_string+"#VFORMAT_VECTOR_LEN_INDEX:"+str(VFORMAT_VECTOR_LEN_INDEX))
-            thisList.append(this_min_tab+tab_string+"#len(self.vertex_format):"+str(len(self.vertex_format)))
-            thisList.append(this_min_tab+tab_string+"#COLOR_OFFSET:"+str(self.COLOR_OFFSET))
-            thisList.append(this_min_tab+tab_string+"#len(self.vertex_format[self.COLOR_INDEX]):"+str(len(self.vertex_format[self.COLOR_INDEX])))
+            #thisList.append(min_tab_string+"#VFORMAT_VECTOR_LEN_INDEX:"+str(VFORMAT_VECTOR_LEN_INDEX))
+            thisList.append(min_tab_string+"#len(self.vertex_format):"+str(len(self.vertex_format)))
+            thisList.append(min_tab_string+"#COLOR_OFFSET:"+str(self.COLOR_OFFSET))
+            thisList.append(min_tab_string+"#len(self.vertex_format[self.COLOR_INDEX]):"+str(len(self.vertex_format[self.COLOR_INDEX])))
         channel_count = self.vertex_format[self.COLOR_INDEX][VFORMAT_VECTOR_LEN_INDEX]
         if add_dump_comments_enable:
-            thisList.append(this_min_tab+tab_string+"#vertex_bytes_per_pixel:"+str(channel_count))
+            thisList.append(min_tab_string+"#vertex_bytes_per_pixel:"+str(channel_count))
 
 
         for k,v in sorted(self.properties.items()):
-            thisList.append(this_min_tab+tab_string+k+": "+v)
+            thisList.append(min_tab_string+k+": "+v)
 
         thisTextureFileName=self.get_texture_diffuse_path()
         if thisTextureFileName is not None:
-            thisList.append(this_min_tab+tab_string+"get_texture_diffuse_path(): "+thisTextureFileName)
+            thisList.append(min_tab_string+"get_texture_diffuse_path(): "+thisTextureFileName)
 
-        #standard_append_dump(thisList, this_min_tab+tab_string, "vertex_info_1D", self.vertices)
+        #standard_emit_yaml(thisList, min_tab_string, "vertex_info_1D", self.vertices)
         if add_dump_comments_enable:
-            thisList.append(this_min_tab+tab_string+"#1D vertex info array, aka:")
-        thisList.append(this_min_tab+tab_string+"vertices:")
+            thisList.append(min_tab_string+"#1D vertex info array, aka:")
+        thisList.append(min_tab_string+"vertices:")
         component_offset = 0
         vertex_actual_index = 0
         for i in range(0,len(self.vertices)):
             if add_dump_comments_enable:
                 if component_offset==0:
-                    thisList.append(this_min_tab+tab_string+tab_string+"#vertex ["+str(vertex_actual_index)+"]:")
+                    thisList.append(min_tab_string+tab_string+"#vertex ["+str(vertex_actual_index)+"]:")
                 elif component_offset==self.COLOR_OFFSET:
-                    thisList.append(this_min_tab+tab_string+tab_string+"#  color:")
+                    thisList.append(min_tab_string+tab_string+"#  color:")
                 elif component_offset==self._NORMAL_OFFSET:
-                    thisList.append(this_min_tab+tab_string+tab_string+"#  normal:")
+                    thisList.append(min_tab_string+tab_string+"#  normal:")
                 elif component_offset==self._POSITION_OFFSET:
-                    thisList.append(this_min_tab+tab_string+tab_string+"#  position:")
+                    thisList.append(min_tab_string+tab_string+"#  position:")
                 elif component_offset==self._TEXCOORD0_OFFSET:
-                    thisList.append(this_min_tab+tab_string+tab_string+"#  texcoords0:")
+                    thisList.append(min_tab_string+tab_string+"#  texcoords0:")
                 elif component_offset==self._TEXCOORD1_OFFSET:
-                    thisList.append(this_min_tab+tab_string+tab_string+"#  texcoords1:")
-            thisList.append(this_min_tab+tab_string+tab_string+"- "+str(self.vertices[i]))
+                    thisList.append(min_tab_string+tab_string+"#  texcoords1:")
+            thisList.append(min_tab_string+tab_string+"- "+str(self.vertices[i]))
             component_offset += 1
             if component_offset==self.vertex_depth:
                 component_offset = 0
                 vertex_actual_index += 1
 
-        thisList.append(this_min_tab+tab_string+"indices:")
+        thisList.append(min_tab_string+"indices:")
         for i in range(0,len(self.indices)):
-            thisList.append(this_min_tab+tab_string+tab_string+"- "+str(self.indices[i]))
+            thisList.append(min_tab_string+tab_string+"- "+str(self.indices[i]))
 
 
     def on_vertex_format_change(self):
@@ -864,6 +936,7 @@ class PyGlop:
 
 
 class PyGlopsMaterial:
+    #update copy constructor if adding/changing copyable members
     properties = None
     name = None
     mtlFileName = None  # mtl file path (only if based on WMaterial of WObject)
@@ -876,7 +949,6 @@ class PyGlopsMaterial:
     specular_exponent = None  # float
     #endregion vars based on OpenGL ES 1.1
 
-
     def __init__(self):
         self.properties = {}
         self.ambient_color = (0.0, 0.0, 0.0, 1.0)
@@ -884,16 +956,33 @@ class PyGlopsMaterial:
         self.specular_color = (1.0, 1.0, 1.0, 1.0)
         self.emissive_color = (0.0, 0.0, 0.0, 1.0)
         self.specular_exponent = 1.0
+        
+    def new_material(self):
+        return PyGlopsMaterial()
 
-    def append_dump(self, thisList, this_min_tab, this_name):
-        thisList.append(this_min_tab+this_name+":")
-        tab_string="  "
+    def copy_as_subclass(self, new_material_method):
+        target = new_material_method()
+        
+        if self.properties is not None:
+            target.properties = copy.deepcopy(self.properties)
+        target.name = self.name
+        target.mtlFileName = self.mtlFileName
+        
+        target.ambient_color = self.ambient_color
+        target.diffuse_color = self.diffuse_color
+        target.specular_color = self.specular_color
+        target.emissive_color = self.emissive_color
+        target.specular_exponent = self.specular_exponent
+        return target
+
+    def emit_yaml(self, thisList, min_tab_string):
+        #thisList.append(min_tab_string+this_name+":")
         if self.name is not None:
-            thisList.append(this_min_tab+tab_string+"name: "+self.name)
+            thisList.append(min_tab_string+"name: "+self.name)
         if self.mtlFileName is not None:
-            thisList.append(this_min_tab+tab_string+"mtlFileName: "+self.mtlFileName)
+            thisList.append(min_tab_string+"mtlFileName: "+self.mtlFileName)
         for k,v in sorted(self.properties.items()):
-            thisList.append(this_min_tab+tab_string+k+": "+str(v))
+            thisList.append(min_tab_string+k+": "+str(v))
 
 #variable name ends in xyz so must be ready to be swizzled
 def angles_to_angle_and_matrix(angles_list_xyz):
@@ -931,10 +1020,10 @@ def theta_radians_from_rectangular(x, y):
 
 
 #already imported from wobjfile.py:
-#def standard_append_dump(thisList, this_min_tab, this_name, sourceList):
-#    thisList.append(this_min_tab+this_name+":")
+#def standard_emit_yaml(thisList, min_tab_string, sourceList):
+#    thisList.append(min_tab_string+this_name+":")
 #    for i in range(0,len(sourceList)):
-#        thisList.append(this_min_tab+tab_string+"- "+str(sourceList[i]))
+#        thisList.append(min_tab_string+"- "+str(sourceList[i]))
 
 
 def new_tuple(length, fill_start=0, fill_len=-1, fill_value=1.0):
@@ -1384,7 +1473,7 @@ class PyGlops:
         self.materials = []
         self._bumper_indices = []
         self._bumpable_indices = []
-    
+
     def _run_command(self, command, bumpable_index, bumper_index, bypass_handlers_enable=False):
         print("WARNING: _run_command should be implemented by a subclass since it requires using the graphics implementation") 
         return False
@@ -1584,14 +1673,16 @@ class PyGlops:
                         break
         return result
 
-    def append_dump(self, thisList, this_min_tab, this_name):
-        thisList.append(this_min_tab+this_name+":")
-        thisList.append(this_min_tab+tab_string+"Glops:")
+    def emit_yaml(self, thisList, min_tab_string):
+        #thisList.append(min_tab_string+this_name+":")
+        thisList.append(min_tab_string+"glops:")
         for i in range(0,len(self.glops)):
-            self.glops[i].append_dump(thisList, this_min_tab+tab_string+tab_string, "-")
-        thisList.append(this_min_tab+tab_string+"GlopsMaterials:")
+            thisList.append(min_tab_string+tab_string+"-")
+            self.glops[i].emit_yaml(thisList, min_tab_string+tab_string+tab_string)
+        thisList.append(min_tab_string+"materials:")
         for i in range(0,len(self.materials)):
-            self.materials[i].append_dump(thisList, this_min_tab+tab_string+tab_string, "-")
+            thisList.append(min_tab_string+tab_string+"-")
+            self.materials[i].emit_yaml(thisList, min_tab_string+tab_string+tab_string)
 
 
     def set_as_actor_by_index(self, index, template_dict):
@@ -1599,7 +1690,7 @@ class PyGlops:
         if index is not None:
             if index>=0:
                 if index<len(self.glops):
-                    actor_dict = self.glops[index].get_dict_deepcopy_except_my_type(template_dict)
+                    actor_dict = self.glops[index].deepcopy_with_my_type(template_dict)
                     self.glops[index].actor_dict = actor_dict
                     if self.glops[index].hit_radius is None:
                         if "hit_radius" in actor_dict:
@@ -1746,12 +1837,12 @@ class PyGlops:
                     break
 
     def add_bump_sound_by_index(self, i, path):
-        if path not in self.glops[i].bump_sounds:
-            self.glops[i].bump_sounds.append(path)
+        if path not in self.glops[i].bump_sound_paths:
+            self.glops[i].bump_sound_paths.append(path)
 
     def set_as_item_by_index(self, i, template_dict):
         result = False
-        item_dict = self.glops[i].get_dict_deepcopy_except_my_type(template_dict)  #prevents every item template from being the one
+        item_dict = self.glops[i].deepcopy_with_my_type(template_dict)  #prevents every item template from being the one
         self.glops[i].item_dict = item_dict
         self.glops[i].item_dict["glop_name"] = self.glops[i].name
         self.glops[i].item_dict["glop_index"] = i
@@ -1850,13 +1941,14 @@ class PyGlops:
                                         print("WARNING: "+this_item["fire_type"]+" not implemented, so using throw_linear")
                                     weapon_dict = this_item
                                     favorite_pivot = None
+                                    
                                     for fires_glop in weapon_dict["fires_glops"]:
                                         if "subscript" not in weapon_dict:
                                             weapon_dict["subscript"] = 0
                                         fired_glop = fires_glop.copy_as_mesh_instance()
                                         fired_glop.name = "fired[" + str(self.fired_count) + "]"
                                         fired_glop.bump_enable = True
-                                        fired_glop.projectile_dict = fired_glop.get_dict_deepcopy_except_my_type(weapon_dict)
+                                        fired_glop.projectile_dict = fired_glop.deepcopy_with_my_type(weapon_dict)
                                         fired_glop.projectile_dict["owner"] = user_glop.name
                                         fired_glop.projectile_dict["owner_index"] = user_glop.index
                                         if favorite_pivot is None:
@@ -1891,6 +1983,7 @@ class PyGlops:
                                         fired_glop.bump_enable = True
                                         self.show_glop(fired_glop_index)  # formerly added mesh to scene in framework-specific way (when this method was in KivyGlops)
                                         weapon_dict["subscript"] += 1
+                                        #print("FIRED self._bumpable_indices: " + str(self._bumpable_indices))
                                         self._bumpable_indices.append(len(self.glops)-1)
                                         #start off a ways away:
                                         fired_glop._translate_instruction.x += fired_glop.x_velocity*2

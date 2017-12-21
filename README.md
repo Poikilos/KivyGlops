@@ -12,12 +12,18 @@ Control 3D objects and the camera in your 3D Kivy app!
 * Triangulates (tesselates) obj input manually
 
 ## Changes
+* (2017-12-21) changed emit_yaml methods since an object shouldn't need to know its own context to save (for example, should be allowable to have data members directly indented under line equal to "-")
+* (2017-12-21) renamed *append_dump to *emit_yaml
+* (2017-12-21) changed `Color(Color(1.0, 1.0, 1.0, 1.0))` to `Color(1.0, 1.0, 1.0, 1.0)`
+* (2017-12-21) added copy constructors to PyGlops, PyGlopsMaterial, and where appropriate, subclasses
+* (2017-12-21) renamed bump_sounds to bump_sound_paths for clarity
+* (2017-12-21) renamed get_dict_deepcopy_except_my_type to deepcopy_with_my_type and made it work for either list or dict (and should work for any subclass since checks for type(self), so was eliminated from subclass)
 * (2017-12-20) Changed to more permissive license (see [LICENSE](https://github.com/expertmm/KivyGlops/blob/master/LICENSE))
 * (2017-12-20) updated kivyglopstesting.py to account for refactoring
 * (2017-12-20) renamed kivyglopsminimal.py to etc/kivyglops-mini-deprecated.py
 * (2017-12-19) wobjfile.py: elimintated smoothing_group in favor of this_face_group_type and this_face_group_name (this_face_group_type "s" is a smoothing group)
 * (2017-12-19) wobjfile.py: always use face groups, to accomodate face groups feature of OBJ spec; added more fault-tolerance to by creating vertex list whenever first vertex of a list is declared, and creating face groups whenever first face of a list is declared
-* (2017-12-19) standardized append_dump methods (and use standard_append_dump when necessary) for consistent yaml and consistent coding: (list, tab, name [, data | self])
+* (2017-12-19) standardized emit_yaml methods (and use standard_emit_yaml when necessary) for consistent yaml and consistent coding: (list, tab, name [, data | self])
 * (2017-12-19) store vertex_group_type in WObject (for future implementation)
 * (2017-12-19) added ability to load non-standard obj file using commands without params; leave WObject name as None if not specified, & added ability to load non-standard object signaling (AND naming) in obj file AFTER useless g command, (such as, name WObject `some_name` if has `# object some_name then useless comments` on any line before data but after line with just `g` or `o` command but only if no name follows those commands)
 * (2017-12-17) frames_per_second moved from KivyGlops to KivyGlops window since is implementation specific (and so KivyGlops instance doesn't need to exist during KivyGlopsWindow constructor)
@@ -53,6 +59,14 @@ Control 3D objects and the camera in your 3D Kivy app!
 
 
 ## Known Issues
+* eventually remove projectiles (though pop method of list takes from left, change _bumpable_indices to a deque for better pop performance):
+  ```
+  from collections import deque
+  >>> l = deque(['a', 'b', 'c', 'd'])
+  >>> l.popleft()
+
+  ```
+* resource license compatibility should be checked against original resource licenses
 * vertex normals should supercede smoothing groups (which are based on faces) according to the obj format spec, but I'm not sure why since that would accomplish nothing since normals are blended across faces on OpenGL ES 2+
 * implement vendor-specific commands at end of OBJ file (see wobjfile.py vs "Vendor specific alterations" section of <https://en.wikipedia.org/wiki/Wavefront_.obj_file>)
 * implement Clara.io PBR extensions to OBJ format (see wobjfile.py vs "Physically-based Rendering" section of <https://en.wikipedia.org/wiki/Wavefront_.obj_file>)
@@ -124,6 +138,7 @@ uniform mat4 modelview_mat;  //derived from self.canvas["modelview_mat"] = model
 uniform mat4 projection_mat;  //derived from self.canvas["projection_mat"] = projectionMatrix
 
 ## Developer Notes
+* if you get a stack overflow, maybe one of the dict objects you put on an object contains a reference to the same object then copy or deepcopy_with_my_type was called
 * ui is usually a KivyGlopsWindow but could be other frameworks. Must have:
         width
         height
@@ -136,6 +151,8 @@ uniform mat4 projection_mat;  //derived from self.canvas["projection_mat"] = pro
                 _meshes
                 _meshes.remove(this_glop.get_context())
                 canvas
+* Subclass of KivyGlops must have:
+    * a new_glop method which returns your subclass of PyGlop (NOT of PyGlops), unless you are handling the `super(MySubclassOfGlop, self).__init__(self.new_glop)` (where MySubclassOfGlop is your class) `self.new_glop param` in your subclass' `__init__` method another way.
 * each program you make should be a subclass of KivyGlops or other PyGlops subclass (representing framework you are using other than Kivy)
 * All subclasses of PyGlops should overload __init__, call super at beginning of it, and glops_init at end of it, like KivyGlops does.
 * pymesher module (which does not require Kivy) loads obj files using intermediate WObjFile class (planned: save&load native PyMesher files), and provides base classes for all classes in kivymesher module

@@ -60,8 +60,13 @@ class KivyGlopsMaterial(PyGlopsMaterial):
 
     def __init__(self):
         super(KivyGlopsMaterial, self).__init__()
-
-
+        
+    def new_glop(self):
+        return KivyGlopsMaterial()
+        
+    def copy(self):
+        target = self.copy_as_subclass(self.new_glop)
+        return target
 
 look_at_none_warning_enable = True
 
@@ -108,28 +113,30 @@ class KivyGlop(PyGlop, Widget):
         self._scale_instruction = Scale(1.0,1.0,1.0)
         #self._scale_instruction.origin = self._pivot_point
         self._translate_instruction = Translate(0, 0, 0)
-        self._color_instruction = Color(Color(1.0, 1.0, 1.0, 1.0))  # TODO: eliminate this in favor of canvas["mat_diffuse_color"]
+        self._color_instruction = Color(1.0, 1.0, 1.0, 1.0)  # TODO: eliminate this in favor of canvas["mat_diffuse_color"]
 
-    def get_dict_deepcopy_except_my_type(self, old_dict):
-        new_dict = None
-        if type(old_dict) is dict:
-            new_dict = {}
-            for this_key in old_dict.keys():
-                if isinstance(old_dict[this_key], KivyGlop):
-                    #prevent pickling failure by cheating since it doesn't matter
-                    new_dict[this_key] = old_dict[this_key]
-                elif isinstance(old_dict[this_key], list):
-                    new_dict[this_key] = []
-                    for i in range(0, len(old_dict[this_key])):
-                        if isinstance(old_dict[this_key][i], KivyGlop):
-                            #prevent pickling failure by cheating since it doesn't matter
-                            new_dict[this_key].append(old_dict[this_key][i])
-                        else:
-                            new_dict[this_key].append(copy.deepcopy(old_dict[this_key][i]))
-                else:
-                    new_dict[this_key] = copy.deepcopy(old_dict[this_key])
-        return new_dict
+    def copy(self):
+        new_material_method = None
+        if self.material is not None:
+            new_material_method = self.material.new_material
+        target = self.copy_as_subclass(self.new_glop, self.new_glop, new_material_method)
+        target.canvas = InstructionGroup()
+        target._pivot_point = self._pivot_point
+        target._pivot_scaled_point = self._pivot_scaled_point
+        target._rotate_instruction_x = Rotate(self._rotate_instruction_x.angle, 1, 0, 0)  #angle, x, y z
+        target._rotate_instruction_x.origin = self._pivot_scaled_point
+        target._rotate_instruction_y = Rotate(self._rotate_instruction_y.angle, 0, 1, 0)  #angle, x, y z
+        target._rotate_instruction_y.origin = self._pivot_scaled_point
+        target._rotate_instruction_z = Rotate(self._rotate_instruction_z.angle, 0, 0, 1)  #angle, x, y z
+        target._rotate_instruction_z.origin = self._pivot_scaled_point
+        target._translate_instruction = Translate(self._translate_instruction.x, self._translate_instruction.y, self._translate_instruction.z)
+        target._color_instruction = Color(self._color_instruction.r, self._color_instruction.g, self._color_instruction.b, self._color_instruction.a)
+        return target
+        
 
+    def new_glop(self):
+        #return PyGlops.new_glop(self)
+        return KivyGlop()
 
     def look_at(self, target_glop):
         if target_glop is not None:
@@ -784,13 +791,12 @@ class KivyGlops(PyGlops):
                         self.glops[bumper_index]._translate_instruction.z += delta_z
             bumper_name = self.glops[bumper_index].name
             
-        
         for bumpable_index_index in range(0, len(self._bumpable_indices)):
-
             bumpable_index = self._bumpable_indices[bumpable_index_index]
             bumpable_name = self.glops[bumpable_index].name
-            bumpable_name = self.glops[bumpable_index]._temp_bumpable_enable = True
+            #self.glops[bumpable_index]._temp_bumpable_enable = True
             if self.glops[bumpable_index].bump_enable is True:
+                
                 for bumper_index_index in range(0,len(self._bumper_indices)):
                     bumper_index = self._bumper_indices[bumper_index_index]
                     bumper_name = self.glops[bumper_index].name
@@ -822,7 +828,9 @@ class KivyGlops(PyGlops):
                                 #print("not out of range yet")
                         else:
                             self.glops[bumpable_index].is_out_of_range = True
-                            #print("did not bump "+str(bumpable_name)+" (bumper is at "+str( (self.camera_glop._translate_instruction.x,self.camera_glop._translate_instruction.y,self.camera_glop._translate_instruction.z) )+")")
+                            if distance < 2:
+                                #debug only:
+                                print("did not bump "+str(bumpable_name)+" (distance:"+str(distance)+"; bumper is at "+str( (self.glops[bumper_index]._translate_instruction.x,self.glops[bumper_index]._translate_instruction.y,self.glops[bumper_index]._translate_instruction.z) )+")")
                             pass
                     else:
                         if missing_radius_warning_enable:
@@ -848,9 +856,9 @@ class KivyGlops(PyGlops):
                         #if self.glops[bumpable_index].z_velocity > kEpsilon:
                         if (self.glops[bumpable_index].y_velocity < 0.0 - (kEpsilon + self.glops[bumpable_index].hit_radius)):
                             #print("  HIT GROUND Y:"+str(self.glops[bumpable_index]._cached_floor_y))
-                            if self.glops[bumpable_index].bump_sounds is not None and len(self.glops[bumpable_index].bump_sounds) > 0:
-                                rand_i = random.randrange(0,len(self.glops[bumpable_index].bump_sounds))
-                                self.play_sound(self.glops[bumpable_index].bump_sounds[rand_i])
+                            if self.glops[bumpable_index].bump_sound_paths is not None and len(self.glops[bumpable_index].bump_sound_paths) > 0:
+                                rand_i = random.randrange(0,len(self.glops[bumpable_index].bump_sound_paths))
+                                self.play_sound(self.glops[bumpable_index].bump_sound_paths[rand_i])
                         if self.glops[bumpable_index].projectile_dict is not None:
                             if self.glops[bumpable_index].item_dict is not None and ("as_projectile" not in self.glops[bumpable_index].item_dict):
                                 #save projectile settings before setting projectile_dict to to None:
@@ -1040,7 +1048,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         #print(self.gl_widget.canvas.shader)  #just prints type and memory address
         if dump_enable:
             glopsYAMLLines = []
-            #self.scene.append_dump(glopsYAMLLines)
+            #self.scene.emit_yaml(glopsYAMLLines)
             try:
                 thisFile = open('glops-dump.yml', 'w')
                 for i in range(0,len(glopsYAMLLines)):

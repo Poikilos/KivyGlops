@@ -124,20 +124,20 @@ class MainScene(KivyGlops):
         weapon["hit_damage"] = .3
         self.add_actor_weapon(player1_index, weapon)
         self.player1 = self.glops[player1_index]
-        #test_deepcopy_weapon = self.player1.get_dict_deepcopy_except_my_type(weapon)
+        #test_deepcopy_weapon = self.player1.deepcopy_with_my_type(weapon)
 
         enemy_indices = self.get_indices_by_source_path("spaceship,simple-denapes.obj")
         for i in range(0,len(enemy_indices)):
             index = enemy_indices[i]
             self.set_as_actor_by_index(index, ship_info)
             self.add_actor_weapon(index, weapon)
-        #test_deepcopy_weapon = self.player1.get_dict_deepcopy_except_my_type(weapon)
+        #test_deepcopy_weapon = self.player1.deepcopy_with_my_type(weapon)
 
     def attacked_glop(self, attacked_index, attacker_index, weapon_dict):
-        self.scene.glops[attacked_index].actor_dict["hp"] -= weapon_dict["hit_damage"]
-        if self.scene.glops[attacked_index].actor_dict["hp"] <= 0:
+        self.glops[attacked_index].actor_dict["hp"] -= weapon_dict["hit_damage"]
+        if self.glops[attacked_index].actor_dict["hp"] <= 0:
             self.explode_glop_by_index(attacked_index, weapon_dict)
-        print("HP: "+str(self.scene.glops[attacked_index].actor_dict["hp"]))
+        print("HP: "+str(self.glops[attacked_index].actor_dict["hp"]))
 
     def obtain_glop(self, bumpable_name, bumper_name):
         if "barrel" in bumpable_name.lower():
