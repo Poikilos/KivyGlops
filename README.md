@@ -12,7 +12,7 @@ Control 3D objects and the camera in your 3D Kivy app!
 * Triangulates (tesselates) obj input manually
 
 ## Changes
-* (2017-12-20) Changed to more permissive license (see License file)
+* (2017-12-20) Changed to more permissive license (see [LICENSE](https://github.com/expertmm/KivyGlops/blob/master/LICENSE))
 * (2017-12-20) updated kivyglopstesting.py to account for refactoring
 * (2017-12-20) renamed kivyglopsminimal.py to etc/kivyglops-mini-deprecated.py
 * (2017-12-19) wobjfile.py: elimintated smoothing_group in favor of this_face_group_type and this_face_group_name (this_face_group_type "s" is a smoothing group)
