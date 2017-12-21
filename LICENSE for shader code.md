@@ -10,5 +10,5 @@ http://www.gnu.org/copyleft/gpl.html
 >
 >Blender also uses many modules or libraries from other projects. For example Python uses the Python License; Bullet uses the ZLib License; Libmv uses the MIT License; and OSL, a BSD License.
 >
->All the components that together make Blender are compatible under the newer GNU GPL Version 3. That is also the license to use for any distribution of Blender binaries."
+>All the components that together make Blender are compatible under the newer GNU GPL Version 3. That is also the license to use for any distribution of Blender binaries.
 >-- <cite>blender.org. <https://www.blender.org/about/license/>. 14 Jan 2016.</cite>
