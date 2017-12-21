@@ -11,6 +11,7 @@ Control 3D objects and the camera in your 3D Kivy app!
 * Triangulates (tesselates) obj input manually
 
 ## Changes
+* (2017-12-20) Changed to more permissive license (see License file)
 * (2017-12-20) updated kivyglopstesting.py to account for refactoring
 * (2017-12-20) renamed kivyglopsminimal.py to etc/kivyglops-mini-deprecated.py
 * (2017-12-19) wobjfile.py: elimintated smoothing_group in favor of this_face_group_type and this_face_group_name (this_face_group_type "s" is a smoothing group)
@@ -100,11 +101,12 @@ Control 3D objects and the camera in your 3D Kivy app!
         self.canvas['resolution'] = list(map(float, self.size))
     )
 ## License
-Software is copyright Jake Gustafson and provided under GNU Lesser General Public License: https://www.gnu.org/licenses/lgpl.html
-#### With the following caveats:
-* KivyGlops was derived from [kivy-trackball](https://github.com/nskrypnik/kivy-trackball)
-* The material loader was derived from [kivy-rotation3d](https://github.com/nskrypnik/kivy-rotation3d)
-* kivy-rotation3d was presumably derived from main.py, objloader.py and simple.glsl in Kivy, approximately version 1.7.2
+See license file
+Software is copyright Jake Gustafson
+#### With the following exceptions:
+* KivyGlops object loading and opengl code was derived from [kivy-trackball](https://github.com/nskrypnik/kivy-trackball) (no license)
+* The material loader was derived from [kivy-rotation3d](https://github.com/nskrypnik/kivy-rotation3d) (no license)
+* kivy-rotation3d was presumably derived from main.py, objloader.py and simple.glsl in Kivy, approximately version 1.7.2 (originally MIT license)
 
 Resources are provided under Creative Commons Attribution Share-Alike (CC-BY-SA) license: http://creativecommons.org/licenses/by-sa/4.0/
 
