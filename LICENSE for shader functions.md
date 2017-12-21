@@ -1,6 +1,6 @@
 Shader code uses same license as other code (see LICENSE.md) and author is Jake Gustafson,
 except:
-* Some shader code is based on Kivy (falls under same license as this project--was originally MIT license)
+* Some shader code is based on Kivy (therefore was originally MIT licensed, however now falls under same license as this project)
 * Some shader code that is not based on Kivy may be based on Blender:
 
 LICENSE for unmodified blender shader code is GPL 3.0:
