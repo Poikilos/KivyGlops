@@ -137,7 +137,9 @@ class MainScene(KivyGlops):
         self.glops[attacked_index].actor_dict["hp"] -= weapon_dict["hit_damage"]
         if self.glops[attacked_index].actor_dict["hp"] <= 0:
             self.explode_glop_by_index(attacked_index, weapon_dict)
-        print("HP: "+str(self.glops[attacked_index].actor_dict["hp"]))
+            print("[ after exploding ] HP: "+str(self.glops[attacked_index].actor_dict["hp"]))
+        else:
+            print("HP: "+str(self.glops[attacked_index].actor_dict["hp"]))
 
     def obtain_glop(self, bumpable_name, bumper_name):
         if "barrel" in bumpable_name.lower():
@@ -146,6 +148,7 @@ class MainScene(KivyGlops):
             self.play_sound("sounds/crate-pickup.wav")
 
     def display_explosion(self, pos, radius, attacked_index, weapon):
+        print("display_explosion...Not Yet Implemented")
         pass
 
     def update_glops(self):

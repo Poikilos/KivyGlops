@@ -56,13 +56,16 @@ def push_yaml_text(yaml, name, val, indent):
         for key in val.keys():
             yaml = push_yaml_text(yaml, key, val[key], indent+"  ")
     else: #if val is None:
-        if yaml is not None:
-            if len(yaml)>0:
-                yaml += "\n"
-        else:
+        #if yaml is not None:
+        #    if len(yaml)>0:
+        #        yaml += "\n"
+        #else:
+        #    yaml = ""
+        if yaml is None:
             yaml = ""
         if val is None:
             yaml += indent + name + ": ~"
         else:
             yaml += indent + name + ": " + str(val)
+        yaml += "\n"
     return yaml

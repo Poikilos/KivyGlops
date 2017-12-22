@@ -12,6 +12,9 @@ Control 3D objects and the camera in your 3D Kivy app!
 * Triangulates (tesselates) obj input manually
 
 ## Changes
+* (2017-12-21) fix issue where add_actor_weapon uses player_glop instead of the glop referenced by the glop_index param (bug was exposed by camera_glop and player_glop being separated)
+* (2017-12-21) separated player_glop from camera_glop (see PyGlops __init__) and keys now move player instead of camera (if most recent param sent to self.set_camera_person was self.CAMERA_FIRST_PERSON(), which is done by default)
+* (2017-12-21) (fixed issue introduced by refactoring) translate instruction should be copied by value not reference for glop
 * (2017-12-21) changed emit_yaml methods since an object shouldn't need to know its own context to save (for example, should be allowable to have data members directly indented under line equal to "-")
 * (2017-12-21) renamed *append_dump to *emit_yaml
 * (2017-12-21) changed `Color(Color(1.0, 1.0, 1.0, 1.0))` to `Color(1.0, 1.0, 1.0, 1.0)`
@@ -59,6 +62,24 @@ Control 3D objects and the camera in your 3D Kivy app!
 
 
 ## Known Issues
+* fired sprite should stay facing camera (as add_actor_weapon sets look_target_glop)
+* deal with situation-dependent members when saving glop:
+    * `look_target_glop` which is a reference and for that reason copied by ref
+    * `weapon_dict["fires_glops"]` which may be runtime-generated mesh such as texture on square mesh (or "meshes/sprite-square.obj")
+* add the following code to expertmultimedia.com boundary detection lesson since was removed from KivyGlops __init__ (or add after call to update_glops??):
+  ```
+        #This is done axis by axis--the only reason is so that you can do OpenGL boundary detection lesson from expertmultimedia.com starting with this file
+        if self.world_boundary_min[0] is not None:
+            if self.player_glop._translate_instruction.x < self.world_boundary_min[0]:
+                self.player_glop._translate_instruction.x = self.world_boundary_min[0]
+        if self.world_boundary_min[1] is not None:
+            if self.player_glop._translate_instruction.y < self.world_boundary_min[1]: #this is done only for this axis, just so that you can do OpenGL 6 lesson using this file (boundary detection)
+                self.player_glop._translate_instruction.y = self.world_boundary_min[1]
+        if self.world_boundary_min[2] is not None:
+            if self.player_glop._translate_instruction.z < self.world_boundary_min[2]: #this is done only for this axis, just so that you can do OpenGL 6 lesson using this file (boundary detection)
+                self.player_glop._translate_instruction.z = self.world_boundary_min[2]
+
+  ```
 * eventually remove projectiles (though pop method of list takes from left, change _bumpable_indices to a deque for better pop performance):
   ```
   from collections import deque

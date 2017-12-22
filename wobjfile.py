@@ -256,14 +256,14 @@ def standard_emit_yaml(thisList, min_tab_string, sourceList):
     if isinstance(sourceList, list):
         for key in range(0,len(sourceList)):
             if isinstance(sourceList[key], list) or isinstance(sourceList[key], dict):
-                thisList.append(min_tab_string+"-")
+                thisList.append(min_tab_string + "-")
                 standard_emit_yaml(thisList, min_tab_string+tab_string, sourceList[key])
             else:
                 thisList.append(min_tab_string+"- "+str(sourceList[key]))
     elif isinstance(sourceList, dict):
         for key in sourceList:
             if isinstance(sourceList[key], list) or isinstance(sourceList[key], dict):
-                thisList.append(min_tab_string+key+":")
+                thisList.append(min_tab_string + key + ":")
                 standard_emit_yaml(thisList, min_tab_string+tab_string, sourceList[key])
             else:
                 thisList.append(min_tab_string+key+": "+str(sourceList[key]))

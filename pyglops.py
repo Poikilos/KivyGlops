@@ -368,6 +368,13 @@ class PyGlop:
     COLOR_INDEX = None
     #endregion calculated from vertex_format
     
+    #copy should have override in subclass that calls copy_as_subclass then adds subclass-specific values to that result
+    def copy(self):
+        new_material_method = None
+        if self.material is not None:
+            new_material_method = self.material.new_material
+        return self.copy_as_subclass(self.new_glop, new_material_method)
+    
     def copy_as_subclass(self, new_glop_method, new_material_method, copy_verts_by_ref_enable=False):
         target = new_glop_method()
         target.name = self.name #object name such as from OBJ's 'o' statement
@@ -402,7 +409,7 @@ class PyGlop:
         target.look_target_glop = self.look_target_glop # by reference since is a reference to begin with
         target.hitbox = self.hitbox.copy()
         target.visible_enable = self.visible_enable
-        target.vertex_format = self.vertex_format
+        target.vertex_format = copy.deepcopy(self.vertex_format)
         if copy_verts_by_ref_enable:
             target.vertices = self.vertices
             target.indices = self.indices
@@ -417,8 +424,9 @@ class PyGlop:
         self.physics_enable = False
         self.infinite_inventory_enable = True
         self.is_out_of_range = True
+        self.eye_height = 0.0  # or 1.7 since 5'10" person is ~1.77m, and eye down a bit
         self.hit_radius = 0.1524  # .5' equals .1524m
-        self.reach_radius = 0.381 # 2.5' .381m
+        self.reach_radius = 0.381  # 2.5' .381m
         self.bump_enable = False
         self.x_velocity = 0.0
         self.y_velocity = 0.0
@@ -442,7 +450,11 @@ class PyGlop:
 
         self.on_vertex_format_change()
 
-        self.indices = []  # list of tris (vertex index, vertex index, vertex index, etc)
+        self.indices = []  # list of tris (1 big linear list of indices)
+
+        self.eye_height = 1.7  # 1.7 since 5'10" person is ~1.77m, and eye down a bit
+        self.hit_radius = .2
+        self.reach_radius = 2.5
 
         # Default basic material of this glop
         self.material = PyGlopsMaterial()
@@ -960,6 +972,10 @@ class PyGlopsMaterial:
     def new_material(self):
         return PyGlopsMaterial()
 
+    #copy should have override in subclass that calls copy_as_subclass then adds subclass-specific values to that result
+    def copy(self):
+        return copy_as_subclass(self.new_material)
+    
     def copy_as_subclass(self, new_material_method):
         target = new_material_method()
         
@@ -1433,8 +1449,6 @@ def get_glop_from_wobject(new_glop, this_wobject):  #formerly set_from_wobject f
     return this_pyglop
 #end def get_glop_from_wobject
 
-
-
 class PyGlops:
     glops = None
     materials = None
@@ -1446,7 +1460,7 @@ class PyGlops:
     ui = None
     camera_glop = None
     player_glop = None
-    player_glop_index = None
+    _player_glop_index = None
     prev_inbounds_camera_translate = None
     _bumper_indices = None
     _bumpable_indices = None
@@ -1454,25 +1468,40 @@ class PyGlops:
     _world_grav_acceleration = None
     last_update_s = None
     _fly_enable = None
+    _camera_person_number = None
+    
     
     fired_count = None
 
     def __init__(self, new_glop_method):
         self._visual_debug_enable = False
+        self._camera_person_number = self.CAMERA_FIRST_PERSON()
         self.fired_count = 0
         self._fly_enable = False
         self._world_grav_acceleration = 9.8
         self.camera_glop = new_glop_method()
-        self.camera_glop.eye_height = 1.7  # 1.7 since 5'10" person is ~1.77m, and eye down a bit
-        self.camera_glop.hit_radius = .2
-        self.camera_glop.reach_radius = 2.5
-
-        self.camera_glop.name = "camera_glop"
+        self.camera_glop.name = "Camera"
         self._walkmeshes = []
         self.glops = []
         self.materials = []
         self._bumper_indices = []
         self._bumpable_indices = []
+        
+    # camera does not move automatically (you may move it yourself)
+    def CAMERA_FREE(self):
+        return 0
+        
+    # camera set to same position as player's pivot point
+    def CAMERA_FIRST_PERSON(self):
+        return 1
+    
+    # camera is from the perspective of random enemy
+    def CAMERA_SECOND_PERSON(self):
+        return 2
+    
+    # camera is behind and above player (in world axes), not rotating
+    def CAMERA_THIRD_PERSON(self):
+        return 3
 
     def _run_command(self, command, bumpable_index, bumper_index, bypass_handlers_enable=False):
         print("WARNING: _run_command should be implemented by a subclass since it requires using the graphics implementation") 
@@ -1567,7 +1596,7 @@ class PyGlops:
             if "name" in select_item_event_dict:
                 name = select_item_event_dict["name"]
             else:
-                print("ERROR in after_selected_item ("+calling_method_string+"): missing name in select_item_event_dict")
+                print("ERROR in after_selected_item: missing name in select_item_event_dict " + calling_method_string)
             #if "proper_name" in select_item_event_dict:
             #    proper_name = select_item_event_dict["proper_name"]
             #else:
@@ -1580,31 +1609,59 @@ class PyGlops:
 
     def add_actor_weapon(self, glop_index, weapon_dict):
         result = False
-        #item_event = self.player_glop.push_glop_item(self.glops[bumpable_index], bumpable_index)
+        #item_event = self.glops[glop_index].push_glop_item(self.glops[bumpable_index], bumpable_index)
         #process item event so selected inventory slot gets updated in case obtained item ends up in it:
         #self.after_selected_item(item_event)
         #if verbose_enable:
         #    print(command+" "+self.glops[bumpable_index].name)
         if "fired_sprite_path" in weapon_dict:
             indices = self.load_obj("meshes/sprite-square.obj")
-            weapon_dict["fires_glops"] = list()
-            if "name" not in weapon_dict or weapon_dict["name"] is None:
-                weapon_dict["name"] = "Primary Weapon"
+        weapon_dict["fires_glops"] = list()
+        if "name" not in weapon_dict or weapon_dict["name"] is None:
+            weapon_dict["name"] = "Primary Weapon"
+        else:
+            w_glop = self.new_glop()
+            self.glops.append(w_glop)
+            indices = [len(self.glops)]
+            if self.glops[indices[0]] is not w_glop:
+                #then address multithreading paranoia
+                indices = None
+                for try_i in range(len(self.glops)):
+                    if self.glops[try_i] is w_glop:
+                        indices = [try_i]
+                        break
             if indices is not None:
-                for i in range(0,len(indices)):
-                    weapon_dict["fires_glops"].append(self.glops[indices[i]])
-                    self.glops[indices[i]].set_texture_diffuse(weapon_dict["fired_sprite_path"])
-                    self.glops[indices[i]].look_target_glop = self.camera_glop
-                    item_event = self.player_glop.push_item(weapon_dict)
-                    if (item_event is not None) and ("is_possible" in item_event) and (item_event["is_possible"]):
-                        result = True
-                        #process item event so selected inventory slot gets updated in case obtained item ends up in it:
-                        self.after_selected_item(item_event)
-                    #print("add_actor_weapon: using "+str(self.glops[indices[i]].name)+" as sprite.")
-                for i in range(0,len(indices)):
-                    self.hide_glop(self.glops[indices[i]])
+                print("WARNING: added invisible "+type(w_glop)+" weapon (no 'fired_sprite_path' in weapon_dict")
             else:
+                print("WARNING: failed to find new invisible "+type(w_glop)+" weapon (no 'fired_sprite_path' in weapon_dict")
+        if indices is not None:
+            for i in range(0,len(indices)):
+                weapon_dict["fires_glops"].append(self.glops[indices[i]])
+                self.glops[indices[i]].set_texture_diffuse(weapon_dict["fired_sprite_path"])
+                self.glops[indices[i]].look_target_glop = self.camera_glop
+                item_event = self.glops[glop_index].push_item(weapon_dict)
+                if (item_event is not None) and ("is_possible" in item_event) and (item_event["is_possible"]):
+                    result = True
+                    #process item event so selected inventory slot gets updated in case obtained item ends up in it:
+                    self.after_selected_item(item_event)
+                else:
+                    if item_event is not None:
+                        if "is_possible" in item_event:
+                            print("ERROR: Nothing done in add_actor_weapon {is_possible: " + str(item_event["is_possible"]+"}")
+                        else:
+                            print("ERROR: Nothing done in add_actor_weapon {is_possible: None}")
+                    else:
+                        
+                #print("add_actor_weapon: using "+str(self.glops[indices[i]].name)+" as sprite.")
+            for i in range(0,len(indices)):
+                self.hide_glop(self.glops[indices[i]])
+        else:
+            if "fired_sprite_path" in weapon_dict:
                 print("ERROR: got 0 objects from fired_sprite_path '"+str(weapon_dict["fired_sprite_path"]+"'"))
+            else:
+                print("ERROR: could not add invisible weapon to self.glops")
+            
+            
         #print("add_actor_weapon OK")
         return result
 
@@ -1655,21 +1712,23 @@ class PyGlops:
             #else:
             #    print("self.glops[bumpable_index].item_dict does not contain 'bump'")
         else:
-            print("bumped object '"+str(self.glops[bumpable_index].name)+"' is not an item")
+            print("bumped object '" + str(self.glops[bumpable_index].name) + 
+                  "' is not an item")
     
     def get_player_glop_index(self, player_number):
         result = None
-        if self.player_glop_index is not None:
+        if self._player_glop_index is not None:
             #TODO: check player_number instead
-            result = self.player_glop_index
+            result = self._player_glop_index
         else:
             if self.player_glop is not None:
                 for i in range(0, len(self.glops)):
                     #TODO: check player_number instead
                     if self.glops[i] is self.player_glop:
                         result = i
-                        print("WARNING: player_glop_index is not set," +
-                            "but player_glop was found in glops")
+                        self._player_glop_index = i
+                        print("WARNING: player_glop_index was not set, but" +
+                              "player_glop was found in glops, so now is.")
                         break
         return result
 
@@ -1684,6 +1743,8 @@ class PyGlops:
             thisList.append(min_tab_string+tab_string+"-")
             self.materials[i].emit_yaml(thisList, min_tab_string+tab_string+tab_string)
 
+    def set_camera_mode(self, person_number):
+        self._camera_person_number = person_number
 
     def set_as_actor_by_index(self, index, template_dict):
         #result = False
@@ -1991,7 +2052,11 @@ class PyGlops:
                                         fired_glop._translate_instruction.z += fired_glop.z_velocity*2
                                         fired_glop._translate_instruction.y -= user_glop.eye_height/2
                                         self.fired_count += 1
-
+                                        print("bumpers:")
+                                        for b_i in self._bumper_indices:  # debug only
+                                            print("  - ")
+                                            print("    name: " + str(self.glops[b_i].name))
+                                            print("    _translate_instruction: " + str(self.glops[b_i]._translate_instruction.xyz))
                         except:
                             print("user_glop.name:"+str(user_glop.name))
                             print('user_glop.properties["inventory_index"]:'+str(user_glop.properties["inventory_index"]))
