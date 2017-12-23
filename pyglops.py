@@ -556,20 +556,21 @@ class PyGlop:
                 result = True
                 break
         return result
-
+    
+    #your program can override this method for custom inventory layout
     def push_item(self, item_dict):
         select_item_event_dict = dict()
-        select_item_event_dict["is_possible"] = False
+        select_item_event_dict["is_possible"] = False  # stays false if inventory was full
         for i in range(0,len(self.properties["inventory_items"])):
             if self.properties["inventory_items"][i] is None or self.properties["inventory_items"][i]["name"] == EMPTY_ITEM["name"]:
                 self.properties["inventory_items"][i] = item_dict
                 select_item_event_dict["is_possible"] = True
-                #print("obtained item in slot "+str(i)+": "+str(item_dict))
+                print("[ debug only ] obtained item in slot "+str(i)+": "+str(item_dict))
                 break
         if self.infinite_inventory_enable:
             if not select_item_event_dict["is_possible"]:
                 self.properties["inventory_items"].append(item_dict)
-                #print("obtained item in new slot: "+str(item_dict))
+                print("[ debug only ] obtained item in new slot: "+str(item_dict))
                 select_item_event_dict["is_possible"] = True
         if select_item_event_dict["is_possible"]:
             if self.properties["inventory_index"] < 0:
@@ -1487,6 +1488,9 @@ class PyGlops:
         self._bumper_indices = []
         self._bumpable_indices = []
         
+    def __str__(self):
+        return type(self)+" named "+str(self.name)+" at "+str(self.get_location)
+        
     # camera does not move automatically (you may move it yourself)
     def CAMERA_FREE(self):
         return 0
@@ -1647,11 +1651,11 @@ class PyGlops:
                 else:
                     if item_event is not None:
                         if "is_possible" in item_event:
-                            print("ERROR: Nothing done in add_actor_weapon {is_possible: " + str(item_event["is_possible"]+"}")
+                            print("NOTICE: Nothing done for item_push since presumably, "+str(self.glops[glop_index].name)+"'s inventory was full {is_possible: " + str(item_event["is_possible"]+"}"))
                         else:
                             print("ERROR: Nothing done in add_actor_weapon {is_possible: None}")
                     else:
-                        
+                        print("WARNING: item_event returned by push_item was None")
                 #print("add_actor_weapon: using "+str(self.glops[indices[i]].name)+" as sprite.")
             for i in range(0,len(indices)):
                 self.hide_glop(self.glops[indices[i]])
@@ -1854,30 +1858,6 @@ class PyGlops:
             print("Could not finish a wobject in load_obj while "+participle+" on line "+str(linePlus1)+":")
             view_traceback()
         return results
-
-    def rotate_view_relative(self, angle, axis_index):
-        #TODO: delete this method and see solutions from http://stackoverflow.com/questions/10048018/opengl-camera-rotation
-        #such as set_view method of https://github.com/sgolodetz/hesperus2/blob/master/Shipwreck/MapEditor/GUI/Camera.java
-        self.rotate_view_relative_around_point(angle, axis_index, self.camera_glop._translate_instruction.x, self.camera_glop._translate_instruction.y, self.camera_glop._translate_instruction.z)
-
-    def rotate_view_relative_around_point(self, angle, axis_index, around_x, around_y, around_z):
-        if axis_index == 0:  #x
-            # += around_y * math.tan(angle)
-            self.camera_glop._rotate_instruction_x.angle += angle
-            # origin_distance = math.sqrt(around_z*around_z + around_y*around_y)
-            # self.camera_glop._translate_instruction.z += origin_distance * math.cos(-1*angle)
-            # self.camera_glop._translate_instruction.y += origin_distance * math.sin(-1*angle)
-        elif axis_index == 1:  #y
-            self.camera_glop._rotate_instruction_y.angle += angle
-            # origin_distance = math.sqrt(around_x*around_x + around_z*around_z)
-            # self.camera_glop._translate_instruction.x += origin_distance * math.cos(-1*angle)
-            # self.camera_glop._translate_instruction.z += origin_distance * math.sin(-1*angle)
-        else:  #z
-            #self.camera_glop._translate_instruction.z += around_y * math.tan(angle)
-            self.camera_glop._rotate_instruction_z.angle += angle
-            # origin_distance = math.sqrt(around_x*around_x + around_y*around_y)
-            # self.camera_glop._translate_instruction.x += origin_distance * math.cos(-1*angle)
-            # self.camera_glop._translate_instruction.y += origin_distance * math.sin(-1*angle)
 
     def axis_index_to_string(self,index):
         result = "unknown axis"

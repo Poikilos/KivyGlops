@@ -12,6 +12,7 @@ Control 3D objects and the camera in your 3D Kivy app!
 * Triangulates (tesselates) obj input manually
 
 ## Changes
+* (2017-12-21) split `rotate_view_relative` into `rotate_camera_relative` and `rotate_player_relative`; moved them to KivyGlops since they use Kivy OpenGL instructions; renamed rotate_view_relative_around_point to rotate_relative_around_point and forces you to specify a glop as first parameter (still needs to be edited in major way to rotate around the point instead of assuming things about the object)
 * (2017-12-21) fix issue where add_actor_weapon uses player_glop instead of the glop referenced by the glop_index param (bug was exposed by camera_glop and player_glop being separated)
 * (2017-12-21) separated player_glop from camera_glop (see PyGlops __init__) and keys now move player instead of camera (if most recent param sent to self.set_camera_person was self.CAMERA_FIRST_PERSON(), which is done by default)
 * (2017-12-21) (fixed issue introduced by refactoring) translate instruction should be copied by value not reference for glop
@@ -62,32 +63,35 @@ Control 3D objects and the camera in your 3D Kivy app!
 
 
 ## Known Issues
+* add touch inventory (such as tap to use, drag to change selected item)
+* add touch joystick (drag to tilt joystick to dolly or strafe--optionally start at "forward" position)
+* cache heightmap for each walkmesh as y-buffer (y is up; load from cache instead of recomputing if date >= source mesh file)
+    * If was 64-bit (8bytes per fragment) 8 * 8192 * 8192 /1024/1024 = 512 MB
+    * If was 32-bit (4bytes per fragment) 4 * 8192 * 8192 /1024/1024 = 256 MB
+    * If was 16-bit (2bytes per fragment) 2 * 8192 * 8192 /1024/1024 = 128 MB
+    * If was 16-bit (2bytes per fragment) 2 * 4096 * 4096 /1024/1024 = 32 MB
+    * (as an unrelated performance comparison, an alpha lookup table is 256*256*256 /1024/1024 = 16 MB)
 * fired sprite should stay facing camera (as add_actor_weapon sets look_target_glop)
 * deal with situation-dependent members when saving glop:
     * `look_target_glop` which is a reference and for that reason copied by ref
     * `weapon_dict["fires_glops"]` which may be runtime-generated mesh such as texture on square mesh (or "meshes/sprite-square.obj")
-* add the following code to expertmultimedia.com boundary detection lesson since was removed from KivyGlops __init__ (or add after call to update_glops??):
-  ```
-        #This is done axis by axis--the only reason is so that you can do OpenGL boundary detection lesson from expertmultimedia.com starting with this file
-        if self.world_boundary_min[0] is not None:
-            if self.player_glop._translate_instruction.x < self.world_boundary_min[0]:
-                self.player_glop._translate_instruction.x = self.world_boundary_min[0]
-        if self.world_boundary_min[1] is not None:
-            if self.player_glop._translate_instruction.y < self.world_boundary_min[1]: #this is done only for this axis, just so that you can do OpenGL 6 lesson using this file (boundary detection)
-                self.player_glop._translate_instruction.y = self.world_boundary_min[1]
-        if self.world_boundary_min[2] is not None:
-            if self.player_glop._translate_instruction.z < self.world_boundary_min[2]: #this is done only for this axis, just so that you can do OpenGL 6 lesson using this file (boundary detection)
-                self.player_glop._translate_instruction.z = self.world_boundary_min[2]
-
-  ```
+* Add the following code to expertmultimedia.com boundary detection lesson since was removed from KivyGlops __init__ (or add after call to update_glops??):
+  ```This is done axis by axis--the only reason is so that you can do OpenGL boundary detection lesson from expertmultimedia.com starting with this file
+    if self.world_boundary_min[0] is not None:
+        if self.player_glop._translate_instruction.x < self.world_boundary_min[0]:
+            self.player_glop._translate_instruction.x = self.world_boundary_min[0]
+    if self.world_boundary_min[1] is not None:
+        if self.player_glop._translate_instruction.y < self.world_boundary_min[1]: #this is done only for this axis, just so that you can do OpenGL 6 lesson using this file (boundary detection)
+            self.player_glop._translate_instruction.y = self.world_boundary_min[1]
+    if self.world_boundary_min[2] is not None:
+        if self.player_glop._translate_instruction.z < self.world_boundary_min[2]: #this is done only for this axis, just so that you can do OpenGL 6 lesson using this file (boundary detection)
+            self.player_glop._translate_instruction.z = self.world_boundary_min[2]```
 * eventually remove projectiles (though pop method of list takes from left, change _bumpable_indices to a deque for better pop performance):
   ```
   from collections import deque
   >>> l = deque(['a', 'b', 'c', 'd'])
-  >>> l.popleft()
-
-  ```
-* resource license compatibility should be checked against original resource licenses
+  >>> l.popleft()```
+* resource license: compatibility should be checked against original resource licenses
 * vertex normals should supercede smoothing groups (which are based on faces) according to the obj format spec, but I'm not sure why since that would accomplish nothing since normals are blended across faces on OpenGL ES 2+
 * implement vendor-specific commands at end of OBJ file (see wobjfile.py vs "Vendor specific alterations" section of <https://en.wikipedia.org/wiki/Wavefront_.obj_file>)
 * implement Clara.io PBR extensions to OBJ format (see wobjfile.py vs "Physically-based Rendering" section of <https://en.wikipedia.org/wiki/Wavefront_.obj_file>)
@@ -159,6 +163,7 @@ uniform mat4 modelview_mat;  //derived from self.canvas["modelview_mat"] = model
 uniform mat4 projection_mat;  //derived from self.canvas["projection_mat"] = projectionMatrix
 
 ## Developer Notes
+* is_possible entry in item_event dict returned by push_item denotes whether giving an item to the player was possible (false if inventory was full on games with limited inventory)
 * if you get a stack overflow, maybe one of the dict objects you put on an object contains a reference to the same object then copy or deepcopy_with_my_type was called
 * ui is usually a KivyGlopsWindow but could be other frameworks. Must have:
         width

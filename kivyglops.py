@@ -114,6 +114,19 @@ class KivyGlop(PyGlop, Widget):
         #self._scale_instruction.origin = self._pivot_point
         self._translate_instruction = Translate(0, 0, 0)
         self._color_instruction = Color(1.0, 1.0, 1.0, 1.0)  # TODO: eliminate this in favor of canvas["mat_diffuse_color"]
+    
+    def __str__(self):
+        return type(self) + " named " + str(self.name) + " at " + \
+               str(self._translate_instruction.xyz)
+
+    #"Called by the repr() built-in function to compute the "official"
+    # string representation of an object. If at all possible, this
+    # should look like a valid Python expression that could be used to
+    # recreate an object..."
+    #   - <https://docs.python.org/3/reference/datamodel.html#customization>
+    def __repr__(self):
+        return "KivyGlop(name=" + str(self.name) + ", location=" + \
+               str(self._translate_instruction.xyz) + ")"
 
     def copy(self):
         new_material_method = None
@@ -133,6 +146,34 @@ class KivyGlop(PyGlop, Widget):
         target._color_instruction = Color(self._color_instruction.r, self._color_instruction.g, self._color_instruction.b, self._color_instruction.a)
         return target
         
+    def rotate_camera_relative(self, angle, axis_index):
+        #TODO: delete this method and see solutions from http://stackoverflow.com/questions/10048018/opengl-camera-rotation
+        #such as set_view method of https://github.com/sgolodetz/hesperus2/blob/master/Shipwreck/MapEditor/GUI/Camera.java
+        self.rotate_relative_around_point(self.camera_glop, angle, axis_index, self.camera_glop._translate_instruction.x, self.camera_glop._translate_instruction.y, self.camera_glop._translate_instruction.z)
+
+    def rotate_player_relative(self, angle, axis_index):
+        #TODO: delete this method and see solutions from http://stackoverflow.com/questions/10048018/opengl-camera-rotation
+        #such as set_view method of https://github.com/sgolodetz/hesperus2/blob/master/Shipwreck/MapEditor/GUI/Camera.java
+        self.rotate_relative_around_point(self.player_glop, angle, axis_index, self.player_glop._translate_instruction.x, self.player_glop._translate_instruction.y, self.player_glop._translate_instruction.z)
+
+    def rotate_relative_around_point(self, this_glop, angle, axis_index, around_x, around_y, around_z):
+        if axis_index == 0:  #x
+            # += around_y * math.tan(angle)
+            this_glop._rotate_instruction_x.angle += angle
+            # origin_distance = math.sqrt(around_z*around_z + around_y*around_y)
+            # this_glop._translate_instruction.z += origin_distance * math.cos(-1*angle)
+            # this_glop._translate_instruction.y += origin_distance * math.sin(-1*angle)
+        elif axis_index == 1:  #y
+            this_glop._rotate_instruction_y.angle += angle
+            # origin_distance = math.sqrt(around_x*around_x + around_z*around_z)
+            # this_glop._translate_instruction.x += origin_distance * math.cos(-1*angle)
+            # this_glop._translate_instruction.z += origin_distance * math.sin(-1*angle)
+        else:  #z
+            #this_glop._translate_instruction.z += around_y * math.tan(angle)
+            this_glop._rotate_instruction_z.angle += angle
+            # origin_distance = math.sqrt(around_x*around_x + around_y*around_y)
+            # this_glop._translate_instruction.x += origin_distance * math.cos(-1*angle)
+            # this_glop._translate_instruction.y += origin_distance * math.sin(-1*angle)
 
     def new_glop(self):
         #return PyGlops.new_glop(self)
@@ -662,14 +703,14 @@ class KivyGlops(PyGlops):
         if self.player1_controller.get_pressed(self.ui.get_keycode("w")):
             if self._fly_enable:
                 #intentionally use z,y:
-                moving_z, moving_y = get_rect_from_polar_rad(1.0, self.camera_glop._rotate_instruction_x.angle)
+                moving_z, moving_y = get_rect_from_polar_rad(1.0, self.player_glop._rotate_instruction_x.angle)
             else:
                 moving_z = 1.0
 
         if self.player1_controller.get_pressed(self.ui.get_keycode("s")):
             if self._fly_enable:
                 #intentionally use z,y:
-                moving_z, moving_y = get_rect_from_polar_rad(1.0, self.camera_glop._rotate_instruction_x.angle)
+                moving_z, moving_y = get_rect_from_polar_rad(1.0, self.player_glop._rotate_instruction_x.angle)
                 moving_z *= -1.0
                 moving_y *= -1.0
             else:
@@ -938,7 +979,7 @@ class KivyGlops(PyGlops):
 
         #modelViewMatrix = modelViewMatrix.look_at(0,self.camera_glop._translate_instruction.y,0, self.look_point[0], self.look_point[1], self.look_point[2], 0, 1, 0)
 
-        #Since what you are looking at should be relative to yourself, add camera's position:
+        #Since camera's target should be relative to camera, add camera's position:
 
         self.look_point[0] += self.camera_glop._translate_instruction.x
         self.look_point[1] += self.camera_glop._translate_instruction.y
@@ -1172,15 +1213,15 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
 
 
     def inventory_prev_button_press(self, instance):
-        event_dict = self.scene.camera_glop.select_next_inventory_slot(False)
+        event_dict = self.scene.player_glop.select_next_inventory_slot(False)
         self.scene.after_selected_item(event_dict)
 
     def inventory_use_button_press(self, instance):
-        event_dict = self.scene.use_selected(self.scene.camera_glop)
+        event_dict = self.scene.use_selected(self.scene.player_glop)
         #self.scene.after_selected_item(event_dict)
 
     def inventory_next_button_press(self, instance):
-        event_dict = self.scene.camera_glop.select_next_inventory_slot(True)
+        event_dict = self.scene.player_glop.select_next_inventory_slot(True)
         self.scene.after_selected_item(event_dict)
 
 
@@ -1289,6 +1330,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
 
         if self.scene.env_rectangle is not None:
             if self.screen_w_arc_theta is not None and self.screen_h_arc_theta is not None:
+                #then calculate environment mapping variables
                 #region old way (does not repeat)
                 #env_h_ratio = (2 * math.pi) / self.screen_h_arc_theta
                 #env_w_ratio = env_h_ratio * math.pi
@@ -1382,12 +1424,12 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         if touch.is_mouse_scrolling:
             event_dict = None
             if touch.button == "scrolldown":
-                event_dict = self.scene.camera_glop.select_next_inventory_slot(True)
+                event_dict = self.scene.player_glop.select_next_inventory_slot(True)
             else:
-                event_dict = self.scene.camera_glop.select_next_inventory_slot(False)
+                event_dict = self.scene.player_glop.select_next_inventory_slot(False)
             self.scene.after_selected_item(event_dict)
         else:
-            event_dict = self.scene.use_selected(self.scene.camera_glop)
+            event_dict = self.scene.use_selected(self.scene.player_glop)
 
     def on_touch_up(self, touch):
         super(KivyGlopsWindow, self).on_touch_up(touch)
@@ -1410,9 +1452,9 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         if keycode[1] == 'escape':
             pass  #keyboard.release()
         # elif keycode[1] == 'w':
-        #     self.scene.camera_glop._translate_instruction.z += self.camera_walk_units_per_frame
+        #     self.scene.player_glop._translate_instruction.z += self.camera_walk_units_per_frame
         # elif keycode[1] == 's':
-        #     self.scene.camera_glop._translate_instruction.z -= self.camera_walk_units_per_frame
+        #     self.scene.player_glop._translate_instruction.z -= self.camera_walk_units_per_frame
         # elif text == 'a':
         #     self.scene.player1_controller["left"] = True
         #     self.moving_x = -1.0
@@ -1438,10 +1480,10 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             else:
                 print('Select glop failed (maybe there are no glops loaded.')
         elif keycode[1] == "x":
-            event_dict = self.scene.camera_glop.select_next_inventory_slot(True)
+            event_dict = self.scene.player_glop.select_next_inventory_slot(True)
             self.scene.after_selected_item(event_dict)
         elif keycode[1] == "z":
-            event_dict = self.scene.camera_glop.select_next_inventory_slot(False)
+            event_dict = self.scene.player_glop.select_next_inventory_slot(False)
             self.scene.after_selected_item(event_dict)
         elif keycode[1] == "f3":
             self.toggle_visual_debug()
