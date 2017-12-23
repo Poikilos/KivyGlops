@@ -11,6 +11,27 @@ Control 3D objects and the camera in your 3D Kivy app!
 * KivyGlops tutorials are available for download at [expertmultimedia.com/usingpython](http://expertmultimedia.com/usingpython/py3tutorials.html) (Unit 4 OpenGL)
 * Triangulates (tesselates) obj input manually
 
+## Usage:
+* Lessons are available at [expertmultimedia.com/usingpython](http://www.expertmultimedia.com/usingpython)
+  (click "Python 3," "Tutorials," "Start Learning Now," "Unit 2 (OpenGL)")
+* spec for weapon_dict:
+  "droppable": ("yes" or "no") whether weapon leaves your inventory as soon as you use it (yes for rocks...hopefully you get the idea)
+  "fired_sprite_size": tuple containing 2 floats (example: ` = (0.5, 0.5)`) in meters determining size of sprite in 3D space
+  "fired_sprite_path": path to sprite (image will be placed on an automatically-generated square)
+  "fire_type": ("throw_linear" or "throw_arc") how missile behaves (arc uses gravity)
+  * generated members:
+    "subscript": (for debugging) if present in weapon_dict, it is the automatically-generated index of the object within the obj file from which the glop containing the weapon dict was loaded.
+    "fires_glops": list of glops that will be fired (generated automatically if you use add_actor_weapon and have fired_sprite_path)
+* is_possible entry in item_event dict returned by push_item denotes whether giving an item to the player was possible (false if inventory was full on games with limited inventory)
+* if you get a stack overflow, maybe one of the dict objects you put on an object contains a reference to the same object then copy or deepcopy_with_my_type was called
+* each program you make should be a subclass of KivyGlops or other PyGlops subclass (representing framework you are using other than Kivy)
+* pyrealtime module (which does not require Kivy) keeps track of keyboard state, allowing getting keystate asynchronously
+* To modify any files (other than examples or tests) see "Developer Notes" section of this file for more information.
+
+### Teaching using KivyGlops:
+* update-kivyglops from LAN.bat will only work for students if teacher places KivyGlops in R:\Classes\ComputerProgramming\Examples\KivyGlops
+(which can be done using deploy.bat, if the folder already exists and the teacher has write permissions to the folder; the students should have read permissions to the folder)
+
 ## Changes
 * (2017-12-22) get_indices_by_source_path now checks against original_path (as passed to load_obj; non-normalized) in addition to processed path
 * (2017-12-21) split `rotate_view_relative` into `rotate_camera_relative` and `rotate_player_relative`; moved them to KivyGlops since they use Kivy OpenGL instructions; renamed rotate_view_relative_around_point to rotate_relative_around_point and forces you to specify a glop as first parameter (still needs to be edited in major way to rotate around the point instead of assuming things about the object)
@@ -64,6 +85,8 @@ Control 3D objects and the camera in your 3D Kivy app!
 
 
 ## Known Issues
+* if object has upward momentum, shouldn't stick to ground (is set near ground if player is near ground during `def use_selected`)
+* pyglops.py: (`update`) throw_linear vs throw_arc setting is ignored (instead, gravity is always applied to missile if _cached_floor_y is present, which is present if there is a walkmesh, in which case ground_y is calculated then object's _cached_floor_y is set to ground_y)
 * add touch inventory (such as tap to use, drag to change selected item)
 * add touch joystick (drag to tilt joystick to dolly or strafe--optionally start at "forward" position)
 * cache heightmap for each walkmesh as y-buffer (y is up; load from cache instead of recomputing if date >= source mesh file)
@@ -164,10 +187,7 @@ uniform mat4 modelview_mat;  //derived from self.canvas["modelview_mat"] = model
 uniform mat4 projection_mat;  //derived from self.canvas["projection_mat"] = projectionMatrix
 
 ## Developer Notes
-* spec for weapon_dict:
-    subscript: (for debugging) if present in weapon_dict, it is the automatically-generated index of the object within the obj file from which the glop containing the weapon dict was loaded.
-* is_possible entry in item_event dict returned by push_item denotes whether giving an item to the player was possible (false if inventory was full on games with limited inventory)
-* if you get a stack overflow, maybe one of the dict objects you put on an object contains a reference to the same object then copy or deepcopy_with_my_type was called
+(these notes only apply to modifying the KivyGlops project files including PyGlops, or making a new subclass of PyGlop*)
 * ui is usually a KivyGlopsWindow but could be other frameworks. Must have:
         width
         height
@@ -182,12 +202,8 @@ uniform mat4 projection_mat;  //derived from self.canvas["projection_mat"] = pro
                 canvas
 * Subclass of KivyGlops must have:
     * a new_glop method which returns your subclass of PyGlop (NOT of PyGlops), unless you are handling the `super(MySubclassOfGlop, self).__init__(self.new_glop)` (where MySubclassOfGlop is your class) `self.new_glop param` in your subclass' `__init__` method another way.
-* each program you make should be a subclass of KivyGlops or other PyGlops subclass (representing framework you are using other than Kivy)
 * All subclasses of PyGlops should overload __init__, call super at beginning of it, and glops_init at end of it, like KivyGlops does.
-* pymesher module (which does not require Kivy) loads obj files using intermediate WObjFile class (planned: save&load native PyMesher files), and provides base classes for all classes in kivymesher module
-* pyrealtime module (which does not require Kivy) keeps track of keyboard state, allowing getting keystate asynchronously
-* update-kivymesher.bat will only work for students if teacher places KivyGlops in R:\Classes\ComputerProgramming\Examples\KivyGlops
-(which can be done using deploy.bat, if the folder already exists and the teacher has write permissions to the folder; the students should have read permissions to the folder)
+* PyGlops module (which does not require Kivy) loads obj files using intermediate WObjFile class (planned: save&load native PyGlops files), and provides base classes for all classes in KivyGlops module
 
 ### Regression Tests
 * result of builting type(x) function assumed to be string without using str(type(x)) where x is anything

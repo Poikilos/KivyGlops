@@ -1710,14 +1710,14 @@ class PyGlops:
             #if "bump" in self.glops[bumpable_index].item_dict:
             #NOTE ignore self.glops[bumpable_index].is_out_of_range
             # since firing at point blank range is ok.
-            print("projectile bumped by object "+str(bumper_name))
-            print("  hit_radius:"+str(self.glops[bumper_index].hit_radius))
-            if self.glops[bumper_index].hitbox is not None:
-                print("  hitbox: "+self.glops[bumper_index].hitbox.to_string())
+            #print("[ debug only ] projectile bumped by object "+str(bumper_name))
+            #print("[ debug only ]    hit_radius:"+str(self.glops[bumper_index].hit_radius))
+            #if self.glops[bumper_index].hitbox is not None:
+            #    print("[ debug only ]   hitbox: "+self.glops[bumper_index].hitbox.to_string())
             #else:
             #    print("self.glops[bumpable_index].item_dict does not contain 'bump'")
         else:
-            print("bumped object '" + str(self.glops[bumpable_index].name) + 
+            print("[ PyGlops] bumped object '" + str(self.glops[bumpable_index].name) + 
                   "' is not an item")
     
     def get_player_glop_index(self, player_number):
@@ -1749,11 +1749,11 @@ class PyGlops:
             self.materials[i].emit_yaml(thisList, min_tab_string+tab_string+tab_string)
 
     def display_explosion(self, pos, radius, attacked_index, weapon_dict):
-        print("subclass of PyGlops should implement display_explosion" + \
+        print("[ PyGlops ] subclass of subclass may implement display_explosion" + \
             " (and check for None before using variables other than pos)")
 
     def explode_glop_by_index(self, index, weapon_dict=None):
-        print("subclass of PyGlops should implement display_explosion" + \
+        print("[ PyGlops ] subclass should implement display_explosion" + \
             " (and check for None before using variables other than pos)")
 
     def set_camera_mode(self, person_number):
@@ -1979,7 +1979,7 @@ class PyGlops:
                                                     self.after_selected_item(event_dict)
                                                     item_glop.visible_enable = True
                                                     item_glop._translate_instruction.x = user_glop._translate_instruction.x
-                                                    item_glop._translate_instruction.y = user_glop._translate_instruction.y
+                                                    item_glop._translate_instruction.y = user_glop._translate_instruction.y + user_glop.eye_height
                                                     item_glop._translate_instruction.z = user_glop._translate_instruction.z
                                                     self.show_glop(glop_index)  # formerly added mesh manually (when this method was in KivyGlops)
                                         else:
@@ -2041,11 +2041,11 @@ class PyGlops:
                                         fired_glop._translate_instruction.z += fired_glop.z_velocity*2
                                         fired_glop._translate_instruction.y -= user_glop.eye_height/2
                                         self.fired_count += 1
-                                        print("bumpers:")
-                                        for b_i in self._bumper_indices:  # debug only
-                                            print("  - ")
-                                            print("    name: " + str(self.glops[b_i].name))
-                                            print("    _translate_instruction: " + str(self.glops[b_i]._translate_instruction.xyz))
+                                        #print("[ debug only ] bumpers:")
+                                        #for b_i in self._bumper_indices:  # debug only
+                                        #    print("[ debug only ]   - ")
+                                        #    print("[ debug only ]     name: " + str(self.glops[b_i].name))
+                                        #    print("[ debug only ]     _translate_instruction: " + str(self.glops[b_i]._translate_instruction.xyz))
                         except:
                             print("user_glop.name:"+str(user_glop.name))
                             print('user_glop.properties["inventory_index"]:'+str(user_glop.properties["inventory_index"]))
@@ -2066,8 +2066,8 @@ class PyGlops:
     #    result = self.get_player_glop_index(self, player_number)
 
     def killed_glop(self, index, weapon_dict):
-        print("subclass should implement killed_glop" + \
-            " (allowing variables other than pos to be None)")
+        pass
+        #print("[ PyGlops ] subclass can implement killed_glop")
 
     def kill_glop_by_index(self, index, weapon_dict=None):
         self.killed_glop(index, weapon_dict)
@@ -2195,20 +2195,8 @@ class PyGlops:
         return result
 
     def use_walkmesh(self, name, hide=True):
-        result = False
-        #for this_glop in self.glops:
-        for index in range(0, len(self.glops)):
-            if self.glops[index].name == name:
-                result = True
-                if self.glops[index] not in self._walkmeshes:
-                    self._walkmeshes.append(self.glops[index])
-                    print("Applying walkmesh translate "+translate_to_string(self.glops[index]._translate_instruction))
-                    self.glops[index].apply_translate()
-                    print("  pivot:"+str(self.glops[index]._pivot_point))
-                    if hide:
-                        self.hide_glop(self.glops[index])
-                break
-        return result
+        print("[ PyGlops ] ERROR: use_walkmesh should be implemented in a subclass since it is dependent on display method")
+        return False
 
     def get_similar_names(self, partial_name):
         results = None
@@ -2222,6 +2210,12 @@ class PyGlops:
                 if this_glop.name is not None:
                     if partial_name_lower in this_glop.name.lower():
                         results.append(this_glop.name)
+                    else:
+                        print("[ debug only ] (in get_similar_names): name "+str(this_glop.name)+" does not contain "+partial_name)
+                else:
+                    print("ERROR in get_similar_names: a glop was None")
+        else:
+            print("ERROR in get_similar_names: tried to search for blank partial_name")
         #print("checked "+str(checked_count))
         return results
 

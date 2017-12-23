@@ -120,28 +120,28 @@ class MainScene(KivyGlops):
         weapon["droppable"] = "no"
         weapon["fired_sprite_path"] = "blue_jet_bulb.png"
         weapon["fired_sprite_size"] = .5,.5  # width and height in meters
-        weapon["fire_type"] = "throw_linear"
+        weapon["fire_type"] = "throw_arc"
         weapon["hit_damage"] = .3
         self.add_actor_weapon(player1_index, weapon)
         #self.player_glop = self.glops[player1_index]  # already done by PyGlops __init__
         #test_deepcopy_weapon = self.player_glop.deepcopy_with_my_type(weapon)
-        print("[ debug only ] #" + str(player1_index) + " named " + str(self.glops[player1_index].name) + " detected as player") 
+        print("[ testing ] #" + str(player1_index) + " named " + str(self.glops[player1_index].name) + " detected as player") 
         enemy_indices = self.get_indices_by_source_path("spaceship,simple-denapes.obj")
         for i in range(0,len(enemy_indices)):
             index = enemy_indices[i]
             self.set_as_actor_by_index(index, ship_info)
             self.add_actor_weapon(index, weapon)
-            print("[ debug only ] #" + str(index) + " named " + str(self.glops[index].name) + " added as enemy") 
-        print("[ debug only ] " + str(len(enemy_indices)) + " enemies found.") 
+            print("[ testing ] #" + str(index) + " named " + str(self.glops[index].name) + " added as enemy") 
+        print("[ testing ] " + str(len(enemy_indices)) + " enemies found.") 
         #test_deepcopy_weapon = self.player_glop.deepcopy_with_my_type(weapon)
 
     def attacked_glop(self, attacked_index, attacker_index, weapon_dict):
         self.glops[attacked_index].actor_dict["hp"] -= weapon_dict["hit_damage"]
         if self.glops[attacked_index].actor_dict["hp"] <= 0:
             self.explode_glop_by_index(attacked_index, weapon_dict)
-            print("[ after exploding ] HP: "+str(self.glops[attacked_index].actor_dict["hp"]))
+            print("[ testing ] (attacked_glop: after exploding) HP: "+str(self.glops[attacked_index].actor_dict["hp"]))
         else:
-            print("HP: "+str(self.glops[attacked_index].actor_dict["hp"]))
+            print("[ testing ] (attacked_glop) HP: "+str(self.glops[attacked_index].actor_dict["hp"]))
 
     def obtain_glop(self, bumpable_name, bumper_name):
         if "barrel" in bumpable_name.lower():

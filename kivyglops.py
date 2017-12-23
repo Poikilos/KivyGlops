@@ -41,6 +41,8 @@ missing_bumper_warning_enable = True
 missing_bumpable_warning_enable = True
 missing_radius_warning_enable = True
 out_of_hitbox_note_enable = True
+no_bounds_warning_enable = True
+bounds_warning_enable = True
 
 def get_distance_kivyglops(a_glop, b_glop):
     return math.sqrt((b_glop._translate_instruction.x - a_glop._translate_instruction.x)**2 +
@@ -50,11 +52,12 @@ def get_distance_kivyglops(a_glop, b_glop):
 #def get_distance_vec3(a_vec3, b_vec3):
 #    return math.sqrt((b_vec3[0] - a_vec3[0])**2 + (b_vec3[1] - a_vec3[1])**2 + (b_vec3[2] - a_vec3[2])**2)
 
-def translate_to_string(_translate_instruction):
-    result = "None"
-    if _translate_instruction is not None:
-        result = str([_translate_instruction.x, _translate_instruction.y, _translate_instruction.z])
-    return result
+#NOTE: use str(_translate_instruction.xyz) instead
+#def translate_to_string(_translate_instruction):
+#    result = "None"
+#    if _translate_instruction is not None:
+#        result = str([_translate_instruction.x, _translate_instruction.y, _translate_instruction.z])
+#    return result
 
 class KivyGlopsMaterial(PyGlopsMaterial):
 
@@ -536,6 +539,22 @@ class KivyGlops(PyGlops):
         self.ui._meshes.add(self.glops[this_glop_index].get_context())
         self.glops[this_glop_index].visible_enable = True
         
+    def use_walkmesh(self, name, hide=True):
+        result = False
+        #for this_glop in self.glops:
+        for index in range(0, len(self.glops)):
+            if self.glops[index].name == name:
+                result = True
+                if self.glops[index] not in self._walkmeshes:
+                    self._walkmeshes.append(self.glops[index])
+                    print("[ KivyGlops ] Applying walkmesh translate "+str(self.glops[index]._translate_instruction.xyz))
+                    self.glops[index].apply_translate()
+                    print("[ KivyGlops ]   pivot:"+str(self.glops[index]._pivot_point))
+                    if hide:
+                        self.hide_glop(self.glops[index])
+                break
+        return result        
+        
     def set_background_cylmap(self, path):
         #self.load_obj("env_sphere.obj")
         #self.load_obj("maps/gi/etc/sky_sphere.obj")
@@ -815,8 +834,15 @@ class KivyGlops(PyGlops):
                     self._world_min_y = ground_y
                 #if self.prev_inbounds_camera_translate is None or self.player_glop._translate_instruction.y != self.prev_inbounds_camera_translate[1]:
                     #print("y:"+str(self.player_glop._translate_instruction.y))
+            global bounds_warning_enable
+            if bounds_warning_enable:
+                print("[ KivyGlops ] (debug only) bounds used")
+                bounds_warning_enable = False
         else:
-            #print("No bounds")
+            global no_bounds_warning_enable
+            if no_bounds_warning_enable:
+                print("[ KivyGlops ] (debug only) No bounds")
+                no_bounds_warning_enable = False
             pass
 
         #self.prev_inbounds_camera_translate = self.camera_glop._translate_instruction.x, self.camera_glop._translate_instruction.y, self.camera_glop._translate_instruction.z
@@ -900,7 +926,7 @@ class KivyGlops(PyGlops):
                                     else:
                                         global out_of_hitbox_note_enable
                                         if out_of_hitbox_note_enable:
-                                            print("Bumped, but bumpable is not in bumper's hitbox: "+self.glops[bumper_index].hitbox.to_string())
+                                            print("[ debug only ] (this is normal) within total_hit_radius, but bumpable is not in bumper's hitbox: "+self.glops[bumper_index].hitbox.to_string())
                                             out_of_hitbox_note_enable = False
                             #else:
                                 #print("not out of range yet")

@@ -73,10 +73,19 @@ class SyncOptions:
         self.leave_out_dot_git_enable = True
         self.verbose_enable = False
         self.ignore_caches_enable = True
+        self.removed_cache_files_count = 0
         
 cache_names = "__pycache__"
 
 def sync_recursively(master_path, target_path, options):
+    if ((options.mode=="force") or (options.mode=="update") or \
+        (options.mode=="clear")):
+        try_path = os.path.join(target_path, "__pycache__")
+        if os.path.isdir(try_path):
+            for try_name in os.listdir(try_path):
+                sub_path = os.path.join(try_path, try_name)
+                os.remove(sub_path)
+                options.removed_cache_files_count += 1
     if os.path.isdir(master_path):
         for master_name in os.listdir(master_path):
             my_path = os.path.join(master_path, master_name)
@@ -130,6 +139,7 @@ if target_path is not None:
         print("sync_recursively ("+options.mode+") result:")
         print("  copied: "+str(options.copied_count))
         print("  removed: "+str(options.removed_count))
+        print("  removed_cache_files_count: "+str(options.removed_cache_files_count))
     else:
         print("STOPPED before processing since missing target path.")
         usage()
