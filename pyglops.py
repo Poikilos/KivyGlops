@@ -570,7 +570,7 @@ class PyGlop:
         if self.infinite_inventory_enable:
             if not select_item_event_dict["is_possible"]:
                 self.properties["inventory_items"].append(item_dict)
-                print("[ debug only ] obtained item in new slot: "+str(item_dict))
+                #print("[ debug only ] obtained item in new slot: "+str(item_dict))
                 select_item_event_dict["is_possible"] = True
         if select_item_event_dict["is_possible"]:
             if self.properties["inventory_index"] < 0:
@@ -1489,7 +1489,7 @@ class PyGlops:
         self._bumpable_indices = []
         
     def __str__(self):
-        return type(self)+" named "+str(self.name)+" at "+str(self.get_location)
+        return str(type(self))+" named "+str(self.name)+" at "+str(self.get_location)
         
     # camera does not move automatically (you may move it yourself)
     def CAMERA_FREE(self):
@@ -1618,15 +1618,13 @@ class PyGlops:
         #self.after_selected_item(item_event)
         #if verbose_enable:
         #    print(command+" "+self.glops[bumpable_index].name)
+        
         if "fired_sprite_path" in weapon_dict:
             indices = self.load_obj("meshes/sprite-square.obj")
-        weapon_dict["fires_glops"] = list()
-        if "name" not in weapon_dict or weapon_dict["name"] is None:
-            weapon_dict["name"] = "Primary Weapon"
         else:
             w_glop = self.new_glop()
             self.glops.append(w_glop)
-            indices = [len(self.glops)]
+            indices = [len(self.glops)-1]
             if self.glops[indices[0]] is not w_glop:
                 #then address multithreading paranoia
                 indices = None
@@ -1635,9 +1633,12 @@ class PyGlops:
                         indices = [try_i]
                         break
             if indices is not None:
-                print("WARNING: added invisible "+type(w_glop)+" weapon (no 'fired_sprite_path' in weapon_dict")
+                print("WARNING: added invisible " + str(type(w_glop)) + " weapon (no 'fired_sprite_path' in weapon_dict")
             else:
-                print("WARNING: failed to find new invisible "+type(w_glop)+" weapon (no 'fired_sprite_path' in weapon_dict")
+                print("WARNING: failed to find new invisible " + str(type(w_glop)) + " weapon (no 'fired_sprite_path' in weapon_dict")
+        weapon_dict["fires_glops"] = list()
+        if "name" not in weapon_dict or weapon_dict["name"] is None:
+            weapon_dict["name"] = "Primary Weapon"
         if indices is not None:
             for i in range(0,len(indices)):
                 weapon_dict["fires_glops"].append(self.glops[indices[i]])
@@ -1746,6 +1747,14 @@ class PyGlops:
         for i in range(0,len(self.materials)):
             thisList.append(min_tab_string+tab_string+"-")
             self.materials[i].emit_yaml(thisList, min_tab_string+tab_string+tab_string)
+
+    def display_explosion(self, pos, radius, attacked_index, weapon_dict):
+        print("subclass of PyGlops should implement display_explosion" + \
+            " (and check for None before using variables other than pos)")
+
+    def explode_glop_by_index(self, index, weapon_dict=None):
+        print("subclass of PyGlops should implement display_explosion" + \
+            " (and check for None before using variables other than pos)")
 
     def set_camera_mode(self, person_number):
         self._camera_person_number = person_number
@@ -2226,13 +2235,15 @@ class PyGlops:
                 checked_count += 1
                 #print("checked "+this_glop.name.lower())
                 if this_glop.source_path is not None:
-                    if source_path == this_glop.source_path:
+                    if source_path == this_glop.source_path or \
+                       source_path == this_glop.original_path:
                         results.append(index)
         #print("checked "+str(checked_count))
         return results
 
 
-    def get_indices_of_similar_names(self, partial_name, allow_owned_enable=True):
+    def get_indices_of_similar_names(self, partial_name,
+                                     allow_owned_enable=True):
         results = None
         checked_count = 0
         if partial_name is not None and len(partial_name)>0:

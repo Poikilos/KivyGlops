@@ -114,7 +114,7 @@ class MainScene(KivyGlops):
         ship_info["hp"] = 1.0
 
         player1_index = self.get_player_glop_index(1)
-        self.set_as_actor_by_index(player1_index, ship_info)
+        #self.set_as_actor_by_index(player1_index, ship_info)  # already done by PyGlops or KivyGlops __init__
 
         weapon = dict()
         weapon["droppable"] = "no"
@@ -123,15 +123,17 @@ class MainScene(KivyGlops):
         weapon["fire_type"] = "throw_linear"
         weapon["hit_damage"] = .3
         self.add_actor_weapon(player1_index, weapon)
-        self.player1 = self.glops[player1_index]
-        #test_deepcopy_weapon = self.player1.deepcopy_with_my_type(weapon)
-
+        #self.player_glop = self.glops[player1_index]  # already done by PyGlops __init__
+        #test_deepcopy_weapon = self.player_glop.deepcopy_with_my_type(weapon)
+        print("[ debug only ] #" + str(player1_index) + " named " + str(self.glops[player1_index].name) + " detected as player") 
         enemy_indices = self.get_indices_by_source_path("spaceship,simple-denapes.obj")
         for i in range(0,len(enemy_indices)):
             index = enemy_indices[i]
             self.set_as_actor_by_index(index, ship_info)
             self.add_actor_weapon(index, weapon)
-        #test_deepcopy_weapon = self.player1.deepcopy_with_my_type(weapon)
+            print("[ debug only ] #" + str(index) + " named " + str(self.glops[index].name) + " added as enemy") 
+        print("[ debug only ] " + str(len(enemy_indices)) + " enemies found.") 
+        #test_deepcopy_weapon = self.player_glop.deepcopy_with_my_type(weapon)
 
     def attacked_glop(self, attacked_index, attacker_index, weapon_dict):
         self.glops[attacked_index].actor_dict["hp"] -= weapon_dict["hit_damage"]
@@ -147,9 +149,9 @@ class MainScene(KivyGlops):
         if "crate" in bumpable_name.lower():
             self.play_sound("sounds/crate-pickup.wav")
 
-    def display_explosion(self, pos, radius, attacked_index, weapon):
-        print("display_explosion...Not Yet Implemented")
-        pass
+    #def display_explosion(self, pos, radius, attacked_index, weapon):
+    #    print("display_explosion...Not Yet Implemented")
+    #    pass
 
     def update_glops(self):
         if self.selected_glop is not None:

@@ -116,7 +116,7 @@ class KivyGlop(PyGlop, Widget):
         self._color_instruction = Color(1.0, 1.0, 1.0, 1.0)  # TODO: eliminate this in favor of canvas["mat_diffuse_color"]
     
     def __str__(self):
-        return type(self) + " named " + str(self.name) + " at " + \
+        return str(type(self)) + " named " + str(self.name) + " at " + \
                str(self._translate_instruction.xyz)
 
     #"Called by the repr() built-in function to compute the "official"
@@ -559,7 +559,7 @@ class KivyGlops(PyGlops):
                 self.env_rectangle.texture.wrap = "repeat"
                 self.ui.canvas.before.add(self.env_rectangle)
             else:
-                print("ERROR in set_background_cylmap: "+original_path+" not found in search path")
+                print("ERROR in set_background_cylmap: " + original_path + " not found in search path")
         else:
             print("ERROR in set_background_cylmap: path is None")
     
@@ -569,6 +569,17 @@ class KivyGlops(PyGlops):
                 self._sounds[path] = {}
                 print("loading "+path)
                 self._sounds[path]["loader"] = SoundLoader.load(path)
+
+    def explode_glop_by_index(self, index, weapon_dict=None):
+        self.display_explosion( \
+            get_vec3_from_point(self.glops[index]._translate_instruction), \
+            self.glops[index].hit_radius, \
+            index,
+            weapon_dict)
+        self.kill_glop_by_index(index, weapon_dict)
+
+    def display_explosion(self, pos, radius, attacked_index, weapon_dict):
+        print("[ KivyGLops] NOTICE: there is no default display_explosion in this version, so nothing will be shown")
 
     def play_sound(self, path, loop=False):
         if path is not None:
@@ -608,6 +619,7 @@ class KivyGlops(PyGlops):
                         #for index in range(0,len(self.glops)):
                         favorite_pivot_point = None
                         for index in range(0,len(new_glops)):
+                            new_glops[index].original_path = original_path
                             #this_glop = new_glops[index]
                             #this_glop = KivyGlop(pyglop=self.glops[index])
                             #if len(self.glops<=index):
@@ -649,9 +661,9 @@ class KivyGlops(PyGlops):
 
                         #print("")
                 else:
-                    print("missing '"+source_path+"'")
+                    print("missing '" + source_path + "'")
             else:
-                print("missing '"+original_path+"'")
+                print("missing '" + original_path + "'")
         else:
             print("ERROR: source_path is None for load_obj")
         load_obj_s = best_timer() - load_obj_start_s
@@ -1175,7 +1187,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                 self.hud_form.canvas.before.add(self.hud_bg_rect)
                 self.hud_form.source = path
             else:
-                print("ERROR in set_hud_image: could not find "+original_path)
+                print("ERROR in set_hud_image: could not find " + original_path)
         else:
             print("ERROR in set_hud_image: path is None")
     
@@ -1198,19 +1210,6 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                 print("missing '" + path + "'")
         else:
             print("ERROR in spawn_pex_particles: path is None")
-
-    def explode_glop_by_index(self, index, weapon_dict=None):
-        self.display_explosion( \
-            get_vec3_from_point(self.scene.glops[index]._translate_instruction), \
-            self.scene.glops[index].hit_radius, \
-            index,
-            weapon_dict)
-        self.kill_glop_by_index(index, weapon_dict)
-
-    def display_explosion(self, pos, radius, attacked_index, weapon_dict):
-        print("subclass should implement display_explosion" + \
-            " (allowing variables other than pos to be None)")
-
 
     def inventory_prev_button_press(self, instance):
         event_dict = self.scene.player_glop.select_next_inventory_slot(False)
@@ -1409,8 +1408,8 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
 
 #     def canvasTouchDown(self, touch, *largs):
 #         touchX, touchY = largs[0].pos
-#         #self.player1.targetX = touchX
-#         #self.player1.targetY = touchY
+#         #self.player_glop.targetX = touchX
+#         #self.player_glop.targetY = touchY
 #         print("\n")
 #         print(str(largs).replace("\" ","\"\n"))
 

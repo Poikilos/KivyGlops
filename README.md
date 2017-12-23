@@ -12,6 +12,7 @@ Control 3D objects and the camera in your 3D Kivy app!
 * Triangulates (tesselates) obj input manually
 
 ## Changes
+* (2017-12-22) get_indices_by_source_path now checks against original_path (as passed to load_obj; non-normalized) in addition to processed path
 * (2017-12-21) split `rotate_view_relative` into `rotate_camera_relative` and `rotate_player_relative`; moved them to KivyGlops since they use Kivy OpenGL instructions; renamed rotate_view_relative_around_point to rotate_relative_around_point and forces you to specify a glop as first parameter (still needs to be edited in major way to rotate around the point instead of assuming things about the object)
 * (2017-12-21) fix issue where add_actor_weapon uses player_glop instead of the glop referenced by the glop_index param (bug was exposed by camera_glop and player_glop being separated)
 * (2017-12-21) separated player_glop from camera_glop (see PyGlops __init__) and keys now move player instead of camera (if most recent param sent to self.set_camera_person was self.CAMERA_FIRST_PERSON(), which is done by default)
@@ -163,6 +164,8 @@ uniform mat4 modelview_mat;  //derived from self.canvas["modelview_mat"] = model
 uniform mat4 projection_mat;  //derived from self.canvas["projection_mat"] = projectionMatrix
 
 ## Developer Notes
+* spec for weapon_dict:
+    subscript: (for debugging) if present in weapon_dict, it is the automatically-generated index of the object within the obj file from which the glop containing the weapon dict was loaded.
 * is_possible entry in item_event dict returned by push_item denotes whether giving an item to the player was possible (false if inventory was full on games with limited inventory)
 * if you get a stack overflow, maybe one of the dict objects you put on an object contains a reference to the same object then copy or deepcopy_with_my_type was called
 * ui is usually a KivyGlopsWindow but could be other frameworks. Must have:
@@ -185,6 +188,11 @@ uniform mat4 projection_mat;  //derived from self.canvas["projection_mat"] = pro
 * pyrealtime module (which does not require Kivy) keeps track of keyboard state, allowing getting keystate asynchronously
 * update-kivymesher.bat will only work for students if teacher places KivyGlops in R:\Classes\ComputerProgramming\Examples\KivyGlops
 (which can be done using deploy.bat, if the folder already exists and the teacher has write permissions to the folder; the students should have read permissions to the folder)
+
+### Regression Tests
+* result of builting type(x) function assumed to be string without using str(type(x)) where x is anything
+* len used inside "[]" without "-1" (or "- 1" or other spacing)
+
 
 ### Shader Spec
 vertex color is always RGBA
