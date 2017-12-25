@@ -46,7 +46,7 @@ class MainScene(KivyGlops):
         #self.load_obj("WarehouseOfFruit_by_Expertmm.obj")
         #self.load_obj("pyramid.obj")
         #self.load_obj("testnurbs-all-textured.obj")
-        #self.load_obj(finalize_scene"orion.obj")
+        #self.load_obj("orion.obj")
         #self.load_obj("etc/problematic mesh files/4 Gold Rings.obj", centered=True)  # self.load_obj("4 Gold Rings.obj")
         #self.load_obj("KivyForest.obj")
         #self.load_obj("pedestal-suzanne.obj")
@@ -106,7 +106,7 @@ class MainScene(KivyGlops):
         self.set_background_cylmap("starfield1-coryg89.jpg")
 
         self.set_fly(True)
-        self.ui.set_hud_background("example_hud.png")
+        self.set_hud_background("example_hud.png")
         self.set_background_cylmap("starfield_cylindrical_map.jpg")
         self.load_obj("spaceship,simple-denapes.obj")
 

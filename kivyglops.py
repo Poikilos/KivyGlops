@@ -35,7 +35,6 @@ from common import *
 import time
 import random
 
-#TODO: try adding captions and 2d axis indicators in canvas.after, or try RenderContext
 sub_canvas_enable = False
 missing_bumper_warning_enable = True
 missing_bumpable_warning_enable = True
@@ -86,6 +85,8 @@ class KivyGlop(PyGlop, Widget):
     _rotate_instruction_z = None
     _scale_instruction = None
     _color_instruction = None
+    
+    _axes_mesh = None  # InstructionGroup for axes
 
     _pivot_scaled_point = None
     _pushmatrix = None
@@ -98,7 +99,7 @@ class KivyGlop(PyGlop, Widget):
         #self.degreesPerSecond = 0.0
         #self.freePos = (10.0,100.0)
 
-        #TODO:
+        #TODO: use a RenderContext instead?
         #self.canvas = RenderContext()
         #self.canvas = RenderContext(compute_normal_mat=True)
         self.canvas = InstructionGroup()
@@ -116,12 +117,114 @@ class KivyGlop(PyGlop, Widget):
         self._scale_instruction = Scale(1.0,1.0,1.0)
         #self._scale_instruction.origin = self._pivot_point
         self._translate_instruction = Translate(0, 0, 0)
-        self._color_instruction = Color(1.0, 1.0, 1.0, 1.0)  # TODO: eliminate this in favor of canvas["mat_diffuse_color"]
+        self._color_instruction = Color(1.0, 0.0, 1.0, 1.0)  # TODO: eliminate this in favor of canvas["mat_diffuse_color"]
+        
+        _axes_vertices, _axes_indices = self.generate_axes()
+        self._axes_mesh = Mesh(
+                               vertices=_axes_vertices,
+                               indices=_axes_indices,
+                               fmt=self.vertex_format,
+                               mode='triangles',
+                               texture=None,
+                              )
     
     def __str__(self):
         return str(type(self)) + " named " + str(self.name) + " at " + \
                str(self._translate_instruction.xyz)
+    
+    def new_vertex(self, set_coords, set_color):
+        # NOTE: assumes vertex format is ok (should be checked by generate_axes)
+        # assumes normal should be point relative to 0,0,0
+        vertex_components = [0.0]*self.vertex_depth
+        for i in range(0, 3):
+            vertex_components[self._POSITION_OFFSET+i] = set_coords[i]
+        if set_color is not None:
+            for i in range(0, len(set_color)):
+                vertex_components[self.COLOR_OFFSET+i] = set_color[i]
+        normals = [0.0]*3;
+        for i in range(0, 3):
+            normals[i] = set_coords[i]
+        normalize_3d_by_ref(normals)
+        for i in range(0, 3):
+            vertex_components[self._NORMAL_OFFSET+i] = normals[i]
+        return vertex_components
+    
+    def append_vertex(self, target_vertices, set_coords, set_color):
+        offset = len(target_vertices)
+        index = int(offset/self.vertex_depth)
+        target_vertices.extend(self.new_vertex(set_coords, set_color))
+        return index
 
+    def generate_axes(self):
+        # NOTE: This is a full solid (3 boxes) where all axes can always
+        # be seen except when another is in the way (some vertices are
+        # doubled so that vertex color can be used).
+        _axes_vertices = []
+        _axes_indices = []
+        
+        IS_SELF_VFORMAT_OK = True
+        if self._POSITION_OFFSET<0:
+            IS_SELF_VFORMAT_OK = False
+            print("generate_axes couldn't find name containing 'pos' or 'position' in any vertex format element (see pyops.py PyGlop constructor)")
+        if self._NORMAL_OFFSET<0:
+            IS_SELF_VFORMAT_OK = False
+            print("generate_axes couldn't find name containing 'normal' in any vertex format element (see pyops.py PyGlop constructor)")
+        if self._TEXCOORD0_OFFSET<0:
+            IS_SELF_VFORMAT_OK = False
+            print("generate_axes couldn't find name containing 'texcoord' in any vertex format element (see pyops.py PyGlop constructor)")
+        if self.COLOR_OFFSET<0:
+            IS_SELF_VFORMAT_OK = False
+            print("generate_axes couldn't find name containing 'color' in any vertex format element (see pyops.py PyGlop constructor)")
+
+        offset = 0
+        red = (1.0, 0.0, 0.0)
+        green = (0.0, 1.0, 0.0)
+        blue = (0.0, 0.0, 1.0)
+        self.append_vertex(_axes_vertices, (0.0, 0.0, 0.0), green)  # 0
+        self.append_vertex(_axes_vertices, (0.1, 0.0, 0.0), green)  # 1
+        self.append_vertex(_axes_vertices, (0.0, 0.0, 0.1), green)  # 2
+        self.append_vertex(_axes_vertices, (0.1, 0.0, 0.1), green)  # 3
+        self.append_vertex(_axes_vertices, (0.0, 1.0, 0.0), green)  # 4
+        self.append_vertex(_axes_vertices, (0.1, 1.0, 0.0), green)  # 5
+        self.append_vertex(_axes_vertices, (0.0, 1.0, 0.1), green)  # 6
+        self.append_vertex(_axes_vertices, (0.1, 1.0, 0.1), green)  # 7
+        
+        _axes_indices.extend([0,1,3, 0,2,3, 0,2,6, 0,4,6,  # bottom & right
+                              0,4,5, 0,1,5, 4,5,7, 4,6,7,  # back & top
+                              1,5,7, 1,3,7, 2,3,7, 2,6,7  # left & front
+                              ])
+        
+        self.append_vertex(_axes_vertices, (0.1, 0.0, 0.0), red)  # 8
+        self.append_vertex(_axes_vertices, (0.1, 0.0, 0.1), red)  # 9
+        self.append_vertex(_axes_vertices, (0.1, 0.1, 0.0), red)  # 10
+        self.append_vertex(_axes_vertices, (1.0, 0.1, 0.1), red)  # 11
+        self.append_vertex(_axes_vertices, (1.0, 0.0, 0.0), red)  # 12
+        self.append_vertex(_axes_vertices, (1.0, 0.1, 0.0), red)  # 13
+        self.append_vertex(_axes_vertices, (1.0, 0.0, 0.1), red)  # 14
+        self.append_vertex(_axes_vertices, (1.0, 0.1, 0.1), red)  # 15
+        
+        _axes_indices.extend([8,9,11, 8,10,11, 8,10,13, 8,12,13,  # back & outside
+                              8,9,14, 8,12,14,  9,14,15, 9,11,15,  # bottom & inside
+                              11,10,13, 11,15,13, 12,13,15, 12,14,15  # top & front
+                              ])
+        
+        self.append_vertex(_axes_vertices, (0.0, 0.0, 0.1), blue)  # 16
+        self.append_vertex(_axes_vertices, (0.1, 0.0, 0.1), blue)  # 17
+        self.append_vertex(_axes_vertices, (0.0, 0.1, 0.1), blue)  # 18
+        self.append_vertex(_axes_vertices, (1.0, 0.1, 0.1), blue)  # 19
+        self.append_vertex(_axes_vertices, (0.0, 0.0, 1.0), blue)  # 20
+        self.append_vertex(_axes_vertices, (0.1, 0.0, 1.0), blue)  # 21
+        self.append_vertex(_axes_vertices, (0.0, 0.1, 1.0), blue)  # 22
+        self.append_vertex(_axes_vertices, (0.1, 0.1, 1.0), blue)  # 23
+        
+        _axes_indices.extend([16,17,19, 16,18,19, 16,18,22, 16,20,22,  # back & outside
+                              16,17,21, 16,20,21, 16,18,22, 16,20,22,  # bottom & inside
+                              19,18,22, 19,23,22, 20,21,23, 20,22,23  # top & front
+                              ])
+        
+        #new_texcoord = new_tuple(self.vertex_format[self.TEXCOORD0_INDEX][VFORMAT_VECTOR_LEN_INDEX])
+        
+        return _axes_vertices, _axes_indices
     #"Called by the repr() built-in function to compute the "official"
     # string representation of an object. If at all possible, this
     # should look like a valid Python expression that could be used to
@@ -267,8 +370,6 @@ class KivyGlop(PyGlop, Widget):
             print("    skipped (vertices: None).")
                 
 
-    def get_context(self):
-        return self.canvas
 
     def rotate_x_relative(self, angle):
         self._rotate_instruction_x.angle += angle
@@ -289,12 +390,14 @@ class KivyGlop(PyGlop, Widget):
         self._translate_instruction.z += distance
 
     def transform_pivot_to_geometry(self):
+        previous_point = self._pivot_point
         super(KivyGlop, self).transform_pivot_to_geometry()
         #self._change_instructions()
-        self._on_change_pivot()
+        #self._on_change_pivot(previous_point)  #commenting this assumes this subclass' version is already run by super
 
-    def _on_change_pivot(self):
-        super(KivyGlop, self)._on_change_pivot()
+    def _on_change_pivot(self, previous_point=(0.0,0.0,0.0)):
+        super(KivyGlop, self)._on_change_pivot(previous_point=previous_point)
+        print("[ KivyGlops ] (debug only) _on_change_pivot from " + str(previous_point))
         self._on_change_scale_instruction()
 
     def get_scale(self):
@@ -386,10 +489,10 @@ class KivyGlop(PyGlop, Widget):
 
     def pop_glop_item(self, this_glop_index):
         select_item_event_dict = None
-        #select_item_event_dict["is_possible"] = False
+        #select_item_event_dict["fit_enable"] = False
         try:
             if this_glop_index < len(self.properties["inventory_items"]) and this_glop_index>=0:
-                #select_item_event_dict["is_possible"] = True
+                #select_item_event_dict["fit_enable"] = True
                 #self.properties["inventory_items"].pop(this_glop_index)
                 self.properties["inventory_items"][this_glop_index] = EMPTY_ITEM
                 if this_glop_index == 0:
@@ -426,11 +529,13 @@ class KivyGlop(PyGlop, Widget):
                 )
             if get_verbose_enable():
                 print(str(len(self.vertices))+" vert(ex/ices)")
-
         else:
             print("WARNING: 0 vertices in glop")
             if self.name is not None:
                 print("  named "+self.name)
+
+    def get_context(self):
+        return self.canvas
 
 
 class KivyGlops(PyGlops):
@@ -553,7 +658,10 @@ class KivyGlops(PyGlops):
                     if hide:
                         self.hide_glop(self.glops[index])
                 break
-        return result        
+        return result
+        
+    def set_hud_background(self, path):
+        self.ui.set_hud_background(path)
         
     def set_background_cylmap(self, path):
         #self.load_obj("env_sphere.obj")
@@ -615,7 +723,7 @@ class KivyGlops(PyGlops):
     def play_music(self, path, loop=True):
         self.play_sound(path, loop=loop)
 
-    def load_obj(self, source_path, swapyz_enable=False, centered=False):
+    def load_obj(self, source_path, swapyz_enable=False, centered=False, pivot_to_geometry_enable=True):
         load_obj_start_s = best_timer()
         results = None
         if swapyz_enable:
@@ -648,21 +756,21 @@ class KivyGlops(PyGlops):
                             #print("")
                             if (favorite_pivot_point is None):
                                 favorite_pivot_point = new_glops[index]._pivot_point
-
-                        print("  applying pivot points...")
-                        for index in range(0,len(new_glops)):
+                        if pivot_to_geometry_enable:
                             #apply pivot point (so that glop's _translate_instruction is actually the center)
-                            prev_pivot = new_glops[index]._pivot_point[0], new_glops[index]._pivot_point[1], new_glops[index]._pivot_point[2]
-                            new_glops[index].apply_pivot()
-                            #print("    moving from "+str( (new_glops[index]._translate_instruction.x, new_glops[index]._translate_instruction.y, new_glops[index]._translate_instruction.z) ))
-                            new_glops[index]._translate_instruction.x = prev_pivot[0]
-                            new_glops[index]._translate_instruction.y = prev_pivot[1]
-                            new_glops[index]._translate_instruction.z = prev_pivot[2]
-                            new_glops[index].generate_kivy_mesh()
-                            self.ui.add_glop(new_glops[index])
-                            if results is None:
-                                results = list()
-                            results.append(len(self.glops)-1)
+                            print("  applying pivot points...")
+                            for index in range(0,len(new_glops)):
+                                prev_pivot = new_glops[index]._pivot_point[0], new_glops[index]._pivot_point[1], new_glops[index]._pivot_point[2]
+                                new_glops[index].apply_pivot()
+                                #print("    moving from "+str( (new_glops[index]._translate_instruction.x, new_glops[index]._translate_instruction.y, new_glops[index]._translate_instruction.z) ))
+                                new_glops[index]._translate_instruction.x = prev_pivot[0]
+                                new_glops[index]._translate_instruction.y = prev_pivot[1]
+                                new_glops[index]._translate_instruction.z = prev_pivot[2]
+                                new_glops[index].generate_kivy_mesh()
+                                self.ui.add_glop(new_glops[index])
+                                if results is None:
+                                    results = list()
+                                results.append(len(self.glops)-1)
                         if centered:
                             #TODO: apply pivot point instead (change vertices as if pivot point were 0,0,0) to ensure translate 0 is world 0; instead of:
                             #center it (use only one pivot point, so all objects in obj file remain aligned with each other):
@@ -934,7 +1042,8 @@ class KivyGlops(PyGlops):
                             self.glops[bumpable_index].is_out_of_range = True
                             if distance < 2:
                                 #debug only:
-                                print("did not bump "+str(bumpable_name)+" (distance:"+str(distance)+"; bumper is at "+str( (self.glops[bumper_index]._translate_instruction.x,self.glops[bumper_index]._translate_instruction.y,self.glops[bumper_index]._translate_instruction.z) )+")")
+                                #print("did not bump "+str(bumpable_name)+" (distance:"+str(distance)+"; bumper is at "+str( (self.glops[bumper_index]._translate_instruction.x,self.glops[bumper_index]._translate_instruction.y,self.glops[bumper_index]._translate_instruction.z) )+")")
+                                pass
                             pass
                     else:
                         if missing_radius_warning_enable:
@@ -950,12 +1059,12 @@ class KivyGlops(PyGlops):
                         self.glops[bumpable_index]._translate_instruction.y += self.glops[bumpable_index].y_velocity
                         self.glops[bumpable_index]._translate_instruction.z += self.glops[bumpable_index].z_velocity
                         if got_frame_delay > 0.0:
-                            print("  GRAVITY AFFECTED:"+str(self.glops[bumpable_index]._translate_instruction.y)+" += "+str(self.glops[bumpable_index].y_velocity))
+                            #print("[ KivyGlops ] (debug only) GRAVITY AFFECTED:"+str(self.glops[bumpable_index]._translate_instruction.y)+" += "+str(self.glops[bumpable_index].y_velocity))
                             self.glops[bumpable_index].y_velocity -= self._world_grav_acceleration * got_frame_delay
-                            print("  THEN VELOCITY CHANGED TO:"+str(self.glops[bumpable_index].y_velocity))
-                            print("  FRAME INTERVAL:"+str(got_frame_delay))
+                            #print("[ KivyGlops ] (debug only) THEN VELOCITY CHANGED TO:"+str(self.glops[bumpable_index].y_velocity))
+                            #print("[ KivyGlops ] (debug only) FRAME INTERVAL:"+str(got_frame_delay))
                         else:
-                            print("missing delay")
+                            print("[ KivyGlops ] WARNING: no frame delay is detectable (update normally runs automatically once per frame but seems to be running more often)")
                     else:
                         #if self.glops[bumpable_index].z_velocity > kEpsilon:
                         if (self.glops[bumpable_index].y_velocity < 0.0 - (kEpsilon + self.glops[bumpable_index].hit_radius)):
@@ -984,7 +1093,7 @@ class KivyGlops(PyGlops):
 
         if get_verbose_enable():
             #print("update_glsl...")
-            print("update matrices...")
+            print("[ KivyGlops ] (verbose message) update matrices...")
         asp = float(self.ui.width) / float(self.ui.height)
 
         clip_top = 0.06  #NOTE: 0.03 is ~1.72 degrees, if that matters
@@ -1004,7 +1113,7 @@ class KivyGlops(PyGlops):
         if self.look_point is not None:
             previous_look_point = self.look_point[0], self.look_point[1], self.look_point[2]
 
-        self.look_point = [0.0,0.0,0.0]
+        self.look_point = [0.0, 0.0, 0.0]
 
         #0 is the angle (1, 2, and 3 are the matrix)
         self.look_point[0] = self.focal_distance * math.cos(self.camera_glop._rotate_instruction_y.angle)
@@ -1078,7 +1187,11 @@ class KivyGlops(PyGlops):
             self.ui.gl_widget.canvas["_world_light_dir_eye_space"] = light_r * math.cos(light_theta), self.ui.gl_widget.canvas["_world_light_dir_eye_space"][1], light_r * math.sin(light_theta)
             self._previous_camera_rotate_y_angle = self.camera_glop._rotate_instruction_y.angle
             self._previous_world_light_dir = self.ui.gl_widget.canvas["_world_light_dir"][0], self.ui.gl_widget.canvas["_world_light_dir"][1], self.ui.gl_widget.canvas["_world_light_dir"][2]
-        
+    
+    def append_wobject(self, this_wobject, pivot_to_geometry_enable=True):
+        super(KivyGlop, self).append_wobject(this_wobject, pivot_to_geometry_enable=pivot_to_geometry_enable)
+        if self.material is not None:
+            self._color_instruction = Color(self.material.diffuse_color[0], self.material.diffuse_color[1], self.material.diffuse_color[2], self.material.diffuse_color[3])
 
 
 class GLWidget(Widget):
@@ -1310,9 +1423,13 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                 print("WARNING: glop had no mesh, so was generated when added to render context. Please ensure it is a KivyGlop and not a PyGlop (however, vertex indices misread could also lead to missing Mesh object).")
             #print("_color_instruction.r,.g,.b,.a: "+str( [this_glop._color_instruction.r, this_glop._color_instruction.g, this_glop._color_instruction.b, this_glop._color_instruction.a] ))
             #print("u_color: "+str(this_glop.material.diffuse_color))
-
+            
+            if this_glop._axes_mesh is not None:
+                #context.add(this_glop._axes_mesh)  # debug only
+                pass
+                
             if this_glop._mesh is not None:
-                context.add(this_glop._mesh)
+                context.add(this_glop._mesh)  # commented for debug only
                 if get_verbose_enable():
                     print("Added mesh to render context.")
             else:
@@ -1320,6 +1437,16 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             context.add(this_glop._popmatrix)
             if self.scene.glops is None:
                 self.scene.glops = list()
+
+            #context.add(PushMatrix())
+            #context.add(this_glop._translate_instruction)
+            #context.add(this_glop._rotate_instruction_x)
+            #context.add(this_glop._rotate_instruction_y)
+            #context.add(this_glop._rotate_instruction_z)
+            #context.add(this_glop._scale_instruction)
+            #context.add(this_glop._updatenormalmatrix)
+            #context.add(this_glop._axes_mesh)
+            #context.add(PopMatrix())
 
 
             self.scene.glops.append(this_glop)

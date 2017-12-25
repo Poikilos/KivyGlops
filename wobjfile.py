@@ -823,9 +823,9 @@ class WObjFile:
                                     this_face_group_type = "s"
                                     this_face_group_name = args_string
                             else:
-                                print(name_msg+" ("+str(line_counting_number)+",0): (INPUT ERROR) unknown object command '"+command+"'")
+                                print(name_msg+" ("+str(line_counting_number)+",0): (INPUT ERROR) unknown OBJ object command '"+command+"'")
                         else:
-                            print(name_msg+" ("+str(line_counting_number)+",0): (INPUT ERROR) object command '"+command+"' before 'o'")
+                            print(name_msg+" ("+str(line_counting_number)+",0): (INPUT ERROR) OBJ object command '"+command+"' before 'o'")
                         #else:
                         #    print(name_msg+" ("+str(line_counting_number)+",0): (INPUT ERROR) no arguments after command")
                         #else:

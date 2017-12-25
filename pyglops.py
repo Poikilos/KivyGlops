@@ -59,6 +59,16 @@ EMPTY_ITEM["name"] = "Empty"
 
 kEpsilon = 1.0E-14 # adjust to suit.  If you use floats, you'll probably want something like 1E-7f
 
+def normalize_3d_by_ref(this_vec3):
+    #see <https://stackoverflow.com/questions/23303598/3d-vector-normalization-issue#23303817>
+    length = math.sqrt(this_vec3[0] * this_vec3[0] + this_vec3[1] * this_vec3[1] + this_vec3[2] * this_vec3[2])
+    if length > 0:
+        this_vec3[0] /= length
+        this_vec3[1] /= length
+        this_vec3[2] /= length
+    else:
+        this_vec3[1] = 1.0  # give some kind of normal for 0,0,0
+
 def get_vec3_from_point(point):
     return (point.x, point.y, point.z)
 
@@ -283,6 +293,7 @@ def is_in_triangle_vec2(check_vec2, a_vec2, b_vec2, c_vec2):
 
 # PyGlop defines a single OpenGL-ready object. PyGlops should be used for importing, since one mesh file (such as obj) can contain several meshes. PyGlops handles the 3D scene.
 
+
 class PyGlopHitBox:
     minimums = None
     maximums = None
@@ -346,7 +357,6 @@ class PyGlop:
     index = None  # set by add_glop
     #endregion runtime variables
 
-
     #region vars based on OpenGL ES 1.1 MOVED TO material
     #ambient_color = None  # vec4
     #diffuse_color = None  # vec4
@@ -367,7 +377,55 @@ class PyGlop:
     TEXCOORD1_INDEX = None
     COLOR_INDEX = None
     #endregion calculated from vertex_format
-    
+
+    def __init__(self):
+        self.separable_offsets = []  # if more than one submesh is in vertices, chunks are saved in here, such as to assist with explosions
+        self.visible_enable = True
+        self.hitbox = PyGlopHitBox()
+        self.physics_enable = False
+        self.infinite_inventory_enable = True
+        self.is_out_of_range = True
+        self.eye_height = 0.0  # or 1.7 since 5'10" person is ~1.77m, and eye down a bit
+        self.hit_radius = 0.1524  # .5' equals .1524m
+        self.reach_radius = 0.381  # 2.5' .381m
+        self.bump_enable = False
+        self.x_velocity = 0.0
+        self.y_velocity = 0.0
+        self.z_velocity = 0.0
+        self.bump_sound_paths = []
+        self.properties = {}
+        self.properties["inventory_index"] = -1
+        self.properties["inventory_items"] = []
+        #formerly in MeshData:
+        # order MUST match V_POS_INDEX etc above
+        self.vertex_format = [(b'a_position', 4, 'float'),  # Munshi prefers vec4 (Kivy prefers vec3)
+                              (b'a_texcoord0', 4, 'float'),  # Munshi prefers vec4 (Kivy prefers vec2); vTexCoord0; available if enable_tex[0] is true
+                              (b'a_texcoord1', 4, 'float'),  # Munshi prefers vec4 (Kivy prefers vec2);  available if enable_tex[1] is true
+                              (b'a_color', 4, 'float'),  # vColor (diffuse color of vertex)
+                              (b'a_normal', 3, 'float')  # vNormal; Munshi prefers vec3 (Kivy also prefers vec3)
+                              ]
+
+        self.on_vertex_format_change()
+
+        self.indices = []  # list of tris (1 big linear list of indices)
+
+        self.eye_height = 1.7  # 1.7 since 5'10" person is ~1.77m, and eye down a bit
+        self.hit_radius = .2
+        self.reach_radius = 2.5
+
+        # Default basic material of this glop
+        self.material = PyGlopsMaterial()
+        self.material.diffuse_color = (1.0, 1.0, 1.0, 1.0)  # overlay vertex color onto this using vertex alpha
+        self.material.ambient_color = (0.0, 0.0, 0.0, 1.0)
+        self.material.specular_color = (1.0, 1.0, 1.0, 1.0)
+        self.material.specular_coefficent = 16.0
+        #self.material.opacity = 1.0
+
+        #TODO: find out where this code goes (was here for unknown reason)
+        #if result is None:
+        #    print("WARNING: no material for Glop named '"+str(self.name)+"' (NOT YET IMPLEMENTED)")
+        #return result
+
     #copy should have override in subclass that calls copy_as_subclass then adds subclass-specific values to that result
     def copy(self):
         new_material_method = None
@@ -417,57 +475,6 @@ class PyGlop:
             target.vertices = copy.deepcopy(self.vertices)
             target.indices = copy.deepcopy(self.indices)
         return target
-
-    def __init__(self):
-        self.visible_enable = True
-        self.hitbox = PyGlopHitBox()
-        self.physics_enable = False
-        self.infinite_inventory_enable = True
-        self.is_out_of_range = True
-        self.eye_height = 0.0  # or 1.7 since 5'10" person is ~1.77m, and eye down a bit
-        self.hit_radius = 0.1524  # .5' equals .1524m
-        self.reach_radius = 0.381  # 2.5' .381m
-        self.bump_enable = False
-        self.x_velocity = 0.0
-        self.y_velocity = 0.0
-        self.z_velocity = 0.0
-        self.bump_sound_paths = []
-        self.properties = {}
-        self.properties["inventory_index"] = -1
-        self.properties["inventory_items"] = []
-        #formerly in MeshData:
-        # order MUST match V_POS_INDEX etc above
-        self.vertex_format = [
-            (b'a_position', 4, 'float'),  # Munshi prefers vec4 (Kivy prefers vec3)
-            (b'a_texcoord0', 4, 'float'),  # Munshi prefers vec4 (Kivy prefers vec2); vTexCoord0; available if enable_tex[0] is true
-            (b'a_texcoord1', 4, 'float'),  # Munshi prefers vec4 (Kivy prefers vec2);  available if enable_tex[1] is true
-            (b'a_color', 4, 'float'),  # vColor (diffuse color of vertex)
-            (b'a_normal', 3, 'float')  # vNormal; Munshi prefers vec3 (Kivy also prefers vec3)
-            ]
-        self.vertex_depth = 0
-        for i in range(0,len(self.vertex_format)):
-            self.vertex_depth += self.vertex_format[i][VFORMAT_VECTOR_LEN_INDEX]
-
-        self.on_vertex_format_change()
-
-        self.indices = []  # list of tris (1 big linear list of indices)
-
-        self.eye_height = 1.7  # 1.7 since 5'10" person is ~1.77m, and eye down a bit
-        self.hit_radius = .2
-        self.reach_radius = 2.5
-
-        # Default basic material of this glop
-        self.material = PyGlopsMaterial()
-        self.material.diffuse_color = (1.0, 1.0, 1.0, 1.0)  # overlay vertex color onto this using vertex alpha
-        self.material.ambient_color = (0.0, 0.0, 0.0, 1.0)
-        self.material.specular_color = (1.0, 1.0, 1.0, 1.0)
-        self.material.specular_coefficent = 16.0
-        #self.material.opacity = 1.0
-
-        #TODO: find out where this code goes (was here for unknown reason)
-        #if result is None:
-        #    print("WARNING: no material for Glop named '"+str(self.name)+"' (NOT YET IMPLEMENTED)")
-        #return result
 
     #prevent pickling failure by using this to copy dicts AND lists that contain members that are my type
     def deepcopy_with_my_type(self, old_dict, copy_my_type_by_reference_enable=False):
@@ -521,7 +528,7 @@ class PyGlop:
         #this should be implemented in the subclass
         pass
 
-    def apply_pivot(self):
+    def apply_vertex_offset(self, this_point):
         vertex_count = int(len(self.vertices)/self.vertex_depth)
         v_offset = 0
         for i in range(0,3):
@@ -530,20 +537,23 @@ class PyGlop:
             self.hitbox.maximums[i] = -sys.maxsize
         for v_number in range(0, vertex_count):
             for i in range(0,3):
-                self.vertices[v_offset+self._POSITION_OFFSET+i] -= self._pivot_point[i]
+                self.vertices[v_offset+self._POSITION_OFFSET+i] -= this_point[i]
                 if self.vertices[v_offset+self._POSITION_OFFSET+i] < self.hitbox.minimums[i]:
                     self.hitbox.minimums[i] = self.vertices[v_offset+self._POSITION_OFFSET+i]
                 if self.vertices[v_offset+self._POSITION_OFFSET+i] > self.hitbox.maximums[i]:
                     self.hitbox.maximums[i] = self.vertices[v_offset+self._POSITION_OFFSET+i]
-            this_vertex_relative_distance = get_distance_vec3(self.vertices[v_offset+self._POSITION_OFFSET:], self._pivot_point)
+            this_vertex_relative_distance = get_distance_vec3(self.vertices[v_offset+self._POSITION_OFFSET:], this_point)
             if this_vertex_relative_distance > self.hit_radius:
                 self.hit_radius = this_vertex_relative_distance
-            #self.vertices[v_offset+self._POSITION_OFFSET+0] -= self._pivot_point[0]
-            #self.vertices[v_offset+self._POSITION_OFFSET+1] -= self._pivot_point[1]
-            #self.vertices[v_offset+self._POSITION_OFFSET+2] -= self._pivot_point[2]
+            #self.vertices[v_offset+self._POSITION_OFFSET+0] -= this_point[0]
+            #self.vertices[v_offset+self._POSITION_OFFSET+1] -= this_point[1]
+            #self.vertices[v_offset+self._POSITION_OFFSET+2] -= this_point[2]
 
             v_offset += self.vertex_depth
-        self._pivot_point = (0.0, 0.0, 0.0)
+        
+    def apply_pivot(self):
+        self.apply_vertex_offset(self._pivot_point)
+        self._pivot_point = (0.0, 0.0, 0.0)        
 
     def look_at(self, this_glop):
         print("WARNING: look_at should be implemented by subclass which has rotation angle(s) or matr(ix/ices)")
@@ -560,19 +570,19 @@ class PyGlop:
     #your program can override this method for custom inventory layout
     def push_item(self, item_dict):
         select_item_event_dict = dict()
-        select_item_event_dict["is_possible"] = False  # stays false if inventory was full
+        select_item_event_dict["fit_enable"] = False  # stays false if inventory was full
         for i in range(0,len(self.properties["inventory_items"])):
             if self.properties["inventory_items"][i] is None or self.properties["inventory_items"][i]["name"] == EMPTY_ITEM["name"]:
                 self.properties["inventory_items"][i] = item_dict
-                select_item_event_dict["is_possible"] = True
-                print("[ debug only ] obtained item in slot "+str(i)+": "+str(item_dict))
+                select_item_event_dict["fit_enable"] = True
+                print("[ PyGlops ] (debug only) obtained item in slot "+str(i)+": "+str(item_dict))
                 break
         if self.infinite_inventory_enable:
-            if not select_item_event_dict["is_possible"]:
+            if not select_item_event_dict["fit_enable"]:
                 self.properties["inventory_items"].append(item_dict)
-                #print("[ debug only ] obtained item in new slot: "+str(item_dict))
-                select_item_event_dict["is_possible"] = True
-        if select_item_event_dict["is_possible"]:
+                print("[ PyGlops ] (debug only) obtained item in new slot: "+str(item_dict))
+                select_item_event_dict["fit_enable"] = True
+        if select_item_event_dict["fit_enable"]:
             if self.properties["inventory_index"] < 0:
                 self.properties["inventory_index"] = 0
             this_item_dict = self.properties["inventory_items"][self.properties["inventory_index"]]
@@ -595,7 +605,7 @@ class PyGlop:
         if not is_forward:
             delta = -1
         if len(self.properties["inventory_items"]) > 0:
-            select_item_event_dict["is_possible"] = True
+            select_item_event_dict["fit_enable"] = True
             self.properties["inventory_index"] += delta
             if self.properties["inventory_index"] < 0:
                 self.properties["inventory_index"] = len(self.properties["inventory_items"]) - 1
@@ -618,23 +628,27 @@ class PyGlop:
             for index in range(0, len(self.properties["inventory_items"])):
                 if self.properties["inventory_items"][index]["name"] != EMPTY_ITEM["name"]:
                     item_count += 1
-            #print("You have "+str(item_count)+" item(s).")
+            print("[ PyGlops ] (debug only) You have "+str(item_count)+" item(s).")
             select_item_event_dict["item_count"] = item_count
         else:
-            select_item_event_dict["is_possible"] = False
-            print("You have 0 items.")
+            select_item_event_dict["fit_enable"] = False
+            print("[ PyGlops ] You have 0 items.")
         return select_item_event_dict
 
-    def _on_change_pivot(self):
+    def _on_change_pivot(self, previous_point=(0.0,0.0,0.0)):
+        # since should be implemented by subclass
+        print("[ PyGlops ] your _on_change_pivot should override this")
         pass
     
     def get_context(self):
-        print("WARNING: get_context should be defined by a subclass since it involves the graphics implementation")
+        # implement in subclass since involves graphics implementation
+        print("WARNING: get_context should be defined by a subclass")
         return False
     
     def transform_pivot_to_geometry(self):
+        previous_point = self._pivot_point
         self._pivot_point = self.get_center_average_of_vertices()
-        self._on_change_pivot()
+        self._on_change_pivot(previous_point=previous_point)
 
     def get_texture_diffuse_path(self):  #formerly getTextureFileName(self):
         result = None
@@ -904,6 +918,10 @@ class PyGlop:
 
 
     def on_vertex_format_change(self):
+        self.vertex_depth = 0
+        for i in range(0,len(self.vertex_format)):
+            self.vertex_depth += self.vertex_format[i][VFORMAT_VECTOR_LEN_INDEX]
+        
         self._POSITION_OFFSET = -1
         self._NORMAL_OFFSET = -1
         self._TEXCOORD0_OFFSET = -1
@@ -946,7 +964,365 @@ class PyGlop:
             print("WARNING: The count of values in vertex format chunks (chunk_count:"+str(len(self.vertex_format))+"; value_count:"+str(offset)+") does not total to vertex depth "+str(self.vertex_depth))
         participle = "(before initializing)"
 
+    def append_wobject(self, this_wobject, pivot_to_geometry_enable=True):  #formerly set_from_wobject formerly import_wobject; based on _finalize_obj_data
+        if (this_wobject.face_groups is not None):
+            self.source_path = this_wobject.source_path
+            #from vertex_format above:
+            #self.vertex_format = [
+                #(b'a_position', , 'float'),  # Munshi prefers vec4 (Kivy prefers vec3)
+                #(b'a_texcoord0', , 'float'),  # Munshi prefers vec4 (Kivy prefers vec2); vTexCoord0; available if enable_tex[0] is true
+                #(b'a_texcoord1', , 'float'),  # Munshi prefers vec4 (Kivy prefers vec2);  available if enable_tex[1] is true
+                #(b'a_color', 4, 'float'),  # vColor (diffuse color of vertex)
+                #(b'a_normal', 3, 'float')  # vNormal; Munshi prefers vec3 (Kivy also prefers vec3)
+                #]
+            #self.on_vertex_format_change()
+            IS_SELF_VFORMAT_OK = True
+            if self._POSITION_OFFSET<0:
+                IS_SELF_VFORMAT_OK = False
+                print("Couldn't find name containing 'pos' or 'position' in any vertex format element (see pyglops.py PyGlop constructor)")
+            if self._NORMAL_OFFSET<0:
+                IS_SELF_VFORMAT_OK = False
+                print("Couldn't find name containing 'normal' in any vertex format element (see pyglops.py PyGlop constructor)")
+            if self._TEXCOORD0_OFFSET<0:
+                IS_SELF_VFORMAT_OK = False
+                print("Couldn't find name containing 'texcoord' in any vertex format element (see pyglops.py PyGlop constructor)")
+            if self.COLOR_OFFSET<0:
+                IS_SELF_VFORMAT_OK = False
+                print("Couldn't find name containing 'color' in any vertex format element (see pyglops.py PyGlop constructor)")
 
+            #vertices_offset = None
+            #normals_offset = None
+            #texcoords_offset = None
+            #vertex_depth = 8
+            #based on finish_object
+        #         if self._current_object == None:
+        #             return
+        #
+            if IS_SELF_VFORMAT_OK:
+                zero_vertex = list()
+                for index in range(0,self.vertex_depth):
+                    zero_vertex.append(0.0)
+                if (self.vertex_format[self.POSITION_INDEX][VFORMAT_VECTOR_LEN_INDEX]>3):
+                    zero_vertex[3] = 1.0
+                    #NOTE: this is done since usually if len is 3, simple.glsl included with kivy converts it to vec4 appending 1.0:
+                    #attribute vec3 v_pos;
+                    #void main (void) {
+                    #vec4(v_pos,1.0);
+                #this_offset = self.COLOR_OFFSET
+                channel_count = self.vertex_format[self.COLOR_INDEX][VFORMAT_VECTOR_LEN_INDEX]
+                for channel_subindex in range(0,channel_count):
+                    zero_vertex[self.COLOR_OFFSET+channel_subindex] = -1.0  # -1.0 for None #TODO: asdf flag a different way (other than negative) to work with fake standard shader
+
+
+                participle="accessing object from list"
+                #this_wobject = self.glops[index]
+                #self.name = None
+                this_name = ""
+                try:
+                    if this_wobject.name is not None:
+                        this_name = this_wobject.name
+                        if self.name is None:
+                            self.name = this_name
+                except:
+                    pass  #don't care
+
+                try:
+                    #if this_wobject.wmaterial is None:
+                    participle="processing material"
+                    if this_wobject.wmaterial is not None:  # if this_wobject.properties["usemtl"] is not None:
+                        #this_wobject.material=self._getMaterial(this_wobject.properties["usemtl"])
+                        if this_wobject.wmaterial._map_filename_dict is not None:  # if this_wobject.wmaterial is not None:
+                            self.set_textures_from_mtl_dict(this_wobject.wmaterial._map_filename_dict)
+                            #TODO: so something with _map_params_dict (wobjfile.py makes each entry a list of params if OBJ had map params before map file name)
+                        else:
+                            print("WARNING: this_wobject.wmaterial._map_filename_dict is None")
+                    else:
+                        print("WARNING: this_wobject.wmaterial is None")
+                except:  # Exception as e:
+                    #print("Could not finish "+participle+" in append_wobject: "+str(e))
+                    print("Could not finish "+participle+" in append_wobject: ")
+                    view_traceback()
+
+                glop_vertex_offset = 0
+                if self.vertices is None:
+                    self.vertices = []
+                else:
+                    if len(self.vertices) > 0:
+                        glop_vertex_offset = len(self.vertices)  # NOTE: len(self.vertices) is #of vertices TIMES vertex depth
+                        self.separable_offsets.append(glop_vertex_offset)
+                        print("[ PyGlops ] appending wobject vertices to glop ("+str(self.name)+")'s existing "+str(glop_vertex_offset)+" vertices")
+                    else:
+                        print("[ PyGlops ] appending wobject vertices to glop ("+str(self.name)+")'s existing list of 0 vertices")
+                    #print("ERROR in append_wobject: existing vertices found {self.name:'"+str(this_name)+"'}")
+                vertex_components = zero_vertex[:]
+                #obj format stores faces like (quads are allowed such as in following examples):
+                #this_wobject_this_face 1399/1619 1373/1593 1376/1596 1400/1620
+                #format is:
+                #this_wobject_this_face VERTEX_I VERTEX_I VERTEX_I VERTEX_I
+                #or
+                #this_wobject_this_face VERTEX_I/TEXCOORDSINDEX VERTEX_I/TEXCOORDSINDEX VERTEX_I/TEXCOORDSINDEX VERTEX_I/TEXCOORDSINDEX
+                #or
+                #this_wobject_this_face VERTEX_I/TEXCOORDSINDEX/NORMALINDEX VERTEX_I/TEXCOORDSINDEX/NORMALINDEX VERTEX_I/TEXCOORDSINDEX/NORMALINDEX VERTEX_I/TEXCOORDSINDEX/NORMALINDEX
+                #where *I are integers starting at 0 (stored starting at 1)
+                #FACE_VERTEX_COMPONENT_VERTEX_INDEX = 0
+                #FACE_VERTEX_COMPONENT_TEXCOORDS_INDEX = 1
+                #FACE_VERTEX_COMPONENT_NORMAL_INDEX = 2
+                #NOTE: in obj format, TEXCOORDS_INDEX is optional
+
+                #FACE_VERTEX_COMPONENT_VERTEX_INDEX = 0
+                #FACE_VERTEX_COMPONENT_TEXCOORDS_INDEX = 1
+                #FACE_VERTEX_COMPONENT_NORMAL_INDEX = 2
+
+                #nskrypnik put them in a different order than obj format (0,1,2) for some reason so do this order instead ONLY if using his obj loader:
+                #FACE_VERTEX_COMPONENT_VERTEX_INDEX = 0
+                #FACE_VERTEX_COMPONENT_TEXCOORDS_INDEX = 2
+                #FACE_VERTEX_COMPONENT_NORMAL_INDEX = 1
+
+                #use the following globals from wobjfile.py instead of assuming any FACE_VERTEX_COMPONENT values:
+                #FACE_V  # index of vertex index in the face (since face is a list)
+                #FACE_TC  # index of tc0 index in the face (since face is a list)
+                #FACE_VN  # index of normal index in the face (since face is a list)
+
+                source_face_index = 0
+                try:
+                    #if (len(self.indices)<1):
+                    participle = "before detecting vertex component offsets"
+                    #detecting vertex component offsets is required since indices in an obj file are sometimes relative to the first index in the FILE not the object
+                    for key in this_wobject.face_groups:
+                        this_face_list = this_wobject.face_groups[key].faces
+                        if this_face_list is not None:
+                            #get offset
+                            for faceIndex in range(0,len(this_face_list)):
+                                for componentIndex in range(0,len(this_face_list[faceIndex])):
+                                    #print("found face "+str(faceIndex)+" component "+str(componentIndex)+": "+str(this_face_list[faceIndex][componentIndex]))
+                                    #print(str(this_face_list[faceIndex][vertexIndex]))
+                                    #if (len(this_face_list[faceIndex][componentIndex])>=FACE_V):
+                                    #TODO: audit this code:
+                                    for vertexIndex in range(0,len(this_face_list[faceIndex][componentIndex])):
+                                        #calculate new offsets, in case obj file was botched (for correct obj format, wobjfile.py changes indices so they are relative to wobject ('o' command) instead of file
+                                        if componentIndex==FACE_V:
+                                            thisVertexIndex = this_face_list[faceIndex][componentIndex][vertexIndex]
+                                            #if vertices_offset is None or thisVertexIndex<vertices_offset:
+                                                #vertices_offset = thisVertexIndex
+                                        #if (len(this_face_list[faceIndex][componentIndex])>=FACE_TC):
+                                        elif componentIndex==FACE_TC:
+                                            thisTexCoordIndex = this_face_list[faceIndex][componentIndex][vertexIndex]
+                                            #if texcoords_offset is None or thisTexCoordIndex<texcoords_offset:
+                                                #texcoords_offset = thisTexCoordIndex
+                                        #if (len(this_face_list[faceIndex][componentIndex])>=FACE_VN):
+                                        elif componentIndex==FACE_VN:
+                                            thisNormalIndex = this_face_list[faceIndex][componentIndex][vertexIndex]
+                                            #if normals_offset is None or thisNormalIndex<normals_offset:
+                                                #normals_offset = thisNormalIndex
+
+                            #if vertices_offset is not None:
+                                #print("detected vertices_offset:"+str(vertices_offset))
+                            #if texcoords_offset is not None:
+                                #print("detected texcoords_offset:"+str(texcoords_offset))
+                            #if normals_offset is not None:
+                                #print("detected normals_offset:"+str(normals_offset))
+
+                        participle = "before processing faces"
+                        dest_vertex_index = 0
+                        face_count = 0
+                        new_texcoord = new_tuple(self.vertex_format[self.TEXCOORD0_INDEX][VFORMAT_VECTOR_LEN_INDEX])
+                        if this_face_list is not None:
+                            for this_wobject_this_face in this_face_list:
+                                participle = "getting face components"
+                                #print("face["+str(source_face_index)+"]: "+participle)
+
+                                #DOES triangulate of more than 3 vertices in this face (connects each loose point to first vertex and previous vertex)
+                                # (vertex_done_flags are no longer needed since that method is used)
+                                #vertex_done_flags = list()
+                                #for vertexinfo_index in range(0,len(this_wobject_this_face)):
+                                #    vertex_done_flags.append(False)
+                                #vertices_done_count = 0
+
+                                #with wobjfile.py, each face is an arbitrary-length list of vertex_infos, where each vertex_info is a list containing vertex_index, texcoord_index, then normal_index, so ignore the following commented deprecated lines of code:
+                                #verts =  this_wobject_this_face[0]
+                                #norms = this_wobject_this_face[1]
+                                #tcs = this_wobject_this_face[2]
+                                #for vertexinfo_index in range(3):
+                                vertexinfo_index = 0
+                                source_face_vertex_count = 0
+                                while vertexinfo_index<len(this_wobject_this_face):
+                                    #print("vertex["+str(vertexinfo_index)+"]")
+                                    vertex_info = this_wobject_this_face[vertexinfo_index]
+
+                                    vertex_index = vertex_info[FACE_V]
+                                    texcoord_index = vertex_info[FACE_TC]
+                                    normal_index = vertex_info[FACE_VN]
+
+                                    vertex = None
+                                    texcoord = None
+                                    normal = None
+
+
+                                    participle = "getting normal components"
+
+                                    #get normal components
+                                    normal = (0.0, 0.0, 1.0)
+                                    #if normals_offset is None:
+                                    #    normals_offset = 1
+                                    normals_offset = 0  # since wobjfile.py makes indices relative to object
+                                    try:
+                                        #if (normal_index is not None) and (normals_offset is not None):
+                                        #    participle = "getting normal components at "+str(normal_index-normals_offset)  # str(norms[face_index]-normals_offset)
+                                        #else:
+                                        participle = "getting normal components at "+str(normal_index)+"-"+str(normals_offset)  # str(norms[face_index]-normals_offset)
+                                        if normal_index is not None:
+                                            normal = this_wobject.normals[normal_index-normals_offset]
+                                        #if norms[face_index] != -1:
+                                            #normal = this_wobject.normals[norms[face_index]-normals_offset]
+                                    except:  # Exception as e:
+                                        print("Could not finish "+participle+" for wobject named '"+this_name+"':")
+                                        view_traceback()
+
+                                    participle = "getting texture coordinate components"
+                                    participle = "getting texture coordinate components at "+str(face_count)
+                                    participle = "getting texture coordinate components using index "+str(face_count)
+                                    #get texture coordinate components
+                                    #texcoord = (0.0, 0.0)
+                                    texcoord = new_texcoord[:]
+                                    #if texcoords_offset is None:
+                                    #    texcoords_offset = 1
+                                    texcoords_offset = 0  # since wobjfile.py makes indices relative to object
+                                    try:
+                                        if this_wobject.texcoords is not None:
+                                            #if (texcoord_index is not None) and (texcoords_offset is not None):
+                                            #    participle = "getting texcoord components at "+str(texcoord_index-texcoords_offset)  # str(norms[face_index]-normals_offset)
+                                            #else:
+                                            participle = "getting texcoord components at "+str(texcoord_index)+"-"+str(texcoords_offset)  # str(norms[face_index]-normals_offset)
+
+                                            if texcoord_index is not None:
+                                                texcoord = this_wobject.texcoords[texcoord_index-texcoords_offset]
+                                            #if tcs[face_index] != -1:
+                                                #participle = "using texture coordinates at index "+str(tcs[face_index]-texcoords_offset)+" (after applying texcoords_offset:"+str(texcoords_offset)+"; Count:"+str(len(this_wobject.texcoords))+")"
+                                                #texcoord = this_wobject.texcoords[tcs[face_index]-texcoords_offset]
+                                        else:
+                                            if verbose_enable:
+                                                print("Warning: no texcoords found in wobject named '"+this_name+"'")
+                                    except:  # Exception as e:
+                                        print("Could not finish "+participle+" for wobject named '"+this_name+"':")
+                                        view_traceback()
+
+                                    participle = "getting vertex components"
+                                    #if vertices_offset is None:
+                                    #    vertices_offset = 1
+                                    vertices_offset = 0  # since wobjfile.py makes indices relative to object
+                                    #participle = "accessing face vertex "+str(verts[face_index]-vertices_offset)+" (after applying vertices_offset:"+str(vertices_offset)+"; Count:"+str(len(this_wobject.vertices))+")"
+                                    participle = "accessing face vertex "+str(vertex_index)+"-"+str(vertices_offset)+" (after applying vertices_offset:"+str(vertices_offset)
+                                    if (this_wobject.vertices is not None):
+                                        participle += "; Count:"+str(len(this_wobject.vertices))+")"
+                                    else:
+                                        participle += "; this_wobject.vertices:None)"
+                                    try:
+                                        #v = this_wobject.vertices[verts[face_index]-vertices_offset]
+                                        v = this_wobject.vertices[vertex_index-vertices_offset]
+                                    except:  # Exception as e:
+                                        print("Could not finish "+participle+" for wobject named '"+this_name+"':")
+                                        view_traceback()
+
+                                    participle = "combining components"
+                                    #vertex_components = [v[0], v[1], v[2], normal[0], normal[1], normal[2], texcoord[0], 1 - texcoord[1]] #TODO: why does kivy-rotation3d version have texcoord[1] instead of 1 - texcoord[1]
+                                    vertex_components = list()
+                                    for i in range(0,self.vertex_depth):
+                                        vertex_components.append(0.0)
+                                    for element_index in range(0,3):
+                                        vertex_components[self._POSITION_OFFSET+element_index] = v[element_index]
+                                    if (self.vertex_format[self.POSITION_INDEX][VFORMAT_VECTOR_LEN_INDEX]>3):
+                                        vertex_components[self._POSITION_OFFSET+3] = 1.0  # non-position padding value must be 1.0 for matrix math to work correctly
+                                    for element_index in range(0,3):
+                                        vertex_components[self._NORMAL_OFFSET+element_index] = normal[element_index]
+                                    for element_index in range(0,2):
+
+                                        if element_index==1:
+                                            vertex_components[self._TEXCOORD0_OFFSET+element_index] = 1-texcoord[element_index]
+                                        else:
+                                            vertex_components[self._TEXCOORD0_OFFSET+element_index] = texcoord[element_index]
+
+                                    if len(v)>3:
+                                        #Handle nonstandard obj file with extended vertex info (color)
+                                        abs_index = 0
+                                        for element_index in range(4,len(v)):
+                                            vertex_components[self.COLOR_OFFSET+abs_index] = v[element_index]
+                                            abs_index += 1
+                                    else:
+                                        #default to white vertex color
+                                        #TODO: asdf change this to black with alpha 0.0 and overlay (using material color as base)
+                                        for element_index in range(0,4):
+                                            vertex_components[self.COLOR_OFFSET+element_index] = 1.0
+                                    self.vertices.extend(vertex_components)
+                                    source_face_vertex_count += 1
+                                    vertexinfo_index += 1
+                                #end while vertexinfo_index in face
+
+                                participle = "combining triangle indices"
+                                vertexinfo_index = 0
+                                relative_source_face_vertex_index = 0  #required for tracking faces with less than 3 vertices
+                                face_first_vertex_dest_index = dest_vertex_index  # store first face (used for tesselation)
+                                tesselated_f_count = 0
+                                #example obj quad (without Texcoord) vertex_index/texcoord_index/normal_index:
+                                #f 61//33 62//33 64//33 63//33
+                                #face_vertex_list = list()  # in case verts are out of order, prevent tesselation from connecting wrong verts
+                                while vertexinfo_index < len(this_wobject_this_face):
+                                    #face_vertex_list.append(dest_vertex_index)
+                                    if vertexinfo_index==2:
+                                        #OK to assume dest vertices are in order, since just created them (should work even if source vertices are not in order)
+                                        tri = [glop_vertex_offset+dest_vertex_index, glop_vertex_offset+dest_vertex_index+1, glop_vertex_offset+dest_vertex_index+2]
+                                        self.indices.extend(tri)
+                                        dest_vertex_index += 3
+                                        relative_source_face_vertex_index += 3
+                                        tesselated_f_count += 1
+                                    elif vertexinfo_index>2:
+                                        #TESSELATE MANUALLY for faces with more than 3 vertices (connect loose vertex with first vertex and previous vertex)
+                                        tri = [glop_vertex_offset+face_first_vertex_dest_index, glop_vertex_offset+dest_vertex_index-1, glop_vertex_offset+dest_vertex_index]
+                                        self.indices.extend(tri)
+                                        dest_vertex_index += 1
+                                        relative_source_face_vertex_index += 1
+                                        tesselated_f_count += 1
+                                    vertexinfo_index += 1
+
+                                if (tesselated_f_count<1):
+                                    print("WARNING: Face tesselated to 0 faces")
+                                elif (tesselated_f_count>1):
+                                    if verbose_enable:
+                                        print("Face tesselated to " + str(tesselated_f_count) + " face(s)")
+
+                                if relative_source_face_vertex_index<source_face_vertex_count:
+                                    print("WARNING: Face has fewer than 3 vertices (problematic obj file " + str(this_wobject.source_path) + ")")
+                                    dest_vertex_index += source_face_vertex_count - relative_source_face_vertex_index
+                                source_face_index += 1
+                        else:
+                            print("WARNING: faces list in this_wobject.face_groups[" + key + "] is None in object '" + this_name + "'")
+                    participle = "generating pivot point"
+                    if pivot_to_geometry_enable:
+                        self.transform_pivot_to_geometry()
+                    #else:
+                    #    print("ERROR: can't use pyglop since already has vertices (len(self.indices)>=1)")
+
+                except:  # Exception as e:
+                    #print("Could not finish "+participle+" at source_face_index "+str(source_face_index)+" in append_wobject: "+str(e))
+                    print("Could not finish "+participle+" at source_face_index "+str(source_face_index)+" in append_wobject: ")
+                    view_traceback()
+
+                        #print("vertices after extending: "+str(this_wobject.vertices))
+                        #print("indices after extending: "+str(this_wobject.indices))
+            #         if this_wobject.mtl is not None:
+            #             this_wobject.wmaterial = this_wobject.mtl.get(this_wobject.obj_material)
+            #         if this_wobject.wmaterial is not None and this_wobject.wmaterial:
+            #             this_wobject.set_textures_from_mtl_dict(this_wobject.wmaterial)
+                    #self.glops[self._current_object] = mesh
+                    #mesh.calculate_normals()
+                    #self.faces = []
+
+            #         if (len(this_wobject.normals)<1):
+            #             this_wobject.calculate_normals()  #this does not work. The call to calculate_normals is even commented out at <https://github.com/kivy/kivy/blob/master/examples/3Drendering/objloader.py> 20 Mar 2014. 16 Apr 2015.
+            else:
+                print("ERROR in append_wobject: bad vertex format specified in glop, no vertices could be added")
+        else:
+            print("WARNING in append_wobject: ignoring wobject where face_groups is None (a default face group is made on load if did not exist).")
+    #end def append_wobject
 
 class PyGlopsMaterial:
     #update copy constructor if adding/changing copyable members
@@ -1096,359 +1472,7 @@ class PyGlopsLight:
        self.spot_cutoff_angle = 45.0
        self.compute_distance_attenuation = False
 
-def get_glop_from_wobject(new_glop, this_wobject):  #formerly set_from_wobject formerly import_wobject; based on _finalize_obj_data
-    this_pyglop = None
-    if (this_wobject.face_groups is not None):
-        this_pyglop = new_glop
-        this_pyglop.source_path = this_wobject.source_path
-        #from vertex_format above:
-        #self.vertex_format = [
-            #(b'a_position', , 'float'),  # Munshi prefers vec4 (Kivy prefers vec3)
-            #(b'a_texcoord0', , 'float'),  # Munshi prefers vec4 (Kivy prefers vec2); vTexCoord0; available if enable_tex[0] is true
-            #(b'a_texcoord1', , 'float'),  # Munshi prefers vec4 (Kivy prefers vec2);  available if enable_tex[1] is true
-            #(b'a_color', 4, 'float'),  # vColor (diffuse color of vertex)
-            #(b'a_normal', 3, 'float')  # vNormal; Munshi prefers vec3 (Kivy also prefers vec3)
-            #]
-        #self.on_vertex_format_change()
-        IS_SELF_VFORMAT_OK = True
-        if this_pyglop._POSITION_OFFSET<0:
-            IS_SELF_VFORMAT_OK = False
-            print("Couldn't find name containing 'pos' or 'position' in any vertex format element (see pyglops.py PyGlop constructor)")
-        if this_pyglop._NORMAL_OFFSET<0:
-            IS_SELF_VFORMAT_OK = False
-            print("Couldn't find name containing 'normal' in any vertex format element (see pyglops.py PyGlop constructor)")
-        if this_pyglop._TEXCOORD0_OFFSET<0:
-            IS_SELF_VFORMAT_OK = False
-            print("Couldn't find name containing 'texcoord' in any vertex format element (see pyglops.py PyGlop constructor)")
-        if this_pyglop.COLOR_OFFSET<0:
-            IS_SELF_VFORMAT_OK = False
-            print("Couldn't find name containing 'color' in any vertex format element (see pyglops.py PyGlop constructor)")
 
-        #vertices_offset = None
-        #normals_offset = None
-        #texcoords_offset = None
-        #vertex_depth = 8
-        #based on finish_object
-    #         if this_pyglop._current_object == None:
-    #             return
-    #
-        if not IS_SELF_VFORMAT_OK:
-            sys.exit(1)
-        zero_vertex = list()
-        for index in range(0,this_pyglop.vertex_depth):
-            zero_vertex.append(0.0)
-        if (this_pyglop.vertex_format[this_pyglop.POSITION_INDEX][VFORMAT_VECTOR_LEN_INDEX]>3):
-            zero_vertex[3] = 1.0
-            #NOTE: this is done since usually if len is 3, simple.glsl included with kivy converts it to vec4 appending 1.0:
-            #attribute vec3 v_pos;
-            #void main (void) {
-            #vec4(v_pos,1.0);
-        #this_offset = this_pyglop.COLOR_OFFSET
-        channel_count = this_pyglop.vertex_format[this_pyglop.COLOR_INDEX][VFORMAT_VECTOR_LEN_INDEX]
-        for channel_subindex in range(0,channel_count):
-            zero_vertex[this_pyglop.COLOR_OFFSET+channel_subindex] = -1.0  # -1.0 for None #TODO: asdf flag a different way (other than negative) to work with fake standard shader
-
-
-        participle="accessing object from list"
-        #this_wobject = this_pyglop.glops[index]
-        this_pyglop.name = None
-        this_name = ""
-        try:
-            if this_wobject.name is not None:
-                this_pyglop.name = this_wobject.name
-                this_name = this_wobject.name
-        except:
-            pass  #don't care
-
-        try:
-            #if this_wobject.wmaterial is None:
-            participle="processing material"
-            if this_wobject.wmaterial is not None:  # if this_wobject.properties["usemtl"] is not None:
-                #this_wobject.material=this_pyglop._getMaterial(this_wobject.properties["usemtl"])
-                if this_wobject.wmaterial._map_filename_dict is not None:  # if this_wobject.wmaterial is not None:
-                    this_pyglop.set_textures_from_mtl_dict(this_wobject.wmaterial._map_filename_dict)
-                    #TODO: so something with _map_params_dict (wobjfile.py makes each entry a list of params if OBJ had map params before map file name)
-                else:
-                    print("WARNING: this_wobject.wmaterial._map_filename_dict is None")
-            else:
-                print("WARNING: this_wobject.wmaterial is None")
-        except:  # Exception as e:
-            #print("Could not finish "+participle+" in get_glop_from_wobject: "+str(e))
-            print("Could not finish "+participle+" in get_glop_from_wobject: ")
-            view_traceback()
-
-        if this_pyglop.vertices is None:
-            this_pyglop.vertices = []
-            vertex_components = zero_vertex[:]
-            #obj format stores faces like (quads are allowed such as in following examples):
-            #this_wobject_this_face 1399/1619 1373/1593 1376/1596 1400/1620
-            #format is:
-            #this_wobject_this_face VERTEX_I VERTEX_I VERTEX_I VERTEX_I
-            #or
-            #this_wobject_this_face VERTEX_I/TEXCOORDSINDEX VERTEX_I/TEXCOORDSINDEX VERTEX_I/TEXCOORDSINDEX VERTEX_I/TEXCOORDSINDEX
-            #or
-            #this_wobject_this_face VERTEX_I/TEXCOORDSINDEX/NORMALINDEX VERTEX_I/TEXCOORDSINDEX/NORMALINDEX VERTEX_I/TEXCOORDSINDEX/NORMALINDEX VERTEX_I/TEXCOORDSINDEX/NORMALINDEX
-            #where *I are integers starting at 0 (stored starting at 1)
-            #FACE_VERTEX_COMPONENT_VERTEX_INDEX = 0
-            #FACE_VERTEX_COMPONENT_TEXCOORDS_INDEX = 1
-            #FACE_VERTEX_COMPONENT_NORMAL_INDEX = 2
-            #NOTE: in obj format, TEXCOORDS_INDEX is optional
-
-            #FACE_VERTEX_COMPONENT_VERTEX_INDEX = 0
-            #FACE_VERTEX_COMPONENT_TEXCOORDS_INDEX = 1
-            #FACE_VERTEX_COMPONENT_NORMAL_INDEX = 2
-
-            #nskrypnik put them in a different order than obj format (0,1,2) for some reason so do this order instead ONLY if using his obj loader:
-            #FACE_VERTEX_COMPONENT_VERTEX_INDEX = 0
-            #FACE_VERTEX_COMPONENT_TEXCOORDS_INDEX = 2
-            #FACE_VERTEX_COMPONENT_NORMAL_INDEX = 1
-
-            #use the following globals from wobjfile.py instead of assuming any FACE_VERTEX_COMPONENT values:
-            #FACE_V  # index of vertex index in the face (since face is a list)
-            #FACE_TC  # index of tc0 index in the face (since face is a list)
-            #FACE_VN  # index of normal index in the face (since face is a list)
-
-            source_face_index = 0
-            try:
-                if (len(this_pyglop.indices)<1):
-                    participle = "before detecting vertex component offsets"
-                    #detecting vertex component offsets is required since indices in an obj file are sometimes relative to the first index in the FILE not the object
-                    for key in this_wobject.face_groups:
-                        this_face_list = this_wobject.face_groups[key].faces
-                        if this_face_list is not None:
-                            #get offset
-                            for faceIndex in range(0,len(this_face_list)):
-                                for componentIndex in range(0,len(this_face_list[faceIndex])):
-                                    #print("found face "+str(faceIndex)+" component "+str(componentIndex)+": "+str(this_face_list[faceIndex][componentIndex]))
-                                    #print(str(this_face_list[faceIndex][vertexIndex]))
-                                    #if (len(this_face_list[faceIndex][componentIndex])>=FACE_V):
-                                    #TODO: audit this code:
-                                    for vertexIndex in range(0,len(this_face_list[faceIndex][componentIndex])):
-                                        #calculate new offsets, in case obj file was botched (for correct obj format, wobjfile.py changes indices so they are relative to wobject ('o' command) instead of file
-                                        if componentIndex==FACE_V:
-                                            thisVertexIndex = this_face_list[faceIndex][componentIndex][vertexIndex]
-                                            #if vertices_offset is None or thisVertexIndex<vertices_offset:
-                                                #vertices_offset = thisVertexIndex
-                                        #if (len(this_face_list[faceIndex][componentIndex])>=FACE_TC):
-                                        elif componentIndex==FACE_TC:
-                                            thisTexCoordIndex = this_face_list[faceIndex][componentIndex][vertexIndex]
-                                            #if texcoords_offset is None or thisTexCoordIndex<texcoords_offset:
-                                                #texcoords_offset = thisTexCoordIndex
-                                        #if (len(this_face_list[faceIndex][componentIndex])>=FACE_VN):
-                                        elif componentIndex==FACE_VN:
-                                            thisNormalIndex = this_face_list[faceIndex][componentIndex][vertexIndex]
-                                            #if normals_offset is None or thisNormalIndex<normals_offset:
-                                                #normals_offset = thisNormalIndex
-
-                            #if vertices_offset is not None:
-                                #print("detected vertices_offset:"+str(vertices_offset))
-                            #if texcoords_offset is not None:
-                                #print("detected texcoords_offset:"+str(texcoords_offset))
-                            #if normals_offset is not None:
-                                #print("detected normals_offset:"+str(normals_offset))
-
-                        participle = "before processing faces"
-                        dest_vertex_index = 0
-                        face_count = 0
-                        new_texcoord = new_tuple(this_pyglop.vertex_format[this_pyglop.TEXCOORD0_INDEX][VFORMAT_VECTOR_LEN_INDEX])
-                        if this_face_list is not None:
-                            for this_wobject_this_face in this_face_list:
-                                participle = "getting face components"
-                                #print("face["+str(source_face_index)+"]: "+participle)
-
-                                #DOES triangulate of more than 3 vertices in this face (connects each loose point to first vertex and previous vertex)
-                                # (vertex_done_flags are no longer needed since that method is used)
-                                #vertex_done_flags = list()
-                                #for vertexinfo_index in range(0,len(this_wobject_this_face)):
-                                #    vertex_done_flags.append(False)
-                                #vertices_done_count = 0
-
-                                #with wobjfile.py, each face is an arbitrary-length list of vertex_infos, where each vertex_info is a list containing vertex_index, texcoord_index, then normal_index, so ignore the following commented deprecated lines of code:
-                                #verts =  this_wobject_this_face[0]
-                                #norms = this_wobject_this_face[1]
-                                #tcs = this_wobject_this_face[2]
-                                #for vertexinfo_index in range(3):
-                                vertexinfo_index = 0
-                                source_face_vertex_count = 0
-                                while vertexinfo_index<len(this_wobject_this_face):
-                                    #print("vertex["+str(vertexinfo_index)+"]")
-                                    vertex_info = this_wobject_this_face[vertexinfo_index]
-
-                                    vertex_index = vertex_info[FACE_V]
-                                    texcoord_index = vertex_info[FACE_TC]
-                                    normal_index = vertex_info[FACE_VN]
-
-                                    vertex = None
-                                    texcoord = None
-                                    normal = None
-
-
-                                    participle = "getting normal components"
-
-                                    #get normal components
-                                    normal = (0.0, 0.0, 1.0)
-                                    #if normals_offset is None:
-                                    #    normals_offset = 1
-                                    normals_offset = 0  # since wobjfile.py makes indices relative to object
-                                    try:
-                                        #if (normal_index is not None) and (normals_offset is not None):
-                                        #    participle = "getting normal components at "+str(normal_index-normals_offset)  # str(norms[face_index]-normals_offset)
-                                        #else:
-                                        participle = "getting normal components at "+str(normal_index)+"-"+str(normals_offset)  # str(norms[face_index]-normals_offset)
-                                        if normal_index is not None:
-                                            normal = this_wobject.normals[normal_index-normals_offset]
-                                        #if norms[face_index] != -1:
-                                            #normal = this_wobject.normals[norms[face_index]-normals_offset]
-                                    except:  # Exception as e:
-                                        print("Could not finish "+participle+" for wobject named '"+this_name+"':")
-                                        view_traceback()
-
-                                    participle = "getting texture coordinate components"
-                                    participle = "getting texture coordinate components at "+str(face_count)
-                                    participle = "getting texture coordinate components using index "+str(face_count)
-                                    #get texture coordinate components
-                                    #texcoord = (0.0, 0.0)
-                                    texcoord = new_texcoord[:]
-                                    #if texcoords_offset is None:
-                                    #    texcoords_offset = 1
-                                    texcoords_offset = 0  # since wobjfile.py makes indices relative to object
-                                    try:
-                                        if this_wobject.texcoords is not None:
-                                            #if (texcoord_index is not None) and (texcoords_offset is not None):
-                                            #    participle = "getting texcoord components at "+str(texcoord_index-texcoords_offset)  # str(norms[face_index]-normals_offset)
-                                            #else:
-                                            participle = "getting texcoord components at "+str(texcoord_index)+"-"+str(texcoords_offset)  # str(norms[face_index]-normals_offset)
-
-                                            if texcoord_index is not None:
-                                                texcoord = this_wobject.texcoords[texcoord_index-texcoords_offset]
-                                            #if tcs[face_index] != -1:
-                                                #participle = "using texture coordinates at index "+str(tcs[face_index]-texcoords_offset)+" (after applying texcoords_offset:"+str(texcoords_offset)+"; Count:"+str(len(this_wobject.texcoords))+")"
-                                                #texcoord = this_wobject.texcoords[tcs[face_index]-texcoords_offset]
-                                        else:
-                                            if verbose_enable:
-                                                print("Warning: no texcoords found in wobject named '"+this_name+"'")
-                                    except:  # Exception as e:
-                                        print("Could not finish "+participle+" for wobject named '"+this_name+"':")
-                                        view_traceback()
-
-                                    participle = "getting vertex components"
-                                    #if vertices_offset is None:
-                                    #    vertices_offset = 1
-                                    vertices_offset = 0  # since wobjfile.py makes indices relative to object
-                                    #participle = "accessing face vertex "+str(verts[face_index]-vertices_offset)+" (after applying vertices_offset:"+str(vertices_offset)+"; Count:"+str(len(this_wobject.vertices))+")"
-                                    participle = "accessing face vertex "+str(vertex_index)+"-"+str(vertices_offset)+" (after applying vertices_offset:"+str(vertices_offset)
-                                    if (this_wobject.vertices is not None):
-                                        participle += "; Count:"+str(len(this_wobject.vertices))+")"
-                                    else:
-                                        participle += "; this_wobject.vertices:None)"
-                                    try:
-                                        #v = this_wobject.vertices[verts[face_index]-vertices_offset]
-                                        v = this_wobject.vertices[vertex_index-vertices_offset]
-                                    except:  # Exception as e:
-                                        print("Could not finish "+participle+" for wobject named '"+this_name+"':")
-                                        view_traceback()
-
-                                    participle = "combining components"
-                                    #vertex_components = [v[0], v[1], v[2], normal[0], normal[1], normal[2], texcoord[0], 1 - texcoord[1]] #TODO: why does kivy-rotation3d version have texcoord[1] instead of 1 - texcoord[1]
-                                    vertex_components = list()
-                                    for i in range(0,this_pyglop.vertex_depth):
-                                        vertex_components.append(0.0)
-                                    for element_index in range(0,3):
-                                        vertex_components[this_pyglop._POSITION_OFFSET+element_index] = v[element_index]
-                                    if (this_pyglop.vertex_format[this_pyglop.POSITION_INDEX][VFORMAT_VECTOR_LEN_INDEX]>3):
-                                        vertex_components[this_pyglop._POSITION_OFFSET+3] = 1.0  # non-position padding value must be 1.0 for matrix math to work correctly
-                                    for element_index in range(0,3):
-                                        vertex_components[this_pyglop._NORMAL_OFFSET+element_index] = normal[element_index]
-                                    for element_index in range(0,2):
-
-                                        if element_index==1:
-                                            vertex_components[this_pyglop._TEXCOORD0_OFFSET+element_index] = 1-texcoord[element_index]
-                                        else:
-                                            vertex_components[this_pyglop._TEXCOORD0_OFFSET+element_index] = texcoord[element_index]
-
-                                    if len(v)>3:
-                                        #Handle nonstandard obj file with extended vertex info (color)
-                                        abs_index = 0
-                                        for element_index in range(4,len(v)):
-                                            vertex_components[this_pyglop.COLOR_OFFSET+abs_index] = v[element_index]
-                                            abs_index += 1
-                                    else:
-                                        #default to white vertex color
-                                        #TODO: asdf change this to black with alpha 0.0 and overlay (using material color as base)
-                                        for element_index in range(0,4):
-                                            vertex_components[this_pyglop.COLOR_OFFSET+element_index] = 1.0
-                                    this_pyglop.vertices.extend(vertex_components)
-                                    source_face_vertex_count += 1
-                                    vertexinfo_index += 1
-                                #end while vertexinfo_index in face
-
-                                participle = "combining triangle indices"
-                                vertexinfo_index = 0
-                                relative_source_face_vertex_index = 0  #required for tracking faces with less than 3 vertices
-                                face_first_vertex_dest_index = dest_vertex_index
-                                tesselated_f_count = 0
-                                #example obj quad (without Texcoord) vertex_index/texcoord_index/normal_index:
-                                #f 61//33 62//33 64//33 63//33
-                                #face_vertex_list = list()  # in case verts are out of order, prevent tesselation from connecting wrong verts
-                                while vertexinfo_index < len(this_wobject_this_face):
-                                    #face_vertex_list.append(dest_vertex_index)
-                                    if vertexinfo_index==2:
-                                        #OK to assume dest vertices are in order, since just created them (should work even if source vertices are not in order)
-                                        tri = [dest_vertex_index, dest_vertex_index+1, dest_vertex_index+2]
-                                        this_pyglop.indices.extend(tri)
-                                        dest_vertex_index += 3
-                                        relative_source_face_vertex_index += 3
-                                        tesselated_f_count += 1
-                                    elif vertexinfo_index>2:
-                                        #TESSELATE MANUALLY for faces with more than 3 vertices (connect loose vertex with first vertex and previous vertex)
-                                        tri = [face_first_vertex_dest_index, dest_vertex_index-1, dest_vertex_index]
-                                        this_pyglop.indices.extend(tri)
-                                        dest_vertex_index += 1
-                                        relative_source_face_vertex_index += 1
-                                        tesselated_f_count += 1
-                                    vertexinfo_index += 1
-
-                                if (tesselated_f_count<1):
-                                    print("WARNING: Face tesselated to 0 faces")
-                                elif (tesselated_f_count>1):
-                                    if verbose_enable:
-                                        print("Face tesselated to "+str(tesselated_f_count)+" face(s)")
-
-                                if relative_source_face_vertex_index<source_face_vertex_count:
-                                    print("WARNING: Face has fewer than 3 vertices (problematic obj file)")
-                                    dest_vertex_index += source_face_vertex_count - relative_source_face_vertex_index
-                                source_face_index += 1
-                        else:
-                            print("WARNING: faces list in this_wobject.face_groups["+key+"] is None in object '"+this_name+"'")
-                    participle = "generating pivot point"
-
-                    this_pyglop.transform_pivot_to_geometry()
-                else:
-                    print("ERROR: can't use pyglop since already has vertices (len(this_pyglop.indices)>=1)")
-
-            except:  # Exception as e:
-                #print("Could not finish "+participle+" at source_face_index "+str(source_face_index)+" in get_glop_from_wobject: "+str(e))
-                print("Could not finish "+participle+" at source_face_index "+str(source_face_index)+" in get_glop_from_wobject: ")
-                view_traceback()
-
-                    #print("vertices after extending: "+str(this_wobject.vertices))
-                    #print("indices after extending: "+str(this_wobject.indices))
-        #         if this_wobject.mtl is not None:
-        #             this_wobject.wmaterial = this_wobject.mtl.get(this_wobject.obj_material)
-        #         if this_wobject.wmaterial is not None and this_wobject.wmaterial:
-        #             this_wobject.set_textures_from_mtl_dict(this_wobject.wmaterial)
-                #self.glops[self._current_object] = mesh
-                #mesh.calculate_normals()
-                #self.faces = []
-
-        #         if (len(this_wobject.normals)<1):
-        #             this_wobject.calculate_normals()  #this does not work. The call to calculate_normals is even commented out at <https://github.com/kivy/kivy/blob/master/examples/3Drendering/objloader.py> 20 Mar 2014. 16 Apr 2015.
-        else:
-            print("ERROR in get_glop_from_wobject: existing vertices found {this_pyglop.name:'"+str(this_name)+"'}")
-    else:
-        print("WARNING in get_glop_from_wobject: ignoring wobject where face_groups is None (a default face group is made on load if did not exist).")
-    return this_pyglop
-#end def get_glop_from_wobject
 
 class PyGlops:
     glops = None
@@ -1620,7 +1644,7 @@ class PyGlops:
         #    print(command+" "+self.glops[bumpable_index].name)
         
         if "fired_sprite_path" in weapon_dict:
-            indices = self.load_obj("meshes/sprite-square.obj")
+            indices = self.load_obj("meshes/sprite-square.obj", pivot_to_geometry_enable=True)
         else:
             w_glop = self.new_glop()
             self.glops.append(w_glop)
@@ -1645,16 +1669,16 @@ class PyGlops:
                 self.glops[indices[i]].set_texture_diffuse(weapon_dict["fired_sprite_path"])
                 self.glops[indices[i]].look_target_glop = self.camera_glop
                 item_event = self.glops[glop_index].push_item(weapon_dict)
-                if (item_event is not None) and ("is_possible" in item_event) and (item_event["is_possible"]):
+                if (item_event is not None) and ("fit_enable" in item_event) and (item_event["fit_enable"]):
                     result = True
                     #process item event so selected inventory slot gets updated in case obtained item ends up in it:
                     self.after_selected_item(item_event)
                 else:
                     if item_event is not None:
-                        if "is_possible" in item_event:
-                            print("NOTICE: Nothing done for item_push since presumably, "+str(self.glops[glop_index].name)+"'s inventory was full {is_possible: " + str(item_event["is_possible"]+"}"))
+                        if "fit_enable" in item_event:
+                            print("NOTICE: Nothing done for item_push since presumably, "+str(self.glops[glop_index].name)+"'s inventory was full {fit_enable: " + str(item_event["fit_enable"]+"}"))
                         else:
-                            print("ERROR: Nothing done in add_actor_weapon {is_possible: None}")
+                            print("ERROR: Nothing done in add_actor_weapon {fit_enable: None}")
                     else:
                         print("WARNING: item_event returned by push_item was None")
                 #print("add_actor_weapon: using "+str(self.glops[indices[i]].name)+" as sprite.")
@@ -1819,7 +1843,7 @@ class PyGlops:
                         result=self.glops[index]
         return result
 
-    def get_glop_list_from_obj(self, source_path, new_glop_method):  # load_obj(self, source_path): #TODO: ? swapyz=False):
+    def get_glop_list_from_obj(self, source_path, new_glop_method, pivot_to_geometry_enable=True):  # load_obj(self, source_path): #TODO: ? swapyz=False):
         participle = "(before initializing)"
         linePlus1 = 1
         #firstMeshIndex = len(self.glops)
@@ -1840,7 +1864,8 @@ class PyGlops:
                             this_wobject = this_objfile.wobjects[i]
                             if this_wobject is not None:
                                 participle = "converting wobject..."
-                                this_pyglop = get_glop_from_wobject(new_glop_method(), this_wobject)
+                                this_pyglop = new_glop_method()
+                                this_pyglop.append_wobject(this_wobject, pivot_to_geometry_enable=pivot_to_geometry_enable)
                                 if this_pyglop is not None:
                                     participle = "appending pyglop to scene"
                                     #if results is None:
@@ -1878,19 +1903,19 @@ class PyGlops:
             result = "z"
         return result
 
-    def set_as_item(self, glop_name, template_dict):
+    def set_as_item(self, glop_name, template_dict, pivot_to_geometry_enable=False):
         result = False
         if glop_name is not None:
             for i in range(0,len(self.glops)):
                 if self.glops[i].name == glop_name:
-                    return self.set_as_item_by_index(i, template_dict)
+                    return self.set_as_item_by_index(i, template_dict, pivot_to_geometry_enable=pivot_to_geometry_enable)
                     break
 
     def add_bump_sound_by_index(self, i, path):
         if path not in self.glops[i].bump_sound_paths:
             self.glops[i].bump_sound_paths.append(path)
 
-    def set_as_item_by_index(self, i, template_dict):
+    def set_as_item_by_index(self, i, template_dict, pivot_to_geometry_enable=False):
         result = False
         item_dict = self.glops[i].deepcopy_with_my_type(template_dict)  #prevents every item template from being the one
         self.glops[i].item_dict = item_dict
@@ -1899,6 +1924,8 @@ class PyGlops:
         self.glops[i].bump_enable = True
         self.glops[i].is_out_of_range = True  # allows item to be obtained instantly at start of main event loop
         self.glops[i].hit_radius = 0.1
+        if pivot_to_geometry_enable:
+            self.glops[i].transform_pivot_to_geometry()
 
         this_glop = self.glops[i]
         vertex_count = int(len(this_glop.vertices)/this_glop.vertex_depth)
@@ -2210,8 +2237,8 @@ class PyGlops:
                 if this_glop.name is not None:
                     if partial_name_lower in this_glop.name.lower():
                         results.append(this_glop.name)
-                    else:
-                        print("[ debug only ] (in get_similar_names): name "+str(this_glop.name)+" does not contain "+partial_name)
+                    #else:
+                        #print("[ PyGlops ] (debug only in get_similar_names): name "+str(this_glop.name)+" does not contain "+partial_name)
                 else:
                     print("ERROR in get_similar_names: a glop was None")
         else:

@@ -22,7 +22,7 @@ Control 3D objects and the camera in your 3D Kivy app!
   * generated members:
     "subscript": (for debugging) if present in weapon_dict, it is the automatically-generated index of the object within the obj file from which the glop containing the weapon dict was loaded.
     "fires_glops": list of glops that will be fired (generated automatically if you use add_actor_weapon and have fired_sprite_path)
-* is_possible entry in item_event dict returned by push_item denotes whether giving an item to the player was possible (false if inventory was full on games with limited inventory)
+* fit_enable entry in item_event dict returned by push_item denotes whether giving an item to the player was possible (false if inventory was full on games with limited inventory)
 * if you get a stack overflow, maybe one of the dict objects you put on an object contains a reference to the same object then copy or deepcopy_with_my_type was called
 * each program you make should be a subclass of KivyGlops or other PyGlops subclass (representing framework you are using other than Kivy)
 * pyrealtime module (which does not require Kivy) keeps track of keyboard state, allowing getting keystate asynchronously
@@ -31,8 +31,11 @@ Control 3D objects and the camera in your 3D Kivy app!
 ### Teaching using KivyGlops:
 * update-kivyglops from LAN.bat will only work for students if teacher places KivyGlops in R:\Classes\ComputerProgramming\Examples\KivyGlops
 (which can be done using deploy.bat, if the folder already exists and the teacher has write permissions to the folder; the students should have read permissions to the folder)
+* if segfault occurs, maybe camera and look_at location are same
 
 ## Changes
+* (2017-12-22) refactored global get_glop_from_wobject into *Glop append_wobject to assist with overriding, and with expandability (in case multi submesh glops are needed later)
+* (2017-12-22) renamed is_possible to fit_enable
 * (2017-12-22) get_indices_by_source_path now checks against original_path (as passed to load_obj; non-normalized) in addition to processed path
 * (2017-12-21) split `rotate_view_relative` into `rotate_camera_relative` and `rotate_player_relative`; moved them to KivyGlops since they use Kivy OpenGL instructions; renamed rotate_view_relative_around_point to rotate_relative_around_point and forces you to specify a glop as first parameter (still needs to be edited in major way to rotate around the point instead of assuming things about the object)
 * (2017-12-21) fix issue where add_actor_weapon uses player_glop instead of the glop referenced by the glop_index param (bug was exposed by camera_glop and player_glop being separated)
@@ -85,6 +88,10 @@ Control 3D objects and the camera in your 3D Kivy app!
 
 
 ## Known Issues
+* (2017-12-22) pivot_to_geometry_enable is broken (must be left at default): (defaults for pivot_to_geometry_enable are flipped since broken) pyglops.py: (append_wobject) make self.transform_pivot_to_geometry() optional, for optimization and predictability (added to set_as_item where pivot_to_geometry_enable; also added that option, to set_as_item, load_obj, get_glop_list_from_obj, append_wobject)
+* renamed etc/kivyglops-mini-deprecated.py to testingkivy3d.py and MinimalKivyGlopsWindow class in it to TestingKivy3D
+* see `context.add(this_glop._color_instruction)  #TODO: asdf add as uniform instead`
+* Only load unique textures once (see "Loaded texture")
 * if object has upward momentum, shouldn't stick to ground (is set near ground if player is near ground during `def use_selected`)
 * pyglops.py: (`update`) throw_linear vs throw_arc setting is ignored (instead, gravity is always applied to missile if _cached_floor_y is present, which is present if there is a walkmesh, in which case ground_y is calculated then object's _cached_floor_y is set to ground_y)
 * add touch inventory (such as tap to use, drag to change selected item)
