@@ -31,16 +31,21 @@ if 'USERPROFILE' in os.environ:  # if os_name=="windows":
 else:
     profile_path = os.environ['HOME']
 
+#class MainForm(KivyGlopsWindow()):
+    #def __init__(self, **kwargs):
+        #super(MainForm, self).__init__(**kwargs)
+
 class MainScene(KivyGlops):
 
-    #def __init__(self, **kwargs):
     def load_glops(self):
+        test_space_enable = False
+        test_medieval_enable = True
         #self.canvas.shader.source = resource_find('simple1b.glsl')
         #self.canvas.shader.source = resource_find('shade-normal-only.glsl') #partially working
         #self.canvas.shader.source = resource_find('shade-texture-only.glsl')
         #self.canvas.shader.source = resource_find('shade-kivyglops-minimal.glsl')
-        #self.canvas.shader.source = resource_find('fresnel.glsl')
-        #super(MainForm, self).__init__(**kwargs)
+        #self.ui.gl_widget.canvas.shader.source = resource_find('fresnel.glsl')
+
         #self.load_obj("barrels triangulated (Costinus at turbosquid).obj")
         #self.load_obj("barrel.obj")
         #self.load_obj("WarehouseOfFruit_by_Expertmm.obj")
@@ -60,79 +65,92 @@ class MainScene(KivyGlops):
         #    print("Found possible walkmesh: "+name)
         #    is_ok = self.use_walkmesh(name, hide=True)
 
-        #self.load_obj(os.path.join(profile_path,"ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-lowpoly.obj"))
-        #self.load_obj(os.path.join(profile_path,"ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-minimal.obj"))
-        #self.load_obj(os.path.join(profile_path,"ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-techdemo.obj"))
-        #self.load_obj("R:\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-lowpoly.obj")
-        #self.load_obj("R:\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-minimal.obj")
-        #self.load_obj("R:\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-techdemo.obj")
-        #self.load_obj("etc\\problematic mesh files\\medseaport1b-floor_glrepeat.obj")
-        #self.load_obj("medseaport1b-lowpoly.obj")
-        #medseaport1b-lowpoly (including dependencies) is available from http://www.expertmultimedia.com/usingpython/resources/Environments,Outdoor-Manmade/seaport.zip
+        if test_medieval_enable:
 
-        #self.load_obj("medseaport1b-minimal.obj")
+            #self.load_obj(os.path.join(profile_path,"ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-lowpoly.obj"))
+            #self.load_obj(os.path.join(profile_path,"ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-minimal.obj"))
+            #self.load_obj(os.path.join(profile_path,"ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-techdemo.obj"))
+            #self.load_obj("R:\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-lowpoly.obj")
+            #self.load_obj("R:\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-minimal.obj")
+            #self.load_obj("R:\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-techdemo.obj")
+            #self.load_obj("etc\\problematic mesh files\\medseaport1b-floor_glrepeat.obj")
+            #self.load_obj("medseaport1b-lowpoly.obj")
+            seaport_name = "medseaport1b-techdemo.obj"
+            kgt_path = os.path.join( os.path.join(profile_path, "Desktop"), "KivyGlopsTesting")
+            seaport_path = resource_find(seaport_name)
+            if seaport_path is None:
+                seaport_path = os.path.join(kgt_path, seaport_name)
+            if os.path.isfile(seaport_path):
+                self.load_obj(seaport_path)
+            else:
+                print("[ testing ] ERROR: can't find '" + seaport_name + "'")
+            #medseaport1b-lowpoly (including dependencies) is available from http://www.expertmultimedia.com/usingpython/resources/Environments,Outdoor-Manmade/seaport.zip
 
-        # If you already have existing walkmesh code, keep that instead of
-        # typing this section, but change "floor" to "walkmesh"
-        #walkmesh_names = self.get_similar_names("walkmesh")
-        #for name in walkmesh_names:
-        #    print("Using walkmesh: ")
-        #    is_ok = self.use_walkmesh(name, hide=True)
+            #self.load_obj("medseaport1b-minimal.obj")
 
-        #item_dict = dict()
-        #item_dict["name"] = "barrel"
-        #item_dict["bump"] = "hide; obtain"
-        #item_dict["use"] = "throw_arc"
-        #item_dict["cooldown"] = .7
+            # If you already have existing walkmesh code, keep that instead of
+            # typing this section, but change "floor" to "walkmesh"
+            walkmesh_names = self.get_similar_names("walkmesh")
+            for name in walkmesh_names:
+                print("[ testing ] Using walkmesh: ")
+                is_ok = self.use_walkmesh(name, hide=True)
 
-        #barrel_names = self.get_similar_names("barrel")
-        #for name in barrel_names:
-        #    print("Preparing item: "+name)
-        #    self.set_as_item(name, item_dict)
+            item_dict = dict()
+            item_dict["name"] = "barrel"
+            item_dict["bump"] = "hide; obtain"
+            item_dict["use"] = "throw_arc"
+            item_dict["cooldown"] = .7
 
-        #self.play_music("music/edinburgh-loop.ogg")
+            barrel_names = self.get_similar_names("barrel")
+            for name in barrel_names:
+                print("Preparing item: "+name)
+                self.set_as_item(name, item_dict)
 
-        #item_dict["name"] = "crate"
-        #item_dict["use_sound"] = "sounds/woosh-medium.wav"
-        #for index in self.get_indices_of_similar_names("crate"):
-        #    self.set_as_item_by_index(index, item_dict)
-        #    self.add_bump_sound_by_index(index, "sounds/crate-drop2.wav")
-        #    self.add_bump_sound_by_index(index, "sounds/crate-drop3.wav")
-        #    self.add_bump_sound_by_index(index, "sounds/crate-drop4.wav")
-        #    self.add_bump_sound_by_index(index, "sounds/crate-drop5.wav")
-        #    self.add_bump_sound_by_index(index, "sounds/crate-drop6.wav")
-        #    self.add_bump_sound_by_index(index, "sounds/crate-drop7.wav")
-        #    self.add_bump_sound_by_index(index, "sounds/crate-drop8.wav")
-        self.set_background_cylmap("starfield1-coryg89.jpg")
+            #self.play_music("music/edinburgh-loop.ogg")
 
-        self.set_fly(True)
-        self.set_hud_background("example_hud.png")
-        self.set_background_cylmap("starfield_cylindrical_map.jpg")
-        self.load_obj("spaceship,simple-denapes.obj")
+            item_dict["name"] = "crate"
+            item_dict["use_sound"] = "sounds/woosh-medium.wav"
+            for index in self.get_indices_of_similar_names("crate"):
+                self.set_as_item_by_index(index, item_dict)
+                self.add_bump_sound_by_index(index, "sounds/crate-drop2.wav")
+                self.add_bump_sound_by_index(index, "sounds/crate-drop3.wav")
+                self.add_bump_sound_by_index(index, "sounds/crate-drop4.wav")
+                self.add_bump_sound_by_index(index, "sounds/crate-drop5.wav")
+                self.add_bump_sound_by_index(index, "sounds/crate-drop6.wav")
+                self.add_bump_sound_by_index(index, "sounds/crate-drop7.wav")
+                self.add_bump_sound_by_index(index, "sounds/crate-drop8.wav")
+        
+        if test_space_enable:
+            self.set_background_cylmap("starfield1-coryg89.jpg")
 
-        ship_info = dict()
-        ship_info["hp"] = 1.0
+            self.set_fly(True)
+            self.set_hud_background("example_hud.png")
+            self.set_background_cylmap("starfield_cylindrical_map.jpg")
+            self.load_obj("spaceship,simple-denapes.obj")
 
-        player1_index = self.get_player_glop_index(1)
-        #self.set_as_actor_by_index(player1_index, ship_info)  # already done by PyGlops or KivyGlops __init__
+            ship_info = dict()
+            ship_info["hp"] = 1.0
 
-        weapon = dict()
-        weapon["droppable"] = "no"
-        weapon["fired_sprite_path"] = "blue_jet_bulb.png"
-        weapon["fired_sprite_size"] = .5,.5  # width and height in meters
-        weapon["fire_type"] = "throw_arc"
-        weapon["hit_damage"] = .3
-        self.add_actor_weapon(player1_index, weapon)
-        #self.player_glop = self.glops[player1_index]  # already done by PyGlops __init__
-        #test_deepcopy_weapon = self.player_glop.deepcopy_with_my_type(weapon)
-        print("[ testing ] #" + str(player1_index) + " named " + str(self.glops[player1_index].name) + " detected as player") 
-        enemy_indices = self.get_indices_by_source_path("spaceship,simple-denapes.obj")
-        for i in range(0,len(enemy_indices)):
-            index = enemy_indices[i]
-            self.set_as_actor_by_index(index, ship_info)
-            self.add_actor_weapon(index, weapon)
-            print("[ testing ] #" + str(index) + " named " + str(self.glops[index].name) + " added as enemy") 
-        print("[ testing ] " + str(len(enemy_indices)) + " enemies found.") 
+            player1_index = self.get_player_glop_index(1)
+            #self.set_as_actor_by_index(player1_index, ship_info)  # already done by PyGlops or KivyGlops __init__
+
+            weapon = dict()
+            weapon["droppable"] = "no"
+            weapon["fired_sprite_path"] = "blue_jet_bulb.png"
+            weapon["fired_sprite_size"] = .5,.5  # width and height in meters
+            weapon["fire_type"] = "throw_arc"
+            weapon["hit_damage"] = .3
+            self.add_actor_weapon(player1_index, weapon)
+            #self.player_glop = self.glops[player1_index]  # already done by PyGlops __init__
+            #test_deepcopy_weapon = self.player_glop.deepcopy_with_my_type(weapon)
+            print("[ testing ] #" + str(player1_index) + " named " + str(self.glops[player1_index].name) + " detected as player") 
+            enemy_indices = self.get_indices_by_source_path("spaceship,simple-denapes.obj")
+            for i in range(0,len(enemy_indices)):
+                index = enemy_indices[i]
+                self.set_as_actor_by_index(index, ship_info)
+                self.add_actor_weapon(index, weapon)
+                print("[ testing ] #" + str(index) + " named " + str(self.glops[index].name) + " added as enemy") 
+            print("[ testing ] " + str(len(enemy_indices)) + " enemies found.") 
         #test_deepcopy_weapon = self.player_glop.deepcopy_with_my_type(weapon)
 
     def attacked_glop(self, attacked_index, attacker_index, weapon_dict):

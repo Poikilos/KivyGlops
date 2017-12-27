@@ -127,6 +127,7 @@ class KivyGlop(PyGlop, Widget):
                                mode='triangles',
                                texture=None,
                               )
+        print("[ KivyGlops ] (debug only) generated axes: "+str(self._axes_mesh))
     
     def __str__(self):
         return str(type(self)) + " named " + str(self.name) + " at " + \
@@ -159,6 +160,7 @@ class KivyGlop(PyGlop, Widget):
         # NOTE: This is a full solid (3 boxes) where all axes can always
         # be seen except when another is in the way (some vertices are
         # doubled so that vertex color can be used).
+        # See etc/axes-widget-diagram.png
         _axes_vertices = []
         _axes_indices = []
         
@@ -337,7 +339,7 @@ class KivyGlop(PyGlop, Widget):
 
     def calculate_hit_range(self):
         #TODO: re-implement superclass method, changing hit box taking rotation into account
-        print("  calculate_hit_range for glop ["+str(self.index)+"]...")
+        print("[ KivyGlop ] calculate_hit_range for glop ["+str(self.index)+"]...")
         if self.vertices is not None:
             vertex_count = int(len(self.vertices)/self.vertex_depth)
             if vertex_count>0:
@@ -398,7 +400,7 @@ class KivyGlop(PyGlop, Widget):
     def _on_change_pivot(self, previous_point=(0.0,0.0,0.0)):
         super(KivyGlop, self)._on_change_pivot(previous_point=previous_point)
         print("[ KivyGlops ] (debug only) _on_change_pivot from " + str(previous_point))
-        self._on_change_scale_instruction()
+        self._on_change_scale_instruction()  # does calculate_hit_range
 
     def get_scale(self):
         return (self._scale_instruction.x + self._scale_instruction.y + self._scale_instruction.z) / 3.0
@@ -407,7 +409,7 @@ class KivyGlop(PyGlop, Widget):
         self._scale_instruction.x = overall_scale
         self._scale_instruction.y = overall_scale
         self._scale_instruction.z = overall_scale
-        self._on_change_scale_instruction()
+        self._on_change_scale_instruction()  # does calculate_hit_range
 
     def _on_change_scale_instruction(self):
         if self._pivot_point is not None:
@@ -431,6 +433,7 @@ class KivyGlop(PyGlop, Widget):
         #print("_on_change_scale_instruction for object named '"+this_name+"'")
         #print ("_pivot_point:"+str(self._pivot_point))
         #print ("_pivot_scaled_point:"+str(self._pivot_scaled_point))
+        self.calculate_hit_range()
 
     def apply_translate(self):
         vertex_count = int(len(self.vertices)/self.vertex_depth)
@@ -478,24 +481,60 @@ class KivyGlop(PyGlop, Widget):
         if self._mesh is not None and this_texture_image is not None:
             self._mesh.texture = this_texture_image.texture
         return this_texture_image
+        
+    def is_linked_as(self, this_glop, as_rel):
+        return self.get_link_as(this_glop, as_rel)
+        
+    def get_link_as(self, this_glop, as_rel):
+        result = -1
+        for i in range(len(self.dat["links"])):
+            rel = self.dat["links"][i]
+            if rel["r_type"] == as_rel:
+                if rel["tmp"]["glop"] is this_glop:
+                    result = i
+                    break
+        return result
 
-    def push_glop_item(self, this_glop, this_glop_index):
+    #gets a tuple with index and relationship type
+    def get_link_and_type(self, this_glop):
+        result = -1, None
+        for i in range(len(self.dat["links"])):
+            rel = self.dat["links"][i]
+            if rel["tmp"]["glop"] is this_glop:
+                result = i, rel["r_type"]
+                break
+        return result
+
+    def push_glop_item(self, item_glop, this_glop_index):
         #item_dict = {}
-        item_dict = this_glop.item_dict
-        #item_dict["glop_index"] = this_glop_index  #already done when set as item
-        #item_dict["glop_name"] = this_glop.name  #already done when set as item
+        item_dict = item_glop.item_dict
+        #item_dict["glop_index"] = item_glop_index  #already done when set as item
+        #item_dict["glop_name"] = item_glop.name  #already done when set as item
+        i, rel = self.get_link_and_type(item_glop)
+        if i <= -1:  # not is_linked_as(item_glop, "carry"):
+            if "cooldown" in item_glop.item_dict:
+                if ("RUNTIME_last_used_time" not in item_glop.item_dict):
+                    # make item ready on first pickup:
+                    item_glop.item_dict["RUNTIME_last_used_time"] = time.time() - item_glop.item_dict["cooldown"]
+            rel = {}
+            rel["tmp"] = {}
+            rel["tmp"]["glop"] = item_glop
+            rel["r_type"] = "carry"
+            self.dat["links"].append(rel)
+        else:
+            print("[ KivyGlop ] WARNING: item is already linked to " + str(self.name) + " as " + rel)
         return self.push_item(item_dict)
 
 
-    def pop_glop_item(self, this_glop_index):
+    def pop_glop_item(self, item_glop_index):
         select_item_event_dict = None
         #select_item_event_dict["fit_enable"] = False
         try:
-            if this_glop_index < len(self.properties["inventory_items"]) and this_glop_index>=0:
+            if item_glop_index < len(self.properties["inventory_items"]) and item_glop_index>=0:
                 #select_item_event_dict["fit_enable"] = True
-                #self.properties["inventory_items"].pop(this_glop_index)
-                self.properties["inventory_items"][this_glop_index] = EMPTY_ITEM
-                if this_glop_index == 0:
+                #self.properties["inventory_items"].pop(item_glop_index)
+                self.properties["inventory_items"][item_glop_index] = EMPTY_ITEM
+                if item_glop_index == 0:
                     select_item_event_dict = self.select_next_inventory_slot(True)
                 else:
                     select_item_event_dict = self.select_next_inventory_slot(False)
@@ -754,23 +793,28 @@ class KivyGlops(PyGlops):
                             #else:
                                 #self.glops[index]=this_glop
                             #print("")
-                            if (favorite_pivot_point is None):
+                            if favorite_pivot_point is None:
                                 favorite_pivot_point = new_glops[index]._pivot_point
-                        if pivot_to_geometry_enable:
-                            #apply pivot point (so that glop's _translate_instruction is actually the center)
-                            print("  applying pivot points...")
-                            for index in range(0,len(new_glops)):
+                        if favorite_pivot_point is None:
+                            favorite_pivot_point = (0.0, 0.0, 0.0)
+                        for index in range(0,len(new_glops)):
+                            if pivot_to_geometry_enable:
+                                #apply pivot point (so that glop's _translate_instruction is actually the center)
+                                some_name = ""
+                                if new_glops[index].name is not None:
+                                    some_name = new_glops[index].name
+                                print("[ KivyGlops ] applying pivot point for " + some_name + "...")
                                 prev_pivot = new_glops[index]._pivot_point[0], new_glops[index]._pivot_point[1], new_glops[index]._pivot_point[2]
                                 new_glops[index].apply_pivot()
                                 #print("    moving from "+str( (new_glops[index]._translate_instruction.x, new_glops[index]._translate_instruction.y, new_glops[index]._translate_instruction.z) ))
                                 new_glops[index]._translate_instruction.x = prev_pivot[0]
                                 new_glops[index]._translate_instruction.y = prev_pivot[1]
                                 new_glops[index]._translate_instruction.z = prev_pivot[2]
-                                new_glops[index].generate_kivy_mesh()
-                                self.ui.add_glop(new_glops[index])
-                                if results is None:
-                                    results = list()
-                                results.append(len(self.glops)-1)
+                            new_glops[index].generate_kivy_mesh()
+                            self.ui.add_glop(new_glops[index])
+                            if results is None:
+                                results = list()
+                            results.append(len(self.glops)-1)
                         if centered:
                             #TODO: apply pivot point instead (change vertices as if pivot point were 0,0,0) to ensure translate 0 is world 0; instead of:
                             #center it (use only one pivot point, so all objects in obj file remain aligned with each other):
@@ -1146,7 +1190,7 @@ class KivyGlops(PyGlops):
         # expressed as positive values since they are distances from the camera
         # then they are compressed to -1 to 1
         # -https://www.youtube.com/watch?v=frtzb2WWECg
-        proj = proj.view_clip(-clip_right, clip_right, -1*clip_top, clip_top, self.projection_near, 100, 1)
+        proj = proj.view_clip(-clip_right, clip_right, -1*clip_top, clip_top, self.projection_near, 100, 1)  # last params: far, perspective
         top_theta = theta_radians_from_rectangular(self.projection_near, clip_top)
         right_theta = theta_radians_from_rectangular(self.projection_near, clip_right)
         self.ui.screen_w_arc_theta = right_theta*2.0
@@ -1419,13 +1463,15 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
 
             #context.add(this_glop._color_instruction)  #TODO: asdf add as uniform instead
             if this_glop._mesh is None:
-                this_glop.generate_kivy_mesh()
+                #verts, indices = this_glop.generate_kivy_mesh()
                 print("WARNING: glop had no mesh, so was generated when added to render context. Please ensure it is a KivyGlop and not a PyGlop (however, vertex indices misread could also lead to missing Mesh object).")
             #print("_color_instruction.r,.g,.b,.a: "+str( [this_glop._color_instruction.r, this_glop._color_instruction.g, this_glop._color_instruction.b, this_glop._color_instruction.a] ))
             #print("u_color: "+str(this_glop.material.diffuse_color))
-            
+            #this_glop.generate_axes()
+            #this_glop._axes_mesh.
             if this_glop._axes_mesh is not None:
                 #context.add(this_glop._axes_mesh)  # debug only
+                #this_glop._mesh = this_glop._axes_mesh  # debug only
                 pass
                 
             if this_glop._mesh is not None:
@@ -1581,6 +1627,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                 event_dict = self.scene.player_glop.select_next_inventory_slot(False)
             self.scene.after_selected_item(event_dict)
         else:
+            print("[ KivyGlops ] (debug only) touch down")
             event_dict = self.scene.use_selected(self.scene.player_glop)
 
     def on_touch_up(self, touch):

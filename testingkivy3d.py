@@ -21,6 +21,15 @@ from kivy.factory import Factory
 
 no_width_error_enable = True
 
+#region globals pasted from common.py
+def view_traceback():
+    ex_type, ex, tb = sys.exc_info()
+    print(str(ex_type)+" "+str(ex)+": ")
+    traceback.print_tb(tb)
+    del tb
+    print("")
+#endregion globals pasted from common.py
+
 #region globals pasted from PyGlops
 #from kivyops import *
 V_POS_INDEX = 0
@@ -303,14 +312,9 @@ class TestingKivy3D(BoxLayout):
             self._keyboard.bind(on_key_down=self._on_keyboard_down)
             self._keyboard.bind(on_key_up=self._on_keyboard_up)
         except:
-            print("Could not finish loading keyboard" +
-                  "(keyboard may not be present).")
-            #view_traceback()
-            ex_type, ex, tb = sys.exc_info()
-            print(str(ex_type)+" "+str(ex)+": ")
-            traceback.print_tb(tb)
-            del tb
-            print("")
+            print("[ TestingKivy3D ] Could not finish loading" + \
+                  " keyboard (keyboard may not be present).")
+            view_traceback()
 
         #self.bind(on_touch_down=self.canvasTouchDown)
 
@@ -434,12 +438,7 @@ class TestingKivy3D(BoxLayout):
             pass
         except:
             print("[ TestingKivy3D ] add_op could not finish adding instructiongroup")
-            #view_traceback()
-            ex_type, ex, tb = sys.exc_info()
-            print(str(ex_type)+" "+str(ex)+": ")
-            traceback.print_tb(tb)
-            del tb
-            print("")
+            view_traceback()
             
         #self._meshes.remove(this_glop.get_context()) #  to hide
         
@@ -482,7 +481,7 @@ class TestingKivy3D(BoxLayout):
         clip_right = asp*clip_top  # formerly overwrote asp
         self.projection_near = 0.1
         proj = Matrix().view_clip(-clip_right, clip_right, -1*clip_top, clip_top, self.projection_near, 100, 1)  # last params: far, perspective
-        #proj = Matrix().view_clip(-asp, asp, -1, 1, 1, 100, 1) last params: far, perspective
+        #proj = Matrix().view_clip(-asp, asp, -1, 1, 1, 100, 1)  # last params: far, perspective
         modelViewMatrix = Matrix()
         modelViewMatrix.translate(self.camera_translate_instruction.x, self.camera_translate_instruction.y, self.camera_translate_instruction.z)
         if (self.camera_translate_instruction.x != self.look_point[0] or

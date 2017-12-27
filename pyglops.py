@@ -23,6 +23,7 @@ from common import *
 
 import timeit
 from timeit import default_timer as best_timer
+import time
 
 tab_string = "  "
 
@@ -318,10 +319,10 @@ class PyGlopHitBox:
             ",  "+str(self.minimums[1]) + " to " + str(self.maximums[1]) + \
             ",  " + str(self.minimums[2])+" to "+str(self.maximums[2])
 
-
 class PyGlop:
     #update copy constructor if adding/changing copyable members
     name = None #object name such as from OBJ's 'o' statement
+    dat = None
     source_path = None  #required so that meshdata objects can be uniquely identified (where more than one file has same object name)
     properties = None #dictionary of properties--has indices such as usemtl
     vertex_depth = None
@@ -379,6 +380,8 @@ class PyGlop:
     #endregion calculated from vertex_format
 
     def __init__(self):
+        self.dat = {}
+        self.dat["links"] = []  # list of relationship dicts
         self.separable_offsets = []  # if more than one submesh is in vertices, chunks are saved in here, such as to assist with explosions
         self.visible_enable = True
         self.hitbox = PyGlopHitBox()
@@ -580,7 +583,9 @@ class PyGlop:
         if self.infinite_inventory_enable:
             if not select_item_event_dict["fit_enable"]:
                 self.properties["inventory_items"].append(item_dict)
-                print("[ PyGlops ] (debug only) obtained item in new slot: "+str(item_dict))
+                #print("[ PyGlops ] (debug only) obtained item in new slot: "+str(item_dict))
+                print("[ PyGlops ] (debug only) obtained "+item_dict["name"]+" in new slot " + \
+                      str(len(self.properties["inventory_items"])-1))
                 select_item_event_dict["fit_enable"] = True
         if select_item_event_dict["fit_enable"]:
             if self.properties["inventory_index"] < 0:
@@ -636,8 +641,8 @@ class PyGlop:
         return select_item_event_dict
 
     def _on_change_pivot(self, previous_point=(0.0,0.0,0.0)):
-        # since should be implemented by subclass
-        print("[ PyGlops ] your _on_change_pivot should override this")
+        # should be implemented by subclass
+        # print("[ PyGlops ] your _on_change_pivot should override this")
         pass
     
     def get_context(self):
@@ -1593,11 +1598,12 @@ class PyGlops:
             #first, fire the (blank) overridable event handlers:
             bumpable_name = self.glops[bumpable_index].name
             bumper_name = self.glops[bumper_index].name
-            self.obtain_glop(bumpable_name, bumper_name)
-            self.obtain_glop_by_index(bumpable_index, bumper_index)
+            self.obtain_glop(bumpable_name, bumper_name)  # handler
+            self.obtain_glop_by_index(bumpable_index, bumper_index)  # handler
             #then manually transfer the glop to the player:
-            self.glops[bumpable_index].item_dict["owner"] = self.glops[bumper_index].name
+            self.glops[bumpable_index].item_dict["owner"] = self.glops[bumper_index].name            
             item_event = self.glops[bumper_index].push_glop_item(self.glops[bumpable_index], bumpable_index)
+            
             #process item event so selected inventory slot gets updated in case that is the found slot for the item:
             self.after_selected_item(item_event)
             if verbose_enable:
@@ -1946,12 +1952,14 @@ class PyGlops:
         return result
 
     def use_selected(self, user_glop):
+        f_name = "use_selected"
         if user_glop is not None:
             if user_glop.properties is not None:
                 if "inventory_items" in user_glop.properties:
                     if "inventory_index" in user_glop.properties:
-                        try:
-                            if user_glop.properties["inventory_index"] > -1:
+                        if user_glop.properties["inventory_index"] > -1:
+                            try:
+                                print("[ PyGlops ] (debug only) " + f_name + ": using item in slot " + str(user_glop.properties['inventory_index']))
                                 user_glop.properties["inventory_items"][user_glop.properties["inventory_index"]]
                                 this_item = user_glop.properties["inventory_items"][user_glop.properties["inventory_index"]]
                                 glop_index = None
@@ -1966,7 +1974,7 @@ class PyGlops:
                                             is_ready = True
                                             if "cooldown" in item_glop.item_dict:
                                                 is_ready = False
-                                                if ("RUNTIME_last_used_time" not in item_glop.item_dict) or (time.time() - item_glop.item_dict["RUNTIME_last_used_time"]):
+                                                if ("RUNTIME_last_used_time" not in item_glop.item_dict) or (time.time() - item_glop.item_dict["RUNTIME_last_used_time"] >= item_glop.item_dict["cooldown"]):
                                                     if ("RUNTIME_last_used_time" in item_glop.item_dict):
                                                         is_ready = True
                                                     #else Don't assume cooled down when obtained, otherwise rapid firing items will be allowed
@@ -2009,6 +2017,11 @@ class PyGlops:
                                                     item_glop._translate_instruction.y = user_glop._translate_instruction.y + user_glop.eye_height
                                                     item_glop._translate_instruction.z = user_glop._translate_instruction.z
                                                     self.show_glop(glop_index)  # formerly added mesh manually (when this method was in KivyGlops)
+                                            else:
+                                                msg = "[ PyGlops ] item is not ready"
+                                                if "cooldown" in item_glop.item_dict:
+                                                    msg += " (cooldown in " + str(item_glop.item_dict["cooldown"] - (time.time() - item_glop.item_dict["RUNTIME_last_used_time"]))
+                                                print(msg)
                                         else:
                                             print(item_glop.name+" has no use.")
                                     else:
@@ -2073,12 +2086,24 @@ class PyGlops:
                                         #    print("[ debug only ]   - ")
                                         #    print("[ debug only ]     name: " + str(self.glops[b_i].name))
                                         #    print("[ debug only ]     _translate_instruction: " + str(self.glops[b_i]._translate_instruction.xyz))
-                        except:
-                            print("user_glop.name:"+str(user_glop.name))
-                            print('user_glop.properties["inventory_index"]:'+str(user_glop.properties["inventory_index"]))
-                            print('len(user_glop.properties["inventory_items"]):'+str(len(user_glop.properties["inventory_items"])))
-                            print("Could not finish use_selected:")
-                            view_traceback()
+                            except:
+                                print("[ PyGlopse ] ERROR: Could not finish use_selected:")
+                                print("  user_glop.name:"+str(user_glop.name))
+                                print('  user_glop.properties["inventory_index"]:'+str(user_glop.properties["inventory_index"]))
+                                print('  len(user_glop.properties["inventory_items"]):'+str(len(user_glop.properties["inventory_items"])))
+                                print("  traceback: '''")
+                                view_traceback()
+                                print("  '''")
+                        else:
+                            print("[ PyGlops ] ERROR in " + f_name + ": user_glop.properties['inventory_index'] is < 0")
+                    else:
+                        print("[ PyGlops ] ERROR in " + f_name + ": user_glop.properties['inventory_index'] is not present (actor tried to use item before inventory was ready)")
+                else:
+                    print("[ PyGlops ] ERROR in " + f_name + ": user_glop.properties['inventory_items'] is None (actor without inventory tried to use item)")
+            else:
+                print("[ PyGlops ] ERROR in " + f_name + ": user_glop.properties is None (non-actor tried to use item)")
+        else:
+            print("[ PyGlops ] ERROR in " + f_name + ": user_glop is None")
 
 
     def load_glops(self):
