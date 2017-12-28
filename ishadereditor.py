@@ -34,8 +34,8 @@ from kivyglops import *
 
 #aka MainForm
 class ShaderEditor(FloatLayout):
-    
-    source = StringProperty('data/logo/kivy-icon-512.png')
+    pass
+    #source = StringProperty('data/logo/kivy-icon-512.png')
 
 #---VERTEX SHADER-------------------------------------------------------
     vs = StringProperty('''
@@ -43,51 +43,72 @@ class ShaderEditor(FloatLayout):
     precision highp float;
 #endif
 
-//why are these vec4? I don't know. Ask Munshi. I say let the GPU do the work, but I may go back and optimize this
 attribute vec4  a_position;
+attribute vec4  a_color;
+attribute vec2  a_texcoord0;
 attribute vec4  a_normal;
 
 uniform mat4 modelview_mat;
 uniform mat4 projection_mat;
-uniform vec4  mat_diffuse_color; //the object color (as opposed to a_color which is the color vertex attribute)
+//uniform material  material_state;
 
-varying vec4 normal_vec;
-varying vec4 vertex_pos;
+varying vec4 frag_color;
+varying vec2 uv_vec;
+varying vec3 v_normal;
+varying vec4 v_pos;
+
+// struct VertextInput {  //sic
+    // vec3 vertex : POSITION;
+    // vec3 normal : NORMAL;
+// };
+// struct VertexOutput {
+    // vec4 pos : SV_POSITION;
+// };
 
 void main (void) {
-    //compute vertex position in eye_sapce and normalize normal vector
-    
-    vec4 pos = modelview_mat * a_position;//vec4 pos = modelview_mat * vec4(a_position,1.0);
-    vertex_pos = pos;
-    
-    normal_vec = a_normal;//normal_vec = vec4(a_normal,0.0);
-    gl_Position = projection_mat * pos;
+    vec4 pos = modelview_mat * a_position; //vec4(v_pos,1.0);
+    v_pos = projection_mat * pos;
+    gl_Position = v_pos;
+    frag_color = a_color;
+    uv_vec = a_texcoord0;
+    v_normal = a_normal.xyz;
 }
-
 
 ''')
 
 #---FRAGMENT SHADER-------------------------------------------------------
 
     fs = StringProperty('''
+//https://www.youtube.com/watch?v=WMHpBpjWUlY
 #ifdef GL_ES
     precision highp float;
 #endif
 
-varying vec4 normal_vec;
-varying vec4 vertex_pos;
+varying vec4 frag_color;
+varying vec2 uv_vec;
+varying vec3 v_normal;
+varying vec4 v_pos;
+uniform vec3 camera_world_pos;
 
-uniform mat4 normal_mat;
+uniform sampler2D tex;
+
+//should have default sharpness otherwise must always set it in calling program
+//uniform fresnel_sharpness; //uniform _sharpness;
+
 
 void main (void){
-    //correct normal, and compute light vector (assume light at the eye)
-    vec4 a_normal = normalize( normal_mat * normal_vec ) ;
-    vec4 v_light = normalize( vec4(0,0,0,1) - vertex_pos );
-    //reflectance based on lamberts law of cosine
-    float theta = clamp(dot(a_normal, v_light), 0.0, 1.0);
-    gl_FragColor = vec4(theta, theta, theta, 1.0);
+    float default_fresnel_sharpness = .2;
+    //if (fresnel_sharpness==null) {
+        //fresnel_sharpness = default_fresnel_sharpness;
+    //}
+    float fresnel_sharpness = default_fresnel_sharpness;
+    vec4 color = texture2D(tex, uv_vec);
+    vec3 V = normalize( camera_world_pos.xyz - v_pos.xyz );  // normalize( _WorldSpaceCameraPos.xyz - i.posWorld );
+    vec3 N = normalize(v_normal); //normalize( i.normalDir );
+    float fresnel = pow( 1.0 - dot( N, V), fresnel_sharpness ); //pow( 1.0 - dot( N, V), _sharpness );
+    vec4 fresnel_color = vec4(fresnel, fresnel, fresnel, 1.0);
+    gl_FragColor = color * fresnel_color;
 }
-
 ''')
 #---END SHADERS-------------------------------------------------------
 
@@ -246,13 +267,13 @@ class Imperative_ShaderEditorApp(App):
     def build(self):
         global form
         kwargs = {}
-        example_path = 'richmond-bridge-512x512-rgba-CC0.png'
-        if len(sys.argv) > 1:
-            kwargs['source'] = sys.argv[1]
+        #example_path = 'richmond-bridge-512x512-rgba-CC0.png'
+        #if len(sys.argv) > 1:
+        #    kwargs['source'] = sys.argv[1]
         form = ShaderEditor(**kwargs)
-        if (not (os.path.isfile(form.source))) and os.path.isfile(example_path):
-            form.source = example_path
-        print("using image: '"+form.source+"'")
+        #if (not (os.path.isfile(form.source))) and os.path.isfile(example_path):
+        #    form.source = example_path
+        #print("using image: '"+form.source+"'")
         form.main_layout = Factory.BoxLayout(orientation="horizontal")
         form.add_widget(form.main_layout)
         form.input_layout = Factory.BoxLayout(orientation="vertical")

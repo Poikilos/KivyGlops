@@ -68,7 +68,9 @@ def normalize_3d_by_ref(this_vec3):
         this_vec3[1] /= length
         this_vec3[2] /= length
     else:
-        this_vec3[1] = 1.0  # give some kind of normal for 0,0,0
+        this_vec3[0] = 0.0
+        this_vec3[1] = -1.0  # give some kind of normal for 0,0,0
+        this_vec3[2] = 0.0
 
 def get_fvec4_from_svec3(vals, last_value):
     results = None
@@ -84,8 +86,10 @@ def get_fvec4_from_svec3(vals, last_value):
             results = float(vals[0]), float(vals[1]), float(vals[2]), last_value
     except ValueError:
         print("ERROR in get_fvec4: bad floats in " + str(vals))
+        results = 0.0, 0.0, 0.0, 0.0
+    return results
 
-def get_fvec4_from_strings(vals):
+def get_fvec4_from_svec_any_len(vals):
     results = None
     try:
         if len(vals)==1:
@@ -99,6 +103,8 @@ def get_fvec4_from_strings(vals):
             results = float(vals[0]), float(vals[1]), float(vals[2]), float(vals[3])
     except ValueError:
         print("ERROR in get_fvec4: bad floats in " + str(vals))
+        results = 0.0, 0.0, 0.0, 0.0
+    return results
 
 def get_vec3_from_point(point):
     return (point.x, point.y, point.z)
@@ -830,10 +836,10 @@ class PyGlop:
             if opacity is not None:
                 self.material.diffuse_color = get_fvec4_from_svec3(wmaterial["Kd"]["values"], opacity) if ("Kd" in wmaterial) else self.material.diffuse_color 
             else:
-                self.material.diffuse_color = get_fvec4_from_strings(wmaterial["Kd"]["values"]) if ("Kd" in wmaterial) else self.material.diffuse_color
+                self.material.diffuse_color = get_fvec4_from_svec_any_len(wmaterial["Kd"]["values"]) if ("Kd" in wmaterial) else self.material.diffuse_color
             #self.material.diffuse_color = [float(v) for v in self.material.diffuse_color]
-            self.material.ambient_color = get_fvec4_from_strings(wmaterial["Ka"]["values"]) if ("Ka" in wmaterial) else self.material.ambient_color
-            self.material.specular_color = get_fvec4_from_strings(wmaterial["Ks"]["values"]) if ("Ks" in wmaterial) else self.material.specular_color
+            self.material.ambient_color = get_fvec4_from_svec_any_len(wmaterial["Ka"]["values"]) if ("Ka" in wmaterial) else self.material.ambient_color
+            self.material.specular_color = get_fvec4_from_svec_any_len(wmaterial["Ks"]["values"]) if ("Ks" in wmaterial) else self.material.specular_color
             if "Ns" in wmaterial:
                 self.material.specular_coefficent = float(wmaterial["Ns"]["values"][0])
             #TODO: store as diffuse color alpha instead: self.opacity = wmaterial.get('d')
@@ -855,7 +861,10 @@ class PyGlop:
             if "map_Tr" in wmaterial:
                 self.material.properties["transparency_path"] = wmaterial["map_Tr"]["values"][0]
                 print("[ PyGlops ] Non-standard map_Tr command found--inverted opacity map is not yet implemented.")
-
+            if "bump" in wmaterial:
+                self.material.properties["bump_path"] = wmaterial["bump"]["values"][0]
+            if "disp" in wmaterial:
+                self.material.properties["displacement_path"] = wmaterial["disp"]["values"][0]
         except:  # Exception:
             print("[ PyGlops ] ERROR: Could not finish " + f_name + ":")
             view_traceback()
@@ -1417,7 +1426,7 @@ def theta_radians_from_rectangular(x, y):
 
 def new_tuple(length, fill_start=0, fill_len=-1, fill_value=1.0):
     result = None
-    tmp = list()
+    tmp = []
     fill_count = 0
     for i in range(0,length):
         if i>=fill_start and fill_count<fill_len:
@@ -1701,7 +1710,6 @@ class PyGlops:
             #    bumpable_name = result["bumpable_name"]
             #if "bumper_name" in result:
             #    bumper_name = result["bumper_name"]
-        #asdf remove if bumpable_glop.item_dict.
 
         #if bumpable_name is not None and bumper_name is not None:
         if self.glops[bumpable_index].item_dict is not None:
@@ -1716,9 +1724,9 @@ class PyGlops:
                             print("  bump "+self.glops[bumpable_index].name+": "+command+" by "+self.glops[bumper_index].name)
                             self._run_command(command, bumpable_index, bumper_index)
                     else:
-                        print("self.glops[bumpable_index].item_dict['bump'] is None")
+                        print("[ PyGlops ] self.glops[bumpable_index].item_dict['bump'] is None")
             else:
-                print("self.glops[bumpable_index].item_dict does not contain 'bump'")
+                print("[ PyGlops ] self.glops[bumpable_index].item_dict does not contain 'bump'")
         elif self.glops[bumpable_index].projectile_dict is not None:
             #print("  this_distance: "+str(distance))
             if self.glops[bumpable_index].projectile_dict is not None:
@@ -1738,7 +1746,8 @@ class PyGlops:
             #else:
             #    print("self.glops[bumpable_index].item_dict does not contain 'bump'")
         else:
-            print("[ PyGlops] bumped object '" + str(self.glops[bumpable_index].name) + 
+            print("[ PyGlops] bumped object '" + \
+                  str(self.glops[bumpable_index].name) + \
                   "' is not an item")
     
     def get_player_glop_index(self, player_number):
@@ -1753,8 +1762,9 @@ class PyGlops:
                     if self.glops[i] is self.player_glop:
                         result = i
                         self._player_glop_index = i
-                        print("WARNING: player_glop_index was not set, but" +
-                              "player_glop was found in glops, so now is.")
+                        print("[ PyGlops ] WARNING: " + \
+                              "player_glop_index was not set (but" + \
+                              "player_glop found in glops) so now is.")
                         break
         return result
 
@@ -1804,22 +1814,22 @@ class PyGlops:
                     self.glops[index].calculate_hit_range()
                     self._bumper_indices.append(index)
                     self.glops[index].bump_enable = True
-                    print("Set "+str(index)+" as bumper")
+                    print("[ PyGlops ] Set "+str(index)+" as bumper")
                     if self.glops[index].hitbox is None:
                         print("  hitbox: None")
                     else:
                         print("  hitbox: "+self.glops[index].hitbox.to_string())
                 else:
-                    print("ERROR in set_as_actor_by_index: index "+str(index)+" is out of range")
+                    print("[ PyGlops ] ERROR in set_as_actor_by_index: index "+str(index)+" is out of range")
             else:
-                print("ERROR in set_as_actor_by_index: index is "+str(index))
+                print("[ PyGlops ] ERROR in set_as_actor_by_index: index is "+str(index))
         else:
-            print("ERROR in set_as_actor_by_index: index is None")
+            print("[ PyGlops ] ERROR in set_as_actor_by_index: index is None")
         #return result
 
     #always reimplement this so the camera is correct subclass 
     def new_glop(self):
-        print("ERROR: new_glop for PyGlop should never be used")
+        print("[ PyGlops ] ERROR: new_glop for PyGlop should never be used")
         return PyGlop()
 
     def set_fly(self, fly_enable):
@@ -2017,10 +2027,10 @@ class PyGlops:
                                         else:
                                             print(item_glop.name+" has no use.")
                                     else:
-                                        print("ERROR: tried to use a glop that is not an item (this should not be in "+str(user_glop.name)+"'s inventory)")
+                                        print("[ PyGlops ] ERROR: tried to use a glop that is not an item (this should not be in "+str(user_glop.name)+"'s inventory)")
                                 elif "fire_type" in this_item:
                                     if this_item["fire_type"] != "throw_linear":
-                                        print("WARNING: "+this_item["fire_type"]+" not implemented, so using throw_linear")
+                                        print("[ PyGlops ] WARNING: "+this_item["fire_type"]+" not implemented, so using throw_linear")
                                     weapon_dict = this_item
                                     favorite_pivot = None
                                     
@@ -2079,7 +2089,7 @@ class PyGlops:
                                         #    print("[ debug only ]     name: " + str(self.glops[b_i].name))
                                         #    print("[ debug only ]     _translate_instruction: " + str(self.glops[b_i]._translate_instruction.xyz))
                             except:
-                                print("[ PyGlopse ] ERROR: Could not finish use_selected:")
+                                print("[ PyGlops ] ERROR: Could not finish use_selected:")
                                 print("  user_glop.name:"+str(user_glop.name))
                                 print('  user_glop.properties["inventory_index"]:'+str(user_glop.properties["inventory_index"]))
                                 print('  len(user_glop.properties["inventory_items"]):'+str(len(user_glop.properties["inventory_items"])))
@@ -2099,7 +2109,7 @@ class PyGlops:
 
 
     def load_glops(self):
-        print("WARNING: program-specific subclass of a framework-specific subclass of PyGlops should implement load_glops (and usually update_glops which will be called before each frame is drawn)")
+        print("[ PyGlops ] WARNING: program-specific subclass of a framework-specific subclass of PyGlops should implement load_glops (and usually update_glops which will be called before each frame is drawn)")
 
     def update_glops(self):
         # subclass of KivyGlopsWindow can implement load_glops
@@ -2122,9 +2132,9 @@ class PyGlops:
         return None
 
     def attacked_glop(self, attacked_index, attacker_index, weapon_dict):
-        print("attacked_glop should be implemented by the subclass" + \
-            "which would know how to damage or calculate defense" + \
-            "or other properties")
+        print("[ PyGlops ] attacked_glop should be implemented by " + \
+              "the subclass which would know how to damage or " + \
+              "calculate defense or other properties")
         #trivial example:
         #self.glops[attacked_index].actor_dict["hp"] -= weapon_dict["hit_damage"]
         #if self.glops[attacked_index].actor_dict["hp"] <= 0:

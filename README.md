@@ -38,7 +38,7 @@ Control 3D objects and the camera in your 3D Kivy app!
 * (2017-12-27) fully implemented face grouping from complete OBJ spec including multiple groups (`g` with no param means "default" group, and no `g` at all means "default" group)
 * (2017-12-27) renamed set_textures_from_mtl_dict to set_textures_from_wmaterial
 * (2017-12-27) eliminated numerical indices for objects in WObjFile object (changed self.wobjects from list to dict), and name property of WObject
-* (2017-12-27) In mtl loader, renamed `args_string`, `args` & `param` to `options_string`, `options` & `option` for clarity, since mtl spec calls the chunks following the command values: option if starts with hyphen, args if follow option, and values if is part of statement (or command)
+* (2017-12-27) In mtl loader, renamed `args_string`, `args` & `param` to `options_string`, `options` & `option` for clarity, since mtl spec calls the chunks following the command values: option if starts with hyphen, args if follow option, and values if is part of statement (or command) [1]
 * (2017-12-27) transitioned from material classes to material dict--see "wmaterial dict spec" subheading under "Developer Notes" (since dict can just be interpreted later; and so 100% of data can be loaded even if mtl file doesn't follow spec)
 * (2017-12-26) started implementing "carry" and dict-ify KivyGlops savable members ("tmp" dict member should not be saved)
 * (2017-12-26) fixed issue where cooldown last used time wasn't set before item was first used (now is ready upon first time ever added to an inventory)
@@ -59,7 +59,7 @@ Control 3D objects and the camera in your 3D Kivy app!
 * (2017-12-20) updated kivyglopstesting.py to account for refactoring
 * (2017-12-20) renamed kivyglopsminimal.py to etc/kivyglops-mini-deprecated.py
 * (2017-12-19) wobjfile.py: elimintated smoothing_group in favor of this_face_group_type and this_face_group_name (this_face_group_type "s" is a smoothing group)
-* (2017-12-19) wobjfile.py: always use face groups, to accomodate face groups feature of OBJ spec; added more fault-tolerance to by creating vertex list whenever first vertex of a list is declared, and creating face groups whenever first face of a list is declared
+* (2017-12-19) wobjfile.py: always use face groups, to accomodate face groups feature of OBJ spec [1]; added more fault-tolerance to by creating vertex list whenever first vertex of a list is declared, and creating face groups whenever first face of a list is declared
 * (2017-12-19) standardized emit_yaml methods (and use standard_emit_yaml when necessary) for consistent yaml and consistent coding: (list, tab, name [, data | self])
 * (2017-12-19) store vertex_group_type in WObject (for future implementation)
 * (2017-12-19) added ability to load non-standard obj file using commands without params; leave WObject name as None if not specified, & added ability to load non-standard object signaling (AND naming) in obj file AFTER useless g command, (such as, name WObject `some_name` if has `# object some_name then useless comments` on any line before data but after line with just `g` or `o` command but only if no name follows those commands)
@@ -132,7 +132,7 @@ Control 3D objects and the camera in your 3D Kivy app!
   >>> l = deque(['a', 'b', 'c', 'd'])
   >>> l.popleft()```
 * resource license: compatibility should be checked against original resource licenses
-* vertex normals should supercede smoothing groups (which are based on faces) according to the obj format spec, but I'm not sure why since that would accomplish nothing since normals are blended across faces on OpenGL ES 2+
+* vertex normals should supercede smoothing groups (which are based on faces) according to the obj format spec [1], but I'm not sure why since that would accomplish nothing since normals are blended across faces on OpenGL ES 2+
 * implement vendor-specific commands at end of OBJ file (see wobjfile.py vs "Vendor specific alterations" section of <https://en.wikipedia.org/wiki/Wavefront_.obj_file>)
 * implement Clara.io PBR extensions to OBJ format (see wobjfile.py vs "Physically-based Rendering" section of <https://en.wikipedia.org/wiki/Wavefront_.obj_file>)
 * `texcoord_number` is always None during `this_face.append([vertex_number,texcoord_number,normal_number])` in wobjfile.py; see also stated_texcoord_number from which texcoord_number is derived when stated_texcoord_number is good
@@ -233,9 +233,9 @@ This spec allows one dict to be used to completely store the Wavefront mtl forma
             * "values" (a list of values)
                 * if the command's (such as Kd) expected values are color values (whether rgb, or CIEXYZ if commands ends in " xyz"), only one color value means other 2 are same (grayscale)! 
                 * if the command's expected value is a filename, values is still a list--first value is filename, additional values are params (usually a factor by which to multiply values in the file)
-                    * map can override: `Ka` (ambient color), `Kd` (diffuse color), `Ks` (specular color), `Ns` (specular coefficient scalar), `d` (opacity scalar), and surface normal according to spec
+                    * map can override: `Ka` (ambient color), `Kd` (diffuse color), `Ks` (specular color), `Ns` (specular coefficient scalar), `d` (opacity scalar), and surface normal (by way of bump map not normal map) according to spec
                         * displacement map is `disp` (in modern terms, a vertex displacement map)
-                        * bump map is `bump`--though it affects normals, it is a standard bump map which in modern terms is a (fragment) displacement map
+                        * bump map is `bump`--though it affects normals, it is a standard bump map which in modern terms is a (fragment) displacement map ("represents the topology or height of the surface relative to the average surface.  Dark areas are depressions and light areas are high points." -Ramey
                         * `refl` is a reflection map, or in modern terms, an environment map (as opposed to a reflectance map): type can be sphere, or there can be several cube_* maps where * is the side (front, back, top, bottom, left, right)
             * "tmp" (a dict of temporary values such as "file_path", which was formerly stored in wmaterial.file_path, and "directory"; both of which are only for using relative paths in the mtl file)
             * "#" (comments list)
@@ -257,3 +257,8 @@ This spec allows one dict to be used to completely store the Wavefront mtl forma
 vertex color is always RGBA
 if vertex_color_enable then vertex color must be set for every vertex, and object diffuse_color is ignored
 texture is overlayed onto vertex color
+
+
+## Works Cited
+[1] Diane Ramey, Linda Rose, and Lisa Tyerman, "Object Files (.obj)," paulbourke.net, October 1995. [Online]. Available: http://paulbourke.net/dataformats/obj/. [Accessed Dec. 28, 2017].
+[2] Diane Ramey, Linda Rose, and Lisa Tyerman, "MTL material format (Lightwave, OBJ)," paulbourke.net, October 1995. [Online]. Available: http://paulbourke.net/dataformats/obj/. [Accessed Dec. 28, 2017].

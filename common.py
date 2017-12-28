@@ -21,8 +21,7 @@ def view_traceback():
     traceback.print_tb(tb)
     del tb
     print("")
-    
-    
+
 def get_by_name(object_list, needle):  # formerly find_by_name
     result = None
     for i in range(0,len(object_list)):

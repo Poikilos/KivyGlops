@@ -121,12 +121,15 @@ class Testing3DWidget(Widget):
         if set_color is not None:
             for i in range(0, len(set_color)):
                 vertex_components[self.COLOR_OFFSET+i] = set_color[i]
+            if (len(set_color)) < 4 and (self.vertex_depth > 3):
+                vertex_components[self.COLOR_OFFSET+3] = 1.0
         normals = [0.0]*3;
         for i in range(0, 3):
             normals[i] = set_coords[i]
         normalize_3d_by_ref(normals)
         for i in range(0, 3):
             vertex_components[self._NORMAL_OFFSET+i] = normals[i]
+        #print("  #* made new vertex " + str(vertex_components) + " (color at " + str(self.COLOR_OFFSET) + ")") 
         return vertex_components
 
     def append_vertex(self, target_vertices, set_coords, set_color):
