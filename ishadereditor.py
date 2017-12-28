@@ -19,6 +19,8 @@ import sys
 import os  # isfile etc
 import kivy
 kivy.require('1.0.6')
+def get_verbose_enable():
+    return False
 
 from kivy.app import App
 from kivy.uix.floatlayout import FloatLayout
@@ -28,6 +30,7 @@ from kivy.graphics import RenderContext, Color
 from kivy.properties import StringProperty, ObjectProperty
 from kivy.clock import Clock  
 from pygments.lexers import GLShaderLexer
+from kivyglops import *
 
 #aka MainForm
 class ShaderEditor(FloatLayout):
@@ -40,45 +43,28 @@ class ShaderEditor(FloatLayout):
     precision highp float;
 #endif
 
-attribute vec3  a_position; //set by vertex (named by vertex_format)
-attribute vec3  a_normal; //formerly vNormal; set by vertex (named by vertex_format)
-attribute vec4  a_color; //formerly vColor; TODO: oops noone set this (neither kivy nor nskrypnik [C:\Kivy-1.8.0-py3.3-win32\kivy\examples\3Drendering\simple.glsl doesn't even mention the variable ])--vertex_format should name it. No wonder having no texture (or multiplying by vColor) makes object invisible. 
-attribute vec2  a_texcoord0; //formerly vTexCoord0; set by vertex (named by vertex_format)
+//why are these vec4? I don't know. Ask Munshi. I say let the GPU do the work, but I may go back and optimize this
+attribute vec4  a_position;
+attribute vec4  a_normal;
 
-uniform mat4 modelview_mat; 
-uniform mat4 projection_mat; 
+uniform mat4 modelview_mat;
+uniform mat4 projection_mat;
+uniform vec4  mat_diffuse_color; //the object color (as opposed to a_color which is the color vertex attribute)
 
-varying vec4 normal_vec; //set by vertex shader below
-varying vec4 vertex_pos; 
-uniform mat4 normal_mat; //normal-only
-varying vec4 frag_color; //set by vertex shader below (according to a_color)
-varying vec2 uv_vec; 
+varying vec4 normal_vec;
+varying vec4 vertex_pos;
 
-
-varying vec2 uv; //http://www.kickjs.org/example/shader_editor/shader_editor.html
-varying vec3 n; //http://www.kickjs.org/example/shader_editor/shader_editor.html
-
-
-void main()
-{
+void main (void) {
     //compute vertex position in eye_sapce and normalize normal vector
-    vec4 pos = modelview_mat * vec4(a_position,1.0);
+    
+    vec4 pos = modelview_mat * a_position;//vec4 pos = modelview_mat * vec4(a_position,1.0);
     vertex_pos = pos;
-    normal_vec = vec4(vNormal,0.0);
-    //gl_Position = projection_mat * pos;
     
-    // Transforming The Vertex
-    /* gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex; this is the c++ way*/
-    //vec4 pos = modelview_mat * vec4(a_position,1.0);
+    normal_vec = a_normal;//normal_vec = vec4(a_normal,0.0);
     gl_Position = projection_mat * pos;
-    frag_color = a_color;
-    uv_vec = a_texcoord0;
-
-    //uv = a_texcoord0; //uv = uv1; //http://www.kickjs.org/example/shader_editor/shader_editor.html
-    // compute light info
-    //n = normalize (normal_mat * vNormal); //n = normalize(_norm * normal); //http://www.kickjs.org/example/shader_editor/shader_editor.html
-    
 }
+
+
 ''')
 
 #---FRAGMENT SHADER-------------------------------------------------------
@@ -87,77 +73,116 @@ void main()
 #ifdef GL_ES
     precision highp float;
 #endif
-//according to http://nehe.gamedev.net/article/glsl_an_introduction/25007/
-//fragment shader replaces all fragment functions in the fixed-function OpenGL pipeline, so you would (as standard practice) do your own:
-// * Texture access and application (Texture environments)
-// * Fog
-// sampler types (have to be declared uniform [which is read-only])
-//sampler1D, sampler2D, sampler3D       1D, 2D and 3D texture
-//samplerCube                           Cube Map texture
-//sampler1Dshadow, sampler2Dshadow  1D and 2D depth-component texture
 
-uniform vec4 camera_light_multiplier;
-
-
-//#region normal-only
 varying vec4 normal_vec;
 varying vec4 vertex_pos;
 
 uniform mat4 normal_mat;
-//#endregion normal-only
 
-//#region texture-only
-varying vec4 frag_color;
-varying vec2 uv_vec;
-
-uniform sampler2D tex;
-//#endregion texture-only
-uniform vec3 _world_light_dir_eye_space;
-
-varying vec3 n; //http://www.kickjs.org/example/shader_editor/shader_editor.html
-varying vec2 uv; //http://www.kickjs.org/example/shader_editor/shader_editor.html
-
-void main()
-{
-    // Setting Each Pixel To Red
-    //gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
-    
+void main (void){
     //correct normal, and compute light vector (assume light at the eye)
-    vec4 vNormal = normalize( normal_mat * normal_vec ) ;
+    vec4 a_normal = normalize( normal_mat * normal_vec ) ;
     vec4 v_light = normalize( vec4(0,0,0,1) - vertex_pos );
     //reflectance based on lamberts law of cosine
-    float theta = clamp(dot(vNormal, v_light), 0.02, 1.0);
-    vec4 color = texture2D(tex, uv_vec);
-    ///gl_FragColor = vec4(theta, theta, theta, 1.0); //normal-only
-    gl_FragColor = vec4(theta, theta, theta, 1.0) * camera_light_multiplier * color;
-    
-    //below is from http://www.kickjs.org/example/shader_editor/shader_editor.html
-    //float diffuse = max(0.0,dot(normalize(n),_world_light_dir_eye_space));
-    //gl_FragColor = vec4(texture2D(tex,uv).xyz*diffuse,1.0);
-    
+    float theta = clamp(dot(a_normal, v_light), 0.0, 1.0);
+    gl_FragColor = vec4(theta, theta, theta, 1.0);
 }
+
 ''')
 #---END SHADERS-------------------------------------------------------
 
-    viewer = ObjectProperty(None)
+    gl_widget = ObjectProperty(None)
     
     def __init__(self, **kwargs):
         super(ShaderEditor, self).__init__(**kwargs)
+        self._meshes = InstructionGroup()
         self.test_canvas = RenderContext()
         s = self.test_canvas.shader
         self.trigger_compile = Clock.create_trigger(self.compile_shaders, -1)
         self.bind(fs=self.trigger_compile, vs=self.trigger_compile)
+
+    scene = None
+    frames_per_second = 30.0
+    
+    def add_glop(self, this_glop):
+        this_glop.visible_enable = True
+        #context = self._meshes
+        #context = self.gl_widget.canvas
+        #if self.scene.selected_glop_index is None:
+        #    self.scene.selected_glop_index = this_glop_index
+        #    self.scene.selected_glop = this_glop
+        self.scene.selected_glop_index = len(self.scene.glops)
+        self.scene.selected_glop = this_glop
+        context = this_glop.get_context()
+        this_mesh_name = ""
+        if this_glop.name is not None:
+            this_mesh_name = this_glop.name
+        #this_glop._scale_instruction = Scale(0.6)
+        this_glop._pushmatrix = PushMatrix()
+        this_glop._updatenormalmatrix = UpdateNormalMatrix()
+        this_glop._popmatrix = PopMatrix()
+
+        context.add(this_glop._pushmatrix)
+        context.add(this_glop._translate_instruction)
+        context.add(this_glop._rotate_instruction_x)
+        context.add(this_glop._rotate_instruction_y)
+        context.add(this_glop._rotate_instruction_z)
+        context.add(this_glop._scale_instruction)
+        context.add(this_glop._updatenormalmatrix)
+
+        #context.add(this_glop._color_instruction)  #TODO: asdf add as uniform instead
+        if this_glop._mesh is None:
+            #verts, indices = this_glop.generate_kivy_mesh()
+            print("WARNING: glop had no mesh, so was generated when added to render context. Please ensure it is a KivyGlop and not a PyGlop (however, vertex indices misread could also lead to missing Mesh object).")
+        #print("_color_instruction.r,.g,.b,.a: "+str( [this_glop._color_instruction.r, this_glop._color_instruction.g, this_glop._color_instruction.b, this_glop._color_instruction.a] ))
+        #print("u_color: "+str(this_glop.material.diffuse_color))
+        #this_glop.generate_axes()
+        #this_glop._axes_mesh.
+        if this_glop._axes_mesh is not None:
+            #context.add(this_glop._axes_mesh)  # debug only
+            #this_glop._mesh = this_glop._axes_mesh  # debug only
+            pass
+            
+        if this_glop._mesh is not None:
+            context.add(this_glop._mesh)  # commented for debug only
+            if get_verbose_enable():
+                print("Added mesh to render context.")
+        else:
+            print("NOT adding mesh.")
+        context.add(this_glop._popmatrix)
+        if self.scene.glops is None:
+            self.scene.glops = list()
+
+        #context.add(PushMatrix())
+        #context.add(this_glop._translate_instruction)
+        #context.add(this_glop._rotate_instruction_x)
+        #context.add(this_glop._rotate_instruction_y)
+        #context.add(this_glop._rotate_instruction_z)
+        #context.add(this_glop._scale_instruction)
+        #context.add(this_glop._updatenormalmatrix)
+        #context.add(this_glop._axes_mesh)
+        #context.add(PopMatrix())
+
+
+        self.scene.glops.append(this_glop)
+        self.scene.glops[len(self.scene.glops)-1].index = len(self.scene.glops) - 1
+        #this_glop.index = len(self.scene.glops) - 1
+        self._meshes.add(self.scene.glops[len(self.scene.glops)-1].get_context())  # _meshes is a visible instruction group
+        self.scene.glops[len(self.scene.glops)-1].visible_enable = True
+
+        if get_verbose_enable():
+            print("Appended Glop (count:"+str(len(self.scene.glops))+").")        
     
     def compile_shaders(self, *largs):
         print('try compile')
-        if not self.viewer:
+        if not self.gl_widget:
             return
         fs = self.fs  # fs_header + self.fs
         vs = self.vs  # vs_header + self.vs
         print('-->', fs)
-        self.viewer.fs = fs
+        self.gl_widget.fs = fs
         print('-->', vs)
-        self.viewer.vs = vs
+        self.gl_widget.vs = vs
     
     def update_vs_to_vs_codeinput(self, instance, value):
         #self.vs = self.vs_codeinput.text
@@ -188,6 +213,7 @@ class ShaderViewer(FloatLayout):
     fs = StringProperty(None)
     vs = StringProperty(None)
 
+
     def __init__(self, **kwargs):
         self.canvas = RenderContext()
         super(ShaderViewer, self).__init__(**kwargs)
@@ -195,13 +221,14 @@ class ShaderViewer(FloatLayout):
 
     def update_shader(self, *args):
         s = self.canvas
+        #s['projection_mat'] = Window.render_context['projection_mat']
         s['projection_mat'] = Window.render_context['projection_mat']
         s['time'] = Clock.get_boottime()
         s['resolution'] = list(map(float, self.size))
-        #if form.viewer.pos is not None:
-        form.image_rect.pos=form.viewer.pos
-        #if form.viewer.size is not None:
-        form.image_rect.size=form.viewer.size
+        #if form.gl_widget.pos is not None:
+        #form.image_rect.pos=form.gl_widget.pos
+        #if form.gl_widget.size is not None:
+        #form.image_rect.size=form.gl_widget.size
         form.vs_label.height=form.vs_label.texture_size[1] + 10
         form.fs_label.height=form.fs_label.texture_size[1] + 10
         s.ask_update()
@@ -246,14 +273,18 @@ class Imperative_ShaderEditorApp(App):
         form.fs_codeinput.bind(text=form.update_fs_to_fs_codeinput)  # on_text=root.fs = args[1]
         form.input_layout.add_widget(form.fs_codeinput)
         
-        form.viewer = Factory.ShaderViewer()
-        form.image_color = Color(1.0,1.0,1.0,1.0)
-        form.viewer.canvas.add(form.image_color)
-        #form.viewer.canvas.add(Factory.Rectangle(pos=form.viewer.pos, size=form.viewer.size, source=form.source))
-        form.image_rect = Factory.Rectangle(pos=(200,0), size=(512,512), source=form.source)
-        form.viewer.canvas.add(form.image_rect)
+        form.gl_widget = Factory.ShaderViewer()
+        #form.image_color = Color(1.0,1.0,1.0,1.0)
+        #form.gl_widget.canvas.add(form.image_color)
+        #form.gl_widget.canvas.add(Factory.Rectangle(pos=form.gl_widget.pos, size=form.gl_widget.size, source=form.source))
+        #form.image_rect = Factory.Rectangle(pos=(200,0), size=(512,512), source=form.source)
+        
+        form.scene = KivyGlops(form)
+        form.scene.load_obj(os.path.join("meshes", "shader-test.obj"))
+        
+        #form.gl_widget.canvas.add(form.image_rect)
         form.main_layout.add_widget(form.input_layout)
-        form.main_layout.add_widget(form.viewer)
+        form.main_layout.add_widget(form.gl_widget)
         
         #form.cols = 1
         #form.orientation = "vertical"

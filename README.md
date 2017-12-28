@@ -34,6 +34,14 @@ Control 3D objects and the camera in your 3D Kivy app!
 * if segfault occurs, maybe camera and look_at location are same
 
 ## Changes
+* (2017-12-27) ishadereditor.py: made it use KivyGlops; renamed viewer to gl_widget
+* (2017-12-27) fully implemented face grouping from complete OBJ spec including multiple groups (`g` with no param means "default" group, and no `g` at all means "default" group)
+* (2017-12-27) renamed set_textures_from_mtl_dict to set_textures_from_wmaterial
+* (2017-12-27) eliminated numerical indices for objects in WObjFile object (changed self.wobjects from list to dict), and name property of WObject
+* (2017-12-27) In mtl loader, renamed `args_string`, `args` & `param` to `options_string`, `options` & `option` for clarity, since mtl spec calls the chunks following the command values: option if starts with hyphen, args if follow option, and values if is part of statement (or command)
+* (2017-12-27) transitioned from material classes to material dict--see "wmaterial dict spec" subheading under "Developer Notes" (since dict can just be interpreted later; and so 100% of data can be loaded even if mtl file doesn't follow spec)
+* (2017-12-26) started implementing "carry" and dict-ify KivyGlops savable members ("tmp" dict member should not be saved)
+* (2017-12-26) fixed issue where cooldown last used time wasn't set before item was first used (now is ready upon first time ever added to an inventory)
 * (2017-12-22) refactored global get_glop_from_wobject into *Glop append_wobject to assist with overriding, and with expandability (in case multi submesh glops are needed later)
 * (2017-12-22) renamed is_possible to fit_enable
 * (2017-12-22) get_indices_by_source_path now checks against original_path (as passed to load_obj; non-normalized) in addition to processed path
@@ -88,7 +96,8 @@ Control 3D objects and the camera in your 3D Kivy app!
 
 
 ## Known Issues
-* (2017-12-22) pivot_to_geometry_enable is broken (must be left at default): (defaults for pivot_to_geometry_enable are flipped since broken) pyglops.py: (append_wobject) make self.transform_pivot_to_geometry() optional, for optimization and predictability (added to set_as_item where pivot_to_geometry_enable; also added that option, to set_as_item, load_obj, get_glop_list_from_obj, append_wobject)
+* fix nonworking ishadereditor.py (finish 3D version)
+* pivot_to_geometry_enable is broken (must be left at default True): (defaults for pivot_to_geometry_enable are flipped since broken) pyglops.py: (append_wobject) make self.transform_pivot_to_geometry() optional, for optimization and predictability (added to set_as_item where pivot_to_geometry_enable; also added that option, to set_as_item, load_obj, get_glop_list_from_obj, append_wobject)
 * renamed etc/kivyglops-mini-deprecated.py to testingkivy3d.py and MinimalKivyGlopsWindow class in it to TestingKivy3D
 * see `context.add(this_glop._color_instruction)  #TODO: asdf add as uniform instead`
 * Only load unique textures once (see "Loaded texture")
@@ -154,6 +163,7 @@ Control 3D objects and the camera in your 3D Kivy app!
     _map_reflection = None  # refl; can be -type sphere
 
 ## Planned Features
+* support surf and mg commands in OBJ
 * show selected item in hand
 * Use Z Buffer as parameter for effects such as desaturate by inverse normalized Z Buffer value so far away objects are less saturated1
 * Implement thorough gamma correction (convert textures to linear space, then convert output back to sRGB) such as http://www.panda3d.org/blog/the-new-opengl-features-in-panda3d-1-9/
@@ -194,6 +204,7 @@ uniform mat4 modelview_mat;  //derived from self.canvas["modelview_mat"] = model
 uniform mat4 projection_mat;  //derived from self.canvas["projection_mat"] = projectionMatrix
 
 ## Developer Notes
+* eventually dat will contain everything, so that emit_yaml can eventually be used to save glop format ("tmp" dict member should not be saved)
 (these notes only apply to modifying the KivyGlops project files including PyGlops, or making a new subclass of PyGlop*)
 * ui is usually a KivyGlopsWindow but could be other frameworks. Must have:
         width
@@ -211,6 +222,31 @@ uniform mat4 projection_mat;  //derived from self.canvas["projection_mat"] = pro
     * a new_glop method which returns your subclass of PyGlop (NOT of PyGlops), unless you are handling the `super(MySubclassOfGlop, self).__init__(self.new_glop)` (where MySubclassOfGlop is your class) `self.new_glop param` in your subclass' `__init__` method another way.
 * All subclasses of PyGlops should overload __init__, call super at beginning of it, and glops_init at end of it, like KivyGlops does.
 * PyGlops module (which does not require Kivy) loads obj files using intermediate WObjFile class (planned: save&load native PyGlops files), and provides base classes for all classes in KivyGlops module
+
+### wmaterial dict spec
+This dict replaces deprecated WMaterial class in wobjfile.py.
+This spec allows one dict to be used to completely store the Wavefront mtl format as per the full mtl spec such as at <http://paulbourke.net/dataformats/mtl/>.
+    * The wmaterials dict is the material library property of the WObjFile instance. Each wmaterial inside the wmaterials dict is a Wavefront material.
+    * The wmaterial's key in the wmaterials dict is the material name (given after "newmtl" in mtl file)
+    * each key is a material command, referring to a deeper dict, except "#" which is comments list
+        * each material command dict has the following keys:
+            * "values" (a list of values)
+                * if the command's (such as Kd) expected values are color values (whether rgb, or CIEXYZ if commands ends in " xyz"), only one color value means other 2 are same (grayscale)! 
+                * if the command's expected value is a filename, values is still a list--first value is filename, additional values are params (usually a factor by which to multiply values in the file)
+                    * map can override: `Ka` (ambient color), `Kd` (diffuse color), `Ks` (specular color), `Ns` (specular coefficient scalar), `d` (opacity scalar), and surface normal according to spec
+                        * displacement map is `disp` (in modern terms, a vertex displacement map)
+                        * bump map is `bump`--though it affects normals, it is a standard bump map which in modern terms is a (fragment) displacement map
+                        * `refl` is a reflection map, or in modern terms, an environment map (as opposed to a reflectance map): type can be sphere, or there can be several cube_* maps where * is the side (front, back, top, bottom, left, right)
+            * "tmp" (a dict of temporary values such as "file_path", which was formerly stored in wmaterial.file_path, and "directory"; both of which are only for using relative paths in the mtl file)
+            * "#" (comments list)
+            * additional keys are args, where value is a list of the arg's values (if space-separated value in original mtl file starts with hyphen, it is an arg; an arg takes remaining values as items of its list, until next hyphen (or last entry, which is always appended to 'values')
+                * may be an empty list, such as when key is "halo" (as specified by `-halo` option in mtl file)
+    * examples (wmaterial is equivalent to wmaterials[material_name]):
+        * if line in mtl file is `Kd 0.5 0.5 0.5` then dict wmaterial["Kd"] will have a list at "values" key which is ["0.5", "0.5", "0.5"]
+        * if line in mtl file is `bump -s 1 1 1 -o 0 0 0 -bm 1 sand.mpb` then the dict wmaterial["bump"] will have a list at "values" key which is a list containing only the string sand.mpb; and dict at "bump" key containing keys s, o, and bm which refer to lists containing the values following those args
+        * if line in mtl file is `Ka spectral file.rfl 1.0` then, as per spec, `Ka spectral` is considered as the statement (or command) and wmaterial["Ka spectral"] will be a dict containing only one key, "values" (since there are no other args in this case), which is `["file.rfl", "1.0"]` where 1.0 is the factor by which to multiply values in the file, as specified in the given mtl line.
+        * if line in mtl file is `Ka xyz 1.0 1.0 1.0` then, as per spec, `Ka xyz` is considered as the statement (or command) and wmaterial["Ka spectral"] will be a dict containing only one key, "values" (since there are no other args in this case), which is `["1.0", "1.0", "1.0"]`.
+        * if line in mtl file is `refl -type cube_top file.png` then the dict wmaterial["refl -type cube_top"] will have a list at "values" key which is ["file.png"]; the entire preceding part `refl -type cube_top` will be considered as the command to avoid overlap (to force consistent rule: one instance of command per material).
 
 ### Regression Tests
 * result of builting type(x) function assumed to be string without using str(type(x)) where x is anything

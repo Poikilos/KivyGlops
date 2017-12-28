@@ -182,46 +182,50 @@ class KivyGlop(PyGlop, Widget):
         red = (1.0, 0.0, 0.0)
         green = (0.0, 1.0, 0.0)
         blue = (0.0, 0.0, 1.0)
+        # NOTE: default opengl winding order is counter-clockwise
+        # (where makes normal face you)
+        nv = 0.1  # near vector
+        fv = 1.0  # far vector
         self.append_vertex(_axes_vertices, (0.0, 0.0, 0.0), green)  # 0
-        self.append_vertex(_axes_vertices, (0.1, 0.0, 0.0), green)  # 1
-        self.append_vertex(_axes_vertices, (0.0, 0.0, 0.1), green)  # 2
-        self.append_vertex(_axes_vertices, (0.1, 0.0, 0.1), green)  # 3
-        self.append_vertex(_axes_vertices, (0.0, 1.0, 0.0), green)  # 4
-        self.append_vertex(_axes_vertices, (0.1, 1.0, 0.0), green)  # 5
-        self.append_vertex(_axes_vertices, (0.0, 1.0, 0.1), green)  # 6
-        self.append_vertex(_axes_vertices, (0.1, 1.0, 0.1), green)  # 7
+        self.append_vertex(_axes_vertices, (nv, 0.0, 0.0), green)  # 1
+        self.append_vertex(_axes_vertices, (0.0, 0.0, nv), green)  # 2
+        self.append_vertex(_axes_vertices, (nv, 0.0, nv), green)  # 3
+        self.append_vertex(_axes_vertices, (0.0, fv, 0.0), green)  # 4
+        self.append_vertex(_axes_vertices, (nv, fv, 0.0), green)  # 5
+        self.append_vertex(_axes_vertices, (0.0, fv, nv), green)  # 6
+        self.append_vertex(_axes_vertices, (nv, fv, nv), green)  # 7
         
-        _axes_indices.extend([0,1,3, 0,2,3, 0,2,6, 0,4,6,  # bottom & right
-                              0,4,5, 0,1,5, 4,5,7, 4,6,7,  # back & top
-                              1,5,7, 1,3,7, 2,3,7, 2,6,7  # left & front
+        _axes_indices.extend([0,1,3, 0,3,2, 0,2,6, 0,6,4,  # bottom & right
+                              0,4,5, 0,5,1, 4,5,7, 4,7,6,  # back & top
+                              1,5,7, 1,7,3, 2,3,7, 2,7,6  # left & front
                               ])
         
-        self.append_vertex(_axes_vertices, (0.1, 0.0, 0.0), red)  # 8
-        self.append_vertex(_axes_vertices, (0.1, 0.0, 0.1), red)  # 9
-        self.append_vertex(_axes_vertices, (0.1, 0.1, 0.0), red)  # 10
-        self.append_vertex(_axes_vertices, (1.0, 0.1, 0.1), red)  # 11
-        self.append_vertex(_axes_vertices, (1.0, 0.0, 0.0), red)  # 12
-        self.append_vertex(_axes_vertices, (1.0, 0.1, 0.0), red)  # 13
-        self.append_vertex(_axes_vertices, (1.0, 0.0, 0.1), red)  # 14
-        self.append_vertex(_axes_vertices, (1.0, 0.1, 0.1), red)  # 15
+        self.append_vertex(_axes_vertices, (nv, 0.0, 0.0), red)  # 8
+        self.append_vertex(_axes_vertices, (nv, 0.0, nv), red)  # 9
+        self.append_vertex(_axes_vertices, (nv, nv, 0.0), red)  # 10
+        self.append_vertex(_axes_vertices, (fv, nv, nv), red)  # 11
+        self.append_vertex(_axes_vertices, (fv, 0.0, 0.0), red)  # 12
+        self.append_vertex(_axes_vertices, (fv, nv, 0.0), red)  # 13
+        self.append_vertex(_axes_vertices, (fv, 0.0, nv), red)  # 14
+        self.append_vertex(_axes_vertices, (fv, nv, nv), red)  # 15
         
-        _axes_indices.extend([8,9,11, 8,10,11, 8,10,13, 8,12,13,  # back & outside
-                              8,9,14, 8,12,14,  9,14,15, 9,11,15,  # bottom & inside
-                              11,10,13, 11,15,13, 12,13,15, 12,14,15  # top & front
+        _axes_indices.extend([8,9,11, 8,11,10, 8,10,13, 8,13,12,  # back & outside
+                              8,12,14, 8,14,9,  9,14,15, 9,15,11,  # bottom & inside
+                              10,11,15, 11,15,13, 12,13,15, 12,15,14  # top & front
                               ])
         
-        self.append_vertex(_axes_vertices, (0.0, 0.0, 0.1), blue)  # 16
-        self.append_vertex(_axes_vertices, (0.1, 0.0, 0.1), blue)  # 17
-        self.append_vertex(_axes_vertices, (0.0, 0.1, 0.1), blue)  # 18
-        self.append_vertex(_axes_vertices, (1.0, 0.1, 0.1), blue)  # 19
-        self.append_vertex(_axes_vertices, (0.0, 0.0, 1.0), blue)  # 20
-        self.append_vertex(_axes_vertices, (0.1, 0.0, 1.0), blue)  # 21
-        self.append_vertex(_axes_vertices, (0.0, 0.1, 1.0), blue)  # 22
-        self.append_vertex(_axes_vertices, (0.1, 0.1, 1.0), blue)  # 23
+        self.append_vertex(_axes_vertices, (0.0, 0.0, nv), blue)  # 16
+        self.append_vertex(_axes_vertices, (nv, 0.0, nv), blue)  # 17
+        self.append_vertex(_axes_vertices, (0.0, nv, nv), blue)  # 18
+        self.append_vertex(_axes_vertices, (nv, nv, nv), blue)  # 19
+        self.append_vertex(_axes_vertices, (0.0, 0.0, fv), blue)  # 20
+        self.append_vertex(_axes_vertices, (nv, 0.0, fv), blue)  # 21
+        self.append_vertex(_axes_vertices, (0.0, nv, fv), blue)  # 22
+        self.append_vertex(_axes_vertices, (nv, nv, fv), blue)  # 23
         
-        _axes_indices.extend([16,17,19, 16,18,19, 16,18,22, 16,20,22,  # back & outside
-                              16,17,21, 16,20,21, 16,18,22, 16,20,22,  # bottom & inside
-                              19,18,22, 19,23,22, 20,21,23, 20,22,23  # top & front
+        _axes_indices.extend([16,18,19, 16,19,17, 16,22,18, 16,20,22,  # back & outside
+                              16,17,21, 16,21,20, 17,19,20, 17,20,21,  # bottom & inside
+                              19,18,22, 19,22,23, 20,21,23, 20,23,22  # top & front
                               ])
         
         #new_texcoord = new_tuple(self.vertex_format[self.TEXCOORD0_INDEX][VFORMAT_VECTOR_LEN_INDEX])
@@ -1236,7 +1240,8 @@ class KivyGlops(PyGlops):
         super(KivyGlop, self).append_wobject(this_wobject, pivot_to_geometry_enable=pivot_to_geometry_enable)
         if self.material is not None:
             self._color_instruction = Color(self.material.diffuse_color[0], self.material.diffuse_color[1], self.material.diffuse_color[2], self.material.diffuse_color[3])
-
+        else:
+            print("[ KivyGlops ] WARNING in append_wobject: self.material is None for " + str(self.name))
 
 class GLWidget(Widget):
     pass

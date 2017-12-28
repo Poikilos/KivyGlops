@@ -18,6 +18,7 @@ import os
 import sys  # exception etc
 import math
 import traceback
+import uuid
 
 tab_string = "  "
 
@@ -50,7 +51,6 @@ FACE_VN = 2  # index of normal index in the face (since face is a list)
 def get_fvec2(values,start_index=0):
     return (float(values[start_index]), float(values[start_index+1]))
 
-
 def get_fvec3(values,start_index=0):
     return (float(values[start_index]), float(values[start_index+1]), float(values[start_index+2]))
 
@@ -70,7 +70,9 @@ def get_fvec7(values,start_index=0):
 
 #class WObjFile (see further down) most accurately represents the obj file format (except indices start at 0 in WObject instead of 1 which file uses). It contains a list of WObjects (each WObject has only the material it needs from the mtl file)
 
+
 class WIlluminationModel:
+
     number = None
     is_color = None
     is_ambient = None
@@ -83,6 +85,9 @@ class WIlluminationModel:
     is_reflection_fresnel = None
     is_reflection_raytrace = None
     is_shadow_cast_onto_invisible_surfaces = None
+    
+    def __init__(self, number):
+        self.set_from_illumination_model_number(number)
 
     def set_from_illumination_model_number(self, number):
         result = True
@@ -133,7 +138,9 @@ class WIlluminationModel:
             self.number = None
         return result
 
+#this is not needed, since it is just a spec (use sub dict in material dict instead)
 class WColorArgInfo:
+
     _param = None
     _value_min_count = None
     _value_max_count = None
@@ -163,128 +170,30 @@ color_arg_type_strings.append(WColorArgInfo("mm","base gain",2,2,["black level|w
 color_arg_type_strings.append(WColorArgInfo("t","turbulence (post-processes tiled textures to hide seem)",2,3,["u","v","w"]))
 color_arg_type_strings.append(WColorArgInfo("texres","resizes texture before using, such as for NPOT textures; if used, image is forced to a square",2,3,["pixel count"]))
 
-#types for refl map (need one texture if refl is -type sphere, but need six if cube:)
-#refl -type cube_top
-# refl -type cube_bottom
-# refl -type cube_front
-# refl -type cube_back
-# refl -type cube_left
-# refl -type cube_right
-
-#http://paulbourke.net/dataformats/mtl/ says (similar or same for Kd etc):
-#The options for the "map_Ka" statement are listed below.  These options
-#are described in detail in "Options for texture map statements" on page
-#5-18.
-#   -blendu on | off
-#   -blendv on | off
-#   -cc on | off
-#   -clamp on | off
-#   -mm base gain
-#   -o u v w
-#   -s u v w
-#   -t u v w
-#   -texres value
-
-
-class WFaceGroup:
-    def __init__(self):
-        self.faces = None
-        #NOTE: no self.name since name is key, since WFaceGroup is in a dict (however, do not save g or s command [discard key] if self.face_group_type is None)
-        self.face_group_type = None  # `g` or `s`
-    
-    def emit_yaml(self, thisList, min_tab_string):
-        #thisList.append(min_tab_string+this_list_name+":")
-        name_line = "name: "
-        if self.name is not None:
-            name_line += self.name
-        else:
-            name_line += "~"
-        thisList.append(min_tab_string+name_line)
-        if self.faces is not None:
-            thisList.append(min_tab_string+"faces:")
-            for face in faces:
-                thisList.append(min_tab_string+tab_string+"- ")
-                for vertex_i in face:
-                    thisList.append(min_tab_string+tab_string+tab_string+"- "+str(vertex_i))
-        else:
-            thisList.append(min_tab_string+"faces: ~")
-
-
-class WMaterial:
-
-    name = None
-    file_path = None  # for finding texture images more easily later
-    _opening_comments = None
-    _illumination_model = None
-    _opacity = None # d (or 1.0-Tr)
-    _ambient_color = None  # Ka
-    _diffuse_color = None  # Kd
-    _specular_color = None  # Ks; black is 'off' (same as None)
-    _specular_exponent = None  # Ns (0 to 1000) "specular highlight component" ('hardness'?)
-
-    #_transmission_color = None  # Tf; NOT YET IMPLEMENTED
-    #_is_halo = None  # outer rim is fully opaque, inner part is based on _opacity
-    # _sharpness = None  # sharpness; sharpness of reflections, 0 to 1000; NOT YET IMPLEMENTED
-    # optical_density = None  #TODO: Ni; Index of Refraction; 0.001 to 10
-    _map_filename_dict = None
-    _map_params_dict = None
-    #_map_ambient_filename = None  # map_Ka
-    #_map_diffuse_filename = None  # map_Kd
-    #_map_specular_color_filename = None    # map_Ks
-    #_map_specular_highlight_filename = None    # map_Ns --just a regular image, but used as gray (values for exponent)
-    #_map_transparency_filename = None  # map_d
-    #_map_bump_filename = None  # map_bump or bump: use luminance
-    #_map_displacement = None  # disp
-    #_map_decal = None # decal: stencil; defaults to 'matte' channel of image
-    #_map_reflection = None  # refl; can be -type sphere
-
-
-    def __init__(self, name=None):
-        self.name = name
-        self._opacity = 1.0
-        self._map_filename_dict = {}
-        self._map_params_dict = {}
-
-    def append_opening_comment(self, text):
-        if self._opening_comments is None:
-            self._opening_comments = list()
-        self._opening_comments.append(text)
-
 
 #Also in pyglops.py; formerly dumpAsYAMLArray
-def standard_emit_yaml(thisList, min_tab_string, sourceList):
-    if isinstance(sourceList, list):
-        for key in range(0,len(sourceList)):
-            if isinstance(sourceList[key], list) or isinstance(sourceList[key], dict):
-                thisList.append(min_tab_string + "-")
-                standard_emit_yaml(thisList, min_tab_string+tab_string, sourceList[key])
+def standard_emit_yaml(lines, min_tab_string, dat):
+    if isinstance(dat, list):
+        for key in range(0,len(dat)):
+            if isinstance(dat[key], list) or isinstance(dat[key], dict):
+                lines.append(min_tab_string + "-")
+                standard_emit_yaml(lines, min_tab_string+tab_string, dat[key])
             else:
-                thisList.append(min_tab_string+"- "+str(sourceList[key]))
-    elif isinstance(sourceList, dict):
-        for key in sourceList:
-            if isinstance(sourceList[key], list) or isinstance(sourceList[key], dict):
-                thisList.append(min_tab_string + key + ":")
-                standard_emit_yaml(thisList, min_tab_string+tab_string, sourceList[key])
+                lines.append(min_tab_string+"- "+str(dat[key]))
+    elif isinstance(dat, dict):
+        for key in dat:
+            if isinstance(dat[key], list) or isinstance(dat[key], dict):
+                lines.append(min_tab_string + key + ":")
+                standard_emit_yaml(lines, min_tab_string+tab_string, dat[key])
             else:
-                thisList.append(min_tab_string+key+": "+str(sourceList[key]))
+                lines.append(min_tab_string+key+": "+str(dat[key]))
     else:
-        print("WARNING in standard_emit_yaml: type '" + type(sourceList) + "' was not implemented and so was converted by plain str function")
-        thisList.append(min_tab_string+str(sourceList))
+        #print("WARNING in standard_emit_yaml: type '" + type(dat) + "' was not implemented and so was converted by plain str function")
+        lines.append(min_tab_string+str(dat))
 
 
 class WObject:
-    #region raw OBJ data (as per nskrypnik)
-    #_name = None
-    #_vertex_strings = None
-    #_obj_cache_vertices = None
-    #_pivot_point = None
-    #_min_coords = None  #bounding cube minimums in local coordinates
-    #_max_coords = None  #bounding cube maximums in local coordinates
-    #texcoords = None
-    #normals = None
-    #parameter_space_vertices = None  #only for curves--not really implemented, just loaded from obj
-    #faces = None
-    #endregion raw OBJ data (as per nskrypnik)
+
     source_path = None
     parameter_space_vertices = None  #only for curves--not really implemented, just loaded from obj
     mtl_filename = None
@@ -292,10 +201,12 @@ class WObject:
     vertices = None  # v
     texcoords = None  # vt (uv point in texture where each coord is from 0.0 to 1.0); aka vertex_uvs
     normals = None  # vn
-    face_groups = None  # f; vertex#/texcoord#/normal# were *# is a counting number starting at 0 (BUT saved as 1)-- only vertex# is required (but // is used if texcoord# is not present but normal# is).
+    face_groups = None  # is a dict where key is face group name, and value is list of indices, where each index refers to a list of faces in face_lists; f; vertex#/texcoord#/normal# were *# is a counting number starting at 0 (BUT saved as 1)-- only vertex# is required (but // is used if texcoord# is not present but normal# is).
+    face_dicts = None  # dict of dicts where key is smoothing group number or a UUID and each value is a dict that has "s" ("on" or "off" or None) and "faces" (list of faces, where each face is a vertex index list)
     wmaterial = None
     name = None
     has_any_data_enable = None
+    polylines = None  # l; followed by vertex indices
 
     _opening_comments = None
 
@@ -308,24 +219,38 @@ class WObject:
             self._opening_comments = list()
         self._opening_comments.append(text)
 
-    def emit_yaml(self, thisList, min_tab_string):
+    def emit_yaml(self, lines, min_tab_string):
         if self.source_path is not None:
-            thisList.append(min_tab_string+"source_path: "+self.source_path)
-        thisList.append(min_tab_string+"vertices:")
-        standard_emit_yaml(thisList, min_tab_string+tab_string, self.vertices)
-        thisList.append(min_tab_string+"texcoords:")
-        standard_emit_yaml(thisList, min_tab_string+tab_string, self.texcoords)
-        thisList.append(min_tab_string+"normals:")
-        standard_emit_yaml(thisList, min_tab_string+tab_string, self.normals)
-        thisList.append(min_tab_string+"_vertex_strings:")
-        standard_emit_yaml(thisList, min_tab_string+tab_string, self._vertex_strings)
-        thisList.append(min_tab_string+"parameter_space_vertices:")
-        standard_emit_yaml(thisList, min_tab_string+tab_string, self.parameter_space_vertices)
-        thisList.append(min_tab_string+"face_groups:")
+            lines.append(min_tab_string+"source_path: "+self.source_path)
+        lines.append(min_tab_string+"vertices:")
+        standard_emit_yaml(lines, min_tab_string+tab_string, self.vertices)
+        lines.append(min_tab_string+"texcoords:")
+        standard_emit_yaml(lines, min_tab_string+tab_string, self.texcoords)
+        lines.append(min_tab_string+"normals:")
+        standard_emit_yaml(lines, min_tab_string+tab_string, self.normals)
+        lines.append(min_tab_string+"_vertex_strings:")
+        standard_emit_yaml(lines, min_tab_string+tab_string, self._vertex_strings)
+        lines.append(min_tab_string+"parameter_space_vertices:")
+        standard_emit_yaml(lines, min_tab_string+tab_string, self.parameter_space_vertices)
+        lines.append(min_tab_string+"face_groups:")
         for key in self.face_groups:
-            thisList.append(min_tab_string+tab_string+"key:")
-            self.face_groups[key].emit_yaml(thisList, min_tab_string+tab_string+tab_string)
-
+            lines.append(min_tab_string+tab_string+key+":")
+            standard_emit_yaml(lines, min_tab_string+tab_string+tab_string, self.face_groups[key])
+        lines.append(min_tab_string+"face_dicts:")
+        for key in self.face_dicts:
+            lines.append(min_tab_string+tab_string+key+":")
+            standard_emit_yaml(lines, min_tab_string+tab_string+tab_string, self.face_dicts[key])
+    
+    def _get_unused_face_list_key(self):
+        #key = None
+        #while True:
+        #    key = "untitled_face_list_" + str(self.untitled_number)
+        #    self.untitled_number += 1
+        #    if this_o_name not in self.wobjects:
+        #        break
+        #return key
+        
+        return str(uuid.uuid4())
 
 ILLUMINATIONMODEL_DESCRIPTION_STRINGS = ["Color on and Ambient off","Color on and Ambient on","Highlight on","Reflection on and Ray trace on","Transparency: Glass on, Reflection: Ray trace on","Reflection: Fresnel on and Ray trace on","Transparency: Refraction on, Reflection: Fresnel off and Ray trace on","Transparency: Refraction on, Reflection: Fresnel on and Ray trace on","Reflection on and Ray trace off","Transparency: Glass on, Reflection: Ray trace off","Casts shadows onto invisible surfaces"]
 
@@ -338,11 +263,11 @@ def get_illumination_model_description(illuminationModelIndex):
 
 
 def get_wmaterial_dict_from_mtl(filename):
-    results = None
+    wmaterials = None
     try:
         if os.path.exists(filename):
-            results = dict()
-            comments = list()
+            wmaterials = {}
+            comments = None  # list added as materials["#"] when done
             line_counting_number = 1
             this_mtl_name = None
             for line in open(filename, "r"):
@@ -354,117 +279,120 @@ def get_wmaterial_dict_from_mtl(filename):
                 if (len(line_strip)>0) and (line_strip[0]!="#"):
                     space_index = line_strip.find(" ")
                     if space_index>-1:
-                        args_string = ""
+                        chunks_string = ""
                         if len(line_strip) >= (space_index+1):  #prevent out of range exception if nothing after space
-                            args_string = line_strip[space_index+1:].strip()
-                        if len(args_string)>0:
+                            chunks_string = line_strip[space_index+1:].strip()
+                        if len(chunks_string)>0:
                             command = line_strip[:space_index].strip()
 
                             if (this_mtl_name is not None) or (command == "newmtl"):
                                 badspace="\t"
-                                badspace_index = args_string.find(badspace)
+                                badspace_index = chunks_string.find(badspace)
                                 while badspace_index > -1:
-                                    args_string = args_string.replace(badspace, " ")
-                                    badspace_index = args_string.find(badspace)
+                                    chunks_string = chunks_string.replace(badspace, " ")
+                                    badspace_index = chunks_string.find(badspace)
 
                                 badspace="  "
-                                badspace_index = args_string.find(badspace)
+                                badspace_index = chunks_string.find(badspace)
                                 while badspace_index > -1:
-                                    args_string = args_string.replace(badspace, " ")
-                                    badspace_index = args_string.find(badspace)
+                                    chunks_string = chunks_string.replace(badspace, " ")
+                                    badspace_index = chunks_string.find(badspace)
 
-                                params = args_string.split(" ")  # line_strip[space_index+1:].strip()
+                                chunks = chunks_string.split(" ")  # line_strip[space_index+1:].strip()
                                 if command=="newmtl":
-                                    this_mtl_name = args_string
-                                    if this_mtl_name not in results.keys():
-                                        results[this_mtl_name] = WMaterial(name=this_mtl_name)
-
+                                    this_mtl_name = chunks_string
+                                    if this_mtl_name not in wmaterials.keys():
+                                        wmaterials[this_mtl_name] = {}
+                                        # store locations for later using relative texture paths in mtl file:
                                         this_mtl_filename = filename
                                         if (this_mtl_filename[:2]=="./") or (this_mtl_filename[:2]==".\\"):
                                             this_mtl_filename = this_mtl_filename[2:]
-                                        this_mesh_folder_path = os.path.dirname(os.path.abspath(filename))
-                                        this_mtl_path = this_mtl_filename
-                                        if (len(this_mesh_folder_path)>0):
-                                            this_mtl_path = os.path.join(this_mesh_folder_path, this_mtl_filename)
-                                        results[this_mtl_name].file_path = this_mtl_path  # to make finding texture images easier later
+                                        wmaterials[this_mtl_name]["tmp"] = {}
+                                        wmaterials[this_mtl_name]["tmp"]["file_path"] = this_mtl_filename
+                                        wmaterials[this_mtl_name]["tmp"]["directory"] = None
+                                        if os.path.dirname(this_mtl_filename) != "":
+                                            wmaterials[this_mtl_name]["tmp"]["directory"] = os.path.dirname(this_mtl_filename)
+                                        if (wmaterials[this_mtl_name]["tmp"]["directory"] is None) or \
+                                           (not os.path.isdir(wmaterials[this_mtl_name]["tmp"]["directory"])):
+                                            wmaterials[this_mtl_name]["tmp"]["directory"] = os.path.dirname(os.path.abspath(this_mtl_filename))
+                                        if not os.path.isdir(wmaterials[this_mtl_name]["tmp"]["directory"]):
+                                            print("[ WObjFile ] WARNING: could not find directory for relative paths in '" + filename + "' so using '" + str(os.path.isdir(wmaterials[this_mtl_name]["tmp"]["directory"]) + "'"))
+                                        #this_mesh_folder_path = os.path.dirname(os.path.abspath(filename))
+                                        #this_mtl_path = this_mtl_filename
+                                        #if (len(this_mesh_folder_path)>0):
+                                        #    this_mtl_path = os.path.join(this_mesh_folder_path, this_mtl_filename)
+                                        #wmaterials[this_mtl_name].file_path = this_mtl_path  # to make finding texture images easier later
                                     else:
-                                        print("WARNING: newmtl already exists: '"+this_mtl_name+"'")
-                                elif command=="illum":
-                                    this_illum = WIlluminationModel()
-                                    result=this_illum.set_from_illumination_model_number(int(args_string))
-                                    if result:
-                                        results[this_mtl_name]._illumination_model = this_illum
-                                    else:
-                                        print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) unknown illumination model number '"+args_string+"'")
-                                elif command=="d":
-                                    halo_string = " -halo "
-                                    if len(args_string)>=len(halo_string):
-                                        if args_string[:len(halo_string)]==halo_string:
-                                            #TODO: halo formula: dissolve = 1.0 - (N*v)(1.0-factor)  # makes center transparent
-                                            args_string=args_string[len(halo_string):]
-                                            print(filename+" ("+str(line_counting_number)+",0): (NOT YET IMPLEMENTED) halo, so using next value as plain opacity value instead")
-                                    this_opacity = float(args_string)
-                                    if (this_opacity>=0.0) and (this_opacity<=1.0):
-                                        results[this_mtl_name]._opacity = this_opacity
-                                    else:
-                                        print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) invalid opacity '"+args_string+"' so using '"+str(results[this_mtl_name]._opacity)+"' instead")
-                                elif command=="Tr":
-                                    this_transparency = float(args_string)
-                                    if (this_transparency>=0.0) and (this_transparency<=1.0):
-                                        results[this_mtl_name]._opacity = 1.0-this_transparency
-                                    else:
-                                        print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) invalid transparency '"+args_string+"' so using '"+str(results[this_mtl_name]._opacity)+"' instead")
-                                elif command=="Kd":
-                                    is_args_ok = True
-                                    value_start=3
-                                    value_name="spectral"
-                                    if args_string[value_start:value_start+len(value_name)]==value_name:
-                                        print(filename+" ("+str(line_counting_number)+",0): (NOT YET IMPLEMENTED) spectral value for '"+command+"'")
-                                        is_args_ok = False
-                                    value_name="xyz"
-                                    if args_string[value_start:value_start+len(value_name)]==value_name:
-                                        print(filename+" ("+str(line_counting_number)+",0): (NOT YET IMPLEMENTED) CIEXYZ color for '"+command+"'")
-                                        is_args_ok = False
-                                    if is_args_ok:
-                                        diffuse_color=args_string.split(" ")
-                                        if len(diffuse_color)>=3:
-                                            results[this_mtl_name]._diffuse_color = [float(diffuse_color[len(diffuse_color)-3]), float(diffuse_color[len(diffuse_color)-2]), float(diffuse_color[len(diffuse_color)-1])]
-                                        else:
-                                            print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) color must have 3 values (r g b): '"+command+"'")
-                                elif len(command)>4 and (command[:4]=="map_"):
-                                    if len(args_string)>0 and args_string[0]=="-":
-                                        #TODO: load OBJ map params
-                                        results[this_mtl_name]._map_filename_dict[command] = params[len(params)-1]
-                                        results[this_mtl_name]._map_params_dict = params[:len(params)-1]
-                                        #results[this_mtl_name]._map_diffuse_filename = params[len(params)-1]
-                                        #args = args_string.split(" ")
-                                        #results[this_mtl_name]._map_diffuse_filename = args[len(args)-1]
-                                        #if len(args)>1:
-                                        #    print(filename+" ("+str(line_counting_number)+",0): (NOT YET IMPLEMENTED) map arguments were ignored (except filename): '"+args_string+"'")
-
-                                    else:
-                                        #process as string in case filename has spaces (works only if no params)
-                                        results[this_mtl_name]._map_filename_dict[command] = args_string
-                                        # (no params)
-                                        #results[this_mtl_name]._map_diffuse_filename = args_string
+                                        print("[ WObjFile ] INPUT ERROR: newmtl already exists: '"+this_mtl_name+"' was referenced more than once in '" + filename + "' which is out of spec and not loadable")
                                 else:
-                                    print(filename+" ("+str(line_counting_number)+",0): (NOT YET IMPLEMENTED) unknown material command '"+command+"'")
+                                    if len(chunks) > 0:
+                                        value_enables = [True] * len(chunks)  # whether the values are values of the command (false if already used as arg or value of arg); start as None so they will not all be the same reference?
+                                        #for i in range(len(value_enables)):
+                                        #    value_enables = True
+                                        #NOTE: values after arg are part of arg UNLESS at end, such as in "d -halo 0.6600" where 0.66 is a value for the command (of d)
+                                        #so first grab args and values of args:
+                                        option_key = None
+                                        debug_offset = len(command) + 1
+                                        if len(chunks) >= 2:
+                                            if chunks[0] == "-type":
+                                                # multiple refl commands may be present, which is an exception to the rule of having <=1 instances of a command, so compensate via:
+                                                command += " -type " + chunks[1]
+                                                value_enables[0] = False
+                                                value_enables[1] = False
+                                        elif len(chunks) >= 1:
+                                            if chunks[0] == "spectral":
+                                                command += " spectral"
+                                                value_enables[0] = False
+                                            elif chunks[0] == "xyz":
+                                                command += " xyz"
+                                                value_enables[0] = False
+                                        
+                                        wmaterials[this_mtl_name][command] = {}
+                                        wmaterials[this_mtl_name][command]["values"] = []
+                                                
+                                        for i in range(len(chunks)):
+                                            #certain keywords are treated as part of the command for the statement (see http://paulbourke.net/dataformats/mtl/)
+                                            if value_enables[i]:
+                                                if chunks[i][:1] == "-":
+                                                    option_key = chunks[i][1:]
+                                                    wmaterials[this_mtl_name][command][option_key] = []
+                                                    value_enables[i] = False
+                                                    if i == (len(chunks)-1):
+                                                        print(filename + " (" + str(line_counting_number) + "," + str(debug_offset) + "): (INPUT ERROR) material statement should end with value, not hyphen* argument")
+                                                elif i < (len(chunks)-1):
+                                                    if option_key is not None:
+                                                        wmaterials[this_mtl_name][command][option_key].append(chunks[i])
+                                                        value_enables[i] = False
+                                            debug_offset += 1 + len(chunks[i])
+                                        for i in range(len(chunks)):
+                                            # remaining values are part of statement directly (as opposed to being options or option args):
+                                            if value_enables[i]:
+                                                wmaterials[this_mtl_name][command]["values"].append(chunks[i])
+                                    else:
+                                        wmaterials[this_mtl_name]["values"] = []
+                                        print(filename + " (" + str(line_counting_number) + "," + str(len(command)) + "): (INPUT ERROR) value(s) are expected after command ('" + command + "')")
                             else:
-                                print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) material command before 'newmtl'")
+                                print(filename + " (" + str(line_counting_number) + ",0): (INPUT ERROR) material command before 'newmtl'")
                         else:
-                            print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) no arguments after command")
+                            print(filename + " (" + str(line_counting_number) + ",0): (INPUT ERROR) no arguments after command")
                     else:
-                        print(filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) no space after command")
+                        print(filename + " (" + str(line_counting_number) + ",0): (INPUT ERROR) no space after command")
                 else:
                     if len(line_strip)>0:
                         comment_notag = line_strip[1:].strip()
                         if len(comment_notag) > 0:
                             if this_mtl_name is not None:
-                                if results[this_mtl_name] is not None:
-                                    results[this_mtl_name].append_opening_comment(comment_notag)
+                                if wmaterials[this_mtl_name] is not None:
+                                    if "#" not in wmaterials[this_mtl_name]:
+                                        wmaterials[this_mtl_name]["#"] = []
+                                    wmaterials[this_mtl_name]["#"].append(comment_notag)
                                 else:
+                                    if comments is None:
+                                        comments = []
                                     comments.append(comment_notag)
                             else:
+                                if comments is None:
+                                    comments = []
                                 comments.append(comment_notag)
                 line_counting_number += 1
             #end for lines in file
@@ -473,64 +401,70 @@ def get_wmaterial_dict_from_mtl(filename):
     except:
         #e = sys.exc_info()[0]
         #print("Could not finish get_wmaterial_dict_from_mtl:" + str(e))
-        print("Could not finish get_wmaterial_dict_from_mtl:")
+        print("ERROR in get_wmaterial_dict_from_mtl (could not finish):")
         view_traceback()
-    return results
+    return wmaterials
 
-texcoords_not_2_warning_enable = True
-NYI_s_enable = True
-short_name_in_messages_enable = True
 
-def show_object_faces_msg(this_object, name_msg):
+def show_object_faces_msg(this_object, msg_filename):
     faces_msg = "...WARNING: got None for this_object.face_groups!"
-    if this_object.face_groups is not None:
+    if this_object.face_dicts is not None:
         key_count = 0
         face_count = 0
-        faces_msg = "...WARNING: this_object face groups contain 0 faces!"
+        faces_msg = "...WARNING: this_object face dicts contain 0 faces!"
         group_err = None
-        for key in this_object.face_groups:
-            if this_object.face_groups[key] != None:
-                if this_object.face_groups[key].faces is not None:
-                    face_count += len(this_object.face_groups[key].faces)
+        for key in this_object.face_dicts:
+            if this_object.face_dicts[key] != None:
+                if this_object.face_dicts[key]["faces"] is not None:
+                    face_count += len(this_object.face_dicts[key]["faces"])
                 else:
-                    print(name_msg+" ERROR: object named '"+str(this_object.name)+"' resulted in a group with a faces list that is None")
+                    print(msg_filename + " ERROR: object named '" + str(this_object.name) + "' resulted in a group with a faces list that is None")
             else:
-                print(name_msg+" ERROR: object named '"+str(this_object.name)+"' resulted in a group that is None")
+                print(msg_filename + " ERROR: object named '" + str(this_object.name) + "' resulted in a group that is None")
             key_count += 1
         if face_count == 0:
             faces_msg = "...WARNING: 0 FACES!"
         else:
             faces_msg = "..."+str(face_count)+" face(s)"
-    print(name_msg+": object named "+str(this_object.name)+""+faces_msg)
+    print(msg_filename + ": object named " + str(this_object.name) + "" + faces_msg)
     
 
 class WObjFile:
-    wobjects = None
 
+    def __init__(self):
+        self.filename = None
+        self.wobjects = None
+        self.wmaterials = None
+        self.texcoords_not_2_warning_enable = True
+        #self.NYI_s_enable = True
+        self.short_name_in_messages_enable = True
+    
     def load(self, filename):
-        self.wobjects = self.get_wobjects_list(filename)
-
-    def get_wobjects_list(self, filename):  # formerly import_obj formerly get_wobjects_from_obj
+        f_name = "load"
+        if (self.filename is not None):
+            print("[ WObjFile ] WARNING in load: WObjFile already " + \
+                  "loaded; loading '" + filename + "' in place of '" + \
+                  str(self.filename) + "'")
+        if (self.wobjects is not None):
+            print("[ WObjFile ] WARNING in load: WObjFile already " + \
+                  "initialized; overriding from '" + filename + "'")
+        self.filename = filename
+        self.wobjects = {}
+        self.wmaterials = None  # will be loaded using another method
         added_face_msg_enable = True
-        name_msg = filename
-        if short_name_in_messages_enable:
-            name_msg = os.path.basename(os.path.normpath(filename))
+        msg_filename = filename
+        if self.short_name_in_messages_enable:
+            msg_filename = os.path.basename(os.path.normpath(filename))
         texcoord_number_warning_enable = True
-        global texcoords_not_2_warning_enable
-        global NYI_s_enable
-        results = None
         try:
             if os.path.exists(filename):
                 command = None
                 prev_command = None
                 prev_usable_command = None
-                results = list()
-                result_index = -1
                 comments = list()
                 this_object = None
                 line_counting_number = 1
                 this_mtl_filename = None
-                materials = None
                 #start offsets at 1 since obj file uses counting numbers
                 #v_offset = 1
                 #vt_offset = 1
@@ -548,15 +482,11 @@ class WObjFile:
                 v_map = None
                 vt_map = None
                 vn_map = None
-                this_g_name = None
                 this_o_name = None
-                untitled_number = 1  # for non-spec objects that also have no non-spec name (such as `# object object_name`) specified
-                unused_g_number = 1  # collisions should be detected before use
-                g_names = []  # just for detecting duplicates
-                this_face_group = None
-                this_face_group_type = None  # s or g
-                this_face_group_name = None  # name property of this_face_group
-                this_face_group_key = None
+                #this_face_group = None
+                group_names = ["default"]  # formerly this_face_group_name
+                smoothing_param = None
+                #this_face_group_key = None
                 for line in open(filename, "r"):
                     line_strip = line.strip()
                     while ("\t" in line_strip):
@@ -584,36 +514,47 @@ class WObjFile:
                                 this_mtl_filename = this_mtl_filename[2:]
                             this_mesh_folder_path = os.path.dirname(os.path.abspath(filename))
                             this_mtl_path = this_mtl_filename
-                            if (len(this_mesh_folder_path)>0):
-                                this_mtl_path = os.path.join(this_mesh_folder_path, this_mtl_filename)
-                            materials = get_wmaterial_dict_from_mtl(this_mtl_path)
+                            if not os.path.isfile(this_mtl_path):
+                                if len(this_mesh_folder_path) > 0:
+                                    this_mtl_path = os.path.join(this_mesh_folder_path, this_mtl_filename)
+                                    if not os.path.isfile(this_mtl_path):
+                                        this_mtl_path = None
+                                        print("[ WObjFile ] INPUT ERROR: missing '" + this_mtl_filename + "' in '" + this_mesh_folder_path+ "'")
+                                else:
+                                    this_mtl_path = None
+                                    print("[ WObjFile ] INPUT ERROR: missing '" + this_mtl_filename + "' in mesh's folder or current directory '" + os.getcwd() + "'")
+                            if self.wmaterials is not None:
+                                print("[ WObjFile ] WARNING: wmaterial already " + \
+                                      "initialized; overriding from '" + this_mtl_path + "'")
+                            self.wmaterials = get_wmaterial_dict_from_mtl(this_mtl_path)
                         elif command=="o":
                             if len(params) > 0:
                                 this_o_name = params[0]  # this_object.name = params[0]
                         elif command=="g":
-                            this_face_group_type = "g"
                             if len(params) > 0:
-                                this_g_name = params[0]  # this_object.name = params[0]
+                                group_names = params
+                            else:
+                                group_names = ["default"]  # as per spec
                         elif command=="v":
                             if prev_usable_command != command:
                                 #this is non-spec to account for non-spec v commands that aren't preceded by `o` command
                                 if this_object is not None:
-                                    results.append(this_object)
-                                    show_object_faces_msg(this_object, name_msg)
-                                    result_index += 1  # ok since starts at -1
+                                    #NOTE: this_object.name is guaranteed
+                                    self.wobjects[this_object.name] = this_object
+                                    show_object_faces_msg(this_object, msg_filename)
                                     this_object = None
                                     #v_offset += len(this_object.vertices)
                                     #vt_offset += len(this_object.texcoords)
                                     #vn_offset += len(this_object.normals)
+                                if this_o_name is None: # do AFTER using name as key for adding previous object to self.wobjects
+                                    this_o_name = self._get_unused_wobject_key()
+                                    print(msg_filename + " (" + str(line_counting_number) + ",0): (INPUT ERROR) `o` command should precede `v` command--compensating for out-of-spec obj file by using generated name '" + this_o_name + "'")
                                 v_map = dict()
                                 vt_map = dict()
                                 vn_map = dict()
                                 this_object = WObject()
-                                if this_o_name is None:
-                                    this_o_name = "untitled_" + str(untitled_number)
-                                    untitled_number += 1
                                 this_object.name = this_o_name
-                                this_o_name = None
+                                this_o_name = None  # consume it
                                 this_vertex_group_type = None
                                 this_object.source_path = filename
                                 this_object.mtl_filename = this_mtl_filename
@@ -638,7 +579,7 @@ class WObjFile:
                             elif len(args)>=3:
                                 result_v = get_fvec3(args)
                             if len(args)!=3 and len(args)!=6 and len(args)!=7:
-                                print(name_msg+" ("+str(line_counting_number)+",0): (INPUT WARNING) vertex must have 3 total coordinate values (or 3 followed by 3 to 4 color channels for 6 to 7 total): '"+args_string+"'")
+                                print(msg_filename + " (" + str(line_counting_number) + ",0): (INPUT WARNING) vertex must have 3 total coordinate values (or 3 followed by 3 to 4 color channels for 6 to 7 total): '" + args_string + "'")
                                 if len(args)>=2:
                                     result_v = get_fvec3( (args[0], 0.0, args[1]) )  #assume x,z for 2d vert
                                 if len(args)>=1:
@@ -653,18 +594,18 @@ class WObjFile:
                                 result_vt = (0.0, 0.0)
                                 if len(args)>=2:
                                     result_vt = get_fvec2(args)
-                                if (texcoords_not_2_warning_enable):
+                                if (self.texcoords_not_2_warning_enable):
                                     if (len(args)!=2):
                                         if (len(args)<2):
-                                            print(name_msg+" ("+str(line_counting_number)+",0): (INPUT ERROR) texcoord missing coordinate (expected u v after vt but only got one param) so texture may not be applied correctly: '"+args_string+"'")
+                                            print(msg_filename + " (" + str(line_counting_number) + ",0): (INPUT ERROR) texcoord missing coordinate (expected u v after vt but only got one param) so texture may not be applied correctly: '" + args_string + "'")
                                         else:
                                             if len(args)!=3:
-                                                print(name_msg+" ("+str(line_counting_number)+",0): (INPUT ERROR) texcoords must have 2 (vt u v) or 3 (vt u v w) coordinates: '"+args_string+"'")
+                                                print(msg_filename + " (" + str(line_counting_number) + ",0): (INPUT ERROR) texcoords must have 2 (vt u v) or 3 (vt u v w) coordinates: '" + args_string + "'")
                                             else:
-                                                print(name_msg+" ("+str(line_counting_number)+",0): (INPUT WARNING / NOT YET IMPLEMENTED) texcoord with 3 coordinates (vt u v w) so w may be ignored: '"+args_string+"'")
+                                                print(msg_filename + " (" + str(line_counting_number) + ",0): (INPUT WARNING / NOT YET IMPLEMENTED) texcoord with 3 coordinates (vt u v w) so w may be ignored: '" + args_string + "'")
                                         print("(this is the last texcoords input warning that will be shown)")
                                         print("")
-                                        texcoords_not_2_warning_enable = False
+                                        self.texcoords_not_2_warning_enable = False
                                 #this_object.texcoords.append(result_vt)
                                 absolute_vt_list.append(result_vt)
                                 absolute_vt_count += 1
@@ -678,30 +619,75 @@ class WObjFile:
                                 if len(args)>=3:
                                     result_vn = get_fvec3(args)
                                 if len(args)!=3:
-                                    print(name_msg+" ("+str(line_counting_number)+",0): (INPUT ERROR) normal must have 3 coordinates: '"+args_string+"'")
+                                    print(msg_filename + " (" + str(line_counting_number) + ",0): (INPUT ERROR) normal must have 3 coordinates: '" + args_string + "'")
                                 #this_object.normals.append(result_vn)
                                 absolute_vn_list.append(result_vn)
                                 absolute_vn_count += 1
                                 #vn_offset += 1
+                            elif command=="l":
+                                # polyline
+                                if this_object.polylines is None:
+                                    this_object.polylines = []
+                                args = args_string.split(" ")
+                                this_polyline = []
+                                for i in range(len(args)):
+                                    absolute_v_index = None
+                                    stated_v_number = int(args[i])
+                                    if stated_v_number>=1:
+                                        absolute_v_index = stated_v_number - 1
+                                        vertex_number = this_wobject_v_count  # ok since adding it below
+                                    elif stated_v_number<0:  # negative index is relative in obj standard
+                                        absolute_v_index = absolute_v_count + stated_v_number  # + since negative
+                                        vertex_number = this_wobject_v_count  # ok since adding it below
+                                    else:
+                                        print(msg_filename + " (" + str(line_counting_number) + ",0): (INPUT ERROR) line vertex number 0 in obj is nonstandard and will be skipped")
+                                    if absolute_v_index is not None:
+                                        abs_v_i_s = str(absolute_v_index)
+                                        if abs_v_i_s in v_map:
+                                            absolute_v_index = None  # prevents copying same one to wobject again below
+                                            vertex_number = v_map[abs_v_i_s]
+                                        else:
+                                            v_map[abs_v_i_s] = vertex_number
+                                    if absolute_v_index is not None:
+                                        if this_object.vertices is None:
+                                            this_object.vertices = list()
+                                        v_num_s = str(vertex_number)
+                                        this_object.vertices.append(absolute_v_list[absolute_v_index])
+                                        individuated_v_count += 1
+                                        this_wobject_v_count += 1
+                                        this_polyline.append(int(args[i]) - 1)
+                                if len(this_polyline) > 0:
+                                    this_object.polylines.append(this_polyline)
+                                else:
+                                    print(msg_filename + " (" + str(line_counting_number) + ",0): (INPUT ERROR) bad polyline skipped (should have absolute counting number of existing vertex from 'v' command in file)")
                             elif command=="f":
                                 if prev_usable_command != command:
-                                    #if this_object.faces is None:
-                                    #    this_object.faces = []
+                                    if group_names is None:
+                                        group_names = ["default"]
                                     if this_object.face_groups is None:
                                         this_object.face_groups = {}
-                                    this_face_group = WFaceGroup()
-                                    this_face_group.faces = []
-                                    if this_face_group_name is None:
-                                        this_face_group_name = str(unused_g_number)
-                                        while this_face_group_name in this_object.face_groups:
-                                            unused_g_number += 1
-                                            this_face_group_name = str(unused_g_number)
-                                    this_face_group.face_group_type = this_face_group_type
-                                    this_face_group_type = None
-                                    this_object.face_groups[this_face_group_name] = this_face_group
-                                    this_face_group_key = this_face_group_name
-                                    this_face_group_name = None                                    
-                                
+                                    smoothing_key = smoothing_param
+                                    smoothing_mode = None
+                                    if smoothing_param is None or \
+                                       smoothing_param=="on" or \
+                                       smoothing_param=="off":
+                                        smoothing_key = this_object._get_unused_face_list_key()
+                                        smoothing_mode = smoothing_param
+                                    else:
+                                        smoothing_mode = "on"
+
+                                    if this_object.face_dicts is None:
+                                        this_object.face_dicts = {}
+                                    if smoothing_key not in this_object.face_dicts:
+                                        this_object.face_dicts[smoothing_key] = {}
+                                    this_object.face_dicts[smoothing_key]["s"] = smoothing_mode
+                                    this_object.face_dicts[smoothing_key]["faces"] = []
+                                    for group_name in group_names:
+                                        if not (group_name in this_object.face_groups):
+                                            this_object.face_groups[group_name] = []
+                                        if not smoothing_key in this_object.face_groups[group_name]:
+                                            this_object.face_groups[group_name].append(smoothing_key)
+
                                 args = args_string.split(" ")
                                 this_face = []
                                 for i in range(0,len(args)):
@@ -724,7 +710,7 @@ class WObjFile:
                                                 absolute_v_index = absolute_v_count + stated_v_number  # + since negative
                                                 vertex_number = this_wobject_v_count  # ok since adding it below
                                             else:
-                                                print("  WARNING: vertex number 0 on obj is nonstandard and will be skipped")
+                                                print(msg_filename + " (" + str(line_counting_number) + ",0): (INPUT ERROR) vertex number 0 in obj is nonstandard and will be skipped")
                                             if absolute_v_index is not None:
                                                 abs_v_i_s = str(absolute_v_index)
                                                 if abs_v_i_s in v_map:
@@ -744,7 +730,7 @@ class WObjFile:
                                                 absolute_vt_index = absolute_v_count + stated_v_number  # + since negative
                                                 texcoord_number = this_wobject_vt_count  # ok since adding it below
                                             else:
-                                                print("  WARNING: texcoord number 0 on obj is nonstandard and will be skipped")
+                                                print(msg_filename + " (" + str(line_counting_number) + ",0): (PARSER WARNING) texcoord number 0 on obj is nonstandard and will be skipped")
                                             if absolute_vt_index is not None:
                                                 abs_vt_i_s = str(absolute_vt_index)
                                                 if abs_vt_i_s in vt_map:
@@ -764,7 +750,7 @@ class WObjFile:
                                                 absolute_vn_index = absolute_vn_count + stated_normal_number  # + since negative
                                                 normal_number = this_wobject_vn_count  # ok since adding it below
                                             else:
-                                                print("  WARNING: normal number 0 on obj is nonstandard and will be skipped")
+                                                print(msg_filename + " (" + str(line_counting_number) + ",0): (PARSER WARNING) normal number 0 on obj is nonstandard and will be skipped")
                                             if absolute_vn_index is not None:
                                                 abs_vn_i_s = str(absolute_vn_index)
                                                 if abs_vn_i_s in vn_map:
@@ -793,43 +779,44 @@ class WObjFile:
                                         this_wobject_vn_count += 1
                                     if texcoord_number_warning_enable:
                                         if texcoord_number is None:
-                                            print(name_msg+" ("+str(line_counting_number)+",0): (PARSER WARNING) vertex texcoord_number is None when adding to face")
+                                            print(msg_filename + " (" + str(line_counting_number) + ",0): (PARSER WARNING) vertex texcoord_number is None when adding to face")
                                             print("(this is the last texcoord_number warning that will be shown for this input file)")
                                             print("")
                                             texcoord_number_warning_enable = False
-                                    this_face.append([vertex_number,texcoord_number,normal_number])
-                                this_object.face_groups[this_face_group_key].faces.append( this_face )
+                                    this_face.append([vertex_number,texcoord_number,normal_number])  # this is OBJ vertex_format
+                                this_object.face_dicts[smoothing_key]["faces"].append(this_face)
                                 if added_face_msg_enable:
-                                    #print("added face to '"+str(this_object.name)+"' group '"+this_face_group_key+"': "+str(this_face))
-                                    #added_face_msg_enable = False  # commented for debug only
+                                    #print("added face to '" + str(this_object.name) + "' face list key '" + smoothing_key + "': " + str(this_face))
+                                    added_face_msg_enable = False  # commented for debug only
                                     if not added_face_msg_enable:
-                                        print("(this is the last face message that will be shown for this input file)")
-                                        print("")
+                                        #print("(this is the last face message that will be shown for this input file)")
+                                        #print("")
+                                        pass
                             elif command=="usemtl":
-                                if materials is not None:
-                                    if args_string in materials.keys():
-                                        this_object.wmaterial = materials[args_string]  # get_by_name(materials,args_string)
+                                if self.wmaterials is not None:
+                                    if args_string in self.wmaterials.keys():
+                                        this_object.wmaterial = self.wmaterials[args_string]  # get_by_name(wmaterials,args_string)
                                         if this_object.wmaterial is None:
-                                            print(name_msg+" ("+str(line_counting_number)+",0): (INPUT ERROR) wmaterial named '"+args_string+"' is None")
+                                            print(msg_filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) material named '"+args_string+"' is None")
                                     else:
-                                        print(name_msg+" ("+str(line_counting_number)+",0): (INPUT ERROR) unknown wmaterial name '"+args_string+"'")
+                                        print(msg_filename + " (" + str(line_counting_number) + ",0): (INPUT ERROR) unknown material name '" + args_string + "'")
                                 else:
-                                    print(name_msg+" ("+str(line_counting_number)+",0): (INPUT ERROR) usemtl '"+args_string+"' is impossible since a material was not loaded with mtllib command first.")
+                                    print(msg_filename + " (" + str(line_counting_number) + ",0): (INPUT ERROR) usemtl '" + args_string + "' is impossible since a material was not loaded with mtllib command first.")
                             elif command=="s":
                                 if args_string=="off":
-                                    this_face_group_type = None
-                                    this_face_group_name = None
+                                    smoothing_param = "off"
+                                elif args_string=="0":  # 0==off in spec
+                                    smoothing_param = "off"
                                 else:
-                                    this_face_group_type = "s"
-                                    this_face_group_name = args_string
+                                    smoothing_param = args_string
                             else:
-                                print(name_msg+" ("+str(line_counting_number)+",0): (INPUT ERROR) unknown OBJ object command '"+command+"'")
+                                print(msg_filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) unknown OBJ object command '"+command+"'")
                         else:
-                            print(name_msg+" ("+str(line_counting_number)+",0): (INPUT ERROR) OBJ object command '"+command+"' before 'o'")
+                            print(msg_filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) OBJ object command '"+command+"' before 'o'")
                         #else:
-                        #    print(name_msg+" ("+str(line_counting_number)+",0): (INPUT ERROR) no arguments after command")
+                        #    print(msg_filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) no arguments after command")
                         #else:
-                        #    print(name_msg+" ("+str(line_counting_number)+",0): (INPUT ERROR) no space after command")
+                        #    print(msg_filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) no space after command")
                         prev_command = command
                         prev_usable_command = command
                         
@@ -839,38 +826,49 @@ class WObjFile:
                             if len(comment_notag) > 0:
                                 if this_object is not None:
                                     this_object.append_opening_comment(comment_notag)
-                                #if (this_object is None) or (not this_object.has_any_data_enable):
-                                if this_o_name is None:
-                                    chunks = comment_notag.split(" ")
-                                    if (chunks is not None) and (len(chunks) > 1):
-                                        if chunks[0].lower() == "object":
-                                            if this_o_name is None:
-                                                this_o_name = chunks[1]
-                                            else:
-                                                print("NOTICE: skipping non-standard commented name '"+chunks[1]+"' since object is already named '" + this_object.name + "'")
                                 else:
                                     comments.append(comment_notag)
+                                words = comment_notag.split(" ")
+                                if (words is not None) and (len(words) > 1):
+                                    if words[0].lower() == "object":
+                                        if this_o_name is None:
+                                            this_o_name = words[1]
+                                        else:
+                                            print("NOTICE: skipping non-standard commented name '" + words[1] + "' since was already specified as '" + this_o_name + "'")
                         prev_command = None
                     line_counting_number += 1
                 #end for lines in file
                 #NOTE: "finalize_obj" code is no longer needed since offsets were already applied above and original format is kept intact (indices instead of opengl-style vertex info array)
                 if this_object is not None:
-                    results.append(this_object)
-                    show_object_faces_msg(this_object, name_msg)
-                    print(name_msg+": has a total of "+str(len(absolute_v_list))+" vertices loaded as "+str(individuated_v_count)+" vertices")
+                    #NOTE: this_object.name is guaranteed
+                    self.wobjects[this_object.name] = this_object
+                    show_object_faces_msg(this_object, msg_filename)
+                    print("[ WObjFile ] '" + msg_filename + "' has a total of " + str(len(absolute_v_list)) + " vertices loaded as " + str(individuated_v_count) + " vertices")
                     this_object = None
+                else:
+                    if len(self.wobjects)>0:
+                        print("[ WObjFile ] ERROR in " + f_name + ": '" + msg_filename + "' did not have any vertex data after last 'o' statement")
+                    else:
+                        print("[ WObjFile ] ERROR in " + f_name + ": '" + msg_filename + "' did not have any vertex data (self.wobjects remains empty)")
             else:
-                print("ERROR in get_wobjects_from_obj: missing file or cannot access '"+filename+"'")
+                print("[ WObjFile ] ERROR in " + f_name + ": missing file or cannot access '" + msg_filename + "'")
         except:
-            print("ERROR: Could not finish get_wobjects_from_obj '"+filename+"':")
+            print("[ WObjFile] ERROR: Could not finish " + f_name + " '" + msg_filename + "':")
             view_traceback()
-        if results is not None:
-            if len(results)<1:
-                print("WARNING: get_wobjects_list (usually called by wobjfile.load) got 0 objects from '" + filename + "'")
+        if self.wobjects is not None:
+            if len(self.wobjects)<1:
+                print("[ WObjFile ] WARNING: " + f_name + " got 0 objects from '" + msg_filename + "'")
         #else ignore since already has file does not exist error
             
-        return results
-
+    def _get_unused_wobject_key(self):
+        #this_o_name = None
+        #while True:
+        #    this_o_name = "untitled_wobject_" + str(self.untitled_number)
+        #    self.untitled_number += 1
+        #    if this_o_name not in self.wobjects:
+        #        break
+        #return this_o_name
+        return str(uuid.uuid4())
 
 
 

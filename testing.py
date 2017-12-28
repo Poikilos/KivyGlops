@@ -40,10 +40,11 @@ class MainScene(KivyGlops):
     def load_glops(self):
         test_space_enable = False
         test_medieval_enable = True
-        #self.canvas.shader.source = resource_find('simple1b.glsl')
-        #self.canvas.shader.source = resource_find('shade-normal-only.glsl') #partially working
-        #self.canvas.shader.source = resource_find('shade-texture-only.glsl')
-        #self.canvas.shader.source = resource_find('shade-kivyglops-minimal.glsl')
+        #NOTE: default gl_widget shader is already loaded by KivyGlops
+        #self.ui.gl_widget.canvas.shader.source = resource_find('simple1b.glsl')
+        #self.ui.gl_widget.canvas.shader.source = resource_find('shade-normal-only.glsl') #partially working
+        #self.ui.gl_widget.canvas.shader.source = resource_find('shade-texture-only.glsl')
+        #self.ui.gl_widget.canvas.shader.source = resource_find('shade-kivyglops-minimal.glsl')
         #self.ui.gl_widget.canvas.shader.source = resource_find('fresnel.glsl')
 
         #self.load_obj("barrels triangulated (Costinus at turbosquid).obj")
@@ -75,13 +76,15 @@ class MainScene(KivyGlops):
             #self.load_obj("R:\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-techdemo.obj")
             #self.load_obj("etc\\problematic mesh files\\medseaport1b-floor_glrepeat.obj")
             #self.load_obj("medseaport1b-lowpoly.obj")
-            seaport_name = "medseaport1b-techdemo.obj"
+            #seaport_name = "medseaport1b-techdemo.obj"
+            seaport_name = "medseaport1b-door.obj"
+            #seaport_name = "medseaport1b-minimal.obj"
             kgt_path = os.path.join( os.path.join(profile_path, "Desktop"), "KivyGlopsTesting")
             seaport_path = resource_find(seaport_name)
             if seaport_path is None:
                 seaport_path = os.path.join(kgt_path, seaport_name)
             if os.path.isfile(seaport_path):
-                self.load_obj(seaport_path)
+                self.load_obj(seaport_path, pivot_to_geometry_enable=True)
             else:
                 print("[ testing ] ERROR: can't find '" + seaport_name + "'")
             #medseaport1b-lowpoly (including dependencies) is available from http://www.expertmultimedia.com/usingpython/resources/Environments,Outdoor-Manmade/seaport.zip
@@ -119,7 +122,7 @@ class MainScene(KivyGlops):
                 self.add_bump_sound_by_index(index, "sounds/crate-drop6.wav")
                 self.add_bump_sound_by_index(index, "sounds/crate-drop7.wav")
                 self.add_bump_sound_by_index(index, "sounds/crate-drop8.wav")
-        
+            self.set_background_cylmap(os.path.join("maps","sky-texture-seamless.jpg"))
         if test_space_enable:
             self.set_background_cylmap("starfield1-coryg89.jpg")
 

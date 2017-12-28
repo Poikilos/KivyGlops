@@ -1,5 +1,180 @@
-* formerly from kivyglops.py, but (PROBABLY) not needed since pyglops.py version of this method checks for type(self) instead of PyGlops now:
+* formerly append_wobject under setting this_face_list
+```python
+                        if this_face_list is not None:
+                            #get offset
+                            for faceIndex in range(0,len(this_face_list)):
+                                for componentIndex in range(0,len(this_face_list[faceIndex])):
+                                    #print("found face "+str(faceIndex)+" component "+str(componentIndex)+": "+str(this_face_list[faceIndex][componentIndex]))
+                                    #print(str(this_face_list[faceIndex][vertexIndex]))
+                                    #if (len(this_face_list[faceIndex][componentIndex])>=FACE_V):
+                                    #TODO: audit this code:
+                                    for vertexIndex in range(0,len(this_face_list[faceIndex][componentIndex])):
+                                        #calculate new offsets, in case obj file was botched (for correct obj format, wobjfile.py changes indices so they are relative to wobject ('o' command) instead of file
+                                        if componentIndex==FACE_V:
+                                            thisVertexIndex = this_face_list[faceIndex][componentIndex][vertexIndex]
+                                            #if vertices_offset is None or thisVertexIndex<vertices_offset:
+                                                #vertices_offset = thisVertexIndex
+                                        #if (len(this_face_list[faceIndex][componentIndex])>=FACE_TC):
+                                        elif componentIndex==FACE_TC:
+                                            thisTexCoordIndex = this_face_list[faceIndex][componentIndex][vertexIndex]
+                                            #if texcoords_offset is None or thisTexCoordIndex<texcoords_offset:
+                                                #texcoords_offset = thisTexCoordIndex
+                                        #if (len(this_face_list[faceIndex][componentIndex])>=FACE_VN):
+                                        elif componentIndex==FACE_VN:
+                                            thisNormalIndex = this_face_list[faceIndex][componentIndex][vertexIndex]
+                                            #if normals_offset is None or thisNormalIndex<normals_offset:
+                                                #normals_offset = thisNormalIndex
+                            #if vertices_offset is not None:
+                                #print("detected vertices_offset:"+str(vertices_offset))
+                            #if texcoords_offset is not None:
+                                #print("detected texcoords_offset:"+str(texcoords_offset))
+                            #if normals_offset is not None:
+                                #print("detected normals_offset:"+str(normals_offset))
+                #obj format stores faces like (quads are allowed such as in following examples):
+                #this_wobject_this_face 1399/1619 1373/1593 1376/1596 1400/1620
+                #format is:
+                #this_wobject_this_face VERTEX_I VERTEX_I VERTEX_I VERTEX_I
+                #or
+                #this_wobject_this_face VERTEX_I/TEXCOORDSINDEX VERTEX_I/TEXCOORDSINDEX VERTEX_I/TEXCOORDSINDEX VERTEX_I/TEXCOORDSINDEX
+                #or
+                #this_wobject_this_face VERTEX_I/TEXCOORDSINDEX/NORMALINDEX VERTEX_I/TEXCOORDSINDEX/NORMALINDEX VERTEX_I/TEXCOORDSINDEX/NORMALINDEX VERTEX_I/TEXCOORDSINDEX/NORMALINDEX
+                #where *I are integers starting at 0 (stored starting at 1)
+                #FACE_VERTEX_COMPONENT_VERTEX_INDEX = 0
+                #FACE_VERTEX_COMPONENT_TEXCOORDS_INDEX = 1
+                #FACE_VERTEX_COMPONENT_NORMAL_INDEX = 2
+                #NOTE: in obj format, TEXCOORDS_INDEX is optional
+
+                #FACE_VERTEX_COMPONENT_VERTEX_INDEX = 0
+                #FACE_VERTEX_COMPONENT_TEXCOORDS_INDEX = 1
+                #FACE_VERTEX_COMPONENT_NORMAL_INDEX = 2
+
+                #nskrypnik put them in a different order than obj format (0,1,2) for some reason so do this order instead ONLY if using his obj loader:
+                #FACE_VERTEX_COMPONENT_VERTEX_INDEX = 0
+                #FACE_VERTEX_COMPONENT_TEXCOORDS_INDEX = 2
+                #FACE_VERTEX_COMPONENT_NORMAL_INDEX = 1
+
+                #use the following globals from wobjfile.py instead of assuming any FACE_VERTEX_COMPONENT values:
+                #FACE_V  # index of vertex index in the face (since face is a list)
+                #FACE_TC  # index of tc0 index in the face (since face is a list)
+                #FACE_VN  # index of normal index in the face (since face is a list)
 ```
+
+* changed to dicts (formerly in wobjfile.py):
+```python
+
+#types for refl map (need one texture if refl is -type sphere, but need six if cube:)
+#refl -type cube_top
+# refl -type cube_bottom
+# refl -type cube_front
+# refl -type cube_back
+# refl -type cube_left
+# refl -type cube_right
+
+#http://paulbourke.net/dataformats/mtl/ says (similar or same for Kd etc):
+#The options for the "map_Ka" statement are listed below.  These options
+#are described in detail in "Options for texture map statements" on page
+#5-18.
+#   -blendu on | off
+#   -blendv on | off
+#   -cc on | off
+#   -clamp on | off
+#   -mm base gain
+#   -o u v w
+#   -s u v w
+#   -t u v w
+#   -texres value
+
+class WFaceGroup:
+
+    def __init__(self):
+        self.faces = None
+        #NOTE: no self.name since name is key, since WFaceGroup is in a dict (however, do not save g or s command [discard key] if self.face_group_type is None)
+        self.face_group_type = None  # `g` or `s` or `s off`
+
+    def emit_yaml(self, lines, min_tab_string):
+        #lines.append(min_tab_string+this_list_name+":")
+        name_line = "name: "
+        if self.name is not None:
+            name_line += self.name
+        else:
+            name_line += "~"
+        lines.append(min_tab_string+name_line)
+        if self.faces is not None:
+            lines.append(min_tab_string+"faces:")
+            for face in faces:
+                lines.append(min_tab_string+tab_string+"- ")
+                for vertex_i in face:
+                    lines.append(min_tab_string+tab_string+tab_string+"- "+str(vertex_i))
+        else:
+            lines.append(min_tab_string+"faces: ~")
+
+
+#use dict instead of this class
+#see full spec at http://paulbourke.net/dataformats/mtl/
+class WMaterial:
+
+    name = None
+    file_path = None  # for finding texture images more easily later
+    _opening_comments = None
+    _illumination_model = None
+    _opacity = None # d (or 1.0-Tr)
+    _ambient_color = None  # Ka
+    _diffuse_color = None  # Kd
+    _specular_color = None  # Ks; black is 'off' (same as None)
+    _specular_exponent = None  # Ns (0 to 1000) "specular highlight component" ('hardness')
+    
+    # TODO: "sharpness" command specified sharpness of reflection 0 to 1000 default 60
+    # where higher is more clear. "Sharpness values greater than 100 map
+    # introduce aliasing effects in flat surfaces that are viewed at a sharp angle" - Ramey
+
+    #_transmission_color = None  # Tf; NOT YET IMPLEMENTED
+    #_is_halo = None  # outer rim is fully opaque, inner part is based on _opacity
+    # _sharpness = None  # sharpness; sharpness of reflections, 0 to 1000; NOT YET IMPLEMENTED
+    # optical_density = None  #TODO: Ni; Index of Refraction; 0.001 to 10
+    _map_filename_dict = None
+    _map_params_dict = None
+    #_map_ambient_filename = None  # map_Ka
+    #_map_diffuse_filename = None  # map_Kd
+    #_map_specular_color_filename = None    # map_Ks
+    #_map_specular_highlight_filename = None    # map_Ns --just a regular image, but used as gray (values for exponent)
+    #_map_transparency_filename = None  # map_d
+    #_map_bump_filename = None  # map_bump or bump: use luminance
+    #_map_displacement = None  # disp
+    #_map_decal = None # decal: stencil; defaults to 'matte' channel of image
+    #_map_reflection = None  # refl; can be -type sphere
+
+    def __init__(self, name=None):
+        self.name = name
+        self._opacity = 1.0
+        self._map_filename_dict = {}
+        self._map_params_dict = {}
+
+    def append_opening_comment(self, text):
+        if self._opening_comments is None:
+            self._opening_comments = list()
+        self._opening_comments.append(text)
+
+```
+
+
+* formerly part of class WObject in wobjfile.py:
+```python
+    #region raw OBJ data (as per nskrypnik)
+    _name = None
+    _vertex_strings = None
+    _obj_cache_vertices = None
+    _pivot_point = None
+    _min_coords = None  #bounding cube minimums in local coordinates
+    _max_coords = None  #bounding cube maximums in local coordinates
+    texcoords = None
+    normals = None
+    parameter_space_vertices = None  #only for curves--not really implemented, just loaded from obj
+    faces = None
+    #endregion raw OBJ data (as per nskrypnik)
+``` 
+
+* formerly from kivyglops.py, but (PROBABLY) not needed since pyglops.py version of this method checks for type(self) instead of PyGlops now:
+```python
 def get_dict_deepcopy_with_my_type(self, old_dict, copy_my_type_by_reference_enable=False):
         new_dict = None
         #if type(old_dict) is dict:
@@ -39,13 +214,13 @@ def get_dict_deepcopy_with_my_type(self, old_dict, copy_my_type_by_reference_ena
 ``` 
 
 * formerly from __init__ in KivyGlops (formerly in KivyGlopsWindow)
-```
+```python
         self.camera_ax = 0
         self.camera_ay = 0
 ```
 
 * instead, use new_glop method (never use `= PyGlop(`) to avoid needing this
-```
+```python
 def get_kivyglop_from_pyglop(this_pyglop):
     this_kivyglop = KivyGlop()
     this_kivyglop.name = this_pyglop.name
@@ -92,7 +267,8 @@ def get_kivyglop_from_pyglop(this_pyglop):
 ```
 
 * no longer needed
-```
+(replaced by get_wmaterial_dict_from_mtl)
+```python
 def get_wmaterial_list_from_mtl(filename):
     print("get_wmaterial_list_from_mtl (formerly get_wmaterials_from_mtl) IS DEPRECTATED: use get_wmaterial_dict_from_mtl instead)")
     results = None
