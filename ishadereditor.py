@@ -116,7 +116,7 @@ void main (void){
     
     def __init__(self, **kwargs):
         super(ShaderEditor, self).__init__(**kwargs)
-        self._meshes = InstructionGroup()
+        self._contexts = InstructionGroup()
         self.test_canvas = RenderContext()
         s = self.test_canvas.shader
         self.trigger_compile = Clock.create_trigger(self.compile_shaders, -1)
@@ -125,9 +125,10 @@ void main (void){
     scene = None
     frames_per_second = 30.0
     
-    def add_glop(self, this_glop):
-        this_glop.visible_enable = True
-        #context = self._meshes
+    def add_glop(self, this_glop, set_visible_enable=None):
+        if set_visible_enable is not None:
+            this_glop.visible_enable = set_visible_enable
+        #context = self._contexts
         #context = self.gl_widget.canvas
         #if self.scene.selected_glop_index is None:
         #    self.scene.selected_glop_index = this_glop_index
@@ -188,7 +189,7 @@ void main (void){
         self.scene.glops.append(this_glop)
         self.scene.glops[len(self.scene.glops)-1].index = len(self.scene.glops) - 1
         #this_glop.index = len(self.scene.glops) - 1
-        self._meshes.add(self.scene.glops[len(self.scene.glops)-1].get_context())  # _meshes is a visible instruction group
+        self._contexts.add(self.scene.glops[len(self.scene.glops)-1].get_context())  # _contexts is a visible instruction group
         self.scene.glops[len(self.scene.glops)-1].visible_enable = True
 
         if get_verbose_enable():

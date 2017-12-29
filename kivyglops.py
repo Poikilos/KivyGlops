@@ -121,15 +121,7 @@ class KivyGlop(PyGlop, Widget):
         self._translate_instruction = Translate(0, 0, 0)
         self._color_instruction = Color(1.0, 0.0, 1.0, 1.0)  # TODO: eliminate this in favor of canvas["mat_diffuse_color"]
 
-        _axes_vertices, _axes_indices = self.generate_axes()
-        self._axes_mesh = Mesh(
-                               vertices=_axes_vertices,
-                               indices=_axes_indices,
-                               fmt=self.vertex_format,
-                               mode='triangles',
-                               texture=None,
-                              )
-        print("[ KivyGlop ] (debug only) generated axes: " + str(self._axes_mesh))
+        self.generate_axes()
 
     def __str__(self):
         return str(type(self)) + " named " + str(self.name) + " at " + \
@@ -236,7 +228,14 @@ class KivyGlop(PyGlop, Widget):
 
         #new_texcoord = new_tuple(self.vertex_format[self.TEXCOORD0_INDEX][VFORMAT_VECTOR_LEN_INDEX])
 
-        return _axes_vertices, _axes_indices
+        self._axes_mesh = Mesh(
+                               vertices=_axes_vertices,
+                               indices=_axes_indices,
+                               fmt=self.vertex_format,
+                               mode='triangles',
+                               texture=None,
+                              )        
+        #return _axes_vertices, _axes_indices
 
     #"Called by the repr() built-in function to compute the "official"
     # string representation of an object. If at all possible, this
@@ -408,7 +407,7 @@ class KivyGlop(PyGlop, Widget):
 
     def _on_change_pivot(self, previous_point=(0.0,0.0,0.0)):
         super(KivyGlop, self)._on_change_pivot(previous_point=previous_point)
-        print("[ KivyGlop ] (debug only) _on_change_pivot from " + str(previous_point))
+        print("[ KivyGlop ] (verbose message) _on_change_pivot from " + str(previous_point))
         self._on_change_scale_instruction()  # does calculate_hit_range
 
     def get_scale(self):
@@ -477,7 +476,7 @@ class KivyGlop(PyGlop, Widget):
                 view_traceback()
         else:
             if get_verbose_enable():
-                Logger.debug("[ KivyGlop ] Warning: no texture specified for glop named '" + this_mesh_name + "'")
+                Logger.debug("[ KivyGlop ] Warning: no texture specified for glop named '" + str(self.name) + "'")
                 this_material_name = ""
                 if self.material is not None:
                     if self.material.name is not None:
@@ -556,7 +555,7 @@ class KivyGlop(PyGlop, Widget):
             view_traceback()
         return select_item_event_dict
 
-    def generate_kivy_mesh(self):
+    def _generate_kivy_mesh(self):
         participle = "checking for texture"
         if self._mesh is not None:
             print("[ KivyGlop ] WARNING in generate_kivy_mesh: self._mesh is not None, overriding")
@@ -564,24 +563,86 @@ class KivyGlop(PyGlop, Widget):
         this_texture_image = self.set_texture_diffuse(self.get_texture_diffuse_path())
         participle = "assembling kivy Mesh"
         this_texture = None
-        if len(self.vertices)>0:
-            if (this_texture_image is not None):
-                this_texture = this_texture_image.texture
-                this_texture.wrap = 'repeat'  # does same as GL_REPEAT -- see https://gist.github.com/tshirtman/3868962#file-main-py-L15
+        if self.vertices is not None:
+            if len(self.vertices) > 0:
+                if (this_texture_image is not None):
+                    this_texture = this_texture_image.texture
+                    this_texture.wrap = 'repeat'  # does same as GL_REPEAT -- see https://gist.github.com/tshirtman/3868962#file-main-py-L15
 
-            self._mesh = Mesh(
-                    vertices=self.vertices,
-                    indices=self.indices,
-                    fmt=self.vertex_format,
-                    mode='triangles',
-                    texture=this_texture,
-                )
-            if get_verbose_enable():
-                print("[ KivyGlop ] " + str(len(self.vertices)) + " vert(s)")
+                self._mesh = Mesh(
+                        vertices=self.vertices,
+                        indices=self.indices,
+                        fmt=self.vertex_format,
+                        mode='triangles',
+                        texture=this_texture,
+                    )
+                if get_verbose_enable():
+                    print("[ KivyGlop ] " + str(len(self.vertices)) + " vert(s)")
+            else:
+                print("[ KivyGlop ] WARNING: 0 vertices in glop")
+                if self.name is not None:
+                    print("[ KivyGlop ]   named " + self.name)
         else:
-            print("[ KivyGlop ] WARNING: 0 vertices in glop")
-            if self.name is not None:
-                print("[ KivyGlop ]   named " + self.name)
+            print("[ KivyGlop ] WARNING: vertices is None in glop " + str(self.name))
+
+    def prepare_canvas(self, use_meshes=None):
+        if self._mesh is None:
+            #verts, indices = self.generate_kivy_mesh()
+            self._generate_kivy_mesh()
+            #_contexts = [ self._axes_mesh ]
+            #print("[ KivyGlop ] WARNING: glop had no mesh, so was generated when added to render context. Please ensure it is a KivyGlop and not a PyGlop (however, vertex indices misread could also lead to missing Mesh object).")
+        if use_meshes is None:
+            use_meshes = [self._mesh]
+
+        m_i = 0
+        context = self.get_context()
+        context.clear()
+        for use_mesh in use_meshes:
+            #self.generate_axes()
+            #self._axes_mesh.
+            #self._scale_instruction = Scale(0.6)
+            self._pushmatrix = PushMatrix()
+            self._updatenormalmatrix = UpdateNormalMatrix()
+            self._popmatrix = PopMatrix()
+
+            context.add(self._pushmatrix)
+            context.add(self._translate_instruction)
+            context.add(self._rotate_instruction_x)
+            context.add(self._rotate_instruction_y)
+            context.add(self._rotate_instruction_z)
+            context.add(self._scale_instruction)
+            context.add(self._updatenormalmatrix)
+
+            #context.add(self._color_instruction)  #TODO: asdf add as uniform instead
+            #print("_color_instruction.r,.g,.b,.a: " + str( [self._color_instruction.r, self._color_instruction.g, self._color_instruction.b, self._color_instruction.a] ))
+            #print("u_color: " + str(self.material.diffuse_color))
+            #if self._axes_mesh is not None:
+                #context.add(self._axes_mesh)  # debug only
+                #self._mesh = self._axes_mesh  # debug only
+            #    pass
+            #else:
+            #    print("[ KivyGlop ] no _axes_mesh.")  # debug only
+            #    pass
+
+            if use_mesh is not None:
+                context.add(use_mesh)  # commented for debug only
+                if get_verbose_enable():
+                    print("[ KivyGlop ] (verbose message) Added mesh to render context.")
+            else:
+                if get_verbose_enable():
+                    print("[ KivyGlop ] (verbose message) NOT adding mesh None at " + str(m_i) + ".")
+            context.add(self._popmatrix)
+
+            #context.add(PushMatrix())
+            #context.add(self._translate_instruction)
+            #context.add(self._rotate_instruction_x)
+            #context.add(self._rotate_instruction_y)
+            #context.add(self._rotate_instruction_z)
+            #context.add(self._scale_instruction)
+            #context.add(self._updatenormalmatrix)
+            #context.add(self._axes_mesh)
+            #context.add(PopMatrix())
+            m_i += 1
 
     def get_context(self):
         return self.canvas
@@ -686,11 +747,11 @@ class KivyGlops(PyGlops):
         return KivyGlopsMaterial()
 
     def hide_glop(self, this_glop):
-        self.ui._meshes.remove(this_glop.get_context())
+        self.ui._contexts.remove(this_glop.get_context())
         this_glop.visible_enable = False
 
     def show_glop(self, this_glop_index):
-        self.ui._meshes.add(self.glops[this_glop_index].get_context())
+        self.ui._contexts.add(self.glops[this_glop_index].get_context())
         self.glops[this_glop_index].visible_enable = True
 
     def use_walkmesh(self, name, hide=True):
@@ -820,7 +881,7 @@ class KivyGlops(PyGlops):
                                 new_glops[index]._translate_instruction.x = prev_pivot[0]
                                 new_glops[index]._translate_instruction.y = prev_pivot[1]
                                 new_glops[index]._translate_instruction.z = prev_pivot[2]
-                            new_glops[index].generate_kivy_mesh()
+                            new_glops[index].prepare_canvas()  # does generate_kivy_mesh() if needed
                             self.ui.add_glop(new_glops[index])
                             if results is None:
                                 results = list()
@@ -998,12 +1059,12 @@ class KivyGlops(PyGlops):
                     #print("y:"+str(self.player_glop._translate_instruction.y))
             global bounds_warning_enable
             if bounds_warning_enable:
-                print("[ KivyGlops ] (debug only) bounds used")
+                print("[ KivyGlops ] (verbose message) bounds used")
                 bounds_warning_enable = False
         else:
             global no_bounds_warning_enable
             if no_bounds_warning_enable:
-                print("[ KivyGlops ] (debug only) No bounds")
+                print("[ KivyGlops ] (verbose message) No bounds")
                 no_bounds_warning_enable = False
             pass
 
@@ -1113,10 +1174,10 @@ class KivyGlops(PyGlops):
                         self.glops[bumpable_index]._translate_instruction.y += self.glops[bumpable_index].y_velocity
                         self.glops[bumpable_index]._translate_instruction.z += self.glops[bumpable_index].z_velocity
                         if got_frame_delay > 0.0:
-                            #print("[ KivyGlops ] (debug only) GRAVITY AFFECTED:"+str(self.glops[bumpable_index]._translate_instruction.y)+" += "+str(self.glops[bumpable_index].y_velocity))
+                            #print("[ KivyGlops ] (verbose message) GRAVITY AFFECTED:"+str(self.glops[bumpable_index]._translate_instruction.y)+" += "+str(self.glops[bumpable_index].y_velocity))
                             self.glops[bumpable_index].y_velocity -= self._world_grav_acceleration * got_frame_delay
-                            #print("[ KivyGlops ] (debug only) THEN VELOCITY CHANGED TO:"+str(self.glops[bumpable_index].y_velocity))
-                            #print("[ KivyGlops ] (debug only) FRAME INTERVAL:"+str(got_frame_delay))
+                            #print("[ KivyGlops ] (verbose message) THEN VELOCITY CHANGED TO:"+str(self.glops[bumpable_index].y_velocity))
+                            #print("[ KivyGlops ] (verbose message) FRAME INTERVAL:"+str(got_frame_delay))
                         else:
                             print("[ KivyGlops ] WARNING: no frame delay is detectable (update normally runs automatically once per frame but seems to be running more often)")
                     else:
@@ -1266,7 +1327,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
 
     scene = None  # only use for drawing frames and sending input
     frames_per_second = None
-    _meshes = None # InstructionGroup so gl operations can be added in realtime (after resetCallback is added, but so resetCallback is on the stack after them)
+    _contexts = None # InstructionGroup so gl operations can be added in realtime (after resetCallback is added, but so resetCallback is on the stack after them)
     #region Window TODO: rename to _*
     use_button = None  
     hud_bg_rect = None
@@ -1345,8 +1406,8 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         #    this_glop = self.scene.glops[this_glop_index]
         #    add_glop(this_glop)
         #self.gl_widget.canvas.add(PopMatrix())
-        self._meshes = InstructionGroup() #RenderContext(compute_normal_mat=True)
-        self.gl_widget.canvas.add(self._meshes)
+        self._contexts = InstructionGroup() #RenderContext(compute_normal_mat=True)
+        self.gl_widget.canvas.add(self._contexts)
 
         self.finalize_canvas()
         self.add_widget(self.gl_widget)
@@ -1425,7 +1486,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         y_angle = -(math.pi/2.0) + (float(pos[1])/float(self.height-1))*(math.pi)
         if "View" not in debug_dict:
             debug_dict["View"] = dict()
-        debug_dict["View"]["pos"] = str(pos)
+        debug_dict["View"]["mouse_pos"] = str(pos)
         debug_dict["View"]["size"] = str( (self.width, self.height) )
         debug_dict["View"]["pitch,yaw"] = str((int(math.degrees(x_angle)),
                                                     int(math.degrees(y_angle))))
@@ -1445,76 +1506,25 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
     #def show_glop(self, this_glop_index):
     #    self.scene.show_glop(this_glop_index)
 
-    def add_glop(self, this_glop):
+    def add_glop(self, this_glop, set_visible_enable=None):
         participle="initializing"
         try:
-            this_glop.visible_enable = True
-            #context = self._meshes
+            if set_visible_enable is not None:
+                this_glop.visible_enable = set_visible_enable
+            #context = self._contexts
             #context = self.gl_widget.canvas
             #if self.scene.selected_glop_index is None:
             #    self.scene.selected_glop_index = this_glop_index
             #    self.scene.selected_glop = this_glop
             self.scene.selected_glop_index = len(self.scene.glops)
             self.scene.selected_glop = this_glop
-            context = this_glop.get_context()
-            this_mesh_name = ""
-            if this_glop.name is not None:
-                this_mesh_name = this_glop.name
-            #this_glop._scale_instruction = Scale(0.6)
-            this_glop._pushmatrix = PushMatrix()
-            this_glop._updatenormalmatrix = UpdateNormalMatrix()
-            this_glop._popmatrix = PopMatrix()
-
-            context.add(this_glop._pushmatrix)
-            context.add(this_glop._translate_instruction)
-            context.add(this_glop._rotate_instruction_x)
-            context.add(this_glop._rotate_instruction_y)
-            context.add(this_glop._rotate_instruction_z)
-            context.add(this_glop._scale_instruction)
-            context.add(this_glop._updatenormalmatrix)
-
-            #context.add(this_glop._color_instruction)  #TODO: asdf add as uniform instead
-            if this_glop._mesh is None:
-                #verts, indices = this_glop.generate_kivy_mesh()
-                print("[ KivyGlopsWindow ] WARNING: glop had no mesh, so was generated when added to render context. Please ensure it is a KivyGlop and not a PyGlop (however, vertex indices misread could also lead to missing Mesh object).")
-            #print("_color_instruction.r,.g,.b,.a: " + str( [this_glop._color_instruction.r, this_glop._color_instruction.g, this_glop._color_instruction.b, this_glop._color_instruction.a] ))
-            #print("u_color: " + str(this_glop.material.diffuse_color))
-            #this_glop.generate_axes()
-            #this_glop._axes_mesh.
-            if this_glop._axes_mesh is not None:
-                #context.add(this_glop._axes_mesh)  # debug only
-                #this_glop._mesh = this_glop._axes_mesh  # debug only
-                pass
-            else:
-                print("[ KivyGlopsWindow ] no _axes_mesh.")  # debug only
-                pass
-
-            if this_glop._mesh is not None:
-                context.add(this_glop._mesh)  # commented for debug only
-                if get_verbose_enable():
-                    print("[ KivyGlopsWindow ] Added mesh to render context.")
-            else:
-                print("[ KivyGlopsWindow ] NOT adding mesh.")
-            context.add(this_glop._popmatrix)
             if self.scene.glops is None:
                 self.scene.glops = []
-
-            #context.add(PushMatrix())
-            #context.add(this_glop._translate_instruction)
-            #context.add(this_glop._rotate_instruction_x)
-            #context.add(this_glop._rotate_instruction_y)
-            #context.add(this_glop._rotate_instruction_z)
-            #context.add(this_glop._scale_instruction)
-            #context.add(this_glop._updatenormalmatrix)
-            #context.add(this_glop._axes_mesh)
-            #context.add(PopMatrix())
-
             self.scene.glops.append(this_glop)
             self.scene.glops[len(self.scene.glops)-1].index = len(self.scene.glops) - 1
             #this_glop.index = len(self.scene.glops) - 1
-            self._meshes.add(self.scene.glops[len(self.scene.glops)-1].get_context())  # _meshes is a visible instruction group
-            self.scene.glops[len(self.scene.glops)-1].visible_enable = True
-
+            
+            self._contexts.add(self.scene.glops[len(self.scene.glops)-1].get_context())  # _contexts is a visible instruction group
             if get_verbose_enable():
                 print("[ KivyGlopsWindow ] Appended Glop (count:" + str(len(self.scene.glops)) + ").")
 
@@ -1570,6 +1580,9 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         x_rad, y_rad = self.get_view_angles_by_pos_rad(Window.mouse_pos)
         self.scene.player_glop._rotate_instruction_y.angle = x_rad
         self.scene.player_glop._rotate_instruction_x.angle = y_rad
+        if "View" not in debug_dict:
+            debug_dict["View"] = dict()
+        debug_dict["View"]["camera x,y: "] = str((self.scene.camera_glop._translate_instruction.x, self.scene.camera_glop._translate_instruction.y))
         #global debug_dict
         #if "Player" not in debug_dict:
         #    debug_dict["Player"] = {}
@@ -1600,10 +1613,16 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         if not self.scene._visual_debug_enable:
             self.scene._visual_debug_enable = True
             self.debug_label.opacity = 1.0
-            print("_visual_debug_enable: True")
+            #self._contexts.clear()
+            for this_glop in self.scene.glops:
+                this_glop.prepare_canvas([this_glop._axes_mesh])
+                print("_visual_debug_enable: True")
         else:
             self.scene._visual_debug_enable = False
             self.debug_label.opacity = 0.0
+            #self._contexts.clear()
+            for this_glop in self.scene.glops:
+                this_glop.prepare_canvas([this_glop._mesh])
             print("_visual_debug_enable: False")
 
     def update_debug_label(self):
@@ -1639,7 +1658,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                 event_dict = self.scene.player_glop.select_next_inventory_slot(False)
             self.scene.after_selected_item(event_dict)
         else:
-            print("[ KivyGlopsWindow ] (debug only) touch down")
+            print("[ KivyGlopsWindow ] (verbose message) touch down")
             event_dict = self.scene.use_selected(self.scene.player_glop)
 
     def on_touch_up(self, touch):

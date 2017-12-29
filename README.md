@@ -34,6 +34,9 @@ Control 3D objects and the camera in your 3D Kivy app!
 * if segfault occurs, maybe camera and look_at location are same
 
 ## Changes
+* (2017-12-28) renamed _meshes to _contexts for clarity (but _meshes is used other places as an actual list of Mesh objects)
+* (2017-12-28) moved glop canvas editing from KivyGlops.add_glop to KivyGlop.prepare_canvas
+* (2017-12-28) added optional set_visible_enable param to add_glop (and made default not set visible to True)
 * (2017-12-27) ishadereditor.py: made it use KivyGlops; renamed viewer to gl_widget
 * (2017-12-27) fully implemented face grouping from complete OBJ spec including multiple groups (`g` with no param means "default" group, and no `g` at all means "default" group)
 * (2017-12-27) renamed set_textures_from_mtl_dict to set_textures_from_wmaterial
@@ -215,8 +218,8 @@ uniform mat4 projection_mat;  //derived from self.canvas["projection_mat"] = pro
         def add_glop(self, this_glop)
         def play_sound(self, path, loop=False)
         - and more for Kivy version (as used by KivyGlops):
-                _meshes
-                _meshes.remove(this_glop.get_context())
+                _contexts
+                _contexts.remove(this_glop.get_context())
                 canvas
 * Subclass of KivyGlops must have:
     * a new_glop method which returns your subclass of PyGlop (NOT of PyGlops), unless you are handling the `super(MySubclassOfGlop, self).__init__(self.new_glop)` (where MySubclassOfGlop is your class) `self.new_glop param` in your subclass' `__init__` method another way.

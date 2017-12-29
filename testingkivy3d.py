@@ -98,7 +98,7 @@ class Testing3DWidget(Widget):
         self._color_instruction = Color(1.0, 0.0, 1.0, 1.0)  # TODO: eliminate this in favor of canvas["mat_diffuse_color"]
         
         #_axes_vertices, _axes_indices = self.generate_plane()
-        _axes_vertices, _axes_indices = self.generate_axes()
+        _axes_vertices, _axes_indices = self._get_generated_axes_buffers()
         
         print("[ Testing3DWidget ] __init__ got " + str(len(_axes_vertices)/self.vertex_depth) + " verts, " + str(len(_axes_indices)/3) + " faces")
         self._axes_mesh = Mesh(
@@ -167,7 +167,7 @@ class Testing3DWidget(Widget):
         return _axes_vertices, _axes_indices
         
         
-    def generate_axes(self):
+    def _get_generated_axes_buffers(self):
         # NOTE: This is a full solid (3 boxes) where all axes can always
         # be seen except when another is in the way (some vertices are
         # doubled so that vertex color can be used).
@@ -357,8 +357,8 @@ class TestingKivy3D(BoxLayout):
 
         self.gl_widget.canvas.add(PushMatrix())
 
-        self._meshes = InstructionGroup() #RenderContext(compute_normal_mat=True)
-        self.gl_widget.canvas.add(self._meshes)
+        self._contexts = InstructionGroup() #RenderContext(compute_normal_mat=True)
+        self.gl_widget.canvas.add(self._contexts)
 
         self.finalize_canvas()
         self.add_widget(self.gl_widget)
@@ -404,7 +404,7 @@ class TestingKivy3D(BoxLayout):
         
         Clock.schedule_interval(self.update_glsl, 1 / 60.)
         
-    def add_op(self, this_op):
+    def add_op(self, this_op, set_visible_enable=None):
         this_glop = this_op
         context = this_glop.get_context()
         #region pasted from KivyGlops add_glop
@@ -439,16 +439,16 @@ class TestingKivy3D(BoxLayout):
         #    self.scene.glops = list()
         #endregion pasted from KivyGlops add_glop
         
-        #self._meshes.add(this_glop.get_context())  # really just self.this_op.canvas (in testingkivy3d.py)
+        #self._contexts.add(this_glop.get_context())  # really just self.this_op.canvas (in testingkivy3d.py)
         try:
-            #self._meshes.add(this_glop.canvas)
-            self._meshes.add(context)
+            #self._contexts.add(this_glop.canvas)
+            self._contexts.add(context)
             pass
         except:
             print("[ TestingKivy3D ] add_op could not finish adding instructiongroup")
             view_traceback()
             
-        #self._meshes.remove(this_glop.get_context()) #  to hide
+        #self._contexts.remove(this_glop.get_context()) #  to hide
         
     def inventory_use_button_press(self, instance):
         print("Pressed button " + instance.text)

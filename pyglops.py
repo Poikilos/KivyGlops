@@ -353,8 +353,8 @@ class PyGlopHitBox:
 
     def to_string(self):
         return str(self.minimums[0]) + " to " + str(self.maximums[0]) + \
-            ",  "+str(self.minimums[1]) + " to " + str(self.maximums[1]) + \
-            ",  " + str(self.minimums[2])+" to "+str(self.maximums[2])
+            ",  " + str(self.minimums[1]) + " to " + str(self.maximums[1]) + \
+            ",  " + str(self.minimums[2]) + " to " + str(self.maximums[2])
 
 class PyGlop:
     #update copy constructor if adding/changing copyable members
@@ -615,13 +615,13 @@ class PyGlop:
             if self.properties["inventory_items"][i] is None or self.properties["inventory_items"][i]["name"] == EMPTY_ITEM["name"]:
                 self.properties["inventory_items"][i] = item_dict
                 select_item_event_dict["fit_enable"] = True
-                print("[ PyGlops ] (debug only) obtained item in slot "+str(i)+": "+str(item_dict))
+                print("[ PyGlops ] (verbose message) obtained item in slot "+str(i)+": "+str(item_dict))
                 break
         if self.infinite_inventory_enable:
             if not select_item_event_dict["fit_enable"]:
                 self.properties["inventory_items"].append(item_dict)
-                #print("[ PyGlops ] (debug only) obtained item in new slot: "+str(item_dict))
-                print("[ PyGlops ] (debug only) obtained "+item_dict["name"]+" in new slot " + \
+                #print("[ PyGlops ] (verbose message) obtained item in new slot: "+str(item_dict))
+                print("[ PyGlops ] (verbose message) obtained " + item_dict["name"] + " in new slot " + \
                       str(len(self.properties["inventory_items"])-1))
                 select_item_event_dict["fit_enable"] = True
         if select_item_event_dict["fit_enable"]:
@@ -670,7 +670,7 @@ class PyGlop:
             for index in range(0, len(self.properties["inventory_items"])):
                 if self.properties["inventory_items"][index]["name"] != EMPTY_ITEM["name"]:
                     item_count += 1
-            print("[ PyGlops ] (debug only) You have "+str(item_count)+" item(s).")
+            print("[ PyGlops ] (verbose message) You have " + str(item_count) + " item(s).")
             select_item_event_dict["item_count"] = item_count
         else:
             select_item_event_dict["fit_enable"] = False
@@ -900,21 +900,21 @@ class PyGlop:
     def emit_yaml(self, lines, min_tab_string):
         #lines.append(min_tab_string+this_name+":")
         if self.name is not None:
-            lines.append(min_tab_string+"name: "+self.name)
+            lines.append(min_tab_string + "name: " + self.name)
         if self.vertices is not None:
             if add_dump_comments_enable:
                 lines.append(min_tab_string+"#len(self.vertices)/self.vertex_depth:")
-            lines.append(min_tab_string+"vertices_count: "+str(len(self.vertices)/self.vertex_depth))
+            lines.append(min_tab_string + "vertices_count: " + str(len(self.vertices)/self.vertex_depth))
         if self.indices is not None:
-            lines.append(min_tab_string+"indices_count:"+str(len(self.indices)))
-        lines.append(min_tab_string+"vertex_depth: "+str(self.vertex_depth))
+            lines.append(min_tab_string + "indices_count:" + str(len(self.indices)))
+        lines.append(min_tab_string + "vertex_depth: " + str(self.vertex_depth))
         if self.vertices is not None:
             if add_dump_comments_enable:
-                lines.append(min_tab_string+"#len(self.vertices):")
-            lines.append(min_tab_string+"vertices_info_len: "+str(len(self.vertices)))
-        lines.append(min_tab_string+"POSITION_INDEX:"+str(self.POSITION_INDEX))
-        lines.append(min_tab_string+"NORMAL_INDEX:"+str(self.NORMAL_INDEX))
-        lines.append(min_tab_string+"COLOR_INDEX:"+str(self.COLOR_INDEX))
+                lines.append(min_tab_string + "#len(self.vertices):")
+            lines.append(min_tab_string + "vertices_info_len: " + str(len(self.vertices)))
+        lines.append(min_tab_string + "POSITION_INDEX:" + str(self.POSITION_INDEX))
+        lines.append(min_tab_string + "NORMAL_INDEX:" + str(self.NORMAL_INDEX))
+        lines.append(min_tab_string + "COLOR_INDEX:" + str(self.COLOR_INDEX))
 
         component_index = 0
         component_offset = 0
@@ -923,10 +923,10 @@ class PyGlop:
             vertex_format_component = self.vertex_format[component_index]
             component_name_bytestring, component_len, component_type = vertex_format_component
             component_name = component_name_bytestring.decode("utf-8")
-            lines.append(min_tab_string+component_name+".len:"+str(component_len))
-            lines.append(min_tab_string+component_name+".type:"+str(component_type))
-            lines.append(min_tab_string+component_name+".index:"+str(component_index))
-            lines.append(min_tab_string+component_name+".offset:"+str(component_offset))
+            lines.append(min_tab_string+component_name + ".len:" + str(component_len))
+            lines.append(min_tab_string+component_name + ".type:" + str(component_type))
+            lines.append(min_tab_string+component_name + ".index:" + str(component_index))
+            lines.append(min_tab_string+component_name + ".offset:" + str(component_offset))
             component_index += 1
             component_offset += component_len
 
@@ -934,12 +934,12 @@ class PyGlop:
 
         if add_dump_comments_enable:
             #lines.append(min_tab_string+"#VFORMAT_VECTOR_LEN_INDEX:"+str(VFORMAT_VECTOR_LEN_INDEX))
-            lines.append(min_tab_string+"#len(self.vertex_format):"+str(len(self.vertex_format)))
-            lines.append(min_tab_string+"#COLOR_OFFSET:"+str(self.COLOR_OFFSET))
-            lines.append(min_tab_string+"#len(self.vertex_format[self.COLOR_INDEX]):"+str(len(self.vertex_format[self.COLOR_INDEX])))
+            lines.append(min_tab_string + "#len(self.vertex_format):" + str(len(self.vertex_format)))
+            lines.append(min_tab_string + "#COLOR_OFFSET:" + str(self.COLOR_OFFSET))
+            lines.append(min_tab_string + "#len(self.vertex_format[self.COLOR_INDEX]):" + str(len(self.vertex_format[self.COLOR_INDEX])))
         channel_count = self.vertex_format[self.COLOR_INDEX][VFORMAT_VECTOR_LEN_INDEX]
         if add_dump_comments_enable:
-            lines.append(min_tab_string+"#vertex_bytes_per_pixel:"+str(channel_count))
+            lines.append(min_tab_string + "#vertex_bytes_per_pixel:" + str(channel_count))
 
 
         for k,v in sorted(self.properties.items()):
@@ -947,37 +947,37 @@ class PyGlop:
 
         thisTextureFileName=self.get_texture_diffuse_path()
         if thisTextureFileName is not None:
-            lines.append(min_tab_string+"get_texture_diffuse_path(): "+thisTextureFileName)
+            lines.append(min_tab_string + "get_texture_diffuse_path(): " + thisTextureFileName)
 
         #standard_emit_yaml(lines, min_tab_string, "vertex_info_1D", self.vertices)
         if add_dump_comments_enable:
-            lines.append(min_tab_string+"#1D vertex info array, aka:")
-        lines.append(min_tab_string+"vertices:")
+            lines.append(min_tab_string + "#1D vertex info array, aka:")
+        lines.append(min_tab_string + "vertices:")
         component_offset = 0
         vertex_actual_index = 0
         for i in range(0,len(self.vertices)):
             if add_dump_comments_enable:
                 if component_offset==0:
-                    lines.append(min_tab_string+tab_string+"#vertex ["+str(vertex_actual_index)+"]:")
+                    lines.append(min_tab_string + tab_string + "#vertex [" + str(vertex_actual_index) + "]:")
                 elif component_offset==self.COLOR_OFFSET:
-                    lines.append(min_tab_string+tab_string+"#  color:")
+                    lines.append(min_tab_string + tab_string + "#  color:")
                 elif component_offset==self._NORMAL_OFFSET:
-                    lines.append(min_tab_string+tab_string+"#  normal:")
+                    lines.append(min_tab_string + tab_string + "#  normal:")
                 elif component_offset==self._POSITION_OFFSET:
-                    lines.append(min_tab_string+tab_string+"#  position:")
+                    lines.append(min_tab_string + tab_string + "#  position:")
                 elif component_offset==self._TEXCOORD0_OFFSET:
-                    lines.append(min_tab_string+tab_string+"#  texcoords0:")
+                    lines.append(min_tab_string + tab_string + "#  texcoords0:")
                 elif component_offset==self._TEXCOORD1_OFFSET:
-                    lines.append(min_tab_string+tab_string+"#  texcoords1:")
-            lines.append(min_tab_string+tab_string+"- "+str(self.vertices[i]))
+                    lines.append(min_tab_string + tab_string + "#  texcoords1:")
+            lines.append(min_tab_string + tab_string + "- " + str(self.vertices[i]))
             component_offset += 1
             if component_offset==self.vertex_depth:
                 component_offset = 0
                 vertex_actual_index += 1
 
-        lines.append(min_tab_string+"indices:")
+        lines.append(min_tab_string + "indices:")
         for i in range(0,len(self.indices)):
-            lines.append(min_tab_string+tab_string+"- "+str(self.indices[i]))
+            lines.append(min_tab_string + tab_string + "- " + str(self.indices[i]))
 
 
     def on_vertex_format_change(self):
@@ -1129,7 +1129,7 @@ class PyGlop:
                         face_count = 0
                         new_texcoord = new_tuple(self.vertex_format[self.TEXCOORD0_INDEX][VFORMAT_VECTOR_LEN_INDEX])
                         if this_face_list is not None:
-                            print("[ PyGlops ] adding "+str(len(this_face_list))+" face(s) from list " + key)  # debug only
+                            print("[ PyGlops ] adding " + str(len(this_face_list)) + " face(s) from " + str(type(this_face_list)) + " " + key)  # debug only
                             for this_wobject_this_face in this_face_list:
                                 #print("  -  # in " + key)  # debug only
                                 participle = "getting face components"
@@ -1224,7 +1224,7 @@ class PyGlop:
                                         #v = this_wobject.vertices[verts[face_index]-vertices_offset]
                                         v = this_wobject.vertices[vertex_index-vertices_offset]
                                     except:  # Exception as e:
-                                        print("Could not finish "+participle+" for wobject named '"+this_name+"':")
+                                        print("[ PyGlops ] (ERROR) could not finish "+participle+" for wobject named '"+this_name+"':")
                                         view_traceback()
 
                                     participle = "combining components"
@@ -1739,10 +1739,10 @@ class PyGlops:
             #if "bump" in self.glops[bumpable_index].item_dict:
             #NOTE ignore self.glops[bumpable_index].is_out_of_range
             # since firing at point blank range is ok.
-            #print("[ debug only ] projectile bumped by object "+str(bumper_name))
-            #print("[ debug only ]    hit_radius:"+str(self.glops[bumper_index].hit_radius))
+            #print("[ debug only ] projectile bumped by object " + str(bumper_name))
+            #print("[ debug only ]    hit_radius:" + str(self.glops[bumper_index].hit_radius))
             #if self.glops[bumper_index].hitbox is not None:
-            #    print("[ debug only ]   hitbox: "+self.glops[bumper_index].hitbox.to_string())
+            #    print("[ debug only ]   hitbox: " + self.glops[bumper_index].hitbox.to_string())
             #else:
             #    print("self.glops[bumpable_index].item_dict does not contain 'bump'")
         else:
@@ -1859,7 +1859,7 @@ class PyGlops:
             #self.lastCreatedMesh = None
             participle = "checking path"
             if os.path.exists(source_path):
-                results = list()  # create now, so that if None, that means source_path didn't exist
+                results = []  # create now, so that if None, that means source_path didn't exist
                 participle = "setting up WObjFile"
                 this_objfile = WObjFile()
                 participle = "loading WObjFile"
@@ -1961,7 +1961,8 @@ class PyGlops:
                     if "inventory_index" in user_glop.properties:
                         if user_glop.properties["inventory_index"] > -1:
                             try:
-                                print("[ PyGlops ] (debug only) " + f_name + ": using item in slot " + str(user_glop.properties['inventory_index']))
+                                if get_verbose_enable():
+                                    print("[ PyGlops ] (verbose message) " + f_name + ": using item in slot " + str(user_glop.properties['inventory_index']))
                                 user_glop.properties["inventory_items"][user_glop.properties["inventory_index"]]
                                 this_item = user_glop.properties["inventory_items"][user_glop.properties["inventory_index"]]
                                 glop_index = None
