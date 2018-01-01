@@ -113,11 +113,13 @@ class Testing3DWidget(Widget):
         # NOTE: assumes vertex format is ok (should be checked by generate_axes)
         # assumes normal should be point relative to 0,0,0
         vertex_components = [0.0]*self.vertex_depth
-        if len(vertex_components) != self.vertex_depth:
-            print("FATAL ERROR: vertex length " + str(len(vertex_components)) + "does not match vertex depth " + str(len(self.vertex_depth)) + "")
-            sys.exit(1)
         for i in range(0, 3):
             vertex_components[self._POSITION_OFFSET+i] = set_coords[i]
+            
+        # Without the 4th index, matrix math cannot work and geometry
+        # cannot be translated (!):
+        if self.vertex_format[self.POSITION_INDEX][VFORMAT_VECTOR_LEN_INDEX] > 3:
+            vertex_components[self._POSITION_OFFSET+3] = 1.0
         if set_color is not None:
             for i in range(0, len(set_color)):
                 vertex_components[self.COLOR_OFFSET+i] = set_color[i]

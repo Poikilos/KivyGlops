@@ -31,21 +31,24 @@ if 'USERPROFILE' in os.environ:  # if os_name=="windows":
 else:
     profile_path = os.environ['HOME']
 
+
 #class MainForm(KivyGlopsWindow()):
     #def __init__(self, **kwargs):
         #super(MainForm, self).__init__(**kwargs)
+
 
 class MainScene(KivyGlops):
 
     def load_glops(self):
         test_space_enable = False
-        test_medieval_enable = True
+        test_medieval_enable = False
+        test_shader_enable = True
         #NOTE: default gl_widget shader is already loaded by KivyGlops
-        #self.ui.gl_widget.canvas.shader.source = resource_find('simple1b.glsl')
-        #self.ui.gl_widget.canvas.shader.source = resource_find('shade-normal-only.glsl') #partially working
-        #self.ui.gl_widget.canvas.shader.source = resource_find('shade-texture-only.glsl')
-        #self.ui.gl_widget.canvas.shader.source = resource_find('shade-kivyglops-minimal.glsl')
-        #self.ui.gl_widget.canvas.shader.source = resource_find('fresnel.glsl')
+        #self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','simple1b.glsl'))
+        #self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','shade-normal-only.glsl'))  # partially working
+        #self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','shade-texture-only.glsl'))
+        #self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','shade-kivyglops-minimal.glsl'))
+        #self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','fresnel.glsl'))
 
         #self.load_obj("barrels triangulated (Costinus at turbosquid).obj")
         #self.load_obj("barrel.obj")
@@ -65,6 +68,11 @@ class MainScene(KivyGlops):
         #for name in walkmesh_names:
         #    print("Found possible walkmesh: "+name)
         #    is_ok = self.use_walkmesh(name, hide=True)
+        
+        if test_shader_enable:
+            test_name = "shader-test.obj"
+            test_path = os.path.join("meshes", test_name)
+            self.load_obj(test_path)
 
         if test_medieval_enable:
 
@@ -227,6 +235,7 @@ class MainScene(KivyGlops):
         #    print("Not found.")
 
 scene = MainScene(KivyGlopsWindow())
+
 
 class KivyGlopsExampleApp(App):
     def build(self):

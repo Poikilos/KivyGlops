@@ -87,6 +87,7 @@ class KivyGlop(PyGlop, Widget):
     _rotate_instruction_z = None
     _scale_instruction = None
     _color_instruction = None
+    #_context_instruction = None
 
     _axes_mesh = None  # InstructionGroup for axes
 
@@ -105,6 +106,7 @@ class KivyGlop(PyGlop, Widget):
         #self.canvas = RenderContext()
         #self.canvas = RenderContext(compute_normal_mat=True)
         self.canvas = InstructionGroup()
+        #self._context_instruction = ContextInstruction()
 
         self._calculated_size = (1.0,1.0)  #finish this--or skip since only needed for getting pivot point
         #Rotate(angle=self.freeAngle, origin=(self._calculated_size[0]/2.0,self._calculated_size[1]/2.0))
@@ -133,6 +135,11 @@ class KivyGlop(PyGlop, Widget):
         vertex_components = [0.0]*self.vertex_depth
         for i in range(0, 3):
             vertex_components[self._POSITION_OFFSET+i] = set_coords[i]
+            
+        # Without the 4th index, matrix math cannot work and geometry
+        # cannot be translated (!):
+        if self.vertex_format[self.POSITION_INDEX][VFORMAT_VECTOR_LEN_INDEX] > 3:
+            vertex_components[self._POSITION_OFFSET+3] = 1.0
         if set_color is not None:
             for i in range(0, len(set_color)):
                 vertex_components[self.COLOR_OFFSET+i] = set_color[i]
@@ -152,6 +159,44 @@ class KivyGlop(PyGlop, Widget):
         index = int(offset/self.vertex_depth)
         target_vertices.extend(self.new_vertex(set_coords, set_color))
         return index
+
+    def generate_plane(self):
+        _axes_vertices = []
+        _axes_indices = []
+        
+        IS_SELF_VFORMAT_OK = True
+        if self._POSITION_OFFSET<0:
+            IS_SELF_VFORMAT_OK = False
+            print("generate_axes couldn't find name containing 'pos' or 'position' in any vertex format element (see pyops.py PyGlop constructor)")
+        if self._NORMAL_OFFSET<0:
+            IS_SELF_VFORMAT_OK = False
+            print("generate_axes couldn't find name containing 'normal' in any vertex format element (see pyops.py PyGlop constructor)")
+        if self._TEXCOORD0_OFFSET<0:
+            IS_SELF_VFORMAT_OK = False
+            print("generate_axes couldn't find name containing 'texcoord' in any vertex format element (see pyops.py PyGlop constructor)")
+        if self.COLOR_OFFSET<0:
+            IS_SELF_VFORMAT_OK = False
+            print("generate_axes couldn't find name containing 'color' in any vertex format element (see pyops.py PyGlop constructor)")
+
+        offset = 0
+        white = (1.0, 1.0, 1.0, 1.0)
+        nv = -.5  # near vector
+        fv = .5  # far vector
+        self.append_vertex(_axes_vertices, (nv, 0.0, nv), white)
+        self.append_vertex(_axes_vertices, (nv, 0.0, fv), white)
+        self.append_vertex(_axes_vertices, (fv, 0.0, fv), white)
+        self.append_vertex(_axes_vertices, (fv, 0.0, nv), white)
+        _axes_indices.extend([0,3,2, 2,1,0])
+        #clockwise winding (not usual unless want to flip normal):
+        #_axes_indices.extend([0,1,2, 2,3,0])
+        
+        self._mesh = Mesh(
+                               vertices=_axes_vertices,
+                               indices=_axes_indices,
+                               fmt=self.vertex_format,
+                               mode='triangles',
+                               texture=None,
+                              )
 
     def generate_axes(self):
         # NOTE: This is a full solid (3 boxes) where all axes can always
@@ -234,7 +279,7 @@ class KivyGlop(PyGlop, Widget):
                                fmt=self.vertex_format,
                                mode='triangles',
                                texture=None,
-                              )        
+                              )
         #return _axes_vertices, _axes_indices
 
     #"Called by the repr() built-in function to compute the "official"
@@ -488,6 +533,8 @@ class KivyGlop(PyGlop, Widget):
                     Logger.debug("[ KivyGlop ] (no material)")
         if self._mesh is not None and this_texture_image is not None:
             self._mesh.texture = this_texture_image.texture
+            context = self.get_context()
+            context["texture0_enable"] = True
         return this_texture_image
 
     def is_linked_as(self, this_glop, as_rel):
@@ -593,18 +640,18 @@ class KivyGlop(PyGlop, Widget):
             #print("[ KivyGlop ] WARNING: glop had no mesh, so was generated when added to render context. Please ensure it is a KivyGlop and not a PyGlop (however, vertex indices misread could also lead to missing Mesh object).")
         if use_meshes is None:
             use_meshes = [self._mesh]
-
         m_i = 0
         context = self.get_context()
         context.clear()
+        #self.generate_axes()
+        #self.generate_plane()
+        #self._context_instruction["texture0_enable"] = False
         for use_mesh in use_meshes:
-            #self.generate_axes()
             #self._axes_mesh.
             #self._scale_instruction = Scale(0.6)
             self._pushmatrix = PushMatrix()
             self._updatenormalmatrix = UpdateNormalMatrix()
             self._popmatrix = PopMatrix()
-
             context.add(self._pushmatrix)
             context.add(self._translate_instruction)
             context.add(self._rotate_instruction_x)
@@ -612,7 +659,7 @@ class KivyGlop(PyGlop, Widget):
             context.add(self._rotate_instruction_z)
             context.add(self._scale_instruction)
             context.add(self._updatenormalmatrix)
-
+            #context.add(self._context_instruction)
             #context.add(self._color_instruction)  #TODO: asdf add as uniform instead
             #print("_color_instruction.r,.g,.b,.a: " + str( [self._color_instruction.r, self._color_instruction.g, self._color_instruction.b, self._color_instruction.a] ))
             #print("u_color: " + str(self.material.diffuse_color))
@@ -628,6 +675,11 @@ class KivyGlop(PyGlop, Widget):
                 context.add(use_mesh)  # commented for debug only
                 if get_verbose_enable():
                     print("[ KivyGlop ] (verbose message) Added mesh to render context.")
+                #if use_mesh.texture is not None:
+                #    self._context_instruction["texture0_enable"] = True
+                #else:
+                #    self._context_instruction["texture0_enable"] = False
+                #print("[ KivyGlop ] (verbose message) texture0_enable: " + self._context_instruction["texture0_enable"])
             else:
                 if get_verbose_enable():
                     print("[ KivyGlop ] (verbose message) NOT adding mesh None at " + str(m_i) + ".")
@@ -1376,7 +1428,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         #self.gl_widget.canvas.shader.source = resource_find('shade-normal-only.glsl') #partially working
         #self.gl_widget.canvas.shader.source = resource_find('shade-texture-only.glsl')
         #self.gl_widget.canvas.shader.source = resource_find('shade-kivyglops-minimal.glsl')  # NOT working
-        self.gl_widget.canvas.shader.source = resource_find('fresnel.glsl')
+        self.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','fresnel.glsl'))
 
         #formerly, .obj was loaded here using load_obj (now calling program does that)
 
@@ -1414,7 +1466,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         #self.hud_form.rows = 1
         self.add_widget(self.hud_form)
 
-        self.debug_label = Factory.Label(text="...")
+        self.debug_label = Factory.Label(text="...", color=(.5,.5,.5,1.0))
         self.hud_form.add_widget(self.debug_label)
         self.hud_form.add_widget(self.hud_buttons_form)
         self.inventory_prev_button = Factory.Button(text="<", id="inventory_prev_button", size_hint=(.2,1.0), on_press=self.inventory_prev_button_press)
@@ -1516,15 +1568,16 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             #if self.scene.selected_glop_index is None:
             #    self.scene.selected_glop_index = this_glop_index
             #    self.scene.selected_glop = this_glop
-            self.scene.selected_glop_index = len(self.scene.glops)
-            self.scene.selected_glop = this_glop
             if self.scene.glops is None:
                 self.scene.glops = []
+            self.scene.selected_glop_index = len(self.scene.glops)
+            self.scene.selected_glop = this_glop
+            this_glop.index = len(self.scene.glops)
             self.scene.glops.append(this_glop)
-            self.scene.glops[len(self.scene.glops)-1].index = len(self.scene.glops) - 1
+            #self.scene.glops[len(self.scene.glops)-1].index = len(self.scene.glops) - 1
             #this_glop.index = len(self.scene.glops) - 1
             
-            self._contexts.add(self.scene.glops[len(self.scene.glops)-1].get_context())  # _contexts is a visible instruction group
+            self._contexts.add(this_glop.get_context())  # _contexts is a visible instruction group
             if get_verbose_enable():
                 print("[ KivyGlopsWindow ] Appended Glop (count:" + str(len(self.scene.glops)) + ").")
 
@@ -1615,14 +1668,24 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             self.debug_label.opacity = 1.0
             #self._contexts.clear()
             for this_glop in self.scene.glops:
-                this_glop.prepare_canvas([this_glop._axes_mesh])
-                print("_visual_debug_enable: True")
+                if this_glop._axes_mesh is not None:
+                    this_glop.prepare_canvas([this_glop._axes_mesh])
+                    context = this_glop.get_context()
+                    #this_glop._context_instruction["texture0_enable"] = False
+                else:
+                    print("[ KivyGlopsWindow ] ERROR: no _axes_mesh" + \
+                          " for glop '" + str(this_glop.name) + "'")
+            print("_visual_debug_enable: True")
         else:
             self.scene._visual_debug_enable = False
             self.debug_label.opacity = 0.0
             #self._contexts.clear()
             for this_glop in self.scene.glops:
                 this_glop.prepare_canvas([this_glop._mesh])
+                context = this_glop.get_context()
+                if this_glop._mesh.texture is not None:
+                    #this_glop._context_instruction["texture0_enable"] = True
+                    pass
             print("_visual_debug_enable: False")
 
     def update_debug_label(self):

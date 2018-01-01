@@ -260,7 +260,8 @@ This spec allows one dict to be used to completely store the Wavefront mtl forma
 vertex color is always RGBA
 if vertex_color_enable then vertex color must be set for every vertex, and object diffuse_color is ignored
 texture is overlayed onto vertex color
-
+#### OpenGL ES notes
+* mix is the ES equivalent of lerp (linear interpolation), which is the same as alpha blending
 
 ## Works Cited
 [1] Diane Ramey, Linda Rose, and Lisa Tyerman, "Object Files (.obj)," paulbourke.net, October 1995. [Online]. Available: http://paulbourke.net/dataformats/obj/. [Accessed Dec. 28, 2017].

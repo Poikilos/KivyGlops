@@ -1026,6 +1026,9 @@ class PyGlop:
         elif offset != self.vertex_depth:
             print("WARNING: The count of values in vertex format chunks (chunk_count:"+str(len(self.vertex_format))+"; value_count:"+str(offset)+") does not total to vertex depth "+str(self.vertex_depth))
         participle = "(before initializing)"
+        # Now you can access any vars you want (not just ones cached
+        # above) like:
+        # self.vertex_format[self.POSITION_INDEX][VFORMAT_VECTOR_LEN_INDEX]
 
     def append_wobject(self, this_wobject, pivot_to_geometry_enable=True):
         # formerly get_glops_from_wobject formerly set_from_wobject
@@ -1129,7 +1132,8 @@ class PyGlop:
                         face_count = 0
                         new_texcoord = new_tuple(self.vertex_format[self.TEXCOORD0_INDEX][VFORMAT_VECTOR_LEN_INDEX])
                         if this_face_list is not None:
-                            print("[ PyGlops ] adding " + str(len(this_face_list)) + " face(s) from " + str(type(this_face_list)) + " " + key)  # debug only
+                            if get_verbose_enable():
+                                print("[ PyGlops ] adding " + str(len(this_face_list)) + " face(s) from " + str(type(this_face_list)) + " " + key)  # debug only
                             for this_wobject_this_face in this_face_list:
                                 #print("  -  # in " + key)  # debug only
                                 participle = "getting face components"
