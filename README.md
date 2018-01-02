@@ -34,6 +34,12 @@ Control 3D objects and the camera in your 3D Kivy app!
 * if segfault occurs, maybe camera and look_at location are same
 
 ## Changes
+* (2018-01-02) changed `new_glop` to `new_material` in KivyGlopsMaterial
+* (2018-01-01) changed KivyGlop canvas to default type instead of InstructionGroup
+    * commented `self.canvas = InstructionGroup` in KivyGlop `__init__`
+    * changed uses of texture0_enable to use canvas as dict
+    * changed init to set it to RenderContext
+    * kivyglops.py (KivyGlop) changed init to manually call _init_glop after __init__ since with multiple inheritance, super only calls first inherited object (first type in parenthesis on `class` line); renamed PyGlop __init__ to _init_glop; changed order of inheritance to `Widget, PyGlop`
 * (2017-12-28) renamed _meshes to _contexts for clarity (but _meshes is used other places as an actual list of Mesh objects)
 * (2017-12-28) moved glop canvas editing from KivyGlops.add_glop to KivyGlop.prepare_canvas
 * (2017-12-28) added optional set_visible_enable param to add_glop (and made default not set visible to True)

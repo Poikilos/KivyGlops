@@ -415,8 +415,11 @@ class PyGlop:
     TEXCOORD1_INDEX = None
     COLOR_INDEX = None
     #endregion calculated from vertex_format
-
+    
     def __init__(self):
+        self._init_glop()
+
+    def _init_glop(self):  # formerly __init__ but that would interfere with super if subclass has multiple inheritance
         self.dat = {}
         self.dat["links"] = []  # list of relationship dicts
         self.separable_offsets = []  # if more than one submesh is in vertices, chunks are saved in here, such as to assist with explosions

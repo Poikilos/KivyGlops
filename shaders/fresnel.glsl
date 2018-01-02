@@ -11,7 +11,7 @@ attribute vec4  a_normal;
 
 uniform mat4 modelview_mat;
 uniform mat4 projection_mat;
-uniform bool texture0_enable;
+uniform float texture0_enable;
 //uniform material  material_state;
 
 varying vec4 v_color;
@@ -48,7 +48,7 @@ varying vec2 uv_vec;
 varying vec3 v_normal;
 varying vec4 v_pos;
 uniform vec3 camera_world_pos;
-uniform bool texture0_enable;
+uniform float texture0_enable;
 
 uniform sampler2D tex;
 

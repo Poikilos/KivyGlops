@@ -136,6 +136,7 @@ void main (void){
         self.scene.selected_glop_index = len(self.scene.glops)
         self.scene.selected_glop = this_glop
         context = this_glop.get_context()
+        context.shader.source = self.gl_widget.canvas.shader.source
         this_mesh_name = ""
         if this_glop.name is not None:
             this_mesh_name = this_glop.name

@@ -41,7 +41,7 @@ class MainScene(KivyGlops):
 
     def load_glops(self):
         test_space_enable = False
-        test_medieval_enable = False
+        test_medieval_enable = True
         test_shader_enable = True
         #NOTE: default gl_widget shader is already loaded by KivyGlops
         #self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','simple1b.glsl'))
@@ -85,15 +85,17 @@ class MainScene(KivyGlops):
             #self.load_obj("etc\\problematic mesh files\\medseaport1b-floor_glrepeat.obj")
             #self.load_obj("medseaport1b-lowpoly.obj")
             #seaport_name = "medseaport1b-techdemo.obj"
-            seaport_name = "medseaport1b-door.obj"
+            seaport_name = "medseaport1b-techdemo.obj"
             #seaport_name = "medseaport1b-minimal.obj"
-            kgt_path = os.path.join( os.path.join(profile_path, "Desktop"), "KivyGlopsTesting")
+            #kgt_path = os.path.join( os.path.join(profile_path, "Desktop"), "KivyGlopsTesting")
+            kgt_path = os.path.join("meshes", "medseaport")
             seaport_path = resource_find(seaport_name)
             if seaport_path is None:
                 seaport_path = os.path.join(kgt_path, seaport_name)
             if os.path.isfile(seaport_path):
                 self.load_obj(seaport_path, pivot_to_geometry_enable=True)
             else:
+                try_path
                 print("[ testing ] ERROR: can't find '" + seaport_name + "'")
             #medseaport1b-lowpoly (including dependencies) is available from http://www.expertmultimedia.com/usingpython/resources/Environments,Outdoor-Manmade/seaport.zip
 

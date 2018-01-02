@@ -64,7 +64,7 @@ class KivyGlopsMaterial(PyGlopsMaterial):
     def __init__(self):
         super(KivyGlopsMaterial, self).__init__()
 
-    def new_glop(self):
+    def new_material(self):
         return KivyGlopsMaterial()
 
     def copy(self):
@@ -74,7 +74,7 @@ class KivyGlopsMaterial(PyGlopsMaterial):
 look_at_none_warning_enable = True
 
 
-class KivyGlop(PyGlop, Widget):
+class KivyGlop(Widget, PyGlop):
 
     #freeAngle = None
     #degreesPerSecond = None
@@ -87,7 +87,7 @@ class KivyGlop(PyGlop, Widget):
     _rotate_instruction_z = None
     _scale_instruction = None
     _color_instruction = None
-    #_context_instruction = None
+    _context_instruction = None
 
     _axes_mesh = None  # InstructionGroup for axes
 
@@ -97,16 +97,18 @@ class KivyGlop(PyGlop, Widget):
     _popmatrix = None
 
     def __init__(self):
-        super(KivyGlop, self).__init__()
+        super(KivyGlop, self).__init__()  # only does class inherited FIRST (see class line above)
+        self._init_glop()
         #self.freeAngle = 0.0
         #self.degreesPerSecond = 0.0
         #self.freePos = (10.0,100.0)
 
         #TODO: use a RenderContext instead?
         #self.canvas = RenderContext()
-        #self.canvas = RenderContext(compute_normal_mat=True)
-        self.canvas = InstructionGroup()
-        #self._context_instruction = ContextInstruction()
+        self.canvas = RenderContext(use_parent_projection=True, use_parent_modelview=True)  # compute_normal_mat=False, 
+        #self.canvas = InstructionGroup()
+        self.canvas.clear()
+        self._context_instruction = ContextInstruction()
 
         self._calculated_size = (1.0,1.0)  #finish this--or skip since only needed for getting pivot point
         #Rotate(angle=self.freeAngle, origin=(self._calculated_size[0]/2.0,self._calculated_size[1]/2.0))
@@ -126,8 +128,11 @@ class KivyGlop(PyGlop, Widget):
         self.generate_axes()
 
     def __str__(self):
-        return str(type(self)) + " named " + str(self.name) + " at " + \
-               str(self._translate_instruction.xyz)
+        result = str(type(self))
+        if self._translate_instruction is not None:
+            result = str(type(self)) + " named " + str(self.name) + \
+                   " at " + str(self._translate_instruction.xyz)
+        return result
 
     def new_vertex(self, set_coords, set_color):
         # NOTE: assumes vertex format is ok (should be checked by generate_axes)
@@ -640,18 +645,21 @@ class KivyGlop(PyGlop, Widget):
             #print("[ KivyGlop ] WARNING: glop had no mesh, so was generated when added to render context. Please ensure it is a KivyGlop and not a PyGlop (however, vertex indices misread could also lead to missing Mesh object).")
         if use_meshes is None:
             use_meshes = [self._mesh]
+        
         m_i = 0
         context = self.get_context()
         context.clear()
+        
         #self.generate_axes()
         #self.generate_plane()
-        #self._context_instruction["texture0_enable"] = False
+        self.canvas["texture0_enable"] = 0
         for use_mesh in use_meshes:
             #self._axes_mesh.
             #self._scale_instruction = Scale(0.6)
             self._pushmatrix = PushMatrix()
             self._updatenormalmatrix = UpdateNormalMatrix()
             self._popmatrix = PopMatrix()
+
             context.add(self._pushmatrix)
             context.add(self._translate_instruction)
             context.add(self._rotate_instruction_x)
@@ -659,7 +667,7 @@ class KivyGlop(PyGlop, Widget):
             context.add(self._rotate_instruction_z)
             context.add(self._scale_instruction)
             context.add(self._updatenormalmatrix)
-            #context.add(self._context_instruction)
+            context.add(self._context_instruction)
             #context.add(self._color_instruction)  #TODO: asdf add as uniform instead
             #print("_color_instruction.r,.g,.b,.a: " + str( [self._color_instruction.r, self._color_instruction.g, self._color_instruction.b, self._color_instruction.a] ))
             #print("u_color: " + str(self.material.diffuse_color))
@@ -675,11 +683,11 @@ class KivyGlop(PyGlop, Widget):
                 context.add(use_mesh)  # commented for debug only
                 if get_verbose_enable():
                     print("[ KivyGlop ] (verbose message) Added mesh to render context.")
-                #if use_mesh.texture is not None:
-                #    self._context_instruction["texture0_enable"] = True
-                #else:
-                #    self._context_instruction["texture0_enable"] = False
-                #print("[ KivyGlop ] (verbose message) texture0_enable: " + self._context_instruction["texture0_enable"])
+                if use_mesh.texture is not None:
+                    self.canvas["texture0_enable"] = 1
+                else:
+                    self.canvas["texture0_enable"] = 0
+                print("[ KivyGlop ] (verbose message) texture0_enable: " + str(self.canvas["texture0_enable"]))
             else:
                 if get_verbose_enable():
                     print("[ KivyGlop ] (verbose message) NOT adding mesh None at " + str(m_i) + ".")
@@ -974,8 +982,8 @@ class KivyGlops(PyGlops):
         #region tried to move to pyglops but didn't work well
         #print("coords:"+str(Window.mouse_pos))
         #see also asp and clip_top in init
-        #screen_w_arc_theta = 32.0  # actual number is from proj matrix
-        #screen_h_arc_theta = 18.0  # actual number is from proj matrix
+        #screen_w_arc_theta = 32.0  # actual number is from projectionMatrix matrix
+        #screen_h_arc_theta = 18.0  # actual number is from projectionMatrix matrix
         got_frame_delay = 0.0
         if self.last_update_s is not None:
             got_frame_delay = best_timer() - self.last_update_s
@@ -1269,13 +1277,13 @@ class KivyGlops(PyGlops):
         # was .3 when projection_near was 1
 
         clip_right = asp*clip_top  # formerly overwrote asp
-        proj = Matrix()
-        modelViewMatrix = Matrix()
+        self.projectionMatrix = Matrix()
+        self.modelViewMatrix = Matrix()
 
-        #modelViewMatrix.rotate(self.camera_glop._rotate_instruction_x.angle,1.0,0.0,0.0)
-        #modelViewMatrix.rotate(self.camera_glop._rotate_instruction_y.angle,0.0,1.0,0.0)
+        #self.modelViewMatrix.rotate(self.camera_glop._rotate_instruction_x.angle,1.0,0.0,0.0)
+        #self.modelViewMatrix.rotate(self.camera_glop._rotate_instruction_y.angle,0.0,1.0,0.0)
         #look_at(eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ)  $http://kivy.org/docs/api-kivy.graphics.transformation.html
-        #modelViewMatrix.rotate(self.camera_glop._rotate_instruction_z.angle,0.0,0.0,1.0)
+        #self.modelViewMatrix.rotate(self.camera_glop._rotate_instruction_z.angle,0.0,0.0,1.0)
         previous_look_point = None
         if self.look_point is not None:
             previous_look_point = self.look_point[0], self.look_point[1], self.look_point[2]
@@ -1291,7 +1299,7 @@ class KivyGlops(PyGlops):
         self.look_point[1] = self.focal_distance * math.sin(self.camera_glop._rotate_instruction_x.angle)
 
 
-        #modelViewMatrix = modelViewMatrix.look_at(0,self.camera_glop._translate_instruction.y,0, self.look_point[0], self.look_point[1], self.look_point[2], 0, 1, 0)
+        #self.modelViewMatrix = self.modelViewMatrix.look_at(0,self.camera_glop._translate_instruction.y,0, self.look_point[0], self.look_point[1], self.look_point[2], 0, 1, 0)
 
         #Since camera's target should be relative to camera, add camera's position:
 
@@ -1300,27 +1308,27 @@ class KivyGlops(PyGlops):
         self.look_point[2] += self.camera_glop._translate_instruction.z
 
         #must translate first, otherwise look_at will override position on rotation axis ('y' in this case)
-        modelViewMatrix.translate(self.camera_glop._translate_instruction.x, self.camera_glop._translate_instruction.y, self.camera_glop._translate_instruction.z)
+        self.modelViewMatrix.translate(self.camera_glop._translate_instruction.x, self.camera_glop._translate_instruction.y, self.camera_glop._translate_instruction.z)
         #moving_theta = theta_radians_from_rectangular(moving_x, moving_z)
-        modelViewMatrix = modelViewMatrix.look_at(self.camera_glop._translate_instruction.x, self.camera_glop._translate_instruction.y, self.camera_glop._translate_instruction.z, self.look_point[0], self.look_point[1], self.look_point[2], 0, 1, 0)
+        self.modelViewMatrix = self.modelViewMatrix.look_at(self.camera_glop._translate_instruction.x, self.camera_glop._translate_instruction.y, self.camera_glop._translate_instruction.z, self.look_point[0], self.look_point[1], self.look_point[2], 0, 1, 0)
 
 
 
-        #proj.view_clip(left, right, bottom, top, near, far, perspective)
+        #projectionMatrix.view_clip(left, right, bottom, top, near, far, perspective)
         #"In OpenGL, a 3D point in eye space is projected onto the near plane (projection plane)"
         # -http://www.songho.ca/opengl/gl_projectionmatrix.html
         #The near plane and far plane distances are in the -z direction but are
         # expressed as positive values since they are distances from the camera
         # then they are compressed to -1 to 1
         # -https://www.youtube.com/watch?v=frtzb2WWECg
-        proj = proj.view_clip(-clip_right, clip_right, -1*clip_top, clip_top, self.projection_near, 100, 1)  # last params: far, perspective
+        self.projectionMatrix = self.projectionMatrix.view_clip(-clip_right, clip_right, -1*clip_top, clip_top, self.projection_near, 100, 1)  # last params: far, perspective
         top_theta = theta_radians_from_rectangular(self.projection_near, clip_top)
         right_theta = theta_radians_from_rectangular(self.projection_near, clip_right)
         self.ui.screen_w_arc_theta = right_theta*2.0
         self.ui.screen_h_arc_theta = top_theta*2.0
 
-        self.ui.gl_widget.canvas['projection_mat'] = proj
-        self.ui.gl_widget.canvas['modelview_mat'] = modelViewMatrix
+        self.ui.gl_widget.canvas['projection_mat'] = self.projectionMatrix
+        self.ui.gl_widget.canvas['modelview_mat'] = self.modelViewMatrix
         self.ui.gl_widget.canvas["camera_world_pos"] = [self.camera_glop._translate_instruction.x, self.camera_glop._translate_instruction.y, self.camera_glop._translate_instruction.z]
         #if get_verbose_enable():
         #    Logger.debug("ok (update_glsl)")
@@ -1580,6 +1588,10 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             self._contexts.add(this_glop.get_context())  # _contexts is a visible instruction group
             if get_verbose_enable():
                 print("[ KivyGlopsWindow ] Appended Glop (count:" + str(len(self.scene.glops)) + ").")
+            this_glop.canvas.shader.source = self.gl_widget.canvas.shader.source
+            #this_glop.canvas['projection_mat'] = self.scene.projectionMatrix
+            this_glop.canvas['modelview_mat'] = self.scene.modelViewMatrix
+            this_glop.canvas["camera_world_pos"] = [self.scene.camera_glop._translate_instruction.x, self.scene.camera_glop._translate_instruction.y, self.scene.camera_glop._translate_instruction.z]
 
         except:
             print("[ KivyGlopsWindow ] ERROR: Could not finish " + participle + " in KivyGlops load_obj")
@@ -1649,7 +1661,16 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         if self.hud_bg_rect is not None:
             self.hud_bg_rect.size = self.hud_form.size
             self.hud_bg_rect.pos=self.hud_form.pos
+        
         self.scene.update()
+        
+        #forcibly use parent info (should not be needed if use_parent_projection use_parent_modelview use_parent_frag_modelview options of RenderContext constructor for canvas of children)
+        #for i in range(len(self.scene.glops)):
+            #this_glop = self.scene.glops[i]
+            #this_glop.canvas['modelview_mat'] = self.scene.modelViewMatrix
+            #this_glop.canvas["camera_world_pos"] = [self.scene.camera_glop._translate_instruction.x, self.scene.camera_glop._translate_instruction.y, self.scene.camera_glop._translate_instruction.z]
+            
+
 
     #def get_view_angles_by_touch_deg(self, touch):
     #    # formerly define_rotate_angle(self, touch):
@@ -1671,7 +1692,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                 if this_glop._axes_mesh is not None:
                     this_glop.prepare_canvas([this_glop._axes_mesh])
                     context = this_glop.get_context()
-                    #this_glop._context_instruction["texture0_enable"] = False
+                    this_glop.canvas["texture0_enable"] = 0
                 else:
                     print("[ KivyGlopsWindow ] ERROR: no _axes_mesh" + \
                           " for glop '" + str(this_glop.name) + "'")
@@ -1684,8 +1705,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                 this_glop.prepare_canvas([this_glop._mesh])
                 context = this_glop.get_context()
                 if this_glop._mesh.texture is not None:
-                    #this_glop._context_instruction["texture0_enable"] = True
-                    pass
+                    this_glop.canvas["texture0_enable"] = 1
             print("_visual_debug_enable: False")
 
     def update_debug_label(self):

@@ -490,8 +490,8 @@ class TestingKivy3D(BoxLayout):
 
         clip_right = asp*clip_top  # formerly overwrote asp
         self.projection_near = 0.1
-        proj = Matrix().view_clip(-clip_right, clip_right, -1*clip_top, clip_top, self.projection_near, 100, 1)  # last params: far, perspective
-        #proj = Matrix().view_clip(-asp, asp, -1, 1, 1, 100, 1)  # last params: far, perspective
+        projectionMatrix = Matrix().view_clip(-clip_right, clip_right, -1*clip_top, clip_top, self.projection_near, 100, 1)  # last params: far, perspective
+        #projectionMatrix = Matrix().view_clip(-asp, asp, -1, 1, 1, 100, 1)  # last params: far, perspective
         modelViewMatrix = Matrix()
         modelViewMatrix.translate(self.camera_translate_instruction.x, self.camera_translate_instruction.y, self.camera_translate_instruction.z)
         if (self.camera_translate_instruction.x != self.look_point[0] or
@@ -504,12 +504,12 @@ class TestingKivy3D(BoxLayout):
         else:
             print("[ TestingKivy3D ] Can't run modelViewMatrix.look_at since camera is at look_point")
                 
-        self.gl_widget.canvas['projection_mat'] = proj
+        self.gl_widget.canvas['projection_mat'] = projectionMatrix
         self.gl_widget.canvas['modelview_mat'] = modelViewMatrix
         self.gl_widget.canvas["camera_world_pos"] = [self.camera_translate_instruction.x, self.camera_translate_instruction.y, self.camera_translate_instruction.z]
         self.gl_widget.canvas['ambient_light'] = (0.1, 0.1, 0.1)
         
-        #self.canvas['projection_mat'] = proj
+        #self.canvas['projection_mat'] = projectionMatrix
         #self.canvas['diffuse_light'] = (1.0, 1.0, 0.8)
         #self.canvas['ambient_light'] = (0.1, 0.1, 0.1)
         self.rot.angle += 1
