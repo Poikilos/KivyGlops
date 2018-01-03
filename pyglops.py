@@ -1561,17 +1561,17 @@ class PyGlops:
         result = False
         if indices is not None and len(indices)>0:
             item_glop_index = indices[0]
-            result = self.give_item_by_index_to_player_number(player_number, item_glop_index, "hide")
+            result = self.give_item_index_to_player_number(player_number, item_glop_index, "hide")
         return result
 
     # This method overrides object bump code, and gives the item to the player (mimics "obtain" command).
     # pre_commands can be either None (to imply default "hide") or a string containing semicolon-separated commands that will occur before obtain
-    def give_item_by_index_to_player_number(self, player_number, item_glop_index, pre_commands=None, bypass_handlers_enable=True):
+    def give_item_index_to_player_number(self, player_number, item_glop_index, pre_commands=None, bypass_handlers_enable=True):
         result = False
         bumpable_index = item_glop_index
         bumper_index = self.get_player_glop_index(player_number)
         if get_verbose_enable():
-            print("give_item_by_index_to_player_number; item_name:"+self.glops[bumpable_index]+"; player_name:"+self.glops[bumper_index].name+"")
+            print("give_item_index_to_player_number; item_name:"+self.glops[bumpable_index]+"; player_name:"+self.glops[bumper_index].name+"")
         if pre_commands is None:
             pre_commands = "hide"  # default behavior is to hold item in inventory invisibly
         if pre_commands is not None:
@@ -1581,7 +1581,7 @@ class PyGlops:
                 if command != "obtain":
                     self._run_command(command, bumpable_index, bumper_index, bypass_handlers_enable=bypass_handlers_enable)
                 else:
-                    print("  warning: skipped redundant 'obtain' command in post_commands param given to give_item_by_index_to_player_number")
+                    print("  warning: skipped redundant 'obtain' command in post_commands param given to give_item_index_to_player_number")
 
         self._run_command("obtain", bumpable_index, bumper_index, bypass_handlers_enable=bypass_handlers_enable)
         result = True
@@ -1606,7 +1606,7 @@ class PyGlops:
             bumpable_name = self.glops[bumpable_index].name
             bumper_name = self.glops[bumper_index].name
             self.obtain_glop(bumpable_name, bumper_name)  # handler
-            self.obtain_glop_by_index(bumpable_index, bumper_index)  # handler
+            self.obtain_glop_at(bumpable_index, bumper_index)  # handler
             #then manually transfer the glop to the player:
             self.glops[bumpable_index].item_dict["owner"] = self.glops[bumper_index].name            
             item_event = self.glops[bumper_index].push_glop_item(self.glops[bumpable_index], bumpable_index)
@@ -1790,14 +1790,14 @@ class PyGlops:
         print("[ PyGlops ] subclass of subclass may implement display_explosion" + \
             " (and check for None before using variables other than pos)")
 
-    def explode_glop_by_index(self, index, weapon_dict=None):
+    def explode_glop_at(self, index, weapon_dict=None):
         print("[ PyGlops ] subclass should implement display_explosion" + \
             " (and check for None before using variables other than pos)")
 
     def set_camera_mode(self, person_number):
         self._camera_person_number = person_number
 
-    def set_as_actor_by_index(self, index, template_dict):
+    def set_as_actor_at(self, index, template_dict):
         #result = False
         if index is not None:
             if index>=0:
@@ -1827,11 +1827,11 @@ class PyGlops:
                     else:
                         print("  hitbox: "+self.glops[index].hitbox.to_string())
                 else:
-                    print("[ PyGlops ] ERROR in set_as_actor_by_index: index "+str(index)+" is out of range")
+                    print("[ PyGlops ] ERROR in set_as_actor_at: index "+str(index)+" is out of range")
             else:
-                print("[ PyGlops ] ERROR in set_as_actor_by_index: index is "+str(index))
+                print("[ PyGlops ] ERROR in set_as_actor_at: index is "+str(index))
         else:
-            print("[ PyGlops ] ERROR in set_as_actor_by_index: index is None")
+            print("[ PyGlops ] ERROR in set_as_actor_at: index is None")
         #return result
 
     #always reimplement this so the camera is correct subclass 
@@ -1923,14 +1923,14 @@ class PyGlops:
         if glop_name is not None:
             for i in range(0,len(self.glops)):
                 if self.glops[i].name == glop_name:
-                    return self.set_as_item_by_index(i, template_dict, pivot_to_geometry_enable=pivot_to_geometry_enable)
+                    return self.set_as_item_at(i, template_dict, pivot_to_geometry_enable=pivot_to_geometry_enable)
                     break
 
-    def add_bump_sound_by_index(self, i, path):
+    def add_bump_sound_at(self, i, path):
         if path not in self.glops[i].bump_sound_paths:
             self.glops[i].bump_sound_paths.append(path)
 
-    def set_as_item_by_index(self, i, template_dict, pivot_to_geometry_enable=False):
+    def set_as_item_at(self, i, template_dict, pivot_to_geometry_enable=False):
         result = False
         item_dict = self.glops[i].deepcopy_with_my_type(template_dict)  #prevents every item template from being the one
         self.glops[i].item_dict = item_dict
@@ -2131,7 +2131,7 @@ class PyGlops:
         pass
         #print("[ PyGlops ] subclass can implement killed_glop")
 
-    def kill_glop_by_index(self, index, weapon_dict=None):
+    def kill_glop_at(self, index, weapon_dict=None):
         self.killed_glop(index, weapon_dict)
         self.hide_glop(self.glops[index])
         self.glops[index].bump_enable = False
@@ -2146,13 +2146,13 @@ class PyGlops:
         #trivial example:
         #self.glops[attacked_index].actor_dict["hp"] -= weapon_dict["hit_damage"]
         #if self.glops[attacked_index].actor_dict["hp"] <= 0:
-        #    self.explode_glop_by_index(attacked_index)
+        #    self.explode_glop_at(attacked_index)
         return None
 
     def obtain_glop(self, bumpable_name, bumper_name):
         return None
 
-    def obtain_glop_by_index(self, bumpable_index, bumper_index):
+    def obtain_glop_at(self, bumpable_index, bumper_index):
         return None
 
     def get_nearest_walkmesh_vec3_using_xz(self, pt):
@@ -2381,7 +2381,7 @@ class PyGlops:
     #def get_pressed(self, key_name):
     #    return self.player1_controller.get_pressed(self.ui.get_keycode(key_name))
 
-    def select_mesh_by_index(self, index):
+    def select_mesh_at(self, index):
         glops_count = len(self.glops)
         if (index>=glops_count):
             index=0
@@ -2430,6 +2430,6 @@ class PyGlops:
         found = False
         index = self.index_of_mesh(name)
         if index > -1:
-            self.select_mesh_by_index(index)
+            self.select_mesh_at(index)
             found = True
         return found

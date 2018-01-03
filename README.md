@@ -34,6 +34,7 @@ Control 3D objects and the camera in your 3D Kivy app!
 * if segfault occurs, maybe camera and look_at location are same
 
 ## Changes
+* (2018-01-03) renamed set_as_item_by_index to set_as_item_at; set_as_actor_by_index to set_as_actor_at; explode_glop_by_index to explode_glop_at; kill_glop_by_index to kill_glop_at; give_item_by_index_to_player_number to give_item_index_to_player_number; obtain_glop_by_index to obtain_glop_at; add_bump_sound_by_index to add_bump_sound_at; select_mesh_by_index to select_mesh_at
 * (2018-01-03) added use_walkmesh_at method for using walkmesh when you know glop index
 * (2018-01-03) fixed selection crash (issue caused by refactoring)
 * (2018-01-02) changed `new_glop` to `new_material` in KivyGlopsMaterial
@@ -85,9 +86,9 @@ Control 3D objects and the camera in your 3D Kivy app!
         * ui.bump_glop (bumpable_name, bumper_name)
         * and in the future, potentially anything else in KivyGlopsWindow (KivyGlopsWindow is the only tested spec at this time, however see Developer Notes section of this file, which should be maintained well)
 * (2017-12-11) _internal_bump_glop now calls the new _run_semicolon_separated_commands which calls the new _run_command method, so that these new methods are available to other methods
-* (2017-12-11) give_item_by_keyword_to_player_number and give_item_by_index_to_player_number methods for manual item transfers without bumping or manually calling _internal_bump_glop
+* (2017-12-11) give_item_by_keyword_to_player_number and give_item_index_to_player_number methods for manual item transfers without bumping or manually calling _internal_bump_glop
 * (2017-12-11) moved projectile handling to _internal_bump_glop (formerly was directly after the _internal_bump_glop call)
-* (2017-12-11) allow handling the obtain glop event by a new obtain_glop_by_index instead of obtain_glop in order to have access to the glop indices (you can still handle both if you desire for some reason, but be aware both will fire)
+* (2017-12-11) allow handling the obtain glop event by a new obtain_glop_at instead of obtain_glop in order to have access to the glop indices (you can still handle both if you desire for some reason, but be aware both will fire)
 * (2017-11-06) Your KivyGlopsWindow implementation can now select mesh by name: self.select_mesh_by_name("some_named_mesh") (or filename but shows warning in stdout: self.select_mesh_by_name("somefilename") or self.select_mesh_by_name("somefilename.obj"))
 * (2016-04-29) Switched to using only graphics that are public domain (changed license of modified resources to CC-BY-SA 4.0); such as, removed graphics based on cinder block wall from photoshoptextures.com due to quirky custom license
 * (2016-02-12) Change the PyGlops ObjFile and objfile.py to WObjFile and wobjfile.py (to avoid naming conflict with ObjFile and objfile.py in Kivy examples)
@@ -155,7 +156,7 @@ Control 3D objects and the camera in your 3D Kivy app!
 * move event handlers and any other methods starting with underscore from kivyglops.py to pyglops.py where possible
     * moved from KivyGlopsWindow to PyGlops [new ones in brackets]:
         * _internal_bump_glop, after_selected_item, add_actor_weapon, get_player_glop_index
-        * [give_item_by_keyword_to_player_number, give_item_by_index_to_player_number,_run_command, _run_semicolon_separated_commands, _run_commands, _run_command]
+        * [give_item_by_keyword_to_player_number, give_item_index_to_player_number,_run_command, _run_semicolon_separated_commands, _run_commands, _run_command]
     * copied to KivyGlops and PyGlops, leaving KivyGlopsWindow methods that call them: hide_glop
         * already done: set_fly
 * push_glop_item should create usable parent-child relationship for movement (at least for selected_item or costume accessories--there is no need to move inventory objects until they are visibly selected/held); or move item to the glop's canvas to accomplish that automatically

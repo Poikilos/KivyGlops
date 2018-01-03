@@ -791,8 +791,8 @@ class KivyGlops(PyGlops):
                 print("WARNING: glop array changed during init, and self._player_glop_index could not be detected.")
         #self._bumper_indices.append(self._player_glop_index)
         this_actor_dict = dict()
-        self.set_as_actor_by_index(self._player_glop_index, this_actor_dict)
-        #NOTE: set_as_actor_by_index sets hitbox to None if has no vertices
+        self.set_as_actor_at(self._player_glop_index, this_actor_dict)
+        #NOTE: set_as_actor_at sets hitbox to None if has no vertices
 
         self.load_glops()  # also moved from ui
 
@@ -870,13 +870,13 @@ class KivyGlops(PyGlops):
                 print("loading " + path)
                 self._sounds[path]["loader"] = SoundLoader.load(path)
 
-    def explode_glop_by_index(self, index, weapon_dict=None):
+    def explode_glop_at(self, index, weapon_dict=None):
         self.display_explosion( \
             get_vec3_from_point(self.glops[index]._translate_instruction), \
             self.glops[index].hit_radius, \
             index,
             weapon_dict)
-        self.kill_glop_by_index(index, weapon_dict)
+        self.kill_glop_at(index, weapon_dict)
 
     def display_explosion(self, pos, radius, attacked_index, weapon_dict):
         print("[ KivyGlops ] NOTICE: there is no default display_explosion in this version, so nothing will be shown")
@@ -1785,7 +1785,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
 #         elif keycode[1] == 'numpadsubtract' or keycode[1] == 'numpadsubstract':  #since is mispelled as numpadsubstract in kivy
 #             pass
         elif keycode[1] == "tab":
-            self.scene.select_mesh_by_index(self.scene.selected_glop_index+1)
+            self.scene.select_mesh_at(self.scene.selected_glop_index+1)
             #if get_verbose_enable():
             this_name = None
             if self.scene.selected_glop_index is not None:
