@@ -34,6 +34,8 @@ Control 3D objects and the camera in your 3D Kivy app!
 * if segfault occurs, maybe camera and look_at location are same
 
 ## Changes
+* (2018-01-03) added use_walkmesh_at method for using walkmesh when you know glop index
+* (2018-01-03) fixed selection crash (issue caused by refactoring)
 * (2018-01-02) changed `new_glop` to `new_material` in KivyGlopsMaterial
 * (2018-01-01) changed KivyGlop canvas to default type instead of InstructionGroup
     * commented `self.canvas = InstructionGroup` in KivyGlop `__init__`

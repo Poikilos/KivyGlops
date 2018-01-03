@@ -814,19 +814,22 @@ class KivyGlops(PyGlops):
         self.ui._contexts.add(self.glops[this_glop_index].get_context())
         self.glops[this_glop_index].visible_enable = True
 
+    def use_walkmesh_at(self, index, hide=True):
+        if self.glops[index] not in self._walkmeshes:
+            self._walkmeshes.append(self.glops[index])
+            print("[ KivyGlops ] Applying walkmesh translate " + str(self.glops[index]._translate_instruction.xyz))
+            self.glops[index].apply_translate()
+            print("[ KivyGlops ]   pivot:" + str(self.glops[index]._pivot_point))
+            if hide:
+                self.hide_glop(self.glops[index])
+
     def use_walkmesh(self, name, hide=True):
         result = False
         #for this_glop in self.glops:
         for index in range(0, len(self.glops)):
             if self.glops[index].name == name:
                 result = True
-                if self.glops[index] not in self._walkmeshes:
-                    self._walkmeshes.append(self.glops[index])
-                    print("[ KivyGlops ] Applying walkmesh translate " + str(self.glops[index]._translate_instruction.xyz))
-                    self.glops[index].apply_translate()
-                    print("[ KivyGlops ]   pivot:" + str(self.glops[index]._pivot_point))
-                    if hide:
-                        self.hide_glop(self.glops[index])
+                self.use_walkmesh_at(index, hide=hide)
                 break
         return result
 
@@ -1589,8 +1592,9 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             if get_verbose_enable():
                 print("[ KivyGlopsWindow ] Appended Glop (count:" + str(len(self.scene.glops)) + ").")
             this_glop.canvas.shader.source = self.gl_widget.canvas.shader.source
-            #this_glop.canvas['projection_mat'] = self.scene.projectionMatrix
-            this_glop.canvas['modelview_mat'] = self.scene.modelViewMatrix
+            #NOTE: projectionMatrix and modelViewMatrix don't exist yet if add_glop was called before first frame! 
+            #this_glop.canvas['projection_mat'] = self.scene.
+            #this_glop.canvas['modelview_mat'] = self.scene.modelViewMatrix
             this_glop.canvas["camera_world_pos"] = [self.scene.camera_glop._translate_instruction.x, self.scene.camera_glop._translate_instruction.y, self.scene.camera_glop._translate_instruction.z]
 
         except:
@@ -1781,7 +1785,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
 #         elif keycode[1] == 'numpadsubtract' or keycode[1] == 'numpadsubstract':  #since is mispelled as numpadsubstract in kivy
 #             pass
         elif keycode[1] == "tab":
-            self.select_mesh_by_index(self.scene.selected_glop_index+1)
+            self.scene.select_mesh_by_index(self.scene.selected_glop_index+1)
             #if get_verbose_enable():
             this_name = None
             if self.scene.selected_glop_index is not None:
