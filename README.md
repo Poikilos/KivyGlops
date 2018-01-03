@@ -24,7 +24,7 @@ Control 3D objects and the camera in your 3D Kivy app!
     "fires_glops": list of glops that will be fired (generated automatically if you use add_actor_weapon and have fired_sprite_path)
 * fit_enable entry in item_event dict returned by push_item denotes whether giving an item to the player was possible (false if inventory was full on games with limited inventory)
 * if you get a stack overflow, maybe one of the dict objects you put on an object contains a reference to the same object then copy or deepcopy_with_my_type was called
-* each program you make should be a subclass of KivyGlops or other PyGlops subclass (representing framework you are using other than Kivy)
+* each program you make should be a subclass of KivyGlops or other PyGlops subclass (if you subclass PyGlops for framework you are using other than Kivy, your *Glops class should have all methods that KivyGlops has since PyGlops expects self to have implemented methods such as load_obj)
 * pyrealtime module (which does not require Kivy) keeps track of keyboard state, allowing getting keystate asynchronously
 * To modify any files (other than examples or tests) see "Developer Notes" section of this file for more information.
 
@@ -34,6 +34,7 @@ Control 3D objects and the camera in your 3D Kivy app!
 * if segfault occurs, maybe camera and look_at location are same
 
 ## Changes
+* (2018-01-03) changed `set_player_fly(self, fly_enable)` to `set_player_fly(self, player_number, fly_enable)`
 * (2018-01-03) renamed set_as_item_by_index to set_as_item_at; set_as_actor_by_index to set_as_actor_at; explode_glop_by_index to explode_glop_at; kill_glop_by_index to kill_glop_at; give_item_by_index_to_player_number to give_item_index_to_player_number; obtain_glop_by_index to obtain_glop_at; add_bump_sound_by_index to add_bump_sound_at; select_mesh_by_index to select_mesh_at
 * (2018-01-03) added use_walkmesh_at method for using walkmesh when you know glop index
 * (2018-01-03) fixed selection crash (issue caused by refactoring)
@@ -108,6 +109,8 @@ Control 3D objects and the camera in your 3D Kivy app!
 
 
 ## Known Issues
+* projectile sprites are not visible (probably a refactoring bug)
+* pyglops.py (PyGlops __init__): implement _player_indices (already a list)
 * fix nonworking ishadereditor.py (finish 3D version)
 * pivot_to_geometry_enable is broken (must be left at default True): (defaults for pivot_to_geometry_enable are flipped since broken) pyglops.py: (append_wobject) make self.transform_pivot_to_geometry() optional, for optimization and predictability (added to set_as_item where pivot_to_geometry_enable; also added that option, to set_as_item, load_obj, get_glop_list_from_obj, append_wobject)
 * renamed etc/kivyglops-mini-deprecated.py to testingkivy3d.py and MinimalKivyGlopsWindow class in it to TestingKivy3D
@@ -158,7 +161,7 @@ Control 3D objects and the camera in your 3D Kivy app!
         * _internal_bump_glop, after_selected_item, add_actor_weapon, get_player_glop_index
         * [give_item_by_keyword_to_player_number, give_item_index_to_player_number,_run_command, _run_semicolon_separated_commands, _run_commands, _run_command]
     * copied to KivyGlops and PyGlops, leaving KivyGlopsWindow methods that call them: hide_glop
-        * already done: set_fly
+        * already done: set_fly [later refactored into set_player_fly]
 * push_glop_item should create usable parent-child relationship for movement (at least for selected_item or costume accessories--there is no need to move inventory objects until they are visibly selected/held); or move item to the glop's canvas to accomplish that automatically
 * pyglops: get_player_glop_index(player_number) should distinguish between multiple players (instead of ignoring param and using get_player_glop_index then falling through to which `is player_glop`)
 * should behave as though you have 1 crate when you have 1 (instead of when you have 2)

@@ -171,25 +171,28 @@ color_arg_type_strings.append(WColorArgInfo("t","turbulence (post-processes tile
 color_arg_type_strings.append(WColorArgInfo("texres","resizes texture before using, such as for NPOT textures; if used, image is forced to a square",2,3,["pixel count"]))
 
 
-#Also in pyglops.py; formerly dumpAsYAMLArray
+#see also override in pyglops.py and kivyglops.py; formerly dumpAsYAMLArray
 def standard_emit_yaml(lines, min_tab_string, dat):
-    if isinstance(dat, list):
+    emit_yaml_or_None = getattr(dat, "emit_yaml", None)  # never throws if has 3rd param
+    if callable(emit_yaml_or_None):
+        dat.emit_yaml(lines, min_tab_string)
+    elif isinstance(dat, list):
         for key in range(0,len(dat)):
             if isinstance(dat[key], list) or isinstance(dat[key], dict):
                 lines.append(min_tab_string + "-")
                 standard_emit_yaml(lines, min_tab_string+tab_string, dat[key])
             else:
-                lines.append(min_tab_string+"- "+str(dat[key]))
+                lines.append(min_tab_string+"- "+get_yaml_from_literal_value(dat[key]))
     elif isinstance(dat, dict):
         for key in dat:
             if isinstance(dat[key], list) or isinstance(dat[key], dict):
                 lines.append(min_tab_string + key + ":")
                 standard_emit_yaml(lines, min_tab_string+tab_string, dat[key])
             else:
-                lines.append(min_tab_string+key+": "+str(dat[key]))
+                lines.append(min_tab_string+key+": "+get_yaml_from_literal_value(dat[key]))
     else:
         #print("WARNING in standard_emit_yaml: type '" + type(dat) + "' was not implemented and so was converted by plain str function")
-        lines.append(min_tab_string+str(dat))
+        lines.append(min_tab_string+get_yaml_from_literal_value(dat))
 
 
 class WObject:

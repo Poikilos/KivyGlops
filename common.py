@@ -1,9 +1,31 @@
 import sys
 import traceback
 import copy
+import string
 
 verbose_enable = False
 debug_dict = dict()  # constantly-changing variables, for visual debug
+
+class ScopeInfo:
+    indent = None
+    name = None
+    line_number = -1
+
+def get_yaml_from_literal_value(val):
+    #TODO: add yaml escape sequences (see expertmm MoneyForesight for example)
+    if str(type(val))=="string":
+        val = "\"" + val.replace("\"", "\\\"") + "\""
+    else:
+        val = str(val)
+    return val
+
+def get_literal_value_from_yaml(val):
+    #TODO: process yaml escape sequences (see expertmm MoneyForesight for example)
+    val=val.strip()
+    if len(val)>2:
+        if val[0:1]=="\"" and val[-1:]=="\"":
+            val=val[1:-1]
+    return val
 
 #from  github.com/expertmm/minetest/chunkymap/expertmm.py, but modified for python2
 def get_dict_deepcopy(old_dict):
@@ -14,6 +36,25 @@ def get_dict_deepcopy(old_dict):
             new_dict[this_key] = copy.deepcopy(old_dict[this_key])
     return new_dict
 
+valid_path_name_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
+print("Using valid_path_name_chars: '" + valid_path_name_chars + "'")
+
+def find_any_not(haystack, needles):
+    result = -1
+    for i in range(len(haystack)):
+        if haystack[i:i+1] not in needles:
+            result = i
+            break
+    return result
+
+def good_path_name(bad_path_name):
+    result = ""
+    for i in range(len(bad_path_name)):
+        if not (bad_path_name[i:i+1] in valid_path_name_chars):
+            result += "_"
+        else:
+            result += bad_path_name[i:i+1]
+    return result
 
 def view_traceback():
     ex_type, ex, tb = sys.exc_info()

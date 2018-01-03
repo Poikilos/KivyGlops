@@ -320,6 +320,7 @@ def is_in_triangle_vec2(check_vec2, a_vec2, b_vec2, c_vec2):
         return  s>kEpsilon and t>kEpsilon and 1-s-t>kEpsilon
     else:
         return False
+
 #class ItemData:  #changed to dict
 #    name = None
 #    passive_bumper_command = None
@@ -355,6 +356,7 @@ class PyGlopHitBox:
         return str(self.minimums[0]) + " to " + str(self.maximums[0]) + \
             ",  " + str(self.minimums[1]) + " to " + str(self.maximums[1]) + \
             ",  " + str(self.minimums[2]) + " to " + str(self.maximums[2])
+
 
 class PyGlop:
     #update copy constructor if adding/changing copyable members
@@ -415,7 +417,7 @@ class PyGlop:
     TEXCOORD1_INDEX = None
     COLOR_INDEX = None
     #endregion calculated from vertex_format
-    
+
     def __init__(self):
         self._init_glop()
 
@@ -475,7 +477,7 @@ class PyGlop:
         if self.material is not None:
             new_material_method = self.material.new_material
         return self.copy_as_subclass(self.new_glop, new_material_method)
-    
+
     def copy_as_subclass(self, new_glop_method, new_material_method, copy_verts_by_ref_enable=False):
         target = new_glop_method()
         target.name = self.name #object name such as from OBJ's 'o' statement
@@ -566,7 +568,7 @@ class PyGlop:
         print("Calculate hit range should be implemented by subclass.")
         print("  (setting hitbox to None to avoid using default hitbox)")
         self.hitbox = None
-    
+
     def process_ai(self, glop_index):
         #this should be implemented in the subclass
         pass
@@ -591,16 +593,15 @@ class PyGlop:
             #self.vertices[v_offset+self._POSITION_OFFSET+0] -= this_point[0]
             #self.vertices[v_offset+self._POSITION_OFFSET+1] -= this_point[1]
             #self.vertices[v_offset+self._POSITION_OFFSET+2] -= this_point[2]
-
             v_offset += self.vertex_depth
-        
+
     def apply_pivot(self):
         self.apply_vertex_offset(self._pivot_point)
         self._pivot_point = (0.0, 0.0, 0.0)        
 
     def look_at(self, this_glop):
         print("WARNING: look_at should be implemented by subclass which has rotation angle(s) or matr(ix/ices)")
-        
+
     def has_item(self, name):
         result = False
         for i in range(0,len(self.properties["inventory_items"])):
@@ -609,7 +610,7 @@ class PyGlop:
                 result = True
                 break
         return result
-    
+
     #your program can override this method for custom inventory layout
     def push_item(self, item_dict):
         select_item_event_dict = dict()
@@ -642,7 +643,6 @@ class PyGlop:
             select_item_event_dict["proper_name"] = proper_name
             select_item_event_dict["calling method"] = "push_glop_item"
         return select_item_event_dict
-
 
     def select_next_inventory_slot(self, is_forward):
         select_item_event_dict = dict()
@@ -684,12 +684,12 @@ class PyGlop:
         # should be implemented by subclass
         # print("[ PyGlops ] your _on_change_pivot should override this")
         pass
-    
+
     def get_context(self):
         # implement in subclass since involves graphics implementation
         print("WARNING: get_context should be defined by a subclass")
         return False
-    
+
     def transform_pivot_to_geometry(self):
         previous_point = self._pivot_point
         self._pivot_point = self.get_center_average_of_vertices()
@@ -903,21 +903,24 @@ class PyGlop:
     def emit_yaml(self, lines, min_tab_string):
         #lines.append(min_tab_string+this_name+":")
         if self.name is not None:
-            lines.append(min_tab_string + "name: " + self.name)
+            lines.append(min_tab_string + "name: " + get_yaml_from_literal_value(self.name))
+        if self.actor_dict is not None:
+            lines.append(min_tab_string + "actor:")
+            standard_emit_yaml(lines, min_tab_string*2, self.actor_dict)  # DOES use emit_yaml when present for a member
         if self.vertices is not None:
             if add_dump_comments_enable:
                 lines.append(min_tab_string+"#len(self.vertices)/self.vertex_depth:")
-            lines.append(min_tab_string + "vertices_count: " + str(len(self.vertices)/self.vertex_depth))
+            lines.append(min_tab_string + "vertices_count: " + get_yaml_from_literal_value(len(self.vertices)/self.vertex_depth))
         if self.indices is not None:
-            lines.append(min_tab_string + "indices_count:" + str(len(self.indices)))
-        lines.append(min_tab_string + "vertex_depth: " + str(self.vertex_depth))
+            lines.append(min_tab_string + "indices_count:" + get_yaml_from_literal_value(len(self.indices)))
+        lines.append(min_tab_string + "vertex_depth: " + get_yaml_from_literal_value(self.vertex_depth))
         if self.vertices is not None:
             if add_dump_comments_enable:
                 lines.append(min_tab_string + "#len(self.vertices):")
-            lines.append(min_tab_string + "vertices_info_len: " + str(len(self.vertices)))
-        lines.append(min_tab_string + "POSITION_INDEX:" + str(self.POSITION_INDEX))
-        lines.append(min_tab_string + "NORMAL_INDEX:" + str(self.NORMAL_INDEX))
-        lines.append(min_tab_string + "COLOR_INDEX:" + str(self.COLOR_INDEX))
+            lines.append(min_tab_string + "vertices_info_len: " + get_yaml_from_literal_value(len(self.vertices)))
+        lines.append(min_tab_string + "POSITION_INDEX:" + get_yaml_from_literal_value(self.POSITION_INDEX))
+        lines.append(min_tab_string + "NORMAL_INDEX:" + get_yaml_from_literal_value(self.NORMAL_INDEX))
+        lines.append(min_tab_string + "COLOR_INDEX:" + get_yaml_from_literal_value(self.COLOR_INDEX))
 
         component_index = 0
         component_offset = 0
@@ -926,10 +929,10 @@ class PyGlop:
             vertex_format_component = self.vertex_format[component_index]
             component_name_bytestring, component_len, component_type = vertex_format_component
             component_name = component_name_bytestring.decode("utf-8")
-            lines.append(min_tab_string+component_name + ".len:" + str(component_len))
-            lines.append(min_tab_string+component_name + ".type:" + str(component_type))
-            lines.append(min_tab_string+component_name + ".index:" + str(component_index))
-            lines.append(min_tab_string+component_name + ".offset:" + str(component_offset))
+            lines.append(min_tab_string+component_name + ".len:" + get_yaml_from_literal_value(component_len))
+            lines.append(min_tab_string+component_name + ".type:" + get_yaml_from_literal_value(component_type))
+            lines.append(min_tab_string+component_name + ".index:" + get_yaml_from_literal_value(component_index))
+            lines.append(min_tab_string+component_name + ".offset:" + get_yaml_from_literal_value(component_offset))
             component_index += 1
             component_offset += component_len
 
@@ -946,7 +949,7 @@ class PyGlop:
 
 
         for k,v in sorted(self.properties.items()):
-            lines.append(min_tab_string+k+": "+v)
+            lines.append(min_tab_string + str(k) + ": " + str(v))
 
         thisTextureFileName=self.get_texture_diffuse_path()
         if thisTextureFileName is not None:
@@ -981,7 +984,6 @@ class PyGlop:
         lines.append(min_tab_string + "indices:")
         for i in range(0,len(self.indices)):
             lines.append(min_tab_string + tab_string + "- " + str(self.indices[i]))
-
 
     def on_vertex_format_change(self):
         self.vertex_depth = 0
@@ -1336,6 +1338,7 @@ class PyGlop:
             print("WARNING in " + f_name + ": ignoring wobject where face_groups is None (a default face group is made on load if did not exist).")
     #end def append_wobject
 
+
 class PyGlopsMaterial:
     #update copy constructor if adding/changing copyable members
     properties = None
@@ -1383,11 +1386,11 @@ class PyGlopsMaterial:
     def emit_yaml(self, lines, min_tab_string):
         #lines.append(min_tab_string+this_name+":")
         if self.name is not None:
-            lines.append(min_tab_string+"name: "+self.name)
+            lines.append(min_tab_string + "name: " + get_yaml_from_literal_value(self.name))
         if self.mtlFileName is not None:
-            lines.append(min_tab_string+"mtlFileName: "+self.mtlFileName)
+            lines.append(min_tab_string + "mtlFileName: " + get_yaml_from_literal_value(self.mtlFileName))
         for k,v in sorted(self.properties.items()):
-            lines.append(min_tab_string+k+": "+str(v))
+            lines.append(min_tab_string + k + ": " + get_yaml_from_literal_value(v))
 
 #variable name ends in xyz so must be ready to be swizzled
 def angles_to_angle_and_matrix(angles_list_xyz):
@@ -1403,7 +1406,6 @@ def angles_to_angle_and_matrix(angles_list_xyz):
     else:
         result_angle_matrix[3] = .000001
     return result_angle_matrix
-
 
 def theta_radians_from_rectangular(x, y):
     theta = 0.0
@@ -1423,13 +1425,11 @@ def theta_radians_from_rectangular(x, y):
         theta = math.atan2(y, x)
     return theta
 
-
 #already imported from wobjfile.py:
 #def standard_emit_yaml(lines, min_tab_string, sourceList):
 #    lines.append(min_tab_string+this_name+":")
 #    for i in range(0,len(sourceList)):
 #        lines.append(min_tab_string+"- "+str(sourceList[i]))
-
 
 def new_tuple(length, fill_start=0, fill_len=-1, fill_value=1.0):
     result = None
@@ -1485,7 +1485,6 @@ class PyGlopsLight:
        self.compute_distance_attenuation = False
 
 
-
 class PyGlops:
     glops = None
     materials = None
@@ -1504,17 +1503,17 @@ class PyGlops:
     _world_min_y = None
     _world_grav_acceleration = None
     last_update_s = None
-    _fly_enable = None
+    _fly_enables = None
     _camera_person_number = None
-    
-    
+
     fired_count = None
 
     def __init__(self, new_glop_method):
+        self._player_indices = []  # player number 1 is 0
         self._visual_debug_enable = False
         self._camera_person_number = self.CAMERA_FIRST_PERSON()
         self.fired_count = 0
-        self._fly_enable = False
+        self._fly_enables = {}
         self._world_grav_acceleration = 9.8
         self.camera_glop = new_glop_method()
         self.camera_glop.name = "Camera"
@@ -1523,22 +1522,22 @@ class PyGlops:
         self.materials = []
         self._bumper_indices = []
         self._bumpable_indices = []
-        
+
     def __str__(self):
         return str(type(self))+" named "+str(self.name)+" at "+str(self.get_location)
-        
+
     # camera does not move automatically (you may move it yourself)
     def CAMERA_FREE(self):
         return 0
-        
+
     # camera set to same position as player's pivot point
     def CAMERA_FIRST_PERSON(self):
         return 1
-    
+
     # camera is from the perspective of random enemy
     def CAMERA_SECOND_PERSON(self):
         return 2
-    
+
     # camera is behind and above player (in world axes), not rotating
     def CAMERA_THIRD_PERSON(self):
         return 3
@@ -1546,14 +1545,14 @@ class PyGlops:
     def _run_command(self, command, bumpable_index, bumper_index, bypass_handlers_enable=False):
         print("WARNING: _run_command should be implemented by a subclass since it requires using the graphics implementation") 
         return False
-        
+
     def update(self):
         print("WARNING: update should be implemented by a subclass since it assumes there is a realtime game or graphics implementation") 
     #end update
-    
+
     def get_verbose_enable(self):
         return get_verbose_enable() 
-        
+
    # This method overrides object bump code, and gives the item to the player (mimics "obtain" event)
     # cause player to obtain the item found first by keyword, then hide the item (overrides object bump code)
     def give_item_by_keyword_to_player_number(self, player_number, keyword, allow_owned_enable=False):
@@ -1586,12 +1585,12 @@ class PyGlops:
         self._run_command("obtain", bumpable_index, bumper_index, bypass_handlers_enable=bypass_handlers_enable)
         result = True
         return result
-        
+
     def _run_semicolon_separated_commands(self, semicolon_separated_commands, bumpable_index, bumper_index, bypass_handlers_enable=False):
         if semicolon_separated_commands is not None:
             command_list = semicolon_separated_commands.split(";")
             self._run_commands(command_list, bumpable_index, bumper_index, bypass_handlers_enable=bypass_handlers_enable)
-    
+
     def _run_commands(self, command_list, bumpable_index, bumper_index, bypass_handlers_enable=False):
         for command_original in command_list:
             command = command_original.strip()
@@ -1621,7 +1620,7 @@ class PyGlops:
     def hide_glop(self, this_glop):
         print("WARNING: hide_glop should be implemented by a sub-class since it is specific to graphics implementation")
         return False
-        
+
     def show_glop(self, this_glop_index):
         print("WARNING: show_glop should be implemented by a sub-class since it is specific to graphics implementation")
         return False
@@ -1647,6 +1646,14 @@ class PyGlops:
             else:
                 print("ERROR in after_selected_item ("+calling_method_string+"): missing inventory_index in select_item_event_dict")
         self.ui.set_primary_item_caption(str(inventory_index)+": "+str(name))
+
+    def load_obj(self, source_path, swapyz_enable=False, centered=False, pivot_to_geometry_enable=True):
+        results = None  # new glop indices
+        print("[ PyGlops ] ERROR: If you are not using KivyGlops, make " + \
+              "your own PyGlops subclass and implement the load_obj(self," + \
+              " source_path, swapyz_enable=False, centered=False," + \
+              " pivot_to_geometry_enable=True)  method")
+        return results
 
     def add_actor_weapon(self, glop_index, weapon_dict):
         result = False
@@ -1756,7 +1763,7 @@ class PyGlops:
             print("[ PyGlops] bumped object '" + \
                   str(self.glops[bumpable_index].name) + \
                   "' is not an item")
-    
+
     def get_player_glop_index(self, player_number):
         result = None
         if self._player_glop_index is not None:
@@ -1839,11 +1846,11 @@ class PyGlops:
         print("[ PyGlops ] ERROR: new_glop for PyGlop should never be used")
         return PyGlop()
 
-    def set_fly(self, fly_enable):
+    def set_player_fly(self, player_number, fly_enable):
         if fly_enable==True:
-            self._fly_enable = True
+            self._fly_enables[self.player_glop.name] = True
         else:
-            self._fly_enable = False
+            self._fly_enables[self.player_glop.name] = False
 
     def create_material(self):
         return PyGlopsMaterial()
@@ -2115,7 +2122,6 @@ class PyGlops:
         else:
             print("[ PyGlops ] ERROR in " + f_name + ": user_glop is None")
 
-
     def load_glops(self):
         print("[ PyGlops ] WARNING: program-specific subclass of a framework-specific subclass of PyGlops should implement load_glops (and usually update_glops which will be called before each frame is drawn)")
 
@@ -2135,7 +2141,7 @@ class PyGlops:
         self.killed_glop(index, weapon_dict)
         self.hide_glop(self.glops[index])
         self.glops[index].bump_enable = False
-        
+
     def bump_glop(self, bumpable_name, bumper_name):
         return None
 
@@ -2297,7 +2303,6 @@ class PyGlops:
         #print("checked "+str(checked_count))
         return results
 
-
     def get_indices_of_similar_names(self, partial_name,
                                      allow_owned_enable=True):
         results = None
@@ -2352,7 +2357,6 @@ class PyGlops:
         #print("checked "+str(checked_count))
         return results
 
-
     def set_world_boundary_by_object(self, thisGlopsMesh, use_x, use_y, use_z):
         self._world_cube = thisGlopsMesh
         if (self._world_cube is not None):
@@ -2367,8 +2371,6 @@ class PyGlops:
         else:
             self.world_boundary_min = [None,None,None]
             self.world_boundary_max = [None,None,None]
-
-
 
     def print_location(self):
         if get_verbose_enable():
@@ -2393,7 +2395,7 @@ class PyGlops:
         else:
             self.selected_glop = None
             self.selected_glop_index = None
-    
+
     def index_of_mesh(self, name):
         result = -1
         name_lower = name.lower()
@@ -2425,7 +2427,7 @@ class PyGlops:
                             print("  * could also be mesh named '" + self.glops[j].name+"'")
                 break
         return result
-    
+
     def select_mesh_by_name(self, name):
         found = False
         index = self.index_of_mesh(name)

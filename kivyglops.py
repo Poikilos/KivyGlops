@@ -3,6 +3,7 @@ This module is the Kivy implementation of PyGlops.
 It provides features that are specific to display method
 (Kivy's OpenGL-like API in this case).
 """
+import hashlib
 from pyglops import *
 
 from kivy.resources import resource_find
@@ -133,6 +134,84 @@ class KivyGlop(Widget, PyGlop):
             result = str(type(self)) + " named " + str(self.name) + \
                    " at " + str(self._translate_instruction.xyz)
         return result
+        
+    def save(self, path):
+        lines = []
+        self.emit_yaml(lines, "")
+        outs = open(path, 'w')
+        for line in lines:
+            outs.write(line + "\n")
+        outs.close()
+
+    #load yaml-formatted glop file
+    def load(self, source_path, original_path=None):
+        specified_path = source_path
+        if self.vertices is not None:
+            print("[ KivyGlop ] WARNING: vertices are already present during load, overwriting")
+        if specified_path is not None:
+            if original_path is None:
+                original_path = source_path
+            if not os.path.isfile(source_path):
+                source_path = resource_find(source_path)
+            if os.path.isfile(source_path):
+                ins = open(source_path)
+                line = True
+                line_number = 1
+                scopes = [ScopeInfo()]
+                scopes[0].indent = ""
+                scopes[0].name = ""
+                scopes[0].line_number = -1
+                nyi_names = {}
+                while line:
+                    line = ins.readline()
+                    if line:
+                        line_strip = line.strip()
+                        indent = find_any_not(line, " \t")
+                        depth = int(len(indent)/2)  # assumes "  " yaml indent
+                        while len(scopes)<=depth:
+                            scopes.append(ScopeInfo())
+                        if line_strip[:1] != "#":
+                            op_i = line_strip.find(":")
+                            if line_strip[-1:]==":":
+                                scopes[depth].name = line_strip[:-1].strip()
+                                scopes[depth].indent = indent
+                                scopes[depth].line_number = line_number
+                            array_i = line_strip.find("-")
+                            if line_strip[0:1]=="-":
+                                if depth>0:
+                                    val = get_literal_value_from_yaml(line_strip[2:].strip())
+                                    if scopes[depth-1].name=="vertices":
+                                        self.vertices.append(float(val))
+                                    elif scopes[depth-1].name=="indices":
+                                        self.indices.append(int(val))
+                                    else:
+                                        if scopes[depth-1].name not in nyi_names:
+                                            print(specified_path + "(" + str(line_number) + ",0): (INPUT ERROR) item for unknown array " + scopes[depth-1].name + " not implemented (this is the last time this message will be shown for " + scopes[depth-1].name + ")")
+                                            nyi_names[scopes[depth-1].name] = False
+                                else:
+                                    print(specified_path + "(" + str(line_number) + ",0): (INPUT ERROR) array in deepest scope (should be indented under an object name)")
+                            else:
+                                if op_i > -1:
+                                    name = line_strip[:op_i]
+                                    val = get_literal_value_from_yaml(line_strip[op_i+1:])
+                                    if name=="get_texture_diffuse_path()":
+                                        self.set_texture_diffuse(val)
+                                else:
+                                    print(specified_path + "(" + str(line_number) + ",0): (INPUT ERROR) input with neither colon nor starting with hyphen is not implemented")
+                        prev_indent = indent
+                    line_number += 1
+                ins.close()
+            else:
+                print("[ KivyGlop ] ERROR in load: missing '" + specified_path + "")
+            #TODO: if cached, change source_path for each object to that in stats.yml in cache folder
+        else:
+            print("[ KivyGlop ] ERROR in load: source_path was None")
+
+    def emit_yaml(self, lines, min_tab_string):
+        super(KivyGlop, self).emit_yaml(lines, min_tab_string)
+        lines.append(min_tab_string + "translate_x: " + get_yaml_from_literal_value(self._translate_instruction.x))        
+        lines.append(min_tab_string + "translate_y: " + get_yaml_from_literal_value(self._translate_instruction.y))        
+        lines.append(min_tab_string + "translate_z: " + get_yaml_from_literal_value(self._translate_instruction.z))        
 
     def new_vertex(self, set_coords, set_color):
         # NOTE: assumes vertex format is ok (should be checked by generate_axes)
@@ -191,7 +270,7 @@ class KivyGlop(Widget, PyGlop):
         self.append_vertex(_axes_vertices, (nv, 0.0, fv), white)
         self.append_vertex(_axes_vertices, (fv, 0.0, fv), white)
         self.append_vertex(_axes_vertices, (fv, 0.0, nv), white)
-        _axes_indices.extend([0,3,2, 2,1,0])
+        _axes_indices.extend([0,3,2, 2,1,0])  # counterclockwise winding
         #clockwise winding (not usual unless want to flip normal):
         #_axes_indices.extend([0,1,2, 2,3,0])
         
@@ -737,8 +816,9 @@ class KivyGlops(PyGlops):
     def __init__(self, new_ui):
         self.ui = new_ui
         if self.ui is None:
-            print("FATAL ERROR: KivyGlops cannot init without a ui")
+            print("[ KivyGlops ] FATAL ERROR in __init__: KivyGlops cannot init without a ui")
             exit(1)
+        self._load_glops_enable = True
         self.ui.scene = self
         super(KivyGlops, self).__init__(self.new_glop)
         self.controllers = list()
@@ -776,6 +856,7 @@ class KivyGlops(PyGlops):
         self.player_glop.bump_enable = True
         self.glops.append(self.camera_glop)
         self.player_glop.name = "Player 1"
+        self._fly_enables[self.player_glop.name] = True
         self.glops.append(self.player_glop)
         self._player_glop_index = len(self.glops)-1
         if self.glops[self._player_glop_index] is not self.player_glop:
@@ -793,8 +874,6 @@ class KivyGlops(PyGlops):
         this_actor_dict = dict()
         self.set_as_actor_at(self._player_glop_index, this_actor_dict)
         #NOTE: set_as_actor_at sets hitbox to None if has no vertices
-
-        self.load_glops()  # also moved from ui
 
     def new_glop(self):
         #return PyGlops.new_glop(self)
@@ -899,19 +978,37 @@ class KivyGlops(PyGlops):
     def load_obj(self, source_path, swapyz_enable=False, centered=False, pivot_to_geometry_enable=True):
         load_obj_start_s = best_timer()
         results = None
+        cache_path = None
+        cached_count = 0
+        cache_path = None
+        original_path = source_path
         if swapyz_enable:
-            print("[ KivyGlops ] NOT YET IMPLEMENTED: swapyz_enable")
+            print("[ KivyGlops ] (load_obj) swapyz_enable is NOT YET IMPLEMENTED")
         if source_path is not None:
-            original_path = source_path
             source_path = resource_find(source_path)
             if source_path is not None:
                 if os.path.isfile(source_path):
+                    #cache_name = hashlib.sha224(source_path).hexdigest()
+                    #path_hash = hashlib.new('ripemd160')
+                    #cache_name = path_hash.hexdigest()
+                    #cache_name = hashlib.ripemd160(source_path).hexdigest()
+                    # 20 like SHA-1, but blake2b is more secure:
+                    cache_name = hashlib.blake2b(digest_size=20).hexdigest()
+                    caches_path = "cache"
+                    if not os.path.isdir(caches_path):
+                        os.mkdir(caches_path)
+                    glop_caches_path = os.path.join(caches_path, "glop")
+                    if not os.path.isdir(glop_caches_path):
+                        os.mkdir(glop_caches_path)
+                    cache_path = os.path.join(glop_caches_path, cache_name)
+                    if not os.path.isdir(cache_path):
+                        os.mkdir(cache_path)
                     #super(KivyGlops, self).load_obj(source_path)
                     new_glops = self.get_glop_list_from_obj(source_path, self.new_glop)
                     if new_glops is None:
-                        print("[ KivyGlops ] FAILED TO LOAD '" + str(source_path) + "'")
+                        print("[ KivyGlops ] (load_obj) FAILED TO LOAD '" + str(source_path) + "'")
                     elif len(new_glops)<1:
-                        print("[ KivyGlops ] NO VALID OBJECTS FOUND in '" + str(source_path) + "'")
+                        print("[ KivyGlops ] (load_obj) NO VALID OBJECTS FOUND in '" + str(source_path) + "'")
                     else:
                         if self.glops is None:
                             self.glops = list()
@@ -937,7 +1034,7 @@ class KivyGlops(PyGlops):
                                 some_name = ""
                                 if new_glops[index].name is not None:
                                     some_name = new_glops[index].name
-                                print("[ KivyGlops ] applying pivot point for " + some_name + "...")
+                                print("[ KivyGlops ] (load_obj) applying pivot point for " + some_name + "...")
                                 prev_pivot = new_glops[index]._pivot_point[0], new_glops[index]._pivot_point[1], new_glops[index]._pivot_point[2]
                                 new_glops[index].apply_pivot()
                                 #print("    moving from "+str( (new_glops[index]._translate_instruction.x, new_glops[index]._translate_instruction.y, new_glops[index]._translate_instruction.z) ))
@@ -949,6 +1046,7 @@ class KivyGlops(PyGlops):
                             if results is None:
                                 results = list()
                             results.append(len(self.glops)-1)
+                            new_glops[index].save(os.path.join(cache_path, good_path_name(new_glops[index].name) + ".glop"))
                         if centered:
                             #TODO: apply pivot point instead (change vertices as if pivot point were 0,0,0) to ensure translate 0 is world 0; instead of:
                             #center it (use only one pivot point, so all objects in obj file remain aligned with each other):
@@ -966,13 +1064,37 @@ class KivyGlops(PyGlops):
 
                         #print("")
                 else:
-                    print("[ KivyGlops ] missing '" + source_path + "'")
+                    print("[ KivyGlops ] (load_obj) missing '" + source_path + "'")
             else:
-                print("[ KivyGlops ] missing '" + original_path + "'")
+                print("[ KivyGlops ] (load_obj) missing '" + original_path + "'")
         else:
-            print("[ KivyGlops ] ERROR: source_path is None for load_obj")
+            print("[ KivyGlops ] (load_obj) ERROR: source_path is None for load_obj")
         load_obj_s = best_timer() - load_obj_start_s
-        print("[ KivyGlops ] Loaded '" + original_path + "' in " + str(load_obj_s) + " seconds.")
+        if results is not None:
+            print("[ KivyGlops ] (load_obj) Loaded '" + original_path + "' in " + str(load_obj_s) + " seconds.")
+            if cache_path is not None:
+                stats_name = "stats.yml"
+                stats_path = os.path.join(cache_path, stats_name)
+                outs = open(stats_path, 'w')
+                outs.write("original_path: " + original_path + "\n")
+                outs.write("path: " + source_path + "\n")
+                outs.close()
+                if cached_count > 0:
+                    stats_name = "stats-cached.yml"
+                    stats_path = os.path.join(cache_path, stats_name)
+                    if not os.path.isfile(stats_path):
+                        outs = open(stats_path, 'w')
+                        outs.write("cached_load_time_s: " + str(load_obj_s) + "\n")
+                        outs.close()
+                else:
+                    stats_name = "stats-notcached.yml"
+                    stats_path = os.path.join(cache_path, stats_name)
+                    if not os.path.isfile(stats_path):
+                        outs = open(stats_path, 'w')
+                        outs.write("not_cached_load_time_s: " + str(load_obj_s) + "\n")
+                        outs.close()
+        else:
+            print("[ KivyGlops ] (load_obj) WARNING: Loaded 0 objects.")
         return results
 
     def get_pressed(self, key_name):
@@ -980,7 +1102,7 @@ class KivyGlops(PyGlops):
         return self.player1_controller.get_pressed(self.ui.get_keycode(key_name))
 
     def update(self):
-        #this is in KivyGlops, but is called by KivyGlopsWindow.*update
+        #this is in KivyGlops, but is called by KivyGlopsWindow.*update* such as update_glsl
         #super(KivyGlops, self).update()
         #region tried to move to pyglops but didn't work well
         #print("coords:"+str(Window.mouse_pos))
@@ -1018,14 +1140,14 @@ class KivyGlops(PyGlops):
             #else:
             #    rotation_multiplier_y = 1.0
         if self.player1_controller.get_pressed(self.ui.get_keycode("w")):
-            if self._fly_enable:
+            if self._fly_enables[self.player_glop.name]:
                 #intentionally use z,y:
                 moving_z, moving_y = get_rect_from_polar_rad(1.0, self.player_glop._rotate_instruction_x.angle)
             else:
                 moving_z = 1.0
 
         if self.player1_controller.get_pressed(self.ui.get_keycode("s")):
-            if self._fly_enable:
+            if self._fly_enables[self.player_glop.name]:
                 #intentionally use z,y:
                 moving_z, moving_y = get_rect_from_polar_rad(1.0, self.player_glop._rotate_instruction_x.angle)
                 moving_z *= -1.0
@@ -1613,66 +1735,74 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         self.gl_widget.canvas.add(self.resetCallback)
 
     def update_glsl(self, *largs):
-        if not self.scene._visual_debug_enable:
-            self.debug_label.opacity = 0.0
-        else:
+        if not self.scene._load_glops_enable:
+            
+            if not self.scene._visual_debug_enable:
+                self.debug_label.opacity = 0.0
+            else:
+                self.debug_label.opacity = 1.0
+
+            if self.scene.env_rectangle is not None:
+                if self.screen_w_arc_theta is not None and self.screen_h_arc_theta is not None:
+                    #then calculate environment mapping variables
+                    #region old way (does not repeat)
+                    #env_h_ratio = (2 * math.pi) / self.screen_h_arc_theta
+                    #env_w_ratio = env_h_ratio * math.pi
+                    #self.scene.env_rectangle.size = (Window.size[0]*env_w_ratio,
+                                               #Window.size[1]*env_h_ratio)
+                    #self.scene.env_rectangle.pos = (-(self.camera_glop._rotate_instruction_y.angle/(2*math.pi)*self.scene.env_rectangle.size[0]),
+                                              #-(self.camera_glop._rotate_instruction_x.angle/(2*math.pi)*self.scene.env_rectangle.size[1]))
+                    #engregion old way (does not repeat)
+                    self.scene.env_rectangle.size = Window.size
+                    self.scene.env_rectangle.pos = 0.0, 0.0
+                    view_right = self.screen_w_arc_theta / 2.0 + self.scene.camera_glop._rotate_instruction_y.angle
+                    view_left = view_right - self.screen_w_arc_theta
+                    view_top = self.screen_h_arc_theta / 2.0 + self.scene.camera_glop._rotate_instruction_x.angle + 90.0
+                    view_bottom = view_top - self.screen_h_arc_theta
+                    circle_theta = 2*math.pi
+                    view_right_ratio = view_right / circle_theta
+                    view_left_ratio = view_left / circle_theta
+                    view_top_ratio = view_top / circle_theta
+                    view_bottom_ratio = view_bottom / circle_theta
+                    #tex_coords order: u,      v,      u + w,  v,
+                    #                  u + w,  v + h,  u,      v + h
+                    # as per https://kivy.org/planet/2014/02/using-tex_coords-in-kivy-for-fun-and-profit/
+                    self.scene.env_rectangle.tex_coords = view_left_ratio, view_bottom_ratio, view_right_ratio, view_bottom_ratio, \
+                                                    view_right_ratio, view_top_ratio, view_left_ratio, view_top_ratio
+
+            x_rad, y_rad = self.get_view_angles_by_pos_rad(Window.mouse_pos)
+            self.scene.player_glop._rotate_instruction_y.angle = x_rad
+            self.scene.player_glop._rotate_instruction_x.angle = y_rad
+            if "View" not in debug_dict:
+                debug_dict["View"] = dict()
+            debug_dict["View"]["camera x,y: "] = str((self.scene.camera_glop._translate_instruction.x, self.scene.camera_glop._translate_instruction.y))
+            #global debug_dict
+            #if "Player" not in debug_dict:
+            #    debug_dict["Player"] = {}
+            #debug_dict["Player"]["_rotate_instruction_x.angle"] = str(_rotate_instruction_x.angle)
+            #debug_dict["Player"]["_rotate_instruction_y.angle"] = str(_rotate_instruction_y.angle)
+            #debug_dict["Player"]["_rotate_instruction_z.angle"] = str(_rotate_instruction_z.angle)
+            #self.ui.update_debug_label()
+
+            self.hud_form.pos = 0.0, 0.0
+            self.hud_form.size = Window.size
+            if self.hud_bg_rect is not None:
+                self.hud_bg_rect.size = self.hud_form.size
+                self.hud_bg_rect.pos=self.hud_form.pos
+            
+            self.scene.update()
+            
+            #forcibly use parent info (should not be needed if use_parent_projection use_parent_modelview use_parent_frag_modelview options of RenderContext constructor for canvas of children)
+            #for i in range(len(self.scene.glops)):
+                #this_glop = self.scene.glops[i]
+                #this_glop.canvas['modelview_mat'] = self.scene.modelViewMatrix
+                #this_glop.canvas["camera_world_pos"] = [self.scene.camera_glop._translate_instruction.x, self.scene.camera_glop._translate_instruction.y, self.scene.camera_glop._translate_instruction.z]
+        else: # if self.scene._load_glops_enable:
             self.debug_label.opacity = 1.0
-
-        if self.scene.env_rectangle is not None:
-            if self.screen_w_arc_theta is not None and self.screen_h_arc_theta is not None:
-                #then calculate environment mapping variables
-                #region old way (does not repeat)
-                #env_h_ratio = (2 * math.pi) / self.screen_h_arc_theta
-                #env_w_ratio = env_h_ratio * math.pi
-                #self.scene.env_rectangle.size = (Window.size[0]*env_w_ratio,
-                                           #Window.size[1]*env_h_ratio)
-                #self.scene.env_rectangle.pos = (-(self.camera_glop._rotate_instruction_y.angle/(2*math.pi)*self.scene.env_rectangle.size[0]),
-                                          #-(self.camera_glop._rotate_instruction_x.angle/(2*math.pi)*self.scene.env_rectangle.size[1]))
-                #engregion old way (does not repeat)
-                self.scene.env_rectangle.size = Window.size
-                self.scene.env_rectangle.pos = 0.0, 0.0
-                view_right = self.screen_w_arc_theta / 2.0 + self.scene.camera_glop._rotate_instruction_y.angle
-                view_left = view_right - self.screen_w_arc_theta
-                view_top = self.screen_h_arc_theta / 2.0 + self.scene.camera_glop._rotate_instruction_x.angle + 90.0
-                view_bottom = view_top - self.screen_h_arc_theta
-                circle_theta = 2*math.pi
-                view_right_ratio = view_right / circle_theta
-                view_left_ratio = view_left / circle_theta
-                view_top_ratio = view_top / circle_theta
-                view_bottom_ratio = view_bottom / circle_theta
-                #tex_coords order: u,      v,      u + w,  v,
-                #                  u + w,  v + h,  u,      v + h
-                # as per https://kivy.org/planet/2014/02/using-tex_coords-in-kivy-for-fun-and-profit/
-                self.scene.env_rectangle.tex_coords = view_left_ratio, view_bottom_ratio, view_right_ratio, view_bottom_ratio, \
-                                                view_right_ratio, view_top_ratio, view_left_ratio, view_top_ratio
-
-        x_rad, y_rad = self.get_view_angles_by_pos_rad(Window.mouse_pos)
-        self.scene.player_glop._rotate_instruction_y.angle = x_rad
-        self.scene.player_glop._rotate_instruction_x.angle = y_rad
-        if "View" not in debug_dict:
-            debug_dict["View"] = dict()
-        debug_dict["View"]["camera x,y: "] = str((self.scene.camera_glop._translate_instruction.x, self.scene.camera_glop._translate_instruction.y))
-        #global debug_dict
-        #if "Player" not in debug_dict:
-        #    debug_dict["Player"] = {}
-        #debug_dict["Player"]["_rotate_instruction_x.angle"] = str(_rotate_instruction_x.angle)
-        #debug_dict["Player"]["_rotate_instruction_y.angle"] = str(_rotate_instruction_y.angle)
-        #debug_dict["Player"]["_rotate_instruction_z.angle"] = str(_rotate_instruction_z.angle)
-        #self.ui.update_debug_label()
-
-        self.hud_form.pos = 0.0, 0.0
-        self.hud_form.size = Window.size
-        if self.hud_bg_rect is not None:
-            self.hud_bg_rect.size = self.hud_form.size
-            self.hud_bg_rect.pos=self.hud_form.pos
-        
-        self.scene.update()
-        
-        #forcibly use parent info (should not be needed if use_parent_projection use_parent_modelview use_parent_frag_modelview options of RenderContext constructor for canvas of children)
-        #for i in range(len(self.scene.glops)):
-            #this_glop = self.scene.glops[i]
-            #this_glop.canvas['modelview_mat'] = self.scene.modelViewMatrix
-            #this_glop.canvas["camera_world_pos"] = [self.scene.camera_glop._translate_instruction.x, self.scene.camera_glop._translate_instruction.y, self.scene.camera_glop._translate_instruction.z]
+            self.scene._load_glops_enable = False
+            self.debug_label.text = "loading..."
+            self.scene.load_glops()  # also moved from ui
+            self.debug_label.text = "..."
             
 
 
@@ -1811,7 +1941,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             self.print_location()
             print("[ KivyGlopsWindow ] cene.camera_glop._rotate_instruction_y.angle: " + str(self.scene.camera_glop._rotate_instruction_y.angle))
             print("[ KivyGlopsWindow ] modelview_mat: " + str(self.gl_widget.canvas['modelview_mat']))
-        self.update_glsl()
+        #self.update_glsl()
         # Return True to accept the key. Otherwise, it will be used by
         # the system.
         return True
