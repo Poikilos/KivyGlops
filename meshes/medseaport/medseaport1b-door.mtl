@@ -1,0 +1,13 @@
+# Blender MTL File: 'None'
+# Material Count: 1
+
+newmtl Wood
+Ns 94.117647
+Ka 1.000000 1.000000 1.000000
+Kd 0.059371 0.024571 0.015506
+Ks 0.025547 0.025547 0.025547
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd medseaport-wood-expertmm.jpg

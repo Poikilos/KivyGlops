@@ -36,13 +36,13 @@ from common import *
 import time
 import random
 
-sub_canvas_enable = False
 missing_bumper_warning_enable = True
 missing_bumpable_warning_enable = True
 missing_radius_warning_enable = True
 out_of_hitbox_note_enable = True
 no_bounds_warning_enable = True
 bounds_warning_enable = True
+_multicontext_enable = False  # only should be set while not running
 
 def get_distance_kivyglops(a_glop, b_glop):
     return math.sqrt((b_glop._translate_instruction.x - a_glop._translate_instruction.x)**2 +
@@ -96,18 +96,24 @@ class KivyGlop(Widget, PyGlop):
     _pushmatrix = None
     _updatenormalmatrix = None
     _popmatrix = None
+    _own_shader_enable = None
+    show_next_no_mesh_warning_enable = None
 
     def __init__(self):
         super(KivyGlop, self).__init__()  # only does class inherited FIRST (see class line above)
         self._init_glop()
+        self._own_shader_enable = False  # if False during add_glop, gets shader of parent if _multicontext_enable, else does nothing either way
+        self.show_next_no_mesh_warning_enable = True
         #self.freeAngle = 0.0
         #self.degreesPerSecond = 0.0
         #self.freePos = (10.0,100.0)
 
         #TODO: use a RenderContext instead?
         #self.canvas = RenderContext()
-        self.canvas = RenderContext(use_parent_projection=True, use_parent_modelview=True)  # compute_normal_mat=False, 
-        #self.canvas = InstructionGroup()
+        if _multicontext_enable:
+            self.canvas = RenderContext(use_parent_projection=True, use_parent_modelview=True, use_parent_frag_modelview=True)  # compute_normal_mat=False, 
+        else:
+            self.canvas = InstructionGroup()
         self.canvas.clear()
         self._context_instruction = ContextInstruction()
 
@@ -124,7 +130,7 @@ class KivyGlop(Widget, PyGlop):
         self._scale_instruction = Scale(1.0,1.0,1.0)
         #self._scale_instruction.origin = self._pivot_point
         self._translate_instruction = Translate(0, 0, 0)
-        self._color_instruction = Color(1.0, 0.0, 1.0, 1.0)  # TODO: eliminate this in favor of canvas["mat_diffuse_color"]
+        self._color_instruction = Color(1.0, 0.0, 1.0, 1.0)  # TODO: eliminate this in favor of self.set_uniform("mat_diffuse_color", (1.0, 0.0, 1.0, 1.0))
 
         self.generate_axes()
 
@@ -134,6 +140,10 @@ class KivyGlop(Widget, PyGlop):
             result = str(type(self)) + " named " + str(self.name) + \
                    " at " + str(self._translate_instruction.xyz)
         return result
+    
+    def emit_debug_to_dict(self, dest):
+        dest["pos"] = str( (self._translate_instruction.x, self._translate_instruction.y, self._translate_instruction.z) )
+
         
     def save(self, path):
         lines = []
@@ -618,7 +628,7 @@ class KivyGlop(Widget, PyGlop):
         if self._mesh is not None and this_texture_image is not None:
             self._mesh.texture = this_texture_image.texture
             context = self.get_context()
-            context["texture0_enable"] = True
+            self.set_uniform("texture0_enable", True)
         return this_texture_image
 
     def is_linked_as(self, this_glop, as_rel):
@@ -716,6 +726,20 @@ class KivyGlop(Widget, PyGlop):
         else:
             print("[ KivyGlop ] WARNING: vertices is None in glop " + str(self.name))
 
+    def set_uniform(self, name, val):
+        if _multicontext_enable:
+            self.canvas[name] = val
+        else:
+            #can't do it so don't try
+            pass
+
+    def get_uniform(self, name):
+        if _multicontext_enable:
+            return self.canvas[name]
+        else:
+            #can't do it so don't try
+            return None
+
     def prepare_canvas(self, use_meshes=None):
         if self._mesh is None:
             #verts, indices = self.generate_kivy_mesh()
@@ -731,7 +755,7 @@ class KivyGlop(Widget, PyGlop):
         
         #self.generate_axes()
         #self.generate_plane()
-        self.canvas["texture0_enable"] = 0
+        self.set_uniform("texture0_enable", False)
         for use_mesh in use_meshes:
             #self._axes_mesh.
             #self._scale_instruction = Scale(0.6)
@@ -763,10 +787,10 @@ class KivyGlop(Widget, PyGlop):
                 if get_verbose_enable():
                     print("[ KivyGlop ] (verbose message) Added mesh to render context.")
                 if use_mesh.texture is not None:
-                    self.canvas["texture0_enable"] = 1
+                    self.set_uniform("texture0_enable", True)
                 else:
-                    self.canvas["texture0_enable"] = 0
-                print("[ KivyGlop ] (verbose message) texture0_enable: " + str(self.canvas["texture0_enable"]))
+                    self.set_uniform("texture0_enable", False)
+                print("[ KivyGlop ] (verbose message) texture0_enable: " + str(self.get_uniform("texture0_enable")))
             else:
                 if get_verbose_enable():
                     print("[ KivyGlop ] (verbose message) NOT adding mesh None at " + str(m_i) + ".")
@@ -794,7 +818,6 @@ class KivyGlops(PyGlops):
     projection_near = None
     look_point = None
     focal_distance = None  # exists so look_point has more freedom
-    camera_walk_units_per_second = None
     selected_glop = None
     selected_glop_index = None
     mode = None
@@ -825,8 +848,6 @@ class KivyGlops(PyGlops):
         #region moved from ui
         self.world_boundary_min = [None,None,None]
         self.world_boundary_max = [None,None,None]
-        self.camera_walk_units_per_second = 12.0
-        self.camera_turn_radians_per_second = math.radians(90.0)
         self.mode = MODE_EDIT
         self.player1_controller = PyRealTimeController()
         self.controllers.append(self.player1_controller)
@@ -842,13 +863,11 @@ class KivyGlops(PyGlops):
         #x,y,z where y is up:
         self.player_glop._translate_instruction.x = 0
         self.player_glop._translate_instruction.y = 0
-        self.player_glop._translate_instruction.z = 25
+        self.player_glop._translate_instruction.z = 25  # + toward view
                         
         self.player_glop._rotate_instruction_x.angle = 0.0
         self.player_glop._rotate_instruction_y.angle = math.radians(-90.0)  # [math.radians(-90.0), 0.0, 1.0, 0.0]
         self.player_glop._rotate_instruction_z.angle = 0.0
-        self.camera_walk_units_per_frame = self.camera_walk_units_per_second / self.ui.frames_per_second
-        self.camera_turn_radians_per_frame = self.camera_turn_radians_per_second / self.ui.frames_per_second
         #region moved from ui
         
         self.set_camera_mode(self.CAMERA_FIRST_PERSON())
@@ -872,6 +891,8 @@ class KivyGlops(PyGlops):
                 print("WARNING: glop array changed during init, and self._player_glop_index could not be detected.")
         #self._bumper_indices.append(self._player_glop_index)
         this_actor_dict = dict()
+        this_actor_dict["land_units_per_second"] = 12.0
+        this_actor_dict["land_degrees_per_second"] = 90.0
         self.set_as_actor_at(self._player_glop_index, this_actor_dict)
         #NOTE: set_as_actor_at sets hitbox to None if has no vertices
 
@@ -1158,8 +1179,11 @@ class KivyGlops(PyGlops):
         if self.player1_controller.get_pressed(self.ui.get_keycode("enter")):
             self.use_selected(self.player_glop)
 
+        walk_units_per_frame = float(self.player_glop.actor_dict["land_units_per_second"]) / self.ui.frames_per_second
+        turn_radians_per_frame = math.radians(float(self.player_glop.actor_dict["land_degrees_per_second"])) / self.ui.frames_per_second
+
         if rotation_multiplier_y != 0.0:
-            delta_y = self.camera_turn_radians_per_frame * rotation_multiplier_y
+            delta_y = turn_radians_per_frame * rotation_multiplier_y
             self.player_glop._rotate_instruction_y.angle += delta_y
             #origin_distance = math.sqrt(self.player_glop._translate_instruction.x*self.player_glop._translate_instruction.x + self.player_glop._translate_instruction.z*self.player_glop._translate_instruction.z)
             #self.player_glop._translate_instruction.x -= origin_distance * math.cos(delta_y)
@@ -1175,11 +1199,10 @@ class KivyGlops(PyGlops):
             if moving_r_multiplier > 1.0:
                 moving_r_multiplier = 1.0  # Limited so that you can't move faster when moving diagonally
 
-
             #TODO: reprogram so adding math.radians(-90) is not needed (?)
-            position_change[0] = self.camera_walk_units_per_frame*moving_r_multiplier * math.cos(self.player_glop._rotate_instruction_y.angle+moving_theta+math.radians(-90))
-            position_change[1] = self.camera_walk_units_per_frame*moving_y
-            position_change[2] = self.camera_walk_units_per_frame*moving_r_multiplier * math.sin(self.player_glop._rotate_instruction_y.angle+moving_theta+math.radians(-90))
+            position_change[0] = walk_units_per_frame*moving_r_multiplier * math.cos(self.player_glop._rotate_instruction_y.angle+moving_theta+math.radians(-90))
+            position_change[1] = walk_units_per_frame*moving_y
+            position_change[2] = walk_units_per_frame*moving_r_multiplier * math.sin(self.player_glop._rotate_instruction_y.angle+moving_theta+math.radians(-90))
 
             # if (self.player_glop._translate_instruction.x + move_by_x > self._world_cube.get_max_x()):
             #     move_by_x = self._world_cube.get_max_x() - self.player_glop._translate_instruction.x
@@ -1256,8 +1279,8 @@ class KivyGlops(PyGlops):
         #self.prev_inbounds_camera_translate = self.camera_glop._translate_instruction.x, self.camera_glop._translate_instruction.y, self.camera_glop._translate_instruction.z
 
         # else:
-        #     self.camera_glop._translate_instruction.x += self.camera_walk_units_per_frame * moving_x
-        #     self.camera_glop._translate_instruction.z += self.camera_walk_units_per_frame * moving_z
+        #     self.camera_glop._translate_instruction.x += self.walk_units_per_frame * moving_x
+        #     self.camera_glop._translate_instruction.z += self.walk_units_per_frame * moving_z
         
         ##############################  DONE FINALIZING PLAYER LOCATION  ##############################
         
@@ -1391,9 +1414,9 @@ class KivyGlops(PyGlops):
         
         #endregion tried to move to pyglops but didn't work well
 
-        if get_verbose_enable():
+        #if get_verbose_enable():
             #print("update_glsl...")
-            print("[ KivyGlops ] (verbose message) update matrices...")
+            #print("[ KivyGlops ] (verbose message) update matrices...")
         asp = float(self.ui.width) / float(self.ui.height)
 
         clip_top = 0.06  #NOTE: 0.03 is ~1.72 degrees, if that matters
@@ -1512,6 +1535,10 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
 
     scene = None  # only use for drawing frames and sending input
     frames_per_second = None
+    _last_frame_tick = None
+    _fps_accumulated_time = None
+    _fps_accumulated_count = None
+    _average_fps = None
     _contexts = None # InstructionGroup so gl operations can be added in realtime (after resetCallback is added, but so resetCallback is on the stack after them)
     #region Window TODO: rename to _*
     use_button = None  
@@ -1524,10 +1551,13 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
     hud_buttons_form = None
     gl_widget = None
     #endregion Window
+    
 
     def __init__(self, **kwargs):
         #self.scene = KivyGlops()
         #self.scene.ui = self
+        self._fps_accumulated_time = 0.0
+        self._fps_accumulated_count = 0
         self.frames_per_second = 60.0
         self.gl_widget = GLWidget()
         self.hud_form = HudForm(orientation="vertical",
@@ -1560,8 +1590,16 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         #self.gl_widget.canvas.shader.source = resource_find('shade-kivyglops-standard.glsl')  # NOT working
         #self.gl_widget.canvas.shader.source = resource_find('shade-normal-only.glsl') #partially working
         #self.gl_widget.canvas.shader.source = resource_find('shade-texture-only.glsl')
-        #self.gl_widget.canvas.shader.source = resource_find('shade-kivyglops-minimal.glsl')  # NOT working
-        self.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','fresnel.glsl'))
+        #self.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','fresnel.glsl'))
+        shader_path = None
+        if _multicontext_enable:
+            #self.gl_widget.canvas.shader.source = resource_find('kivyglops-testing.glsl')  # NOT working
+            shader_path = os.path.join('shaders','kivyglops.glsl')
+        else:
+            shader_path = os.path.join('shaders','kivyglops-singlecontext.glsl')
+        print("[ KivyGlopsWindow ] default shader has been set to '" + \
+              shader_path + "'")
+        self.gl_widget.canvas.shader.source = resource_find(shader_path)
 
         #formerly, .obj was loaded here using load_obj (now calling program does that)
 
@@ -1713,11 +1751,13 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             self._contexts.add(this_glop.get_context())  # _contexts is a visible instruction group
             if get_verbose_enable():
                 print("[ KivyGlopsWindow ] Appended Glop (count:" + str(len(self.scene.glops)) + ").")
-            this_glop.canvas.shader.source = self.gl_widget.canvas.shader.source
-            #NOTE: projectionMatrix and modelViewMatrix don't exist yet if add_glop was called before first frame! 
-            #this_glop.canvas['projection_mat'] = self.scene.
-            #this_glop.canvas['modelview_mat'] = self.scene.modelViewMatrix
-            this_glop.canvas["camera_world_pos"] = [self.scene.camera_glop._translate_instruction.x, self.scene.camera_glop._translate_instruction.y, self.scene.camera_glop._translate_instruction.z]
+            if _multicontext_enable:
+                if not this_glop._own_shader_enable:
+                    this_glop.canvas.shader.source = self.gl_widget.canvas.shader.source
+                #NOTE: projectionMatrix and modelViewMatrix don't exist yet if add_glop was called before first frame! 
+                #this_glop.set_uniform("projection_mat", self.scene.projectionMatrix)
+                #this_glop.set_uniform("modelview_mat", self.scene.modelViewMatrix)
+                this_glop.set_uniform("camera_world_pos", [self.scene.camera_glop._translate_instruction.x, self.scene.camera_glop._translate_instruction.y, self.scene.camera_glop._translate_instruction.z])
 
         except:
             print("[ KivyGlopsWindow ] ERROR: Could not finish " + participle + " in KivyGlops load_obj")
@@ -1735,6 +1775,21 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         self.gl_widget.canvas.add(self.resetCallback)
 
     def update_glsl(self, *largs):
+        actual_fps = None
+        actual_frame_interval = None
+        
+        if self._last_frame_tick is not None:
+            #NOTE: best_timer() is a second
+            actual_frame_interval = best_timer() - self._last_frame_tick
+            self._fps_accumulated_time += actual_frame_interval
+            self._fps_accumulated_count += 1
+            if self._fps_accumulated_time > .5:
+                self._average_fps = 1.0 / (self._fps_accumulated_time/float(self._fps_accumulated_count))
+                self._fps_accumulated_time = 0.0
+                self._fps_accumulated_count = 0
+            if actual_frame_interval > 0.0:
+                actual_fps = 1.0 / actual_frame_interval
+        self._last_frame_tick = best_timer()
         if not self.scene._load_glops_enable:
             
             if not self.scene._visual_debug_enable:
@@ -1776,6 +1831,8 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             if "View" not in debug_dict:
                 debug_dict["View"] = dict()
             debug_dict["View"]["camera x,y: "] = str((self.scene.camera_glop._translate_instruction.x, self.scene.camera_glop._translate_instruction.y))
+            if self._average_fps is not None:
+                debug_dict["View"]["fps"] = str(self._average_fps)
             #global debug_dict
             #if "Player" not in debug_dict:
             #    debug_dict["Player"] = {}
@@ -1795,8 +1852,8 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             #forcibly use parent info (should not be needed if use_parent_projection use_parent_modelview use_parent_frag_modelview options of RenderContext constructor for canvas of children)
             #for i in range(len(self.scene.glops)):
                 #this_glop = self.scene.glops[i]
-                #this_glop.canvas['modelview_mat'] = self.scene.modelViewMatrix
-                #this_glop.canvas["camera_world_pos"] = [self.scene.camera_glop._translate_instruction.x, self.scene.camera_glop._translate_instruction.y, self.scene.camera_glop._translate_instruction.z]
+                #this_glop.set_uniform("modelview_mat", self.scene.modelViewMatrix)
+                #this_glop.set_uniform("camera_world_pos", [self.scene.camera_glop._translate_instruction.x, self.scene.camera_glop._translate_instruction.y, self.scene.camera_glop._translate_instruction.z])
         else: # if self.scene._load_glops_enable:
             self.debug_label.opacity = 1.0
             self.scene._load_glops_enable = False
@@ -1826,7 +1883,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                 if this_glop._axes_mesh is not None:
                     this_glop.prepare_canvas([this_glop._axes_mesh])
                     context = this_glop.get_context()
-                    this_glop.canvas["texture0_enable"] = 0
+                    this_glop.set_uniform("texture0_enable", False)
                 else:
                     print("[ KivyGlopsWindow ] ERROR: no _axes_mesh" + \
                           " for glop '" + str(this_glop.name) + "'")
@@ -1837,9 +1894,15 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             #self._contexts.clear()
             for this_glop in self.scene.glops:
                 this_glop.prepare_canvas([this_glop._mesh])
-                context = this_glop.get_context()
-                if this_glop._mesh.texture is not None:
-                    this_glop.canvas["texture0_enable"] = 1
+                if this_glop._mesh is not None:
+                    if this_glop._mesh.texture is not None:
+                        this_glop.set_uniform("texture0_enable", True)
+                else:
+                    #doesn't actually matter
+                    if get_verbose_enable():
+                        if this_glop.show_next_no_mesh_warning_enable:
+                            this_glop.show_next_no_mesh_warning_enable = False
+                            print("[ " + str(type(self)) + " ] WARNING: _mesh is None for " + str(this_glop.name))
             print("_visual_debug_enable: False")
 
     def update_debug_label(self):
@@ -1899,9 +1962,9 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         if keycode[1] == 'escape':
             pass  #keyboard.release()
         # elif keycode[1] == 'w':
-        #     self.scene.player_glop._translate_instruction.z += self.camera_walk_units_per_frame
+        #     self.scene.player_glop._translate_instruction.z += self.walk_units_per_frame
         # elif keycode[1] == 's':
-        #     self.scene.player_glop._translate_instruction.z -= self.camera_walk_units_per_frame
+        #     self.scene.player_glop._translate_instruction.z -= self.walk_units_per_frame
         # elif text == 'a':
         #     self.scene.player1_controller["left"] = True
         #     self.moving_x = -1.0
@@ -1937,10 +2000,22 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         # else:
         #     print('Pressed unused key: ' + str(keycode) + "; text:"+text)
 
-        if get_verbose_enable():
-            self.print_location()
-            print("[ KivyGlopsWindow ] cene.camera_glop._rotate_instruction_y.angle: " + str(self.scene.camera_glop._rotate_instruction_y.angle))
-            print("[ KivyGlopsWindow ] modelview_mat: " + str(self.gl_widget.canvas['modelview_mat']))
+        global debug_dict
+        if "View" not in debug_dict:
+            debug_dict["View"] = {}
+        debug_dict["View"]["modelview_mat"] = str(self.gl_widget.canvas['modelview_mat'])
+        if "camera_glop" not in debug_dict:
+            debug_dict["camera_glop"] = {}
+        debug_dict["camera_glop"]["rot_y"] = str(self.scene.camera_glop._rotate_instruction_y.angle)
+        if "player_glop" not in debug_dict:
+            debug_dict["player_glop"] = {}
+        debug_dict["player_glop"]["land_units_per_second"] = self.scene.player_glop.actor_dict["land_units_per_second"]
+        self.scene.camera_glop.emit_debug_to_dict(debug_dict["camera_glop"])
+        
+
+        #if get_verbose_enable():
+            #print("[ KivyGlopsWindow ] scene.camera_glop._rotate_instruction_y.angle: " + str(self.scene.camera_glop._rotate_instruction_y.angle))
+            #print("[ KivyGlopsWindow ] modelview_mat: " + str(self.gl_widget.canvas['modelview_mat']))
         #self.update_glsl()
         # Return True to accept the key. Otherwise, it will be used by
         # the system.

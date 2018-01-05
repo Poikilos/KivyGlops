@@ -42,13 +42,13 @@ class MainScene(KivyGlops):
     def load_glops(self):
         test_space_enable = False
         test_medieval_enable = True
-        test_shader_enable = True
+        test_shader_enable = False
         #NOTE: default gl_widget shader is already loaded by KivyGlops
-        #self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','simple1b.glsl'))
-        #self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','shade-normal-only.glsl'))  # partially working
-        #self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','shade-texture-only.glsl'))
-        #self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','shade-kivyglops-minimal.glsl'))
-        #self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','fresnel.glsl'))
+        #self.ui.gl_widget._multicontext_enable resource_find(os.path.join('shaders','simple1b.glsl'))
+        #self.ui.gl_widget._multicontext_enable resource_find(os.path.join('shaders','shade-normal-only.glsl'))  # partially working
+        #self.ui.gl_widget._multicontext_enable resource_find(os.path.join('shaders','shade-texture-only.glsl'))
+        #self.ui.gl_widget._multicontext_enable resource_find(os.path.join('shaders','shade-kivyglops-minimal.glsl'))
+        #self.ui.gl_widget._multicontext_enable resource_find(os.path.join('shaders','fresnel.glsl'))
 
         #self.load_obj("barrels triangulated (Costinus at turbosquid).obj")
         #self.load_obj("barrel.obj")
@@ -85,13 +85,14 @@ class MainScene(KivyGlops):
             #self.load_obj("etc\\problematic mesh files\\medseaport1b-floor_glrepeat.obj")
             #self.load_obj("medseaport1b-lowpoly.obj")
             #seaport_name = "medseaport1b-techdemo.obj"
-            seaport_name = "medseaport1b-techdemo.obj"
+            #seaport_name = "medseaport1b-techdemo.obj"
+            seaport_name = "medseaport1b-door.obj"
             #seaport_name = "medseaport1b-minimal.obj"
-            #kgt_path = os.path.join( os.path.join(profile_path, "Desktop"), "KivyGlopsTesting")
-            kgt_path = os.path.join("meshes", "medseaport")
+            #testing_path = os.path.join( os.path.join(profile_path, "Desktop"), "KivyGlopsTesting")
+            testing_path = os.path.join("meshes", "medseaport")
             seaport_path = resource_find(seaport_name)
             if seaport_path is None:
-                seaport_path = os.path.join(kgt_path, seaport_name)
+                seaport_path = os.path.join(testing_path, seaport_name)
             if os.path.isfile(seaport_path):
                 self.load_obj(seaport_path, pivot_to_geometry_enable=True)
             else:
@@ -124,14 +125,15 @@ class MainScene(KivyGlops):
             item_dict["name"] = "crate"
             item_dict["use_sound"] = "sounds/woosh-medium.wav"
             for index in self.get_indices_of_similar_names("crate"):
-                self.set_as_item_by_index(index, item_dict)
-                self.add_bump_sound_by_index(index, "sounds/crate-drop2.wav")
-                self.add_bump_sound_by_index(index, "sounds/crate-drop3.wav")
-                self.add_bump_sound_by_index(index, "sounds/crate-drop4.wav")
-                self.add_bump_sound_by_index(index, "sounds/crate-drop5.wav")
-                self.add_bump_sound_by_index(index, "sounds/crate-drop6.wav")
-                self.add_bump_sound_by_index(index, "sounds/crate-drop7.wav")
-                self.add_bump_sound_by_index(index, "sounds/crate-drop8.wav")
+                self.set_as_item_at(index, item_dict)
+                self.add_bump_sound_at(index, "sounds/crate-drop1.wav")
+                self.add_bump_sound_at(index, "sounds/crate-drop2.wav")
+                self.add_bump_sound_at(index, "sounds/crate-drop3.wav")
+                self.add_bump_sound_at(index, "sounds/crate-drop4.wav")
+                self.add_bump_sound_at(index, "sounds/crate-drop5.wav")
+                self.add_bump_sound_at(index, "sounds/crate-drop6.wav")
+                self.add_bump_sound_at(index, "sounds/crate-drop7.wav")
+                self.add_bump_sound_at(index, "sounds/crate-drop8.wav")
             self.set_background_cylmap(os.path.join("maps","sky-texture-seamless.jpg"))
         if test_space_enable:
             self.set_background_cylmap("starfield1-coryg89.jpg")
@@ -145,7 +147,7 @@ class MainScene(KivyGlops):
             ship_info["hp"] = 1.0
 
             player1_index = self.get_player_glop_index(1)
-            #self.set_as_actor_by_index(player1_index, ship_info)  # already done by PyGlops or KivyGlops __init__
+            #self.set_as_actor_at(player1_index, ship_info)  # already done by PyGlops or KivyGlops __init__
 
             weapon = dict()
             weapon["droppable"] = "no"
@@ -160,7 +162,7 @@ class MainScene(KivyGlops):
             enemy_indices = self.get_indices_by_source_path("spaceship,simple-denapes.obj")
             for i in range(0,len(enemy_indices)):
                 index = enemy_indices[i]
-                self.set_as_actor_by_index(index, ship_info)
+                self.set_as_actor_at(index, ship_info)
                 self.add_actor_weapon(index, weapon)
                 print("[ testing ] #" + str(index) + " named " + str(self.glops[index].name) + " added as enemy") 
             print("[ testing ] " + str(len(enemy_indices)) + " enemies found.") 
@@ -169,7 +171,7 @@ class MainScene(KivyGlops):
     def attacked_glop(self, attacked_index, attacker_index, weapon_dict):
         self.glops[attacked_index].actor_dict["hp"] -= weapon_dict["hit_damage"]
         if self.glops[attacked_index].actor_dict["hp"] <= 0:
-            self.explode_glop_by_index(attacked_index, weapon_dict)
+            self.explode_glop_at(attacked_index, weapon_dict)
             print("[ testing ] (attacked_glop: after exploding) HP: "+str(self.glops[attacked_index].actor_dict["hp"]))
         else:
             print("[ testing ] (attacked_glop) HP: "+str(self.glops[attacked_index].actor_dict["hp"]))

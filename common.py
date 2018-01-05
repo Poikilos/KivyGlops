@@ -3,8 +3,11 @@ import traceback
 import copy
 import string
 
-verbose_enable = False
+verbose_enable = True
 debug_dict = dict()  # constantly-changing variables, for visual debug
+
+def get_verbose_enable():
+    return verbose_enable
 
 class ScopeInfo:
     indent = None
@@ -37,7 +40,8 @@ def get_dict_deepcopy(old_dict):
     return new_dict
 
 valid_path_name_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
-print("Using valid_path_name_chars: '" + valid_path_name_chars + "'")
+if verbose_enable:
+    print("Using valid_path_name_chars: '" + valid_path_name_chars + "'")
 
 def find_any_not(haystack, needles):
     result = -1

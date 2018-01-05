@@ -34,6 +34,17 @@ Control 3D objects and the camera in your 3D Kivy app!
 * if segfault occurs, maybe camera and look_at location are same
 
 ## Changes
+        self.camera_walk_units_per_second = 12.0
+        self.camera_turn_radians_per_second = math.radians(90.0)
+
+* (2018-01-04) eliminated scene.log_camera_info(); created kivyglop.emit_debug_to_dict(dict); moved ui's camera_walk_units_per_second and camera_turn_radians_per_second to *_glop.actor_dict["land_units_per_second"] and "land_degrees_per_second" (player_glop in this case); changed their per_frame equivalents to local variables in kivyglops.update
+* (2018-01-04) pyglops.py: removed uses of `Logger` to `print` to be framework-independent 
+* (2018-01-04) consolidated get_verbose_enable() to be in one file only (common.py)
+* (2018-01-04) renamed print_location to log_camera_info
+* (2018-01-04) made _multicontext_enable global (if false, glop gets InstructionGroup as canvas instead of RenderContext)
+* (2018-01-04) added `use_parent_frag_modelview=True` to RenderContext constructor for KivyGlop
+* (2018-01-04) renamed shade-kivyglops-minimal.glsl to kivyglops-testing.glsl
+* (2018-01-04) fresnel.glsl utilize per-object booleans; 
 * (2018-01-03) changed `set_player_fly(self, fly_enable)` to `set_player_fly(self, player_number, fly_enable)`
 * (2018-01-03) renamed set_as_item_by_index to set_as_item_at; set_as_actor_by_index to set_as_actor_at; explode_glop_by_index to explode_glop_at; kill_glop_by_index to kill_glop_at; give_item_by_index_to_player_number to give_item_index_to_player_number; obtain_glop_by_index to obtain_glop_at; add_bump_sound_by_index to add_bump_sound_at; select_mesh_by_index to select_mesh_at
 * (2018-01-03) added use_walkmesh_at method for using walkmesh when you know glop index
@@ -192,7 +203,7 @@ Control 3D objects and the camera in your 3D Kivy app!
 * Implement fresnel_away_color fresnel_toward_color (can have alpha, and can be used for fake SSS)
 * Implement full-screen shaders
 * Add a plasma effect to example (such as using plasma shader from C:\Kivy-1.8.0-py3.3-win32\kivy\examples\shader\plasma.py)
-    (note that the following uniforms need to be added:
+    (note that the following uniforms would need to be added for that example:
         self.canvas['time'] = Clock.get_boottime()
         self.canvas['resolution'] = list(map(float, self.size))
     )
@@ -219,6 +230,7 @@ uniform mat4 modelview_mat;  //derived from self.canvas["modelview_mat"] = model
 uniform mat4 projection_mat;  //derived from self.canvas["projection_mat"] = projectionMatrix
 
 ## Developer Notes
+* for glop to have custom shader, set kivyglop._own_shader_enable before adding glop, or add shader after calling add_glop
 * eventually dat will contain everything, so that emit_yaml can eventually be used to save glop format ("tmp" dict member should not be saved)
 (these notes only apply to modifying the KivyGlops project files including PyGlops, or making a new subclass of PyGlop*)
 * ui is usually a KivyGlopsWindow but could be other frameworks. Must have:

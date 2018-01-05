@@ -11,6 +11,7 @@ attribute vec4  a_normal;
 
 uniform mat4 modelview_mat;
 uniform mat4 projection_mat;
+//uniform bool texture0_enable;
 //uniform material  material_state;
 
 varying vec4 v_color;
@@ -47,6 +48,7 @@ varying vec2 uv_vec;
 varying vec3 v_normal;
 varying vec4 v_pos;
 uniform vec3 camera_world_pos;
+//uniform bool texture0_enable;
 
 uniform sampler2D tex;
 
@@ -62,7 +64,12 @@ void main (void){
     float fresnel_sharpness = default_fresnel_sharpness;
     vec4 tex_color = texture2D(tex, uv_vec);
     vec4 color = v_color;
-	color = mix(v_color, tex_color, tex_color.a);
+    //if (texture0_enable) {
+        //if (tex_color.a>0.0) {
+        //    color = mix(v_color, tex_color, tex_color.a);
+        //}
+        color = tex_color;
+    //}
     vec3 V = normalize( camera_world_pos.xyz - v_pos.xyz );  // normalize( _WorldSpaceCameraPos.xyz - i.posWorld );
     vec3 N = normalize(v_normal); //normalize( i.normalDir );
     float fresnel = pow( 1.0 - dot( N, V), fresnel_sharpness ); //pow( 1.0 - dot( N, V), _sharpness );

@@ -27,10 +27,9 @@ import time
 
 tab_string = "  "
 
-verbose_enable = True
+#verbose_enable = True  # see get_verbose_enable() in common.py instead
 
-def get_verbose_enable():
-    return verbose_enable
+
 
 #references:
 #kivy-trackball objloader (version with no MTL loader) by nskrypnik
@@ -2372,10 +2371,6 @@ class PyGlops:
             self.world_boundary_min = [None,None,None]
             self.world_boundary_max = [None,None,None]
 
-    def print_location(self):
-        if get_verbose_enable():
-            Logger.debug("self.camera_walk_units_per_second:"+str(self.camera_walk_units_per_second)+"; location:"+str( (self.camera_glop._translate_instruction.x, self.camera_glop._translate_instruction.y, self.camera_glop._translate_instruction.z) ))
-
     #def get_keycode(self, key_name):
     #    print("ERROR: get_keycode must be implemented by the framework-specific subclass")
     #    return None
@@ -2388,7 +2383,7 @@ class PyGlops:
         if (index>=glops_count):
             index=0
         if get_verbose_enable():
-            Logger.debug("trying to select index "+str(index)+" (count is "+str(glops_count)+")...")
+            print("trying to select index "+str(index)+" (count is "+str(glops_count)+")...")
         if (glops_count > 0):
             self.selected_glop_index = index
             self.selected_glop = self.glops[index]

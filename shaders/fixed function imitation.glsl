@@ -4,18 +4,18 @@
 // * instances of (int)x changed to int(x)
 // * i is initialized in the 'for' statement instead of before it
 // * removed mvp_matrix and instead added projection_matrix
-// * changed a_texcoord[0] & a_texcoord[1] to a_texcoord0 & a_texcoord1
+// * changed a_texcoord[0] a_texcoord[1] to a_texcoord0 a_texcoord1
 
 //(FRAGMENT SHADER is from earlier in the chapter but modified to work with VERTEX SHADER,
 //but is NOT TESTED)
 
-//		Transform the normal and position to eye space, if required (typically required for lighting). Rescale or normalization of normal is also performed.
-//		Computes the OpenGL ES 1.1 vertex lighting equation for up to eight directional, point, or spot lights with two-sided lighting and color material per vertex.
-//		Transform texture coordinates for up to two texture coordinates per vertex.
-//		Compute fog factor passed to fragment shader. The fragment shader uses the fog factor to interpolate between fog color and vertex color.
-//		Computes per-vertex user clip plane factor. Only one user clip plane is supported.
-//		Transform position to clip space.
-//							-Munshi (Ch. 8)
+//      Transform the normal and position to eye space, if required (typically required for lighting). Rescale or normalization of normal is also performed.
+//      Computes the OpenGL ES 1.1 vertex lighting equation for up to eight directional, point, or spot lights with two-sided lighting and color material per vertex.
+//      Transform texture coordinates for up to two texture coordinates per vertex.
+//      Compute fog factor passed to fragment shader. The fragment shader uses the fog factor to interpolate between fog color and vertex color.
+//      Computes per-vertex user clip plane factor. Only one user clip plane is supported.
+//      Transform position to clip space.
+//                          -Munshi (Ch. 8)
 
 
 //******************************************************************
@@ -72,7 +72,7 @@ uniform mat4      projection_matrix;   // combined model-view +
 uniform mat4      modelview_matrix;     // model view matrix
 uniform mat3      inv_modelview_matrix; // inverse model-view
                                         // matrix used
-										// to transform normal
+                                        // to transform normal
 uniform mat4      tex_matrix[NUM_TEXTURES]; // texture matrices
 uniform bool      enable_tex[NUM_TEXTURES]; // texture enables
 uniform bool      enable_tex_matrix[NUM_TEXTURES]; // texture matrix
@@ -334,13 +334,13 @@ uniform sampler2D s_baseMap;
 uniform sampler2D s_lightMap;
 void main()
 {
-	vec4 baseColor;
-	vec4 lightColor;
-	if (enable_tex[indx_one]) {
-		baseColor = texture2D(s_baseMap, v_texCoord);
-		lightColor = texture2D(s_lightMap, v_texCoord);
-		gl_FragColor = baseColor * (lightColor + 0.25);
-	}
-	else {
-	}
+    vec4 baseColor;
+    vec4 lightColor;
+    if (enable_tex[indx_one]) {
+        baseColor = texture2D(s_baseMap, v_texCoord);
+        lightColor = texture2D(s_lightMap, v_texCoord);
+        gl_FragColor = baseColor * (lightColor + 0.25);
+    }
+    else {
+    }
 }
