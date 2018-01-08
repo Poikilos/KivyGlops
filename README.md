@@ -250,6 +250,15 @@ uniform mat4 projection_mat;  //derived from self.canvas["projection_mat"] = pro
 * All subclasses of PyGlops should overload __init__, call super at beginning of it, and glops_init at end of it, like KivyGlops does.
 * PyGlops module (which does not require Kivy) loads obj files using intermediate WObjFile class (planned: save&load native PyGlops files), and provides base classes for all classes in KivyGlops module
 
+### Kivy `instructions` library notes
+(see <https://github.com/kivy/kivy/blob/master/kivy/graphics/instructions.pxd>)
+* RenderContext is a subclass of Canvas but adds many features such as:
+    * `set_texture(index,texture)`
+    * `push_state(name)` `pop_state(name)` `set_states(dict states)` (not available to python)
+* Canvas is a subclass of InstructionGroup
+* shader values can be set using `set_state` and a subcontext can be created using `push_state` in ContextInstruction 
+* InstructionGroup has `insert(index, instruction)` and `remove(index)` and a list named `children`
+
 ### wmaterial dict spec
 This dict replaces deprecated WMaterial class in wobjfile.py.
 This spec allows one dict to be used to completely store the Wavefront mtl format as per the full mtl spec such as at <http://paulbourke.net/dataformats/mtl/>.
