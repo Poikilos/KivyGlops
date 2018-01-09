@@ -14,29 +14,22 @@ from kivy.core.window import Keyboard
 #from pyrealtime import *
 #from kivy.clock import Clock
 from kivy.input.providers.mouse import MouseMotionEvent
-
 from kivy.factory import Factory
 from kivy.uix.boxlayout import BoxLayout
-
 from kivyglops import *
 #from common import *
-
 import math
 import os
 
 profile_path = None
-
 if 'USERPROFILE' in os.environ:  # if os_name=="windows":
     profile_path = os.environ['USERPROFILE']
 else:
     profile_path = os.environ['HOME']
 
 
-
-
 class MainScene(KivyGlops):
 
-    #def __init__(self, **kwargs):
     def load_glops(self):
         self.load_obj("meshes/stadium,primitive.obj")
 
@@ -95,7 +88,9 @@ class MainScene(KivyGlops):
     def update_glops(self):
         pass
 
+
 scene = MainScene(KivyGlopsWindow())
+
 
 class KivyGlopsExampleApp(App):
     def build(self):

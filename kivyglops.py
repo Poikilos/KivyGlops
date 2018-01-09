@@ -1018,7 +1018,12 @@ class KivyGlops(PyGlops):
                     #cache_name = path_hash.hexdigest()
                     #cache_name = hashlib.ripemd160(source_path).hexdigest()
                     # 20 like SHA-1, but blake2b is more secure:
-                    cache_name = hashlib.blake2b(digest_size=20).hexdigest()
+                    try:
+                        cache_name = hashlib.blake2b(digest_size=20).hexdigest()
+                    except:
+                        cache_name = hashlib.sha1().hexdigest()
+                    # NOTE: at this point, cache_name should be 40 characters
+                    # (since is a hexdigest of a 20-value hash)
                     caches_path = "cache"
                     if not os.path.isdir(caches_path):
                         os.mkdir(caches_path)

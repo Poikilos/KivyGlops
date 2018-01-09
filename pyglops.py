@@ -477,6 +477,20 @@ class PyGlop:
             new_material_method = self.material.new_material
         return self.copy_as_subclass(self.new_glop, new_material_method)
 
+    def get_owner_name(self):
+        result = None
+        if self.item_dict is not None:
+            if "owner" in self.item_dict:
+                result = self.item_dict["owner"]
+        return result
+
+    def get_owner_index(self):
+        result = None
+        if self.item_dict is not None:
+            if "owner_index" in self.item_dict:
+                result = self.item_dict["owner_index"]
+        return result
+
     def copy_as_subclass(self, new_glop_method, new_material_method, copy_verts_by_ref_enable=False):
         target = new_glop_method()
         target.name = self.name #object name such as from OBJ's 'o' statement
@@ -961,32 +975,33 @@ class PyGlop:
         #standard_emit_yaml(lines, min_tab_string, "vertex_info_1D", self.vertices)
         if add_dump_comments_enable:
             lines.append(min_tab_string + "#1D vertex info array, aka:")
-        lines.append(min_tab_string + "vertices:")
         component_offset = 0
         vertex_actual_index = 0
-        for i in range(0,len(self.vertices)):
-            if add_dump_comments_enable:
-                if component_offset==0:
-                    lines.append(min_tab_string + tab_string + "#vertex [" + str(vertex_actual_index) + "]:")
-                elif component_offset==self.COLOR_OFFSET:
-                    lines.append(min_tab_string + tab_string + "#  color:")
-                elif component_offset==self._NORMAL_OFFSET:
-                    lines.append(min_tab_string + tab_string + "#  normal:")
-                elif component_offset==self._POSITION_OFFSET:
-                    lines.append(min_tab_string + tab_string + "#  position:")
-                elif component_offset==self._TEXCOORD0_OFFSET:
-                    lines.append(min_tab_string + tab_string + "#  texcoords0:")
-                elif component_offset==self._TEXCOORD1_OFFSET:
-                    lines.append(min_tab_string + tab_string + "#  texcoords1:")
-            lines.append(min_tab_string + tab_string + "- " + str(self.vertices[i]))
-            component_offset += 1
-            if component_offset==self.vertex_depth:
-                component_offset = 0
-                vertex_actual_index += 1
-
-        lines.append(min_tab_string + "indices:")
-        for i in range(0,len(self.indices)):
-            lines.append(min_tab_string + tab_string + "- " + str(self.indices[i]))
+        if self.vertices is not None:
+            lines.append(min_tab_string + "vertices:")
+            for i in range(0,len(self.vertices)):
+                if add_dump_comments_enable:
+                    if component_offset==0:
+                        lines.append(min_tab_string + tab_string + "#vertex [" + str(vertex_actual_index) + "]:")
+                    elif component_offset==self.COLOR_OFFSET:
+                        lines.append(min_tab_string + tab_string + "#  color:")
+                    elif component_offset==self._NORMAL_OFFSET:
+                        lines.append(min_tab_string + tab_string + "#  normal:")
+                    elif component_offset==self._POSITION_OFFSET:
+                        lines.append(min_tab_string + tab_string + "#  position:")
+                    elif component_offset==self._TEXCOORD0_OFFSET:
+                        lines.append(min_tab_string + tab_string + "#  texcoords0:")
+                    elif component_offset==self._TEXCOORD1_OFFSET:
+                        lines.append(min_tab_string + tab_string + "#  texcoords1:")
+                lines.append(min_tab_string + tab_string + "- " + str(self.vertices[i]))
+                component_offset += 1
+                if component_offset==self.vertex_depth:
+                    component_offset = 0
+                    vertex_actual_index += 1
+        if self.indices is not None:
+            lines.append(min_tab_string + "indices:")
+            for i in range(0,len(self.indices)):
+                lines.append(min_tab_string + tab_string + "- " + str(self.indices[i]))
 
     def on_vertex_format_change(self):
         self.vertex_depth = 0
@@ -1610,7 +1625,8 @@ class PyGlops:
             self.obtain_glop(bumpable_name, bumper_name)  # handler
             self.obtain_glop_at(bumpable_index, bumper_index)  # handler
             #then manually transfer the glop to the player:
-            self.glops[bumpable_index].item_dict["owner"] = self.glops[bumper_index].name            
+            self.glops[bumpable_index].item_dict["owner"] = self.glops[bumper_index].name
+            self.glops[bumpable_index].item_dict["owner_index"] = bumper_index
             item_event = self.glops[bumper_index].push_glop_item(self.glops[bumpable_index], bumpable_index)
             
             #process item event so selected inventory slot gets updated in case that is the found slot for the item:
@@ -2010,6 +2026,7 @@ class PyGlops:
                                                         item_glop.projectile_dict["owner_index"] = user_glop.index
                                                     if "owner" in item_glop.item_dict:
                                                         del item_glop.item_dict["owner"]  # ok since still in projectile_dict if matters
+                                                        del item_glop.item_dict["owner_index"]
                                                     #or useless_string = my_dict.pop('key', None)  # where None causes to return None instead of throwing KeyError if not found
                                                     self.glops[item_glop.item_dict["glop_index"]].physics_enable = True
                                                     throw_speed = 1.0 # meters/sec
