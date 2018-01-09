@@ -53,11 +53,14 @@ def find_any_not(haystack, needles):
 
 def good_path_name(bad_path_name):
     result = ""
-    for i in range(len(bad_path_name)):
-        if not (bad_path_name[i:i+1] in valid_path_name_chars):
-            result += "_"
-        else:
-            result += bad_path_name[i:i+1]
+    if bad_path_name is not None:
+        for i in range(len(bad_path_name)):
+            if not (bad_path_name[i:i+1] in valid_path_name_chars):
+                result += "_"
+            else:
+                result += bad_path_name[i:i+1]
+    else:
+        result = None
     return result
 
 def view_traceback():

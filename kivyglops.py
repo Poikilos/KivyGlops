@@ -5,6 +5,7 @@ It provides features that are specific to display method
 """
 import hashlib
 from pyglops import *
+import uuid
 
 from kivy.resources import resource_find
 from kivy.graphics import *
@@ -890,10 +891,13 @@ class KivyGlops(PyGlops):
             else:
                 print("WARNING: glop array changed during init, and self._player_glop_index could not be detected.")
         #self._bumper_indices.append(self._player_glop_index)
-        this_actor_dict = dict()
-        this_actor_dict["land_units_per_second"] = 12.0
-        this_actor_dict["land_degrees_per_second"] = 90.0
-        self.set_as_actor_at(self._player_glop_index, this_actor_dict)
+        
+        #TODO: why was this code here? it's not good. these are set during update instead now
+        #this_actor_dict = dict()
+        #this_actor_dict["land_units_per_second"] = 12.0
+        #this_actor_dict["land_degrees_per_second"] = 90.0
+        #self.set_as_actor_at(self._player_glop_index, this_actor_dict)
+        
         #NOTE: set_as_actor_at sets hitbox to None if has no vertices
 
     def new_glop(self):
@@ -1022,8 +1026,10 @@ class KivyGlops(PyGlops):
                     if not os.path.isdir(glop_caches_path):
                         os.mkdir(glop_caches_path)
                     cache_path = os.path.join(glop_caches_path, cache_name)
+                    cache_path_enable = False
                     if not os.path.isdir(cache_path):
                         os.mkdir(cache_path)
+                        cache_path_enable = True
                     #super(KivyGlops, self).load_obj(source_path)
                     new_glops = self.get_glop_list_from_obj(source_path, self.new_glop)
                     if new_glops is None:
@@ -1067,7 +1073,13 @@ class KivyGlops(PyGlops):
                             if results is None:
                                 results = list()
                             results.append(len(self.glops)-1)
-                            new_glops[index].save(os.path.join(cache_path, good_path_name(new_glops[index].name) + ".glop"))
+                            if (new_glops[index].name is None) and \
+                               (cache_path_enable):
+                                new_glops[index].name = str(uuid.uuid4())
+                                #else don't create uuid for existing obj file,
+                                #or cache will keep growing
+                            if new_glops[index].name is not None:
+                                new_glops[index].save(os.path.join(cache_path, good_path_name(new_glops[index].name) + ".glop"))
                         if centered:
                             #TODO: apply pivot point instead (change vertices as if pivot point were 0,0,0) to ensure translate 0 is world 0; instead of:
                             #center it (use only one pivot point, so all objects in obj file remain aligned with each other):
@@ -1179,8 +1191,13 @@ class KivyGlops(PyGlops):
         if self.player1_controller.get_pressed(self.ui.get_keycode("enter")):
             self.use_selected(self.player_glop)
 
-        walk_units_per_frame = float(self.player_glop.actor_dict["land_units_per_second"]) / self.ui.frames_per_second
-        turn_radians_per_frame = math.radians(float(self.player_glop.actor_dict["land_degrees_per_second"])) / self.ui.frames_per_second
+        walk_units_per_frame = 12. / self.ui.frames_per_second
+        turn_radians_per_frame = math.radians(90.) / self.ui.frames_per_second
+        if (self.player_glop.actor_dict is not None):
+            if ("land_units_per_second" in self.player_glop.actor_dict):
+                walk_units_per_frame = float(self.player_glop.actor_dict["land_units_per_second"]) / self.ui.frames_per_second
+            if "land_degrees_per_second" in self.player_glop.actor_dict:
+                turn_radians_per_frame = math.radians(float(self.player_glop.actor_dict["land_degrees_per_second"])) / self.ui.frames_per_second
 
         if rotation_multiplier_y != 0.0:
             delta_y = turn_radians_per_frame * rotation_multiplier_y
@@ -2009,7 +2026,8 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         debug_dict["camera_glop"]["rot_y"] = str(self.scene.camera_glop._rotate_instruction_y.angle)
         if "player_glop" not in debug_dict:
             debug_dict["player_glop"] = {}
-        debug_dict["player_glop"]["land_units_per_second"] = self.scene.player_glop.actor_dict["land_units_per_second"]
+        if "land_units_per_second" in self.scene.player_glop.actor_dict:
+            debug_dict["player_glop"]["land_units_per_second"] = self.scene.player_glop.actor_dict["land_units_per_second"]
         self.scene.camera_glop.emit_debug_to_dict(debug_dict["camera_glop"])
         
 

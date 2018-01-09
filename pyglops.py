@@ -573,26 +573,30 @@ class PyGlop:
         pass
 
     def apply_vertex_offset(self, this_point):
-        vertex_count = int(len(self.vertices)/self.vertex_depth)
-        v_offset = 0
-        for i in range(0,3):
-            #intentionally set to rediculously far in opposite direction:
-            self.hitbox.minimums[i] = sys.maxsize
-            self.hitbox.maximums[i] = -sys.maxsize
-        for v_number in range(0, vertex_count):
+        if self.vertices is not None:
+            vertex_count = int(len(self.vertices)/self.vertex_depth)
+            v_offset = 0
             for i in range(0,3):
-                self.vertices[v_offset+self._POSITION_OFFSET+i] -= this_point[i]
-                if self.vertices[v_offset+self._POSITION_OFFSET+i] < self.hitbox.minimums[i]:
-                    self.hitbox.minimums[i] = self.vertices[v_offset+self._POSITION_OFFSET+i]
-                if self.vertices[v_offset+self._POSITION_OFFSET+i] > self.hitbox.maximums[i]:
-                    self.hitbox.maximums[i] = self.vertices[v_offset+self._POSITION_OFFSET+i]
-            this_vertex_relative_distance = get_distance_vec3(self.vertices[v_offset+self._POSITION_OFFSET:], this_point)
-            if this_vertex_relative_distance > self.hit_radius:
-                self.hit_radius = this_vertex_relative_distance
-            #self.vertices[v_offset+self._POSITION_OFFSET+0] -= this_point[0]
-            #self.vertices[v_offset+self._POSITION_OFFSET+1] -= this_point[1]
-            #self.vertices[v_offset+self._POSITION_OFFSET+2] -= this_point[2]
-            v_offset += self.vertex_depth
+                #intentionally set to rediculously far in opposite direction:
+                self.hitbox.minimums[i] = sys.maxsize
+                self.hitbox.maximums[i] = -sys.maxsize
+            for v_number in range(0, vertex_count):
+                for i in range(0,3):
+                    self.vertices[v_offset+self._POSITION_OFFSET+i] -= this_point[i]
+                    if self.vertices[v_offset+self._POSITION_OFFSET+i] < self.hitbox.minimums[i]:
+                        self.hitbox.minimums[i] = self.vertices[v_offset+self._POSITION_OFFSET+i]
+                    if self.vertices[v_offset+self._POSITION_OFFSET+i] > self.hitbox.maximums[i]:
+                        self.hitbox.maximums[i] = self.vertices[v_offset+self._POSITION_OFFSET+i]
+                this_vertex_relative_distance = get_distance_vec3(self.vertices[v_offset+self._POSITION_OFFSET:], this_point)
+                if this_vertex_relative_distance > self.hit_radius:
+                    self.hit_radius = this_vertex_relative_distance
+                #self.vertices[v_offset+self._POSITION_OFFSET+0] -= this_point[0]
+                #self.vertices[v_offset+self._POSITION_OFFSET+1] -= this_point[1]
+                #self.vertices[v_offset+self._POSITION_OFFSET+2] -= this_point[2]
+                v_offset += self.vertex_depth
+        else:
+            print("[ PyGlop ] WARNING in apply_vertex_offset: " + \
+                  " self.vertices is None for " + str(self.name))
 
     def apply_pivot(self):
         self.apply_vertex_offset(self._pivot_point)

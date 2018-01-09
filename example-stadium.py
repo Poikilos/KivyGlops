@@ -34,7 +34,7 @@ else:
 
 
 
-class MainForm(KivyGlopsWindow):
+class MainScene(KivyGlops):
 
     #def __init__(self, **kwargs):
     def load_glops(self):
@@ -70,7 +70,7 @@ class MainForm(KivyGlopsWindow):
         human_info["hp"] = 1.0
 
         player1_index = self.get_player_glop_index(1)
-        self.set_as_actor_by_index(player1_index, human_info)
+        self.set_as_actor_at(player1_index, human_info)
 
         chimp_info = dict()
         chimp_info["hp"] = 1.0
@@ -79,12 +79,12 @@ class MainForm(KivyGlopsWindow):
         print("Found "+str(len(enemy_indices))+" chimp(s)")
         for i in range(0,len(enemy_indices)):
             index = enemy_indices[i]
-            self.set_as_actor_by_index(index, chimp_info)
+            self.set_as_actor_at(index, chimp_info)
 
     def attacked_glop(self, attacked_index, attacker_index, weapon_dict):
         self.scene.glops[attacked_index].actor_dict["hp"] -= weapon_dict["hit_damage"]
         if self.scene.glops[attacked_index].actor_dict["hp"] <= 0:
-            self.explode_glop_by_index(attacked_index, weapon_dict)
+            self.explode_glop_at(attacked_index, weapon_dict)
         print(self.scene.glops[attacked_index].name+"'s hp: "+str(self.scene.glops[attacked_index].actor_dict["hp"]))
 
     def obtain_glop(self, bumpable_name, bumper_name):
@@ -95,10 +95,11 @@ class MainForm(KivyGlopsWindow):
     def update_glops(self):
         pass
 
+scene = MainScene(KivyGlopsWindow())
+
 class KivyGlopsExampleApp(App):
     def build(self):
-        mainform = MainForm()
-        return mainform
+        return scene.ui
         #mainform = MainForm()
         #boxlayout = TextForm()
         #boxlayout.add_widget(mainform)
