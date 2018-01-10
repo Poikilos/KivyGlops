@@ -28,6 +28,30 @@ copy "%SOURCE_DIR%\more credits\*.*" "%DEST_DIR%\more credits"
 md "%DEST_DIR%\maps\"
 copy "%SOURCE_DIR%\maps\*.*" "%DEST_DIR%\maps\"
 
+md "%DEST_DIR%\maps\2D"
+copy "%SOURCE_DIR%\maps\2D\*.*" "%DEST_DIR%\maps\2D\"
+
+md "%DEST_DIR%\maps\gi"
+copy "%SOURCE_DIR%\maps\gi\*.*" "%DEST_DIR%\maps\gi\"
+
+md "%DEST_DIR%\maps\organic"
+copy "%SOURCE_DIR%\maps\organic\*.*" "%DEST_DIR%\maps\organic\"
+
+md "%DEST_DIR%\maps\patterns"
+copy "%SOURCE_DIR%\maps\patterns\*.*" "%DEST_DIR%\maps\patterns\"
+
+md "%DEST_DIR%\maps\planets"
+copy "%SOURCE_DIR%\maps\planets\*.*" "%DEST_DIR%\maps\planets\"
+
+md "%DEST_DIR%\maps\rock"
+copy "%SOURCE_DIR%\maps\rock\*.*" "%DEST_DIR%\maps\rock\"
+
+md "%DEST_DIR%\shaders\"
+copy "%SOURCE_DIR%\shaders\*.*" "%DEST_DIR%\shaders\"
+
+md "%DEST_DIR%\sprites\"
+copy "%SOURCE_DIR%\sprites\*.*" "%DEST_DIR%\sprites\"
+
 IF NOT EXIST "%DEST_DIR%\medseaport1b-minimal.obj" GOTO NOMESH
 IF EXIST "%DEST_DIR%\starfield_cylindrical_map.png.png" del "%DEST_DIR%\starfield_cylindrical_map.png.png"
 IF EXIST "%DEST_DIR%\starfield_cylindrical_map.png" del "%DEST_DIR%\starfield_cylindrical_map.png"

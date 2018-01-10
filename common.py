@@ -3,7 +3,7 @@ import traceback
 import copy
 import string
 
-verbose_enable = True
+verbose_enable = False
 debug_dict = dict()  # constantly-changing variables, for visual debug
 
 def get_verbose_enable():

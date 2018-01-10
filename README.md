@@ -34,27 +34,41 @@ Control 3D objects and the camera in your 3D Kivy app!
 * if segfault occurs, maybe camera and look_at location are same
 
 ## Changes
-        self.camera_walk_units_per_second = 12.0
-        self.camera_turn_radians_per_second = math.radians(90.0)
-
-* (2018-01-04) eliminated scene.log_camera_info(); created kivyglop.emit_debug_to_dict(dict); moved ui's camera_walk_units_per_second and camera_turn_radians_per_second to *_glop.actor_dict["land_units_per_second"] and "land_degrees_per_second" (player_glop in this case); changed their per_frame equivalents to local variables in kivyglops.update
-* (2018-01-04) pyglops.py: removed uses of `Logger` to `print` to be framework-independent 
-* (2018-01-04) consolidated get_verbose_enable() to be in one file only (common.py)
-* (2018-01-04) renamed print_location to log_camera_info
-* (2018-01-04) made _multicontext_enable global (if false, glop gets InstructionGroup as canvas instead of RenderContext)
-* (2018-01-04) added `use_parent_frag_modelview=True` to RenderContext constructor for KivyGlop
-* (2018-01-04) renamed shade-kivyglops-minimal.glsl to kivyglops-testing.glsl
-* (2018-01-04) fresnel.glsl utilize per-object booleans; 
-* (2018-01-03) changed `set_player_fly(self, fly_enable)` to `set_player_fly(self, player_number, fly_enable)`
-* (2018-01-03) renamed set_as_item_by_index to set_as_item_at; set_as_actor_by_index to set_as_actor_at; explode_glop_by_index to explode_glop_at; kill_glop_by_index to kill_glop_at; give_item_by_index_to_player_number to give_item_index_to_player_number; obtain_glop_by_index to obtain_glop_at; add_bump_sound_by_index to add_bump_sound_at; select_mesh_by_index to select_mesh_at
-* (2018-01-03) added use_walkmesh_at method for using walkmesh when you know glop index
-* (2018-01-03) fixed selection crash (issue caused by refactoring)
-* (2018-01-02) changed `new_glop` to `new_material` in KivyGlopsMaterial
-* (2018-01-01) changed KivyGlop canvas to default type instead of InstructionGroup
-    * commented `self.canvas = InstructionGroup` in KivyGlop `__init__`
-    * changed uses of texture0_enable to use canvas as dict
-    * changed init to set it to RenderContext
-    * kivyglops.py (KivyGlop) changed init to manually call _init_glop after __init__ since with multiple inheritance, super only calls first inherited object (first type in parenthesis on `class` line); renamed PyGlop __init__ to _init_glop; changed order of inheritance to `Widget, PyGlop`
+(2018-01-10)
+* move `properties["inventory_items"]` to `actor_dict["inventory_items"]` (same for `"inventory_index"`)
+* move `is_linked_as`, `get_link_as`, `get_link_and_type`, `push_glop_item`, `pop_glop_item` from KivyGlop to PyGlop
+* made `projectile_dict` a deepcopy of `item_glop.item_dict["as_projectile"]` instead of a reference since `projectile_dict` contains flight-specific information
+* changed `item["use"] = "*"` to `item["uses"] = ["*"]`  where * is a use for the item such as `throw_arc` or `melee`
+* replaced `bump_sound_paths` with `properties["bump_sound_paths"]`
+* created `add_damaged_sound_at` method for PyGlops scene (in properties so available to non-actors)
+* (no longer inherits from Widget) workaround disturbing `'dict' is not callable` error in Kivy 1.9.0
+* fix potentially very bad bug -- replace (new_glop, new_glop, ...) with (new_glop, ...)
+* remove redundant call to _init_glop in KivyGlop __init__ (still calls it if super fails)
+(2018-01-09)
+* fresnel.glsl utilize per-object booleans
+* renamed shade-kivyglops-minimal.glsl to kivyglops-testing.glsl
+* added `use_parent_frag_modelview=True` to RenderContext constructor for KivyGlop
+* made _multicontext_enable global (if false, glop gets InstructionGroup as canvas instead of RenderContext)
+* renamed print_location to log_camera_info
+* consolidated get_verbose_enable() to be in one file only (common.py)
+* pyglops.py: removed uses of `Logger` to `print` to be framework-independent 
+* eliminated scene.log_camera_info(); created kivyglop.emit_debug_to_dict(dict); moved ui's camera_walk_units_per_second and camera_turn_radians_per_second to *_glop.actor_dict["land_units_per_second"] and "land_degrees_per_second" (player_glop in this case); changed their per_frame equivalents to local variables in kivyglops.update
+* move `self.camera_walk_units_per_second = 12.0` to actor_dict
+* move `self.camera_turn_radians_per_second = math.radians(90.0)` to actor_dict
+* fixed issue where projectile sprites not visible (probably a refactoring bug)
+(2018-01-03)
+* fixed selection crash (issue caused by refactoring)
+* added use_walkmesh_at method for using walkmesh when you know glop index
+* renamed set_as_item_by_index to set_as_item_at; set_as_actor_by_index to set_as_actor_at; explode_glop_by_index to explode_glop_at; kill_glop_by_index to kill_glop_at; give_item_by_index_to_player_number to give_item_index_to_player_number; obtain_glop_by_index to obtain_glop_at; add_bump_sound_by_index to add_bump_sound_at; select_mesh_by_index to select_mesh_at
+* changed `set_player_fly(self, fly_enable)` to `set_player_fly(self, player_number, fly_enable)`
+(2018-01-02)
+* changed `new_glop` to `new_material` in KivyGlopsMaterial
+(2018-01-01)
+* changed KivyGlop canvas to default type instead of InstructionGroup
+  * commented `self.canvas = InstructionGroup` in KivyGlop `__init__`
+  * changed uses of texture0_enable to use canvas as dict
+  * changed init to set it to RenderContext
+  * kivyglops.py (KivyGlop) changed init to manually call _init_glop after __init__ since with multiple inheritance, super only calls first inherited object (first type in parenthesis on `class` line); renamed PyGlop __init__ to _init_glop; changed order of inheritance to `Widget, PyGlop`
 * (2017-12-28) renamed _meshes to _contexts for clarity (but _meshes is used other places as an actual list of Mesh objects)
 * (2017-12-28) moved glop canvas editing from KivyGlops.add_glop to KivyGlop.prepare_canvas
 * (2017-12-28) added optional set_visible_enable param to add_glop (and made default not set visible to True)
@@ -120,7 +134,11 @@ Control 3D objects and the camera in your 3D Kivy app!
 
 
 ## Known Issues
-* projectile sprites are not visible (probably a refactoring bug)
+* this is a pending change (may not be changed ever) #instructions should be changed from `item_dict["use"] = "throw_arc"` to:
+  ```python
+  item_dict["uses"] = ["throw_arc"]
+  ```  
+  see example-stadium for more info
 * pyglops.py (PyGlops __init__): implement _player_indices (already a list)
 * fix nonworking ishadereditor.py (finish 3D version)
 * pivot_to_geometry_enable is broken (must be left at default True): (defaults for pivot_to_geometry_enable are flipped since broken) pyglops.py: (append_wobject) make self.transform_pivot_to_geometry() optional, for optimization and predictability (added to set_as_item where pivot_to_geometry_enable; also added that option, to set_as_item, load_obj, get_glop_list_from_obj, append_wobject)

@@ -44,11 +44,11 @@ class MainScene(KivyGlops):
         test_medieval_enable = True
         test_shader_enable = False
         #NOTE: default gl_widget shader is already loaded by KivyGlops
-        #self.ui.gl_widget._multicontext_enable resource_find(os.path.join('shaders','simple1b.glsl'))
-        #self.ui.gl_widget._multicontext_enable resource_find(os.path.join('shaders','shade-normal-only.glsl'))  # partially working
-        #self.ui.gl_widget._multicontext_enable resource_find(os.path.join('shaders','shade-texture-only.glsl'))
-        #self.ui.gl_widget._multicontext_enable resource_find(os.path.join('shaders','shade-kivyglops-minimal.glsl'))
-        #self.ui.gl_widget._multicontext_enable resource_find(os.path.join('shaders','fresnel.glsl'))
+        #self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','simple1b.glsl'))
+        #self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','shade-normal-only.glsl'))  # partially working
+        #self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','shade-texture-only.glsl'))
+        #self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','shade-kivyglops-minimal.glsl'))
+        #self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','fresnel.glsl'))
 
         #self.load_obj("barrels triangulated (Costinus at turbosquid).obj")
         #self.load_obj("barrel.obj")

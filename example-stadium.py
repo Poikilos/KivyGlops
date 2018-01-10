@@ -40,11 +40,11 @@ class MainScene(KivyGlops):
 
         #self.load_obj("player1.obj")
 
-
         item_dict = dict()
         item_dict["name"] = "rock"
         item_dict["bump"] = "hide; obtain"
-        item_dict["use"] = "throw_arc"
+        item_dict["uses"] = ["throw_arc", "melee"]
+        item_dict["target_types"] = ["surface", "actor", "glop"]
         item_dict["cooldown"] = .7
 
         weapon = dict()
@@ -52,10 +52,12 @@ class MainScene(KivyGlops):
 
         item_dict["as_projectile"] = weapon
 
-        rock_names = self.get_similar_names("rock")
-        for name in rock_names:
-            print("Preparing item: "+name)
-            self.set_as_item(name, item_dict)
+        for index in self.get_indices_of_similar_names("rock"):
+            print("Preparing item at index " + str(index))
+            self.set_as_item_at(index, item_dict)
+            self.add_bump_sound_at(index, "sounds/carpeted-cement-hit,light1.wav")
+            self.add_bump_sound_at(index, "sounds/carpeted-cement-hit1.wav")
+            self.add_bump_sound_at(index, "sounds/carpeted-cement-hit2.wav")
 
         self.set_background_cylmap("maps/sky-texture-seamless.jpg")
 
@@ -64,21 +66,34 @@ class MainScene(KivyGlops):
 
         player1_index = self.get_player_glop_index(1)
         self.set_as_actor_at(player1_index, human_info)
+        self.add_damaged_sound_at(player1_index, "sounds/body-hit1.wav")
+        self.add_damaged_sound_at(player1_index, "sounds/body-hit2.wav")
+        self.add_damaged_sound_at(player1_index, "sounds/body-hit3.wav")
+        self.add_damaged_sound_at(player1_index, "sounds/body-hit4.wav")
 
         chimp_info = dict()
         chimp_info["hp"] = 1.0
+        
+        chimp_info["land_units_per_second"] = self.glops[player1_index].actor_dict["land_units_per_second"] / 2.
+        # If the ranges below are not set, PyGlops will set defaults for them:
+        chimp_info["ranges"] = {}
+        chimp_info["ranges"]["melee"] = 0.5
+        chimp_info["ranges"]["throw_arc"] = 20.
 
         enemy_indices = self.get_indices_of_similar_names("chimp")
         print("Found "+str(len(enemy_indices))+" chimp(s)")
         for i in range(0,len(enemy_indices)):
             index = enemy_indices[i]
             self.set_as_actor_at(index, chimp_info)
+            self.add_damaged_sound_at(index, "sounds/chimp-ooh1.wav")
+            self.add_damaged_sound_at(index, "sounds/chimp-upset1.wav")
 
     def attacked_glop(self, attacked_index, attacker_index, weapon_dict):
         self.scene.glops[attacked_index].actor_dict["hp"] -= weapon_dict["hit_damage"]
         if self.scene.glops[attacked_index].actor_dict["hp"] <= 0:
             self.explode_glop_at(attacked_index, weapon_dict)
-        print(self.scene.glops[attacked_index].name+"'s hp: "+str(self.scene.glops[attacked_index].actor_dict["hp"]))
+        print(str(self.scene.glops[attacked_index].name) + "'s hp: " + \
+              str(self.scene.glops[attacked_index].actor_dict["hp"]))
 
     def obtain_glop(self, bumpable_name, bumper_name):
         #if "rock" in bumpable_name.lower():
@@ -100,7 +115,8 @@ class KivyGlopsExampleApp(App):
         #boxlayout.add_widget(mainform)
         #boxlayout.cols = 1
         #boxlayout.orientation = "vertical"
-        #boxlayout.useButton = Factory.Button(text="Use", id="useButton", size_hint=(.1,.1))
+        #boxlayout.useButton = Factory.Button(text="Use", id="useButton", \
+        #                                     size_hint=(.1,.1))
         #boxlayout.add_widget(boxlayout.useButton)
         #return boxlayout
 
