@@ -1727,6 +1727,11 @@ class PyGlops:
     def get_verbose_enable(self):
         return get_verbose_enable()
 
+    def spawn_pex_particles(self, path, pos, radius=1.0, duration_seconds=None):
+        if self.ui is not None:
+            self.ui.spawn_pex_particles(path, pos, radius, duration_seconds)
+        else:
+            print("[ " + str(type(self)) + " ] ERROR in spawn_pex_particles: self.ui is None")
    # This method overrides object bump code, and gives the item to the player (mimics "obtain" event)
     # cause player to obtain the item found first by keyword, then hide the item (overrides object bump code)
     def give_item_by_keyword_to_player_number(self, player_number, keyword, allow_owned_enable=False):

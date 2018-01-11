@@ -1431,6 +1431,10 @@ class KivyGlops(PyGlops):
                                             if out_of_hitbox_note_enable:
                                                 print("[ KivyGlops ] (debug only--this is normal) within total_hit_radius, but bumpable is not in bumper's hitbox: "+self.glops[bumper_index].hitbox.to_string())
                                                 out_of_hitbox_note_enable = False
+                                    else:
+                                        if get_verbose_enable():
+                                            print("[ KivyGlops ] (verbose message) '" + str(self.glops[bumper_index].name) + "' is not a bumper.")
+
                                 #else:
                                     #print("not out of range yet")
                             else:
