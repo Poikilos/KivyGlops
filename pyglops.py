@@ -16,6 +16,7 @@ This provides simple dependency-free access to OBJ files and certain 3D math ope
 
 import os
 import math
+import random
 #from docutils.utils.math.math2html import VerticalSpace
 #import traceback
 from common import *
@@ -744,7 +745,7 @@ class PyGlop:
                         else:
                             select_item_event_dict["calling_method"] = "from pop_glop_item"
             else:
-                print("[ PyGlop ] ERROR: cannot give item to non-actor")
+                print("[ PyGlop ] ERROR: cannot give item to non-actor (only add actors to self._bumper_indices; add items to self._bumpable_indices instead)")
         except:
             print("[ PyGlop ] Could not finish pop_glop_item:")
             view_traceback()
@@ -1454,9 +1455,9 @@ class PyGlop:
 
                                 if (tesselated_f_count<1):
                                     print("WARNING: Face tesselated to 0 faces")
-                                elif (tesselated_f_count>1):
-                                    if get_verbose_enable():
-                                        print("Face tesselated to " + str(tesselated_f_count) + " face(s)")
+                                #elif (tesselated_f_count>1):
+                                    #if get_verbose_enable():
+                                        #print("Face tesselated to " + str(tesselated_f_count) + " face(s)")
 
                                 if relative_source_face_vertex_index<source_face_vertex_count:
                                     print("WARNING: Face has fewer than 3 vertices (problematic obj file " + str(this_wobject.source_path) + ")")
@@ -1749,7 +1750,7 @@ class PyGlops:
         bumpable_index = item_glop_index
         bumper_index = self.get_player_glop_index(player_number)
         if get_verbose_enable():
-            print("give_item_index_to_player_number; item_name:"+self.glops[bumpable_index]+"; player_name:"+self.glops[bumper_index].name+"")
+            print("give_item_index_to_player_number; item_name:" + self.glops[bumpable_index] + "; player_name:" + self.glops[bumper_index].name)
         if pre_commands is None:
             pre_commands = "hide"  # default behavior is to hold item in inventory invisibly
         if pre_commands is not None:
@@ -1757,7 +1758,8 @@ class PyGlops:
             for command_original in command_list:
                 command = command_original.strip()
                 if command != "obtain":
-                    self._run_command(command, bumpable_index, bumper_index, bypass_handlers_enable=bypass_handlers_enable)
+                    self._run_command(command, bumpable_index, bumper_index,
+                                      bypass_handlers_enable=bypass_handlers_enable)
                 else:
                     print("[ PyGlops ] warning: skipped redundant 'obtain' command in post_commands param given to give_item_index_to_player_number")
                     #"obtain" command is ONLY run below (or automatically by _internal_bump_glop), via _run_command
@@ -1793,17 +1795,21 @@ class PyGlops:
             self.obtain_glop(bumpable_name, bumper_name)  # handler
             self.obtain_glop_at(bumpable_index, bumper_index)  # handler
             # Add it to player's item list if "fits" in inventory:
-            item_event = self.glops[bumper_index].push_glop_item(self.glops[bumpable_index], bumpable_index)
-            # Then manually transfer the glop to the player if it fit
-            # (a game can override `push_item` to control fit_enable):
-            if item_event["fit_enable"]:
-                self.glops[bumpable_index].item_dict["owner"] = self.glops[bumper_index].name
-                self.glops[bumpable_index].item_dict["owner_index"] = bumper_index
+            if self.glops[bumper_index].actor_dict is not None:
+                item_event = self.glops[bumper_index].push_glop_item(self.glops[bumpable_index], bumpable_index)
+                # Then manually transfer the glop to the player if it fit
+                # (a game can override `push_item` to control fit_enable):
+                if item_event["fit_enable"]:
+                    self.glops[bumpable_index].item_dict["owner"] = self.glops[bumper_index].name
+                    self.glops[bumpable_index].item_dict["owner_index"] = bumper_index
 
-                #process item event so selected inventory slot gets updated in case that is the found slot for the item:
-                self.after_selected_item(item_event)
-            if get_verbose_enable():
-                print(command + " " + self.glops[bumpable_index].name + " {fit:" + str(item_event["fit_enable"]) + "}")
+                    #process item event so selected inventory slot gets updated in case that is the found slot for the item:
+                    self.after_selected_item(item_event)
+                if get_verbose_enable():
+                    print(command + " " + self.glops[bumpable_index].name + " {fit:" + str(item_event["fit_enable"]) + "}")
+            else:
+                print("[ PyGlops ] ERROR in _run_command: tried to give item to non-actor (only add actors to self._bumper_indices; add items to self._bumpable_indices instead)")
+                view_traceback()
         else:
             print("Glop named "+str(self.glops[bumpable_index].name)+" attempted an unknown glop command (in bump event): "+str(command))
 
@@ -1908,6 +1914,9 @@ class PyGlops:
         return result
 
     def _internal_bump_glop(self, bumpable_index, bumper_index):
+        # Normally called by update (every frame for every bump)
+        # in your subclass (in subclass only since locations are
+        # dependent on graphics implementation).
         # Prevent repeated bumping until out of range again:
         self.glops[bumpable_index].is_out_of_range = False
         bumpable_name = self.glops[bumpable_index].name
@@ -1921,43 +1930,20 @@ class PyGlops:
             #    bumper_name = result["bumper_name"]
 
         #if bumpable_name is not None and bumper_name is not None:
-        if self.glops[bumpable_index].item_dict is not None:
-            if "bump" in self.glops[bumpable_index].item_dict:
-                if self.glops[bumpable_index].bump_enable:
-                    if (self.glops[bumpable_index].item_dict is None) or \
-                       (not ("owner_index" in self.glops[bumpable_index].item_dict)) or \
-                       (self.glops[bumpable_index].item_dict["owner_index"] is None):
-                        if self.glops[bumpable_index].item_dict["bump"] is not None:
-                            #self._run_semicolon_separated_commands(self.glops[bumpable_index].item_dict["bump"], bumpable_index, bumper_index);
-                            commands = self.glops[bumpable_index].item_dict["bump"].split(";")
-                            for command in commands:
-                                command = command.strip()
-                                if get_verbose_enable():
-                                    print("[ PyGlops ] bump " + \
-                                          self.glops[bumpable_index].name + ": " + \
-                                          command + " by " + \
-                                          self.glops[bumper_index].name)
-                                self._run_command(command, bumpable_index,
-                                                  bumper_index)
-                        else:
-                            if get_verbose_enable():
-                                print("[ PyGlops ] self.glops[bumpable_index].item_dict['bump'] is None")
-                    else:
-                        if get_verbose_enable():
-                            print("[ PyGlops ] '" + self.glops[bumper_index].name + "' is not bumping into '" + self.glops[bumpable_index].name + "' since it was already obtained by [" + str(self.glops[bumpable_index].item_dict["owner_index"]) + "] " + str(self.glops[self.glops[bumpable_index].item_dict["owner_index"]].name))
-            else:
-                if get_verbose_enable():
-                    print("[ PyGlops ] self.glops[bumpable_index].item_dict does not contain 'bump'")
-        elif self.glops[bumpable_index].projectile_dict is not None:
-            #print("  this_distance: "+str(distance))
-            if self.glops[bumpable_index].projectile_dict is not None:
-                self.attacked_glop(bumper_index, self.glops[bumpable_index].projectile_dict["owner_index"], self.glops[bumpable_index].projectile_dict)
-                if len(self.glops[bumpable_index].properties["bump_sound_paths"]) > 0:
-                    rand_i = random.randrange(0,len(self.glops[bumpable_index].properties["bump_sound_paths"]))
-                    self.play_sound(self.glops[bumpable_index].properties["bump_sound_paths"][rand_i])
-                self.glops[bumpable_index].bump_enable = False
-            else:
-                pass
+        if self.glops[bumpable_index].projectile_dict is not None:
+            print("[ PyGlops ] PROJECTILE HIT _internal_bump_glop found projectile_dictbump")  # debug only
+            #if self.glops[bumpable_index].projectile_dict is not None:
+            self.attacked_glop(bumper_index, self.glops[bumpable_index].projectile_dict["owner_index"], self.glops[bumpable_index].projectile_dict)
+            if len(self.glops[bumpable_index].properties["bump_sound_paths"]) > 0:
+                rand_i = random.randrange(0,len(self.glops[bumpable_index].properties["bump_sound_paths"]))
+                self.play_sound(self.glops[bumpable_index].properties["bump_sound_paths"][rand_i])
+            if len(self.glops[bumper_index].properties["bump_sound_paths"]) > 0:
+                rand_i = random.randrange(0,len(self.glops[bumper_index].properties["bump_sound_paths"]))
+                self.play_sound(self.glops[bumper_index].properties["bump_sound_paths"][rand_i])
+            self.glops[bumpable_index].projectile_dict = None
+            self.glops[bumpable_index].bump_enable = True
+            #else:
+            #    pass
                 #print("bumper:"+str( (self.glops[bumper_index]._translate_instruction.x, self.glops[bumper_index]._translate_instruction.y, self.glops[bumper_index]._translate_instruction.z) ) +
                 #      "; bumped:"+str( (self.glops[bumpable_index]._translate_instruction.x, self.glops[bumpable_index]._translate_instruction.y, self.glops[bumpable_index]._translate_instruction.z) ))
             #if "bump" in self.glops[bumpable_index].item_dict:
@@ -1969,10 +1955,61 @@ class PyGlops:
             #    print("[ debug only ]   hitbox: " + self.glops[bumper_index].hitbox.to_string())
             #else:
             #    print("self.glops[bumpable_index].item_dict does not contain 'bump'")
+        elif self.glops[bumpable_index].item_dict is not None:
+            bad_flag = "(projectile_dict)"
+            this_flag = "(NOT as_projectile, NOT projectile_dict)"
+            bumpable_name = str(self.glops[bumpable_index].name)
+
+            if "bump" in self.glops[bumpable_index].item_dict:
+                if self.glops[bumpable_index].bump_enable:
+                    rock_msg = ""
+                    #if "rock" in self.glops[bumpable_index].name.lower():
+                        # debug only
+                    if self.glops[bumpable_index].projectile_dict is not None:
+                        this_flag = bad_flag
+                    elif self.glops[bumpable_index].item_dict is not None and \
+                       "as_projectile" in self.glops[bumpable_index].item_dict:
+                        this_flag = "(as_projectile)"
+                    rock_msg = "[ PyGlops ] _internal_bump_glop " + \
+                               bumpable_name + " processing " + this_flag
+                    print(rock_msg)  # debug only
+
+                    if (self.glops[bumpable_index].item_dict is None) or \
+                       (not ("owner_index" in self.glops[bumpable_index].item_dict)) or \
+                       (self.glops[bumpable_index].item_dict["owner_index"] is None):
+                        if self.glops[bumpable_index].item_dict["bump"] is not None:
+                            #self._run_semicolon_separated_commands(self.glops[bumpable_index].item_dict["bump"], bumpable_index, bumper_index);
+                            commands = self.glops[bumpable_index].item_dict["bump"].split(";")
+                            for command in commands:
+                                command = command.strip()
+                                if get_verbose_enable():
+                                    print("[ PyGlops ] bump " + \
+                                          self.glops[bumpable_index].name + \
+                                          ": " + command + " " + \
+                                          bumpable_name + " by " + \
+                                          self.glops[bumper_index].name)
+                                if command=="obtain":
+                                    if self.glops[bumper_index].actor_dict is None:
+                                        print("[ PyGlops ] ERROR in _internal_bump_glop: tried to run obtain for bumper '" + str(self.glops[bumper_index].name) + "' that is not an actor")
+
+                                    if rock_msg[-len(bad_flag):] == bad_flag:
+                                        print("[ PyGlops ] ERROR: _internal_bump_glop: obtained projectile while airborne")
+                                self._run_command(command, bumpable_index,
+                                                  bumper_index)
+                        else:
+                            if get_verbose_enable():
+                                print("[ PyGlops ] self.glops[bumpable_index].item_dict['bump'] is None")
+                    else:
+                        if get_verbose_enable():
+                            print("[ PyGlops ] '" + self.glops[bumper_index].name + "' is not bumping into '" + self.glops[bumpable_index].name + "' since it was already obtained by [" + str(self.glops[bumpable_index].item_dict["owner_index"]) + "] " + str(self.glops[self.glops[bumpable_index].item_dict["owner_index"]].name))
+            else:
+                if get_verbose_enable():
+                    print("[ PyGlops ] self.glops[bumpable_index].item_dict does not contain 'bump'")
         else:
             print("[ PyGlops] bumped object '" + \
                   str(self.glops[bumpable_index].name) + \
-                  "' is not an item")
+                  "' is not an item nor projectile" + \
+                  "(maybe it was incorrectly set to bump_enable manually)")
 
     def get_player_glop_index(self, player_number):
         result = None
@@ -2224,16 +2261,14 @@ class PyGlops:
                     print("[ PyGlops ] ERROR in use_item_at: user_glop.name was None (set to '<None>' for safety)")
                 if not (user_glop.name in debug_dict):
                     debug_dict[user_glop.name] = {}
-                if get_verbose_enable():
-                    print("[ PyGlops ] (verbose message) " + f_name + ": using item in slot " + str(user_glop.actor_dict['inventory_index']))
                 # DICT IS NOT CALLABLE WHY WAS THIS HERE user_glop.actor_dict["inventory_items"][inventory_index]
                 this_item = user_glop.actor_dict["inventory_items"][inventory_index]
-                glop_index = None
+                this_glop_index = None
                 item_glop = None
                 if "glop_index" in this_item:
-                    glop_index = this_item["glop_index"]
-                    if glop_index is not None:
-                        item_glop = self.glops[glop_index]
+                    this_glop_index = this_item["glop_index"]
+                    if this_glop_index is not None:
+                        item_glop = self.glops[this_glop_index]
                 if item_glop is not None:
                     if item_glop.item_dict is not None:
                         drop_enable = False
@@ -2250,6 +2285,10 @@ class PyGlops:
                             else:
                                 debug_dict[user_glop.name]["this_item.cooldown"] = "None"
                             if is_ready:
+                                if get_verbose_enable():
+                                    print("[ PyGlops ] (verbose message) " + f_name + ": '" + \
+                                          str(user_glop.name) + "' using item in slot " + \
+                                          str(user_glop.actor_dict['inventory_index']))
                                 if "use_sound" in item_glop.item_dict:
                                     self.play_sound(item_glop.item_dict["use_sound"])
                                 if this_use is None:
@@ -2262,8 +2301,17 @@ class PyGlops:
                                         item_glop.projectile_dict = get_dict_deepcopy(item_glop.item_dict["as_projectile"])
                                         item_glop.projectile_dict["owner"] = user_glop.name
                                         item_glop.projectile_dict["owner_index"] = user_glop.glop_index
+                                        item_glop.bump_enable = True
+                                        item_glop.is_out_of_range = False  # prevent re-acquiring the item instantly
+                                        if self.glops[this_glop_index].hitbox is None:
+                                            self.glops[this_glop_index].calculate_hit_range()
+                                        # item is bumpable (only actor can be bumper)
+                                        self._bumpable_indices.append(this_glop_index)
+                                        if get_verbose_enable():
+                                            print("[ PyGlops ] use_item_at set projectile_dict and bump_enable for '" + str(item_glop.name) + "' and added to _bumpable_indices")
                                     if "owner" in item_glop.item_dict:
                                         del item_glop.item_dict["owner"]  # ok since still in projectile_dict if matters
+                                    if "owner_index" in item_glop.item_dict:
                                         del item_glop.item_dict["owner_index"]
                                     #or useless_string = my_dict.pop('key', None)  # where None causes to return None instead of throwing KeyError if not found
                                     self.glops[item_glop.item_dict["glop_index"]].physics_enable = True
@@ -2291,14 +2339,14 @@ class PyGlops:
                                     item_glop._translate_instruction.x = user_glop._translate_instruction.x
                                     item_glop._translate_instruction.y = user_glop._translate_instruction.y + user_glop.eye_height
                                     item_glop._translate_instruction.z = user_glop._translate_instruction.z
-                                    self.show_glop(glop_index)  # formerly added mesh manually (when this method was in KivyGlops)
-
+                                    self.show_glop(this_glop_index)  # formerly added mesh manually (when this method was in KivyGlops)
                             else:
                                 debug_dict[user_glop.name]["this_item.cooldown"] = item_glop.item_dict["cooldown"]
-                                #msg = "[ PyGlops ] item is not ready"
-                                #if "cooldown" in item_glop.item_dict:
-                                #    msg += " (cooldown in " + str(item_glop.item_dict["cooldown"] - (time.time() - item_glop.item_dict["RUNTIME_last_used_time"]))
-                                #print(msg)
+                                #if get_verbose_enable():
+                                #    msg = "[ PyGlops ] item is not ready"
+                                #    if "cooldown" in item_glop.item_dict:
+                                #        msg += " (cooldown in " + str(item_glop.item_dict["cooldown"] - (time.time() - item_glop.item_dict["RUNTIME_last_used_time"]))
+                                #    print(msg)
                         else:
                             print(str(item_glop.name) + " has no use.")
                         if drop_enable:

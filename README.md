@@ -43,6 +43,9 @@ Control 3D objects and the camera in your 3D Kivy app!
 * show glop_name of selected item on debug screen
 * removed extra declaration of _run_command in PyGlops
 * pyglops.py: removed redundant call to self._run_semicolon_separated_commands from _internal_bump_glop
+* pyglops.py: (PyGlops) added missing spawn_pex_particles (calls self.ui.spawn_pex_particles)
+* pyglops.py: (if as_projectile in item_dict used, set bump_enable to True--is set to false when obtained) make thrown items bumping work while airborne
+* pyglops.py: put projectile_dict case before item_dict case in _internal_bump_glop so projectiles that are items work (such as thrown glop items with weapon_dict stored at as_projectile key in item_dict)
 (2018-01-10)
 * move `properties["inventory_items"]` to `actor_dict["inventory_items"]` (same for `"inventory_index"`)
 * move `is_linked_as`, `get_link_as`, `get_link_and_type`, `push_glop_item`, `pop_glop_item` from KivyGlop to PyGlop
@@ -145,6 +148,9 @@ Control 3D objects and the camera in your 3D Kivy app!
 
 
 ## Known Issues
+* allow rocks to roll (and keep projectile_dict until they stop) in opengl9
+* pyglops.py: (_internal_bump_glop; may not be an issue) plays `properties["bump_sound_paths"]` for both bumper (actor) and bumpable (item)
+* pyglops.py: eliminate item_dict["fire_type"] dict (may contain "throw_linear" key) and merge with item_dict["uses"] (test with opengl6 or opengl7 since they use a weapon dict that is NOT a glop (only has fired_glop)--they may need to be changed)
 * pyglops.py: eliminate (or improve & rename) index_of_mesh, select_mesh_at
 * see `failed to deepcopy` -- not sure why happens
 * by default do not set bounds; modify instructions on expertmultimedia.com to set bounds for office hallway project
@@ -268,6 +274,7 @@ uniform mat4 projection_mat;  //derived from self.canvas["projection_mat"] = pro
         width
         height
         frames_per_second
+        def spawn_pex_particles(self, path, pos, radius=1.0, duration_seconds=None)
         def get_keycode(self, key_name)  # param such as 'a' (allow lowercase only), 'enter' or 'shift'
         def set_primary_item_caption(self, name)  # param such as "hammer"
         def add_glop(self, this_glop)
@@ -302,8 +309,8 @@ This spec allows one dict to be used to completely store the Wavefront mtl forma
                 * if the command's expected value is a filename, values is still a list--first value is filename, additional values are params (usually a factor by which to multiply values in the file)
                     * map can override: `Ka` (ambient color), `Kd` (diffuse color), `Ks` (specular color), `Ns` (specular coefficient scalar), `d` (opacity scalar), and surface normal (by way of bump map not normal map) according to spec
                         * displacement map is `disp` (in modern terms, a vertex displacement map)
-                        * bump map is `bump`--though it affects normals, it is a standard bump map which in modern terms is a (fragment) displacement map ("represents the topology or height of the surface relative to the average surface.  Dark areas are depressions and light areas are high points." -Ramey
-                        * `refl` is a reflection map, or in modern terms, an environment map (as opposed to a reflectance map): type can be sphere, or there can be several cube_* maps where * is the side (front, back, top, bottom, left, right)
+                        * bump map is `bump`--though it affects normals, it is a standard bump map which in modern terms is a detail map (previously known as a [fragment]] displacement map; "represents the topology or height of the surface relative to the average surface.  Dark areas are depressions and light areas are high points." -Ramey)
+                        * `refl` is a reflection map, or in modern terms, an environment map (is NOT a reflectance map): type can be sphere, or there can be several cube_* maps where * is the side (front, back, top, bottom, left, right)
             * "tmp" (a dict of temporary values such as "file_path", which was formerly stored in wmaterial.file_path, and "directory"; both of which are only for using relative paths in the mtl file)
             * "#" (comments list)
             * additional keys are args, where value is a list of the arg's values (if space-separated value in original mtl file starts with hyphen, it is an arg; an arg takes remaining values as items of its list, until next hyphen (or last entry, which is always appended to 'values')
@@ -318,7 +325,21 @@ This spec allows one dict to be used to completely store the Wavefront mtl forma
 ### Regression Tests
 * result of builting type(x) function assumed to be string without using str(type(x)) where x is anything
 * len used inside "[]" without "-1" (or "- 1" or other spacing)
-
+* if you set `self.glops[index].bump_enable = True` you should also do something like:
+```python
+self.glops[index].bump_enable = True
+self.glops[index].calculate_hit_range()
+#usually you would manually control whether is actor or item:
+if self.glops[index].actor_dict is not None:
+    #actor
+    self._bumper_indices.append(index)
+else:
+    #item
+    self._bumpable_indices.append(index)
+if self.glops[index].item_dict is not None:
+    if "as_projectile" in self.glops[index].item_dict
+        self.glops[index].projectile_dict = self.glops[index].item_dict["as_projectile"]
+```
 
 ### Shader Spec
 vertex color is always RGBA

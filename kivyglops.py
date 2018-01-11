@@ -1137,7 +1137,7 @@ class KivyGlops(PyGlops):
         return self.player1_controller.get_pressed(self.ui.get_keycode(key_name))
 
     def update(self):
-        #this is in KivyGlops, but is called by KivyGlopsWindow.*update* such as update_glsl
+        # KivyGlops.update is called by KivyGlopsWindow.*update* such as update_glsl
         #super(KivyGlops, self).update()
         #region tried to move to pyglops but didn't work well
         #print("coords:"+str(Window.mouse_pos))
@@ -1321,6 +1321,8 @@ class KivyGlops(PyGlops):
         global missing_radius_warning_enable
         for bumper_index_index in range(0,len(self._bumper_indices)):
             bumper_index = self._bumper_indices[bumper_index_index]
+            if self.glops[bumper_index].actor_dict is None:
+                print("[ KivyGlops ] error in update: actor_dict is None for bumper named '" + str(self.glops[bumper_index].name) + "'")
             if self.glops[bumper_index].actor_dict is not None and \
                "ai_enable" in self.glops[bumper_index].actor_dict and \
                self.glops[bumper_index].actor_dict["ai_enable"]:
@@ -1388,7 +1390,7 @@ class KivyGlops(PyGlops):
         for bumpable_index_index in range(0, len(self._bumpable_indices)):
             bumpable_index = self._bumpable_indices[bumpable_index_index]
             bumpable_name = self.glops[bumpable_index].name
-            #self.glops[bumpable_index]._temp_bumpable_enable = True
+            #self.glops[bumpable_index]._temp_bump_enable = True
             if (self.glops[bumpable_index].item_dict is None) or \
                (not ("owner_index" in self.glops[bumpable_index].item_dict)) or \
                (self.glops[bumpable_index].item_dict["owner_index"] is None):
@@ -1951,7 +1953,9 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         if not self.scene._loaded_glops_enable:
             self.debug_label.opacity = 1.0
             self.scene._load_glops_enable = False
-            self.debug_label.text = "loading glops..."
+            self.debug_label.text = "Press F3 after loaded \n" + \
+                                    "for debug mode.\n\n" + \
+                                    "loading glops...\n"
             if not self.scene._loading_glops_enable:
                 self.scene._loading_glops_enable = True
                 Clock.schedule_once(self._deferred_load_glops, 0.)

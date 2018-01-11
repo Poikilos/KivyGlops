@@ -43,6 +43,7 @@ class MainScene(KivyGlops):
         test_space_enable = False
         test_medieval_enable = True
         test_shader_enable = False
+        test_infinite_crates = True
         #NOTE: default gl_widget shader is already loaded by KivyGlops
         #self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','simple1b.glsl'))
         #self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','shade-normal-only.glsl'))  # partially working

@@ -73,7 +73,7 @@ class MainScene(KivyGlops):
 
         chimp_info = dict()
         chimp_info["hp"] = 1.0
-        
+
         chimp_info["land_units_per_second"] = self.glops[player1_index].actor_dict["land_units_per_second"] / 2.
         # If the ranges below are not set, PyGlops will set defaults for them:
         chimp_info["ranges"] = {}
@@ -89,11 +89,12 @@ class MainScene(KivyGlops):
             self.add_damaged_sound_at(index, "sounds/chimp-upset1.wav")
 
     def attacked_glop(self, attacked_index, attacker_index, weapon_dict):
-        self.scene.glops[attacked_index].actor_dict["hp"] -= weapon_dict["hit_damage"]
-        if self.scene.glops[attacked_index].actor_dict["hp"] <= 0:
+        self.glops[attacked_index].actor_dict["hp"] -= weapon_dict["hit_damage"]
+        if self.glops[attacked_index].actor_dict["hp"] <= 0:
             self.explode_glop_at(attacked_index, weapon_dict)
-        print(str(self.scene.glops[attacked_index].name) + "'s hp: " + \
-              str(self.scene.glops[attacked_index].actor_dict["hp"]))
+        #if get_verbose_enable():
+        print(str(self.glops[attacked_index].name) + "'s hp: " + \
+              str(self.glops[attacked_index].actor_dict["hp"]))
 
     def obtain_glop(self, bumpable_name, bumper_name):
         #if "rock" in bumpable_name.lower():

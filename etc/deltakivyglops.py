@@ -6,7 +6,13 @@ import shutil
 profile_path = os.environ["HOME"]
 verbose_enable = False
 
-student_rm_list = ["testing.py", "testingkivy3d.py", "kivyglopsexample.py", "kivyglops.py.bak", "example_hud.png"]
+student_rm_list = ["testing.py", "testingkivy3d.py", "kivyglopsexample.py",
+                   "kivyglops.py.bak", "example_hud.png",
+                   "kivyglopstesting.py", "kivyglopsminimal.py"]
+deprecated_rm_list = ["Cylinder_Cylinder.001.pyglop", "glops-dump.yml",
+                      "mesher-dump.yml",
+                      "richmond-bridge-512x512-rgba-CC0.png",
+                      "shade-kivyglops-minimal.glsl"]
 
 original_project_name = "KivyGlops"
 documents_path = os.path.join(profile_path, "Documents")
@@ -40,7 +46,8 @@ def is_like(target, wildcard, case_sensitive_enable=True):
         wildcard = wildcard.lower()
     if "*" in wildcard:
         if "**" in wildcard:
-            print("    WARNING: is_like removing duplicate wildcard in '" + wildcard + "'")
+            print("    WARNING: is_like removing duplicate wildcard in '" + \
+                  wildcard + "'")
             while "**" in wildcard:
                 wildcard = wildcard.replace("**", "*")
         if wildcard == "*":
@@ -117,15 +124,15 @@ def usage():
     print("")
 
 force_mode = None
-gi_path = os.path.join(original_project_path, ".gitignore")
+gitignore_path = os.path.join(original_project_path, ".gitignore")
 file_ignore_paths = []
 file_ignore_patterns = []
 dir_ignore_paths = []
 dir_ignore_patterns = []
 
-if os.path.isfile(gi_path):
+if os.path.isfile(gitignore_path):
     print("Using .gitignore")
-    ins = open(gi_path, 'r')
+    ins = open(gitignore_path, 'r')
     line = True
     while line:
         line = ins.readline()
@@ -176,7 +183,7 @@ class SyncOptions:
         self.verbose_enable = verbose_enable
         self.ignore_caches_enable = True
         self.removed_cache_files_count = 0
-        
+
 cache_names = ["__pycache__"]
 
 def sync_recursively(master_path, target_path, options):
@@ -264,4 +271,4 @@ else:
     print("target_path must be specified as command line parameter.")
     usage()
     exit(2)
-    
+
