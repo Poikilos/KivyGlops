@@ -9,8 +9,8 @@ Ks 0.000000 0.000000 0.000000
 Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
-illum 1
-map_Kd stadium,primitive-chimp.png
+illum 0
+map_Kd /home/owner/GitHub/KivyGlops/etc/stadium,primitive-chimp.png
 
 newmtl Dirt
 Ns 96.078431
@@ -21,7 +21,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 1
-map_Kd stadium,primitive-dirt,dry1.jpg
+map_Kd /home/owner/GitHub/KivyGlops/etc/stadium,primitive-dirt,dry1.jpg
 
 newmtl Null
 Ns 96.078431
@@ -32,7 +32,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 2
-map_Kd stadium,primitive-dirt,dry1.jpg
+map_Kd /home/owner/GitHub/KivyGlops/etc/stadium,primitive-dirt,dry1.jpg
 
 newmtl Rock
 Ns 96.078431
@@ -43,7 +43,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 1
-map_Kd stadium,primitive-bricks,natural_gray.jpg
+map_Kd /home/owner/GitHub/KivyGlops/etc/stadium,primitive-bricks,natural_gray.jpg
 
 newmtl Stone,Natural_Gray
 Ns 96.078431
@@ -54,4 +54,4 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 1
-map_Kd stadium,primitive-bricks,natural_gray.jpg
+map_Kd /home/owner/GitHub/KivyGlops/etc/stadium,primitive-bricks,natural_gray.jpg

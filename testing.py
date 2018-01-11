@@ -68,7 +68,7 @@ class MainScene(KivyGlops):
         #for name in walkmesh_names:
         #    print("Found possible walkmesh: "+name)
         #    is_ok = self.use_walkmesh(name, hide=True)
-        
+
         if test_shader_enable:
             test_name = "shader-test.obj"
             test_path = os.path.join("meshes", test_name)
@@ -85,8 +85,8 @@ class MainScene(KivyGlops):
             #self.load_obj("etc\\problematic mesh files\\medseaport1b-floor_glrepeat.obj")
             #self.load_obj("medseaport1b-lowpoly.obj")
             #seaport_name = "medseaport1b-techdemo.obj"
-            #seaport_name = "medseaport1b-techdemo.obj"
-            seaport_name = "medseaport1b-door.obj"
+            seaport_name = "medseaport1b-techdemo.obj"
+            #seaport_name = "medseaport1b-door.obj"
             #seaport_name = "medseaport1b-minimal.obj"
             #testing_path = os.path.join( os.path.join(profile_path, "Desktop"), "KivyGlopsTesting")
             testing_path = os.path.join("meshes", "medseaport")
@@ -112,19 +112,20 @@ class MainScene(KivyGlops):
             item_dict = dict()
             item_dict["name"] = "barrel"
             item_dict["bump"] = "hide; obtain"
-            item_dict["use"] = "throw_arc"
+            item_dict["uses"] = ["throw_arc"]
             item_dict["cooldown"] = .7
 
             barrel_names = self.get_similar_names("barrel")
             for name in barrel_names:
-                print("Preparing item: "+name)
+                print("Preparing item: " + name)
                 self.set_as_item(name, item_dict)
 
             #self.play_music("music/edinburgh-loop.ogg")
 
             item_dict["name"] = "crate"
             item_dict["use_sound"] = "sounds/woosh-medium.wav"
-            for index in self.get_indices_of_similar_names("crate"):
+            crate_indices = self.get_indices_of_similar_names("crate")
+            for index in crate_indices:
                 self.set_as_item_at(index, item_dict)
                 self.add_bump_sound_at(index, "sounds/crate-drop1.wav")
                 self.add_bump_sound_at(index, "sounds/crate-drop2.wav")
@@ -134,6 +135,8 @@ class MainScene(KivyGlops):
                 self.add_bump_sound_at(index, "sounds/crate-drop6.wav")
                 self.add_bump_sound_at(index, "sounds/crate-drop7.wav")
                 self.add_bump_sound_at(index, "sounds/crate-drop8.wav")
+            print("[ testing ] len(barrel_names): " + str(len(barrel_names)))
+            print("[ testing ] len(crate_indices): " + str(len(crate_indices)))
             self.set_background_cylmap(os.path.join("maps","sky-texture-seamless.jpg"))
         if test_space_enable:
             self.set_background_cylmap("starfield1-coryg89.jpg")
@@ -158,14 +161,14 @@ class MainScene(KivyGlops):
             self.add_actor_weapon(player1_index, weapon)
             #self.player_glop = self.glops[player1_index]  # already done by PyGlops __init__
             #test_deepcopy_weapon = self.player_glop.deepcopy_with_my_type(weapon)
-            print("[ testing ] #" + str(player1_index) + " named " + str(self.glops[player1_index].name) + " detected as player") 
+            print("[ testing ] #" + str(player1_index) + " named " + str(self.glops[player1_index].name) + " detected as player")
             enemy_indices = self.get_indices_by_source_path("spaceship,simple-denapes.obj")
             for i in range(0,len(enemy_indices)):
                 index = enemy_indices[i]
                 self.set_as_actor_at(index, ship_info)
                 self.add_actor_weapon(index, weapon)
-                print("[ testing ] #" + str(index) + " named " + str(self.glops[index].name) + " added as enemy") 
-            print("[ testing ] " + str(len(enemy_indices)) + " enemies found.") 
+                print("[ testing ] #" + str(index) + " named " + str(self.glops[index].name) + " added as enemy")
+            print("[ testing ] " + str(len(enemy_indices)) + " enemies found.")
         #test_deepcopy_weapon = self.player_glop.deepcopy_with_my_type(weapon)
 
     def attacked_glop(self, attacked_index, attacker_index, weapon_dict):

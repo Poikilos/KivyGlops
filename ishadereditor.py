@@ -28,7 +28,7 @@ from kivy.core.window import Window
 from kivy.factory import Factory
 from kivy.graphics import RenderContext, Color
 from kivy.properties import StringProperty, ObjectProperty
-from kivy.clock import Clock  
+from kivy.clock import Clock
 from pygments.lexers import GLShaderLexer
 from kivyglops import *
 
@@ -113,7 +113,7 @@ void main (void){
 #---END SHADERS-------------------------------------------------------
 
     gl_widget = ObjectProperty(None)
-    
+
     def __init__(self, **kwargs):
         super(ShaderEditor, self).__init__(**kwargs)
         self._contexts = InstructionGroup()
@@ -124,7 +124,7 @@ void main (void){
 
     scene = None
     frames_per_second = 30.0
-    
+
     def add_glop(self, this_glop, set_visible_enable=None):
         if set_visible_enable is not None:
             this_glop.visible_enable = set_visible_enable
@@ -165,7 +165,7 @@ void main (void){
             #context.add(this_glop._axes_mesh)  # debug only
             #this_glop._mesh = this_glop._axes_mesh  # debug only
             pass
-            
+
         if this_glop._mesh is not None:
             context.add(this_glop._mesh)  # commented for debug only
             if get_verbose_enable():
@@ -188,14 +188,24 @@ void main (void){
 
 
         self.scene.glops.append(this_glop)
-        self.scene.glops[len(self.scene.glops)-1].index = len(self.scene.glops) - 1
+        this_glop.index = len(self.scene.glops) - 1
+        if not (self.scene.glops[this_glop.index] is this_glop:
+            # deal with multithreading paranoia:
+            print("[ ishadereditor.py ] index was wrong, correcting...")
+            this_glop.index = None
+            for i in range(len(self.scene.glops)):
+                if self.scene.glops[i] is this_glop:
+                    self.scene.glops[i].index = i
+                    break
+            if this_glop.index is None:
+                print("                      ERROR: unable to correct index")
         #this_glop.index = len(self.scene.glops) - 1
         self._contexts.add(self.scene.glops[len(self.scene.glops)-1].get_context())  # _contexts is a visible instruction group
         self.scene.glops[len(self.scene.glops)-1].visible_enable = True
 
         if get_verbose_enable():
-            print("Appended Glop (count:"+str(len(self.scene.glops))+").")        
-    
+            print("Appended Glop (count:"+str(len(self.scene.glops))+").")
+
     def compile_shaders(self, *largs):
         print('try compile')
         if not self.gl_widget:
@@ -206,12 +216,12 @@ void main (void){
         self.gl_widget.fs = fs
         print('-->', vs)
         self.gl_widget.vs = vs
-    
+
     def update_vs_to_vs_codeinput(self, instance, value):
         #self.vs = self.vs_codeinput.text
         self.vs = value  # self.vs_codeinput.text
         print("update_vs_to_vs_codeinput")
-        
+
     def update_fs_to_fs_codeinput(self, instance, value):
         #self.fs = self.fs_codeinput.text
         self.fs = value  # self.fs_codeinput.text
@@ -287,7 +297,7 @@ class Imperative_ShaderEditorApp(App):
         form.vs_codeinput.lexer=GLShaderLexer()
         form.vs_codeinput.bind(text=form.update_vs_to_vs_codeinput)  # on_text=root.vs = args[1]
         form.input_layout.add_widget(form.vs_codeinput)
-        
+
         form.fs_label = Factory.Label(text='Fragment Shader', size_hint_y=None)
         form.fs_label.height=form.fs_label.texture_size[1] + 10
         form.input_layout.add_widget(form.fs_label)
@@ -295,20 +305,20 @@ class Imperative_ShaderEditorApp(App):
         form.fs_codeinput.lexer=GLShaderLexer()
         form.fs_codeinput.bind(text=form.update_fs_to_fs_codeinput)  # on_text=root.fs = args[1]
         form.input_layout.add_widget(form.fs_codeinput)
-        
+
         form.gl_widget = Factory.ShaderViewer()
         #form.image_color = Color(1.0,1.0,1.0,1.0)
         #form.gl_widget.canvas.add(form.image_color)
         #form.gl_widget.canvas.add(Factory.Rectangle(pos=form.gl_widget.pos, size=form.gl_widget.size, source=form.source))
         #form.image_rect = Factory.Rectangle(pos=(200,0), size=(512,512), source=form.source)
-        
+
         form.scene = KivyGlops(form)
         form.scene.load_obj(os.path.join("meshes", "shader-test.obj"))
-        
+
         #form.gl_widget.canvas.add(form.image_rect)
         form.main_layout.add_widget(form.input_layout)
         form.main_layout.add_widget(form.gl_widget)
-        
+
         #form.cols = 1
         #form.orientation = "vertical"
         #form.okButton = Factory.Button(text="Hide Button", id="okButton")

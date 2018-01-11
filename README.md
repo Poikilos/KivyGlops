@@ -34,6 +34,8 @@ Control 3D objects and the camera in your 3D Kivy app!
 * if segfault occurs, maybe camera and look_at location are same
 
 ## Changes
+(2018-01-11)
+* pyglops.py: (move `is_out_of_range` from `_internal_bump_glop` to `_update` in kivyglops.py and set immediately after checked) fixed issue where is_out_of_range was only being set for items
 (2018-01-10)
 * move `properties["inventory_items"]` to `actor_dict["inventory_items"]` (same for `"inventory_index"`)
 * move `is_linked_as`, `get_link_as`, `get_link_and_type`, `push_glop_item`, `pop_glop_item` from KivyGlop to PyGlop
@@ -42,8 +44,10 @@ Control 3D objects and the camera in your 3D Kivy app!
 * replaced `bump_sound_paths` with `properties["bump_sound_paths"]`
 * created `add_damaged_sound_at` method for PyGlops scene (in properties so available to non-actors)
 * (no longer inherits from Widget) workaround disturbing `'dict' is not callable` error in Kivy 1.9.0
-* fix potentially very bad bug -- replace (new_glop, new_glop, ...) with (new_glop, ...)
+* pyglops.py: (copy_as_subclass call in copy) fix potentially very bad bug -- `self.copy_as_subclass(self.new_glop, new_material_method)` had 3 params (not correct) 2nd one being another self.new_glop
 * remove redundant call to _init_glop in KivyGlop __init__ (still calls it if super fails)
+* improved monkey: added eyelids, UV mapped eyelids, improved texture for eyes and around eyes
+* now uses _deferred_load_glops to load glops; to be more clear and functional, made separate load, loading, loaded booleans for *_glops_enable
 (2018-01-09)
 * fresnel.glsl utilize per-object booleans
 * renamed shade-kivyglops-minimal.glsl to kivyglops-testing.glsl
@@ -51,7 +55,7 @@ Control 3D objects and the camera in your 3D Kivy app!
 * made _multicontext_enable global (if false, glop gets InstructionGroup as canvas instead of RenderContext)
 * renamed print_location to log_camera_info
 * consolidated get_verbose_enable() to be in one file only (common.py)
-* pyglops.py: removed uses of `Logger` to `print` to be framework-independent 
+* pyglops.py: removed uses of `Logger` to `print` to be framework-independent
 * eliminated scene.log_camera_info(); created kivyglop.emit_debug_to_dict(dict); moved ui's camera_walk_units_per_second and camera_turn_radians_per_second to *_glop.actor_dict["land_units_per_second"] and "land_degrees_per_second" (player_glop in this case); changed their per_frame equivalents to local variables in kivyglops.update
 * move `self.camera_walk_units_per_second = 12.0` to actor_dict
 * move `self.camera_turn_radians_per_second = math.radians(90.0)` to actor_dict
@@ -134,10 +138,12 @@ Control 3D objects and the camera in your 3D Kivy app!
 
 
 ## Known Issues
+* by default do not set bounds; modify instructions on expertmultimedia.com to set bounds for office hallway project
+* make a file-reading kernel for loading obj files to avoid blocking io
 * this is a pending change (may not be changed ever) #instructions should be changed from `item_dict["use"] = "throw_arc"` to:
   ```python
   item_dict["uses"] = ["throw_arc"]
-  ```  
+  ```
   see example-stadium for more info
 * pyglops.py (PyGlops __init__): implement _player_indices (already a list)
 * fix nonworking ishadereditor.py (finish 3D version)
@@ -274,7 +280,7 @@ uniform mat4 projection_mat;  //derived from self.canvas["projection_mat"] = pro
     * `set_texture(index,texture)`
     * `push_state(name)` `pop_state(name)` `set_states(dict states)` (not available to python)
 * Canvas is a subclass of InstructionGroup
-* shader values can be set using `set_state` and a subcontext can be created using `push_state` in ContextInstruction 
+* shader values can be set using `set_state` and a subcontext can be created using `push_state` in ContextInstruction
 * InstructionGroup has `insert(index, instruction)` and `remove(index)` and a list named `children`
 
 ### wmaterial dict spec
@@ -285,7 +291,7 @@ This spec allows one dict to be used to completely store the Wavefront mtl forma
     * each key is a material command, referring to a deeper dict, except "#" which is comments list
         * each material command dict has the following keys:
             * "values" (a list of values)
-                * if the command's (such as Kd) expected values are color values (whether rgb, or CIEXYZ if commands ends in " xyz"), only one color value means other 2 are same (grayscale)! 
+                * if the command's (such as Kd) expected values are color values (whether rgb, or CIEXYZ if commands ends in " xyz"), only one color value means other 2 are same (grayscale)!
                 * if the command's expected value is a filename, values is still a list--first value is filename, additional values are params (usually a factor by which to multiply values in the file)
                     * map can override: `Ka` (ambient color), `Kd` (diffuse color), `Ks` (specular color), `Ns` (specular coefficient scalar), `d` (opacity scalar), and surface normal (by way of bump map not normal map) according to spec
                         * displacement map is `disp` (in modern terms, a vertex displacement map)

@@ -14,3 +14,10 @@ Arena:
 Extrude for wall (steps) was 1m, but left gap from -15.57583 to -15.24
 with 258 extrusion count
 So was filled manually
+
+from top of eye to center of eye (UV vertex positions as per blender UV/Image editor):
+125,2011
+125,1976
+125,1951: edge of cornea
+125,1941
+125,1925: center
