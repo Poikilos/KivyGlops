@@ -519,7 +519,12 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
     def calculate_hit_range(self):
         #TODO: re-implement superclass method, changing hit box taking rotation into account
         #NOTE: index is set by add_glop so None if done earlier:
-        print("[ KivyGlop ] calculate_hit_range for glop [" + str(self.index) + "] '" + str(self.name) + "'...")
+        glop_msg = "new glop"
+        if self.glop_index is not None:
+            glop_msg = str(self.glop_index)
+        if self.name is not None:
+            glop_msg += " '" + self.name + "'"
+        print("[ KivyGlop ] calculate_hit_range (hitbox) for " + glop_msg + "...")
         if self.vertices is not None:
             vertex_count = int(len(self.vertices)/self.vertex_depth)
             if vertex_count>0:
@@ -573,7 +578,7 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
         previous_point = self._pivot_point
         super(KivyGlop, self).transform_pivot_to_geometry()
         #self._change_instructions()
-        #self._on_change_pivot(previous_point)  #commenting this assumes this subclass' version is already run by super
+        #self._on_change_pivot(previous_point)  #commenting this assumes this subclass' version of _on_change_pivot is already run by super
 
     def _on_change_pivot(self, previous_point=(0.0,0.0,0.0)):
         super(KivyGlop, self)._on_change_pivot(previous_point=previous_point)
@@ -611,6 +616,9 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
         #print("_on_change_scale_instruction for object named '"+this_name+"'")
         #print ("_pivot_point:"+str(self._pivot_point))
         #print ("_pivot_scaled_point:"+str(self._pivot_scaled_point))
+        #if self.hitbox is not None:
+            #only should be recalculated if already
+            # (already bumper or bumpable list)
         self.calculate_hit_range()
 
     def apply_translate(self):
@@ -1815,20 +1823,20 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                 self.scene.glops = []
             self.scene.selected_glop_index = len(self.scene.glops)
             self.scene.selected_glop = this_glop
-            this_glop.index = len(self.scene.glops)
+            this_glop.glop_index = len(self.scene.glops)
             self.scene.glops.append(this_glop)
-            if not (self.scene.glops[this_glop.index] is this_glop):
+            if not (self.scene.glops[this_glop.glop_index] is this_glop):
                 # then deal with multithreading paranoia:
                 print("[ KivyGlopsWindow ] index was wrong, correcting...")
-                this_glop.index = None
+                this_glop.glop_index = None
                 for i in range(len(self.scene.glops)):
                     if self.scene.glops[i] is this_glop:
-                        self.scene.glops[i].index = i
+                        self.scene.glops[i].glop_index = i
                         break
-                if this_glop.index is None:
+                if this_glop.glop_index is None:
                     print("                      ERROR: unable to correct index")
-            #self.scene.glops[len(self.scene.glops)-1].index = len(self.scene.glops) - 1
-            #this_glop.index = len(self.scene.glops) - 1
+            #self.scene.glops[len(self.scene.glops)-1].glop_index = len(self.scene.glops) - 1
+            #this_glop.glop_index = len(self.scene.glops) - 1
 
             self._contexts.add(this_glop.get_context())  # _contexts is a visible instruction group
             if get_verbose_enable():

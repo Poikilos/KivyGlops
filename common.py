@@ -3,7 +3,7 @@ import traceback
 import copy
 import string
 
-verbose_enable = False
+verbose_enable = True
 debug_dict = dict()  # constantly-changing variables, for visual debug
 
 def get_verbose_enable():
@@ -36,7 +36,13 @@ def get_dict_deepcopy(old_dict):
     if type(old_dict) is dict:
         new_dict = {}
         for this_key in old_dict.keys():
-            new_dict[this_key] = copy.deepcopy(old_dict[this_key])
+            try:
+                new_dict[this_key] = copy.deepcopy(old_dict[this_key])
+            except:
+                try:
+                    new_dict[this_key] = old_dict[this_key].copy()
+                except:
+                    new_dict[this_key] = old_dict[this_key]
     return new_dict
 
 valid_path_name_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)

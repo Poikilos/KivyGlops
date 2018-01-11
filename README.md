@@ -36,6 +36,13 @@ Control 3D objects and the camera in your 3D Kivy app!
 ## Changes
 (2018-01-11)
 * pyglops.py: (move `is_out_of_range` from `_internal_bump_glop` to `_update` in kivyglops.py and set immediately after checked) fixed issue where is_out_of_range was only being set for items
+* kivyglops.py, pyglops.py: (only bumper [not even bumpable] has or needs hitbox; hitbox is set to None by super calculate_hit_range so stays that way if no override, so check for bumpable_enable before calling calculate_hit_range from _on_change_scale_instruction; check for hitbox before using in apply_vertex_offset; check whether glop_index is usable during calculate_hit_range to make sure it is not used improperly) prevent using glop_index before assigned (since _on_change_scale_instruction happens during append_wobject via _on_change_pivot, before glop is bumpable)
+* change copy.deepcopy to get_dict_deepcopy where possible for safety with wierd types and python2
+* fix PyGlop deepcopy_with_my_type (pre-allocate list, use copy or '=', etc)
+* reduced verbosity by checking get_verbose_enable() in more situations
+* show glop_name of selected item on debug screen
+* removed extra declaration of _run_command in PyGlops
+* pyglops.py: removed redundant call to self._run_semicolon_separated_commands from _internal_bump_glop
 (2018-01-10)
 * move `properties["inventory_items"]` to `actor_dict["inventory_items"]` (same for `"inventory_index"`)
 * move `is_linked_as`, `get_link_as`, `get_link_and_type`, `push_glop_item`, `pop_glop_item` from KivyGlop to PyGlop
@@ -138,12 +145,12 @@ Control 3D objects and the camera in your 3D Kivy app!
 
 
 ## Known Issues
+* pyglops.py: eliminate (or improve & rename) index_of_mesh, select_mesh_at
+* see `failed to deepcopy` -- not sure why happens
 * by default do not set bounds; modify instructions on expertmultimedia.com to set bounds for office hallway project
 * make a file-reading kernel for loading obj files to avoid blocking io
 * this is a pending change (may not be changed ever) #instructions should be changed from `item_dict["use"] = "throw_arc"` to:
-  ```python
-  item_dict["uses"] = ["throw_arc"]
-  ```
+  `item_dict["uses"] = ["throw_arc"]`
   see example-stadium for more info
 * pyglops.py (PyGlops __init__): implement _player_indices (already a list)
 * fix nonworking ishadereditor.py (finish 3D version)

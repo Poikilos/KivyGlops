@@ -96,7 +96,7 @@ class MainScene(KivyGlops):
             if os.path.isfile(seaport_path):
                 self.load_obj(seaport_path, pivot_to_geometry_enable=True)
             else:
-                try_path
+                #try_path
                 print("[ testing ] ERROR: can't find '" + seaport_name + "'")
             #medseaport1b-lowpoly (including dependencies) is available from http://www.expertmultimedia.com/usingpython/resources/Environments,Outdoor-Manmade/seaport.zip
 
@@ -112,7 +112,10 @@ class MainScene(KivyGlops):
             item_dict = dict()
             item_dict["name"] = "barrel"
             item_dict["bump"] = "hide; obtain"
+            #item_dict["use"] = "throw_arc"
             item_dict["uses"] = ["throw_arc"]
+            #item_dict["uses"] = []
+            #item_dict["uses"].append("throw_arc")
             item_dict["cooldown"] = .7
 
             barrel_names = self.get_similar_names("barrel")

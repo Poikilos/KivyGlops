@@ -122,7 +122,7 @@ class WMaterial:
     _diffuse_color = None  # Kd
     _specular_color = None  # Ks; black is 'off' (same as None)
     _specular_exponent = None  # Ns (0 to 1000) "specular highlight component" ('hardness')
-    
+
     # TODO: "sharpness" command specified sharpness of reflection 0 to 1000 default 60
     # where higher is more clear. "Sharpness values greater than 100 map
     # introduce aliasing effects in flat surfaces that are viewed at a sharp angle" - Ramey
@@ -171,7 +171,7 @@ class WMaterial:
     parameter_space_vertices = None  #only for curves--not really implemented, just loaded from obj
     faces = None
     #endregion raw OBJ data (as per nskrypnik)
-``` 
+```
 
 * formerly from kivyglops.py, but (PROBABLY) not needed since pyglops.py version of this method checks for type(self) instead of PyGlops now:
 ```python
@@ -209,9 +209,9 @@ def get_dict_deepcopy_with_my_type(self, old_dict, copy_my_type_by_reference_ena
             elif isinstance(old_dict[this_key], list):
                 new_dict[this_key] = get_dict_deepcopy_with_my_type(old_dict[this_key], copy_my_type_by_reference_enable)
             else:
-                new_dict[this_key] = copy.deepcopy(old_dict[this_key])
+                new_dict[this_key] = get_dict_deepcopy(old_dict[this_key])
         return new_dict
-``` 
+```
 
 * formerly from __init__ in KivyGlops (formerly in KivyGlopsWindow)
 ```python
@@ -247,7 +247,8 @@ def get_kivyglop_from_pyglop(this_pyglop):
     this_kivyglop.infinite_inventory_enable = this_pyglop.infinite_inventory_enable
     this_kivyglop.bump_sounds = this_pyglop.bump_sounds
     this_kivyglop.look_target_glop = this_pyglop.look_target_glop
-    this_kivyglop.hitbox = this_pyglop.hitbox
+    if this_pyglop.hitbox is not None:
+        this_kivyglop.hitbox = this_pyglop.hitbox.copy()
     this_kivyglop.visible_enable = this_pyglop.visible_enable
 
     this_kivyglop.vertex_format = this_pyglop.vertex_format

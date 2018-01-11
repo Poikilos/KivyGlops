@@ -188,18 +188,18 @@ void main (void){
 
 
         self.scene.glops.append(this_glop)
-        this_glop.index = len(self.scene.glops) - 1
-        if not (self.scene.glops[this_glop.index] is this_glop:
+        this_glop.glop_index = len(self.scene.glops) - 1
+        if not (self.scene.glops[this_glop.glop_index] is this_glop:
             # deal with multithreading paranoia:
-            print("[ ishadereditor.py ] index was wrong, correcting...")
-            this_glop.index = None
+            print("[ ishadereditor.py ] glop_index was wrong, correcting...")
+            this_glop.glop_index = None
             for i in range(len(self.scene.glops)):
                 if self.scene.glops[i] is this_glop:
-                    self.scene.glops[i].index = i
+                    self.scene.glops[i].glop_index = i
                     break
-            if this_glop.index is None:
+            if this_glop.glop_index is None:
                 print("                      ERROR: unable to correct index")
-        #this_glop.index = len(self.scene.glops) - 1
+        #this_glop.glop_index = len(self.scene.glops) - 1
         self._contexts.add(self.scene.glops[len(self.scene.glops)-1].get_context())  # _contexts is a visible instruction group
         self.scene.glops[len(self.scene.glops)-1].visible_enable = True
 
