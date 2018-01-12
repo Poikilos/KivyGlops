@@ -39,6 +39,9 @@ Control 3D objects and the camera in your 3D Kivy app!
 * changed default projectile_speed (see also throw_speed) to 15 (was 1.0) for realism (works now, with since now physics is correct--second-based)--still no wind resistance, so things will go rather far
 * added infinite recursion checking to copy_as_subclass & deepcopy_with_my_type (and fixed deepcopy_with_my_type)
 * kivyglops.py: moved code using walkmesh from update to new method: constrain_glop_to_walkmesh
+* changed boolean is_out_of_range to list in_range_indices which makes way more sense (bumpable gets one bump per bumper, and thrower can be added to list so bumper doesn't hit itself with the bumpable)
+* pyglops.py: limited eye height to 86.5% of hitbox.maximums[1] in calculate_hit_range (so throwing looks better; see "Phi in the human body")
+* pyglops.py: eliminated `fired_glop.name = str(fires_glop.name) + "." + str(projectile_dict["subscript"])` (was redundant since `fired_glop.name = "fired[" + str(self.fired_count) + "]"` was already used)
 (2018-01-11)
 * pyglops.py: (move `is_out_of_range` from `_internal_bump_glop` to `_update` in kivyglops.py and set immediately after checked) fixed issue where is_out_of_range was only being set for items
 * kivyglops.py, pyglops.py: (only bumper [not even bumpable] has or needs hitbox; hitbox is set to None by super calculate_hit_range so stays that way if no override, so check for bumpable_enable before calling calculate_hit_range from _on_change_scale_instruction; check for hitbox before using in apply_vertex_offset; check whether glop_index is usable during calculate_hit_range to make sure it is not used improperly) prevent using glop_index before assigned (since _on_change_scale_instruction happens during append_wobject via _on_change_pivot, before glop is bumpable)
@@ -156,6 +159,8 @@ Control 3D objects and the camera in your 3D Kivy app!
 
 
 ## Known Issues
+* pyglops.py: remove kivy-specific _translate_instruction_* (in throw cases)
+* projectile_speed of `item_dict` or of `item_dict["as_projectile"]` should override throw_speed of actor ONLY if present
 * allow rocks to roll (and keep projectile_dict until they stop) in opengl9
 * pyglops.py: (_internal_bump_glop; may not be an issue) plays `properties["bump_sound_paths"]` for both bumper (actor) and bumpable (item)
 * pyglops.py: eliminate item_dict["fire_type"] dict (may contain "throw_linear" key) and merge with item_dict["uses"] (test with opengl6 or opengl7 since they use a weapon dict that is NOT a glop (only has fired_glop)--they may need to be changed)
@@ -331,6 +336,7 @@ This spec allows one dict to be used to completely store the Wavefront mtl forma
         * if line in mtl file is `refl -type cube_top file.png` then the dict wmaterial["refl -type cube_top"] will have a list at "values" key which is ["file.png"]; the entire preceding part `refl -type cube_top` will be considered as the command to avoid overlap (to force consistent rule: one instance of command per material).
 
 ### Regression Tests
+* calling a function and passing self as the first param (almost always wrong)
 * using str(type(x)) where should be type(x).__name__
 * result of builting type(x) function assumed to be string without using str(type(x)) where x is anything
 * len used inside "[]" without "-1" (or "- 1" or other spacing)

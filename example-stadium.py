@@ -44,13 +44,15 @@ class MainScene(KivyGlops):
         item_dict["name"] = "rock"
         item_dict["bump"] = "hide; obtain"
         item_dict["uses"] = ["throw_arc", "melee"]
-        item_dict["target_types"] = ["surface", "actor", "glop"]
+        item_dict["target_types"] = ["surface", "actor", "glop"]  # TODO
         item_dict["cooldown"] = .7
+        item_dict["hit_damage"] = .3
+        item_dict["projectile_var_names"] = ["hit_damage"]
 
-        weapon = dict()
-        weapon["hit_damage"] = .3
+        #weapon = dict()
+        #weapon["hit_damage"] = .3
 
-        item_dict["as_projectile"] = weapon
+        #item_dict["as_projectile"] = weapon
 
         for index in self.get_indices_of_similar_names("rock"):
             print("Preparing item at index " + str(index))

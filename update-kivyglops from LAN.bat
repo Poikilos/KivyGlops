@@ -22,6 +22,9 @@ copy "%SOURCE_DIR%\music\*.*" "%DEST_DIR%\music\"
 md "%DEST_DIR%\meshes\"
 copy "%SOURCE_DIR%\meshes\*.*" "%DEST_DIR%\meshes\"
 
+md "%DEST_DIR%\meshes\medseaport"
+copy "%SOURCE_DIR%\meshes\medseaport\*.*" "%DEST_DIR%\meshes\medseaport\"
+
 md "%DEST_DIR%\more credits"
 copy "%SOURCE_DIR%\more credits\*.*" "%DEST_DIR%\more credits"
 
