@@ -19,7 +19,8 @@ from kivy.factory import Factory
 from kivy.uix.boxlayout import BoxLayout
 
 from kivyglops import *
-#from common import *
+from common import *
+set_verbose_enable(True)
 
 import math
 import os
@@ -44,6 +45,9 @@ class MainScene(KivyGlops):
         test_medieval_enable = True
         test_shader_enable = False
         test_infinite_crates = True
+        if test_infinite_crates:
+            if not test_medieval_enable:
+                print("test_infinite_crates requires test_medieval_enable")
         #NOTE: default gl_widget shader is already loaded by KivyGlops
         #self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','simple1b.glsl'))
         #self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','shade-normal-only.glsl'))  # partially working
@@ -128,6 +132,10 @@ class MainScene(KivyGlops):
 
             item_dict["name"] = "crate"
             item_dict["use_sound"] = "sounds/woosh-medium.wav"
+            if test_infinite_crates:
+                item_dict["droppable"] = False
+                item_dict["cooldown"] = .1
+                #item_dict["fire_type"] = "throw_arc"  #redundant
             crate_indices = self.get_indices_of_similar_names("crate")
             for index in crate_indices:
                 self.set_as_item_at(index, item_dict)

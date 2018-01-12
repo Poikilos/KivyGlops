@@ -34,6 +34,11 @@ Control 3D objects and the camera in your 3D Kivy app!
 * if segfault occurs, maybe camera and look_at location are same
 
 ## Changes
+(2018-01-12)
+* (was sending self.new_glop instead of self.new_material) fix KivyGlopsMaterial not using copy_as_subclass correctly
+* changed default projectile_speed (see also throw_speed) to 15 (was 1.0) for realism (works now, with since now physics is correct--second-based)--still no wind resistance, so things will go rather far
+* added infinite recursion checking to copy_as_subclass & deepcopy_with_my_type (and fixed deepcopy_with_my_type)
+* kivyglops.py: moved code using walkmesh from update to new method: constrain_glop_to_walkmesh
 (2018-01-11)
 * pyglops.py: (move `is_out_of_range` from `_internal_bump_glop` to `_update` in kivyglops.py and set immediately after checked) fixed issue where is_out_of_range was only being set for items
 * kivyglops.py, pyglops.py: (only bumper [not even bumpable] has or needs hitbox; hitbox is set to None by super calculate_hit_range so stays that way if no override, so check for bumpable_enable before calling calculate_hit_range from _on_change_scale_instruction; check for hitbox before using in apply_vertex_offset; check whether glop_index is usable during calculate_hit_range to make sure it is not used improperly) prevent using glop_index before assigned (since _on_change_scale_instruction happens during append_wobject via _on_change_pivot, before glop is bumpable)
@@ -46,6 +51,9 @@ Control 3D objects and the camera in your 3D Kivy app!
 * pyglops.py: (PyGlops) added missing spawn_pex_particles (calls self.ui.spawn_pex_particles)
 * pyglops.py: (if as_projectile in item_dict used, set bump_enable to True--is set to false when obtained) make thrown items bumping work while airborne
 * pyglops.py: put projectile_dict case before item_dict case in _internal_bump_glop so projectiles that are items work (such as thrown glop items with weapon_dict stored at as_projectile key in item_dict)
+* common.py: now you can do `from common import *` then `set_verbose_enable(True)` for manipulating debug output manually (now False can stay as default during debugging)
+* pyglops.py: now you can set `item_dict["droppable"]` to false for any item to be emitted (produces items which can't be picked up, so that inventory is not duplicated forever)
+* pyglops.py: (now multiplies velocities [meters per second] by got_frame_delay [seconds] as should) make speed of objects more realistic
 (2018-01-10)
 * move `properties["inventory_items"]` to `actor_dict["inventory_items"]` (same for `"inventory_index"`)
 * move `is_linked_as`, `get_link_as`, `get_link_and_type`, `push_glop_item`, `pop_glop_item` from KivyGlop to PyGlop
@@ -323,6 +331,7 @@ This spec allows one dict to be used to completely store the Wavefront mtl forma
         * if line in mtl file is `refl -type cube_top file.png` then the dict wmaterial["refl -type cube_top"] will have a list at "values" key which is ["file.png"]; the entire preceding part `refl -type cube_top` will be considered as the command to avoid overlap (to force consistent rule: one instance of command per material).
 
 ### Regression Tests
+* using str(type(x)) where should be type(x).__name__
 * result of builting type(x) function assumed to be string without using str(type(x)) where x is anything
 * len used inside "[]" without "-1" (or "- 1" or other spacing)
 * if you set `self.glops[index].bump_enable = True` you should also do something like:

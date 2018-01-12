@@ -69,10 +69,10 @@ class KivyGlopsMaterial(PyGlopsMaterial):
     def new_material(self):
         return KivyGlopsMaterial()
 
-    def copy(self):
+    def copy(self, depth=0):
         target = None
         try:
-            target = self.copy_as_subclass(self.new_glop)
+            target = self.copy_as_subclass(self.new_material, depth=depth+1)
         except:
             print("[ KivyGlopsMaterial ] ERROR--could not finish" + \
                   " self.copy_as_subclass:")
@@ -80,6 +80,7 @@ class KivyGlopsMaterial(PyGlopsMaterial):
         return target
 
 look_at_none_warning_enable = True
+look_at_pos_none_warning_enable = True
 
 # If inherits from Widget, has the following error only on
 # Kivy 1.9.0 (on Windows 10; does not occur on 1.10.0 on linux):
@@ -410,13 +411,15 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
         return "KivyGlop(name=" + str(self.name) + ", location=" + \
                str(self._translate_instruction.xyz) + ")"
 
-    def copy(self):
+    def copy(self, depth=0):
         target = None
         try:
             new_material_method = None
             if self.material is not None:
                 new_material_method = self.material.new_material
-            target = self.copy_as_subclass(self.new_glop, new_material_method)
+            if get_verbose_enable():
+                print("[ KivyGlop ] "+"  "*depth+"copy is calling copy_as_subclass")
+            target = self.copy_as_subclass(self.new_glop, new_material_method, depth=depth+1)
             target.canvas = InstructionGroup()
             target._pivot_point = self._pivot_point
             target._pivot_scaled_point = self._pivot_scaled_point
@@ -468,21 +471,49 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
 
     def look_at(self, target_glop):
         if target_glop is not None:
-            pitch = 0.0
-            pitch = getAngleBetweenPoints(self._translate_instruction.y, self._translate_instruction.z, target_glop._translate_instruction.y, target_glop._translate_instruction.z)
-            self._rotate_instruction_x.angle = pitch
-            yaw = getAngleBetweenPoints(self._translate_instruction.x, self._translate_instruction.z, target_glop._translate_instruction.x, target_glop._translate_instruction.z)
-            self._rotate_instruction_y.angle = yaw
+            self.look_at_pos(target_glop._translate_instruction.x, target_glop._translate_instruction.y, target_glop._translate_instruction.z)
+            #pitch = 0.0
+            #pitch = getAngleBetweenPoints(self._translate_instruction.y, self._translate_instruction.z, target_glop._translate_instruction.y, target_glop._translate_instruction.z)
+            #self._rotate_instruction_x.angle = pitch
+            #yaw = getAngleBetweenPoints(self._translate_instruction.x, self._translate_instruction.z, target_glop._translate_instruction.x, target_glop._translate_instruction.z)
+            #self._rotate_instruction_y.angle = yaw
             #print("look at pitch,yaw: " + str(int(math.degrees(pitch))) + "," + str(int(math.degrees(yaw))))
         else:
             global look_at_none_warning_enable
             if look_at_none_warning_enable:
-                print("[ KivyGlop ] Tried to look at None")
+                print("[ KivyGlop ] look_at got None for target_glop")
                 look_at_none_warning_enable = False
 
-    def copy_as_mesh_instance(self):
+    def look_at_pos(self, pos):
+        if pos is not None:
+            pitch = self._rotate_instruction_x.angle
+            yaw = self._rotate_instruction_y.angle
+            if len(pos) > 2:
+                pitch = getAngleBetweenPoints(self._translate_instruction.y, self._translate_instruction.z, pos[1], pos[2])
+                yaw = getAngleBetweenPoints(self._translate_instruction.x, self._translate_instruction.z, pos[0], pos[2])
+            else:
+                yaw = getAngleBetweenPoints(self._translate_instruction.x, self._translate_instruction.z, pos[0], pos[1])
+                if get_verbose_enable():
+                    print("[ KivyGlop ] WARNING: look_at_pos got 2D coords")
+            self._rotate_instruction_x.angle = pitch
+            self._rotate_instruction_y.angle = yaw
+            #print("look at pitch,yaw: " + str(int(math.degrees(pitch))) + "," + str(int(math.degrees(yaw))))
+        else:
+            global look_at_none_warning_enable
+            if look_at_pos_none_warning_enable:
+                print("[ KivyGlop ] ERROR: look_at_pos got None for pos")
+                look_at_pos_none_warning_enable = False
+
+    def copy_as_mesh_instance(self, depth=0, ref_vertices_enable=True):
         result = KivyGlop()
         result.name = self.name
+        if ref_vertices_enable:
+            result.vertex_format = self.vertex_format
+            result.on_vertex_format_change()
+            result.vertices = self.vertices
+            result.indices = self.indices
+        result.hit_radius = self.hit_radius
+        result.hitbox = self.hitbox
         context = result.get_context()
         result._translate_instruction.x = self._translate_instruction.x
         result._translate_instruction.y = self._translate_instruction.y
@@ -524,7 +555,8 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
             glop_msg = str(self.glop_index)
         if self.name is not None:
             glop_msg += " '" + self.name + "'"
-        print("[ KivyGlop ] calculate_hit_range (hitbox) for " + glop_msg + "...")
+        if get_verbose_enable():
+            print("[ KivyGlop ] calculate_hit_range (hitbox) for " + glop_msg + "...")
         if self.vertices is not None:
             vertex_count = int(len(self.vertices)/self.vertex_depth)
             if vertex_count>0:
@@ -548,13 +580,13 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
             else:
                 self.hitbox = None  # avoid 0-size hitbot which would prevent bumps
                 if self.hit_radius is None:
-                    self.hit_radius = .5
+                    self.hit_radius = .4444  # flag value
                 print("    skipped (0 vertices).")
         else:
             self.hitbox = None  # avoid 0-size hitbot which would prevent bumps
             if self.hit_radius is None:
-                self.hit_radius = .5
-            print("    skipped (vertices: None).")
+                self.hit_radius = .4444  # flag value
+            print("[ KivyGlop ] hitbox skipped since vertices None.")
 
     def rotate_x_relative(self, angle):
         self._rotate_instruction_x.angle += angle
@@ -857,9 +889,11 @@ class KivyGlops(PyGlops):
             self.set_camera_mode(self.CAMERA_FIRST_PERSON())
             #self.player_glop = self.camera_glop  # TODO: separate into two objects and make camera follow player
             self.player_glop.bump_enable = True
+            self.camera_glop.glop_index = len(self.glops)
             self.glops.append(self.camera_glop)
             self.player_glop.name = "Player 1"
             self._fly_enables[self.player_glop.name] = True
+            self.player_glop.glop_index = len(self.glops)
             self.glops.append(self.player_glop)
             self._player_glop_index = len(self.glops)-1
             self.set_as_actor_at(self._player_glop_index, None)
@@ -1136,6 +1170,56 @@ class KivyGlops(PyGlops):
         #WARNING: this is for backward compatibility only
         return self.player1_controller.get_pressed(self.ui.get_keycode(key_name))
 
+    def constrain_glop_to_walkmesh(self, this_glop, height_only_enable=False):
+        if len(self._walkmeshes)>0:
+            walkmesh_result = self.get_container_walkmesh_and_poly_index_xz( (this_glop._translate_instruction.x, this_glop._translate_instruction.y, this_glop._translate_instruction.z) )
+            if walkmesh_result is None:
+                #print("Out of bounds")
+                corrected_pos = None
+                #if self.prev_inbounds_camera_translate is not None:
+                #    this_glop._translate_instruction.x = self.prev_inbounds_camera_translate[0]
+                #    this_glop._translate_instruction.y = self.prev_inbounds_camera_translate[1]
+                #    this_glop._translate_instruction.z = self.prev_inbounds_camera_translate[2]
+                #else:
+                corrected_pos = self.get_nearest_walkmesh_vec3_using_xz( (this_glop._translate_instruction.x, this_glop._translate_instruction.y, this_glop._translate_instruction.z) )
+                if corrected_pos is not None:
+                    pushed_angle = get_angle_between_two_vec3_xz( (this_glop._translate_instruction.x, this_glop._translate_instruction.y, this_glop._translate_instruction.z), corrected_pos)
+                    corrected_pos = get_pushed_vec3_xz_rad(corrected_pos, this_glop.hit_radius, pushed_angle)
+                    if not height_only_enable:
+                        this_glop._translate_instruction.x = corrected_pos[0]
+                        this_glop._translate_instruction.y = corrected_pos[1]   # TODO: check y (vertical) axis against eye height and jump height etc
+                    #+ this_glop.eye_height #no longer needed since swizzled to xz (get_nearest_walkmesh_vec3_using_xz returns original's y in return's y)
+                    this_glop._translate_instruction.z = corrected_pos[2]
+                #else:
+                #    print("ERROR: could not find point to bring player in bounds.")
+            else:
+                #print("In bounds")
+                result_glop = self._walkmeshes[walkmesh_result["walkmesh_index"]]
+                X_i = result_glop._POSITION_OFFSET + 0
+                Y_i = result_glop._POSITION_OFFSET + 1
+                Z_i = result_glop._POSITION_OFFSET + 2
+                ground_tri = list()
+                ground_tri.append( (result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]]*result_glop.vertex_depth+X_i], result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]]*result_glop.vertex_depth+Y_i], result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]]*result_glop.vertex_depth+Z_i]) )
+                ground_tri.append( (result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]+1]*result_glop.vertex_depth+X_i], result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]+1]*result_glop.vertex_depth+Y_i], result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]+1]*result_glop.vertex_depth+Z_i]) )
+                ground_tri.append( (result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]+2]*result_glop.vertex_depth+X_i], result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]+2]*result_glop.vertex_depth+Y_i], result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]+2]*result_glop.vertex_depth+Z_i]) )
+                #this_glop._translate_instruction.y = ground_tri[0][1] + this_glop.eye_height
+                ground_y = get_y_from_xz(ground_tri[0], ground_tri[1], ground_tri[2], this_glop._translate_instruction.x, this_glop._translate_instruction.z)
+                this_glop._translate_instruction.y = ground_y  # no longer add eye height, since that is done later to camera_glop relative to player, and only for CAMERA_FIRST_PERSON()
+                if self._world_min_y is None or ground_y < self._world_min_y:
+                    self._world_min_y = ground_y
+                #if self.prev_inbounds_camera_translate is None or this_glop._translate_instruction.y != self.prev_inbounds_camera_translate[1]:
+                    #print("y:"+str(this_glop._translate_instruction.y))
+            global bounds_warning_enable
+            if bounds_warning_enable:
+                print("[ KivyGlops ] (verbose message) bounds used")
+                bounds_warning_enable = False
+        else:
+            global no_bounds_warning_enable
+            if no_bounds_warning_enable:
+                print("[ KivyGlops ] (verbose message) no bounds")
+                no_bounds_warning_enable = False
+            pass
+
     def update(self):
         # KivyGlops.update is called by KivyGlopsWindow.*update* such as update_glsl
         #super(KivyGlops, self).update()
@@ -1193,8 +1277,10 @@ class KivyGlops(PyGlops):
         if self.player1_controller.get_pressed(self.ui.get_keycode("enter")):
             self.use_selected(self.player_glop)
 
+
         walk_units_per_frame = 12. / self.ui.frames_per_second
         turn_radians_per_frame = math.radians(90.) / self.ui.frames_per_second
+        # above are changed to glop settings if present:
         if (self.player_glop.actor_dict is not None):
             if ("land_units_per_second" in self.player_glop.actor_dict):
                 walk_units_per_frame = float(self.player_glop.actor_dict["land_units_per_second"]) / self.ui.frames_per_second
@@ -1247,53 +1333,7 @@ class KivyGlops(PyGlops):
         if position_change[2] is not None:
             self.player_glop._translate_instruction.z += position_change[2]
 
-        if len(self._walkmeshes)>0:
-            walkmesh_result = self.get_container_walkmesh_and_poly_index_xz( (self.player_glop._translate_instruction.x, self.player_glop._translate_instruction.y, self.player_glop._translate_instruction.z) )
-            if walkmesh_result is None:
-                #print("Out of bounds")
-                corrected_pos = None
-                #if self.prev_inbounds_camera_translate is not None:
-                #    self.player_glop._translate_instruction.x = self.prev_inbounds_camera_translate[0]
-                #    self.player_glop._translate_instruction.y = self.prev_inbounds_camera_translate[1]
-                #    self.player_glop._translate_instruction.z = self.prev_inbounds_camera_translate[2]
-                #else:
-                corrected_pos = self.get_nearest_walkmesh_vec3_using_xz( (self.player_glop._translate_instruction.x, self.player_glop._translate_instruction.y, self.player_glop._translate_instruction.z) )
-                if corrected_pos is not None:
-                    pushed_angle = get_angle_between_two_vec3_xz( (self.player_glop._translate_instruction.x, self.player_glop._translate_instruction.y, self.player_glop._translate_instruction.z), corrected_pos)
-                    corrected_pos = get_pushed_vec3_xz_rad(corrected_pos, self.player_glop.hit_radius, pushed_angle)
-                    self.player_glop._translate_instruction.x = corrected_pos[0]
-                    self.player_glop._translate_instruction.y = corrected_pos[1]   # TODO: check y (vertical) axis against eye height and jump height etc
-                    #+ self.player_glop.eye_height #no longer needed since swizzled to xz (get_nearest_walkmesh_vec3_using_xz returns original's y in return's y)
-                    self.player_glop._translate_instruction.z = corrected_pos[2]
-                #else:
-                #    print("ERROR: could not find point to bring player in bounds.")
-            else:
-                #print("In bounds")
-                result_glop = self._walkmeshes[walkmesh_result["walkmesh_index"]]
-                X_i = result_glop._POSITION_OFFSET + 0
-                Y_i = result_glop._POSITION_OFFSET + 1
-                Z_i = result_glop._POSITION_OFFSET + 2
-                ground_tri = list()
-                ground_tri.append( (result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]]*result_glop.vertex_depth+X_i], result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]]*result_glop.vertex_depth+Y_i], result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]]*result_glop.vertex_depth+Z_i]) )
-                ground_tri.append( (result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]+1]*result_glop.vertex_depth+X_i], result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]+1]*result_glop.vertex_depth+Y_i], result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]+1]*result_glop.vertex_depth+Z_i]) )
-                ground_tri.append( (result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]+2]*result_glop.vertex_depth+X_i], result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]+2]*result_glop.vertex_depth+Y_i], result_glop.vertices[result_glop.indices[walkmesh_result["polygon_offset"]+2]*result_glop.vertex_depth+Z_i]) )
-                #self.player_glop._translate_instruction.y = ground_tri[0][1] + self.player_glop.eye_height
-                ground_y = get_y_from_xz(ground_tri[0], ground_tri[1], ground_tri[2], self.player_glop._translate_instruction.x, self.player_glop._translate_instruction.z)
-                self.player_glop._translate_instruction.y = ground_y  # no longer add eye height, since that is done later to camera_glop relative to player, and only for CAMERA_FIRST_PERSON()
-                if self._world_min_y is None or ground_y < self._world_min_y:
-                    self._world_min_y = ground_y
-                #if self.prev_inbounds_camera_translate is None or self.player_glop._translate_instruction.y != self.prev_inbounds_camera_translate[1]:
-                    #print("y:"+str(self.player_glop._translate_instruction.y))
-            global bounds_warning_enable
-            if bounds_warning_enable:
-                print("[ KivyGlops ] (verbose message) bounds used")
-                bounds_warning_enable = False
-        else:
-            global no_bounds_warning_enable
-            if no_bounds_warning_enable:
-                print("[ KivyGlops ] (verbose message) no bounds")
-                no_bounds_warning_enable = False
-            pass
+        self.constrain_glop_to_walkmesh(self.player_glop)
 
         #self.prev_inbounds_camera_translate = self.camera_glop._translate_instruction.x, self.camera_glop._translate_instruction.y, self.camera_glop._translate_instruction.z
 
@@ -1335,6 +1375,7 @@ class KivyGlops(PyGlops):
                     else:
                         self.glops[bumper_index].actor_dict["target_pos"] = get_vec3_from_point(self.glops[self.glops[bumper_index].actor_dict["moveto_index"]]._translate_instruction)
                 if self.glops[bumper_index].actor_dict["target_pos"] is not None:
+                    self.glops[bumper_index].look_at_pos(self.glops[bumper_index].actor_dict["target_pos"])
                     src_pos = get_vec3_from_point(self.glops[bumper_index]._translate_instruction)
                     dest_pos = self.glops[bumper_index].actor_dict["target_pos"]
                     r = self.glops[bumper_index].actor_dict["land_units_per_second"] / self.ui.frames_per_second
@@ -1375,6 +1416,7 @@ class KivyGlops(PyGlops):
                         delta_x, delta_z = get_rect_from_polar_rad(r, theta)
                         self.glops[bumper_index]._translate_instruction.x += delta_x
                         self.glops[bumper_index]._translate_instruction.z += delta_z
+                        self.constrain_glop_to_walkmesh(self.glops[bumper_index], height_only_enable=True)
                     else:
                         # if has weapon, attack
                         if weapon_index is not None:
@@ -1457,9 +1499,9 @@ class KivyGlops(PyGlops):
                     if self.glops[bumpable_index]._cached_floor_y is not None:
                         if self.glops[bumpable_index]._translate_instruction.y - self.glops[bumpable_index].hit_radius - kEpsilon > self.glops[bumpable_index]._cached_floor_y:
                             #TODO: why does this make things float? self.glops[bumpable_index]._rotate_instruction_x.angle += 15.
-                            self.glops[bumpable_index]._translate_instruction.x += self.glops[bumpable_index].x_velocity
-                            self.glops[bumpable_index]._translate_instruction.y += self.glops[bumpable_index].y_velocity
-                            self.glops[bumpable_index]._translate_instruction.z += self.glops[bumpable_index].z_velocity
+                            self.glops[bumpable_index]._translate_instruction.x += self.glops[bumpable_index].x_velocity * got_frame_delay
+                            self.glops[bumpable_index]._translate_instruction.y += self.glops[bumpable_index].y_velocity * got_frame_delay
+                            self.glops[bumpable_index]._translate_instruction.z += self.glops[bumpable_index].z_velocity * got_frame_delay
                             if got_frame_delay > 0.0:
                                 #print("[ KivyGlops ] (verbose message) GRAVITY AFFECTED:"+str(self.glops[bumpable_index]._translate_instruction.y)+" += "+str(self.glops[bumpable_index].y_velocity))
                                 self.glops[bumpable_index].y_velocity -= self._world_grav_acceleration * got_frame_delay
@@ -1484,6 +1526,16 @@ class KivyGlops(PyGlops):
                                     self.glops[bumpable_index].projectile_dict = None
 
                             self.glops[bumpable_index]._translate_instruction.y = self.glops[bumpable_index]._cached_floor_y + self.glops[bumpable_index].hit_radius
+                            if self.glops[bumpable_index].x_velocity != 0.0 or \
+                               self.glops[bumpable_index].y_velocity != 0.0 or \
+                               self.glops[bumpable_index].z_velocity != 0.0:
+                                if get_verbose_enable():
+                                    print("[ KivyGlops ] stopped glop {" + \
+                                          "hit_radius:" + \
+                                          str(self.glops[bumpable_index].hit_radius) + \
+                                          "; glop._cached_floor_y:" + \
+                                          str(self.glops[bumpable_index]._cached_floor_y) + \
+                                          "}")
                             self.glops[bumpable_index].x_velocity = 0.0
                             self.glops[bumpable_index].y_velocity = 0.0
                             self.glops[bumpable_index].z_velocity = 0.0
@@ -1953,8 +2005,8 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         if not self.scene._loaded_glops_enable:
             self.debug_label.opacity = 1.0
             self.scene._load_glops_enable = False
-            self.debug_label.text = "Press F3 after loaded \n" + \
-                                    "for debug mode.\n\n" + \
+            self.debug_label.text = "After loaded, you can press\n" + \
+                                    "F3 for debug screen.\n\n" + \
                                     "loading glops...\n"
             if not self.scene._loading_glops_enable:
                 self.scene._loading_glops_enable = True

@@ -3,11 +3,15 @@ import traceback
 import copy
 import string
 
-verbose_enable = True
+verbose_enable = False
 debug_dict = dict()  # constantly-changing variables, for visual debug
 
 def get_verbose_enable():
     return verbose_enable
+
+def set_verbose_enable(enable):
+    global verbose_enable
+    verbose_enable = enable
 
 class ScopeInfo:
     indent = None
@@ -16,7 +20,7 @@ class ScopeInfo:
 
 def get_yaml_from_literal_value(val):
     #TODO: add yaml escape sequences (see expertmm MoneyForesight for example)
-    if str(type(val))=="string":
+    if type(val).__name__ == "string":
         val = "\"" + val.replace("\"", "\\\"") + "\""
     else:
         val = str(val)
@@ -31,7 +35,7 @@ def get_literal_value_from_yaml(val):
     return val
 
 #from  github.com/expertmm/minetest/chunkymap/expertmm.py, but modified for python2
-def get_dict_deepcopy(old_dict):
+def get_dict_deepcopy(old_dict, depth=0):
     new_dict = None
     if type(old_dict) is dict:
         new_dict = {}
@@ -40,9 +44,12 @@ def get_dict_deepcopy(old_dict):
                 new_dict[this_key] = copy.deepcopy(old_dict[this_key])
             except:
                 try:
-                    new_dict[this_key] = old_dict[this_key].copy()
+                    new_dict[this_key] = old_dict[this_key].copy(depth=depth+1)
                 except:
-                    new_dict[this_key] = old_dict[this_key]
+                    try:
+                        new_dict[this_key] = old_dict[this_key].copy()
+                    except:
+                        new_dict[this_key] = old_dict[this_key]
     return new_dict
 
 valid_path_name_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
@@ -122,3 +129,5 @@ def push_yaml_text(yaml, name, val, indent):
             yaml += indent + name + ": " + str(val)
         yaml += "\n"
     return yaml
+
+
