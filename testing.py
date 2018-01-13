@@ -168,7 +168,7 @@ class MainScene(KivyGlops):
             weapon["droppable"] = "no"
             weapon["fired_sprite_path"] = "blue_jet_bulb.png"
             weapon["fired_sprite_size"] = .5,.5  # width and height in meters
-            weapon["fire_type"] = "throw_arc"
+            weapon["uses"] = ["throw_linear"] #weapon["fire_type"] = "throw_arc"
             weapon["hit_damage"] = .3
             self.add_actor_weapon(player1_index, weapon)
             #self.player_glop = self.glops[player1_index]  # already done by PyGlops __init__
@@ -256,7 +256,7 @@ class MainScene(KivyGlops):
 scene = MainScene(KivyGlopsWindow())
 
 
-class KivyGlopsExampleApp(App):
+class KivyGlopsTestingApp(App):
     def build(self):
         #mainform = MainForm()
         return scene.ui
@@ -271,4 +271,4 @@ class KivyGlopsExampleApp(App):
 
 
 if __name__ == "__main__":
-    KivyGlopsExampleApp().run()
+    KivyGlopsTestingApp().run()

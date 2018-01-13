@@ -80,7 +80,7 @@ class MainScene(KivyGlops):
         # If the ranges below are not set, PyGlops will set defaults for them:
         chimp_info["ranges"] = {}
         chimp_info["ranges"]["melee"] = 0.5
-        chimp_info["ranges"]["throw_arc"] = 20.
+        chimp_info["ranges"]["throw_arc"] = 10.
 
         enemy_indices = self.get_indices_of_similar_names("chimp")
         print("Found "+str(len(enemy_indices))+" chimp(s)")

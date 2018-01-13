@@ -543,17 +543,19 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
         context.add(result._rotate_instruction_z)
         context.add(result._scale_instruction)
         context.add(result._updatenormalmatrix)
-        #context.add(this_glop._color_instruction)  #TODO: asdf add as uniform instead
+        #context.add(this_glop._color_instruction)  #TODO: asdf add as uniform
         if self._mesh is not None:
             context.add(self._mesh)
         else:
-            print("[ KivyGlop ] WARNING in copy_as_mesh_instance: meshless glop '" + str(self.name) + "'")
+            print("[ KivyGlop ] " + "  "*depth + "WARNING in " + \
+                  "copy_as_mesh_instance: meshless glop '" + \
+                  str(self.name) + "'")
         context.add(result._popmatrix)
 
         return result
 
     def calculate_hit_range(self):
-        #TODO: re-implement superclass method, changing hit box taking rotation into account
+        #TODO: re-implement super method, changing hitbox taking rotation & scale into account
         #NOTE: index is set by add_glop so None if done earlier:
         glop_msg = "new glop"
         if self.glop_index is not None:
@@ -585,7 +587,7 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
                 if self.eye_height > phi_eye_height:
                     print("[ KivyGlop ] WARNING in calculate_hit_range:" + \
                           " eye_height " + str(self.eye_height) + \
-                          " is beyond =phi_eye_height" + \
+                          " is beyond phi_eye_height" + \
                           str(phi_eye_height) + \
                           " so is being set to that value")
                     self.eye_height = self.hitbox.maximums[1]
@@ -1389,6 +1391,7 @@ class KivyGlops(PyGlops):
                "ai_enable" in self.glops[bumper_index].actor_dict and \
                self.glops[bumper_index].actor_dict["ai_enable"]:
                 self.process_ai(bumper_index)
+                #NOTE: moveto_index and target_index are guaranteed to exist by set_as_actor_at
                 if self.glops[bumper_index].actor_dict["target_index"] is not None:
                     self.glops[bumper_index].actor_dict["target_pos"] = get_vec3_from_point(self.glops[self.glops[bumper_index].actor_dict["target_index"]]._translate_instruction)
                 elif self.glops[bumper_index].actor_dict["moveto_index"] is not None:
@@ -1403,35 +1406,30 @@ class KivyGlops(PyGlops):
                     r = self.glops[bumper_index].actor_dict["land_units_per_second"] / self.ui.frames_per_second
                     distance = get_distance_vec3_xz(src_pos, dest_pos)
                     attack_radius = None
-                    attack_method = None
+                    attack_s = None
                     acquire_radius = self.glops[bumper_index].reach_radius
-                    weapon_index = None
-                    # NOTE: uses is determined by item, ranges is by actor
-                    if self.glops[bumper_index].actor_dict["inventory_index"] > -1:
-                        try_item = self.glops[bumper_index].actor_dict["inventory_items"][self.glops[bumper_index].actor_dict["inventory_index"]]
-                        if "uses" in try_item:
-                            for this_use in try_item["uses"]:
-                                if this_use == "throw_arc":
-                                    attack_method = "throw_arc"
-                                    # attack guarantees attack_types exists
-                                    # (via set_as_item)
-                                    acquire_radius = self.glops[bumper_index].actor_dict["ranges"]["throw_arc"]
-                                    weapon_index = self.glops[bumper_index].actor_dict["inventory_index"]
-                            #TODO: loop again and look for melee
-                        #else item has no use
-                    else:
-                        # choose random weapon
-                        for i in range(len(self.glops[bumper_index].actor_dict["inventory_items"])):
-                            try_item = self.glops[bumper_index].actor_dict["inventory_items"][i]
+                    if "target_index" in self.glops[bumper_index].actor_dict and self.glops[bumper_index].actor_dict["target_index"] is not None:
+                        weapon_index = None
+                        # NOTE: uses is determined by item, ranges is by actor
+                        if self.glops[bumper_index].actor_dict["inventory_index"] > -1:
+                            try_item = self.glops[bumper_index].actor_dict["inventory_items"][self.glops[bumper_index].actor_dict["inventory_index"]]
                             if "uses" in try_item:
                                 for this_use in try_item["uses"]:
-                                    if this_use == "throw_arc":
+                                    if this_use in self.attack_uses:
+                                        attack_s = this_use
                                         # attack guarantees attack_types exists
                                         # (via set_as_item)
-                                        acquire_radius = self.glops[bumper_index].actor_dict["ranges"]["throw_arc"]
-                                        weapon_index = i
-                                        break
-                        #else item has no use
+                                        acquire_radius = self.glops[bumper_index].actor_dict["ranges"]["throw_arc"]  # guaranteed to exist by set_as_actor_at
+                                        weapon_index = self.glops[bumper_index].actor_dict["inventory_index"]  # guaranteed to exist by set_as_actor_at
+                                #TODO: loop again and look for melee
+                            #else item has no use
+                        if weapon_index is None:
+                            # If weapon is not selected, choose random weapon even if selected a slot.
+                            weapon_index, attack_s = self.glops[bumper_index].find_item_with_any_use(self.attack_uses)
+                            if weapon_index > -1:
+                                acquire_radius = self.glops[bumper_index].actor_dict["ranges"]["throw_arc"]
+                            else:
+                                weapon_index = None
                     if distance > acquire_radius:
                         theta = get_angle_between_two_vec3_xz(src_pos, dest_pos)
                         self.glops[bumper_index]._rotate_instruction_y.angle = theta
@@ -1440,13 +1438,14 @@ class KivyGlops(PyGlops):
                         self.glops[bumper_index]._translate_instruction.z += delta_z
                         self.constrain_glop_to_walkmesh(self.glops[bumper_index], height_only_enable=True)
                     else:
-                        # if has weapon, attack
-                        if weapon_index is not None:
-                            try:
-                                self.use_item_at(self.glops[bumper_index], weapon_index, this_use=attack_method)
-                            except:
-                                print("[ KivyGlops ] ERROR--update could not finish using item " + str(weapon_index))
-                                view_traceback()
+                        # if has weapon and attack target, attack
+                        if self.glops[bumper_index].actor_dict["target_index"] is not None:
+                            if weapon_index is not None:
+                                try:
+                                    self.use_item_at(self.glops[bumper_index], weapon_index, this_use=attack_s)
+                                except:
+                                    print("[ KivyGlops ] ERROR--update could not finish using item " + str(weapon_index))
+                                    view_traceback()
                         # else in range but can't attack
 
             bumper_name = self.glops[bumper_index].name

@@ -130,4 +130,39 @@ def push_yaml_text(yaml, name, val, indent):
         yaml += "\n"
     return yaml
 
+true_like_strings = ['true', 'yes', 'on', '1']
 
+def set_true_like_strings(vals):
+    global true_like_strings
+    set_enable = True
+    for tls in vals:
+        if tls.lower() != tls:
+            set_enable = False
+            print("[ common.py ] ERROR: refusing to set true_like_strings" + \
+                  " since an element contains uppercase characters")
+            break
+    if set_enable:
+        true_like_strings = vals
+
+# Only returns True if `is True`, `== 1`, or
+# lower().strip() in true_like_strings
+def is_true(val):
+    result = False
+    try:
+        val_lower = None
+        try:
+            val_lower = val.lower()
+        except:
+            pass
+        if val_lower is not None:  # is string
+            val_lower = val_lower.strip()
+            if val_lower in true_like_strings:
+                result = True
+        elif val_lower is True:
+            result = True
+        elif val == 1:
+            result = True
+    except:
+        print("[ common.py ] Could not finish is_true (returning false):")
+        view_traceback()
+    return result

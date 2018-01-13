@@ -14,11 +14,12 @@ Control 3D objects and the camera in your 3D Kivy app!
 ## Usage:
 * Lessons are available at [expertmultimedia.com/usingpython](http://www.expertmultimedia.com/usingpython)
   (click "Python 3," "Tutorials," "Start Learning Now," "Unit 2 (OpenGL)")
-* spec for weapon_dict:
-  "droppable": ("yes" or "no") whether weapon leaves your inventory as soon as you use it (yes for rocks...hopefully you get the idea)
-  "fired_sprite_size": tuple containing 2 floats (example: ` = (0.5, 0.5)`) in meters determining size of sprite in 3D space
-  "fired_sprite_path": path to sprite (image will be placed on an automatically-generated square)
-  "fire_type": ("throw_linear" or "throw_arc") how missile behaves (arc uses gravity)
+* spec for item_dict:
+  * "uses": ("throw_linear" or "throw_arc") how missile behaves
+  * "drop_enable": (True or False, or string like "yes", "no", etc) whether weapon leaves your inventory as soon as you use it (yes for rocks...hopefully you get the idea); considered True if not present
+    * special variables used along with drop_enable False:
+      "fired_sprite_size": tuple containing 2 floats (example: ` = (0.5, 0.5)`) in meters determining size of sprite in 3D space
+      "fired_sprite_path": path to sprite (image will be placed on an automatically-generated square)
   * generated members:
     "subscript": (for debugging) if present in weapon_dict, it is the automatically-generated index of the object within the obj file from which the glop containing the weapon dict was loaded.
     "fires_glops": list of glops that will be fired (generated automatically if you use add_actor_weapon and have fired_sprite_path)
@@ -42,6 +43,10 @@ Control 3D objects and the camera in your 3D Kivy app!
 * changed boolean is_out_of_range to list in_range_indices which makes way more sense (bumpable gets one bump per bumper, and thrower can be added to list so bumper doesn't hit itself with the bumpable)
 * pyglops.py: limited eye height to 86.5% of hitbox.maximums[1] in calculate_hit_range (so throwing looks better; see "Phi in the human body")
 * pyglops.py: eliminated `fired_glop.name = str(fires_glop.name) + "." + str(projectile_dict["subscript"])` (was redundant since `fired_glop.name = "fired[" + str(self.fired_count) + "]"` was already used)
+* pyglops.py: (PyGlops) combined throw types into single throw_glop method
+* pyglops.py: changed usage of whether item drops on use from `["droppable"] = "no"` to `["drop_enable"] = False`
+* pyglops.py: (PyGlop) added `has_item_with_any_use(uses)` method
+* kivyglops.py: (KivyGlops update) fixed ai_enable case (weapon choosing, attacking only if target is glop, etc)
 (2018-01-11)
 * pyglops.py: (move `is_out_of_range` from `_internal_bump_glop` to `_update` in kivyglops.py and set immediately after checked) fixed issue where is_out_of_range was only being set for items
 * kivyglops.py, pyglops.py: (only bumper [not even bumpable] has or needs hitbox; hitbox is set to None by super calculate_hit_range so stays that way if no override, so check for bumpable_enable before calling calculate_hit_range from _on_change_scale_instruction; check for hitbox before using in apply_vertex_offset; check whether glop_index is usable during calculate_hit_range to make sure it is not used improperly) prevent using glop_index before assigned (since _on_change_scale_instruction happens during append_wobject via _on_change_pivot, before glop is bumpable)
@@ -336,6 +341,9 @@ This spec allows one dict to be used to completely store the Wavefront mtl forma
         * if line in mtl file is `refl -type cube_top file.png` then the dict wmaterial["refl -type cube_top"] will have a list at "values" key which is ["file.png"]; the entire preceding part `refl -type cube_top` will be considered as the command to avoid overlap (to force consistent rule: one instance of command per material).
 
 ### Regression Tests
+* `actor_dict["inventory_list"]` should be `actor_dict["inventory_items"]`
+* make sure all attack uses are in PyGlops.attack_uses (for ai or other purposes)
+* using fired_glop.item_dict in throw_glop where should instead use item_dict param (also, should create fired_glop.projectile_dict, and warn if already exists; projectile_dict is set to None on impact)
 * calling a function and passing self as the first param (almost always wrong)
 * using str(type(x)) where should be type(x).__name__
 * result of builting type(x) function assumed to be string without using str(type(x)) where x is anything

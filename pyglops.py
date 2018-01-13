@@ -749,6 +749,29 @@ class PyGlop:
                 break
         return result
 
+    def has_item_with_any_use(self, uses):
+        result = False
+        if self.actor_dict is not None:
+            for item_dict in self.actor_dict["inventory_items"]:
+                if "uses" in item_dict:
+                    for this_use in item_dict["uses"]:
+                        if this_use in uses:
+                            result = True
+                            break
+        return result
+
+    #returns tuple containing inventory index in actor_dict["inventory_items"] AND use string that is in uses
+    def find_item_with_any_use(self, uses):
+        result = -1, None
+        if self.actor_dict is not None:
+            for item_dict in self.actor_dict["inventory_items"]:
+                if "uses" in item_dict:
+                    for i in range(len(item_dict["uses"])):
+                        if item_dict["uses"][i] in uses:
+                            result = i, item_dict["uses"][i]
+                            break
+        return result
+
     def push_glop_item(self, item_glop, this_glop_index, sender_name="unknown"):
         # automatically run by _run_command which is normally run
         # by _internal_bump_glop (such as via _run_*)
@@ -1766,6 +1789,7 @@ class PyGlops:
         self._world_grav_acceleration = gravity_mss
 
     def __init__(self, new_glop_method):
+        self.attack_uses = ["throw_arc", "throw_linear", "melee"]
         self._default_fly_enable = False
         self._player_indices = []  # player number 1 is 0
         self._visual_debug_enable = False
@@ -2155,6 +2179,7 @@ class PyGlops:
     def set_camera_mode(self, person_number):
         self._camera_person_number = person_number
 
+
     def set_as_actor_at(self, index, template_dict):
         #result = False
         if index is not None:
@@ -2185,7 +2210,7 @@ class PyGlops:
                     if "melee" not in self.glops[index].actor_dict["ranges"]:
                         self.glops[index].actor_dict["ranges"]["melee"] = 0.5
                     if "throw_arc" not in self.glops[index].actor_dict["ranges"]:
-                        self.glops[index].actor_dict["ranges"]["throw_arc"] = 20.
+                        self.glops[index].actor_dict["ranges"]["throw_arc"] = 10.
                     if "inventory_index" not in self.glops[index].actor_dict:
                         self.glops[index].actor_dict["inventory_index"] = -1
                     if "inventory_items" not in self.glops[index].actor_dict:
@@ -2323,21 +2348,27 @@ class PyGlops:
             print("[ PyGlops ] WARNING in set_as_item_at: use is deprecated--do item['uses'] = ['" + str(item_dict["use"]) + "'] instead")
             del item_dict["use"]
         if "uses" in item_dict:
-            if "throw_arc" in item_dict["uses"]:
+            if "throw_arc" in item_dict["uses"] or \
+               "throw_linear" in item_dict["uses"]:
                 #del item_dict["use"]["throw_arc"]
                 #item_dict["use"]["attack"]
-                if not ("as_projectile" in item_dict):
-                    print("[ PyGlops ] WARNING: no ['as_projectile'] in item--won't do damage")
-                else:
-                    if not ("hit_damage" in item_dict["as_projectile"]):
-                        print("[ PyGlops ] WARNING: no ['hit_damage'] in ['as_projectile'] in item--so won't do damage")
+                if not ("projectile_var_names" in item_dict):
+                    print("[ PyGlops ] WARNING: no ['as_projectile'] in item, so if thrown, projectile_dict will have only defaults such as owner and owner_index--for example, won't have any custom weapon_dict vars available to attacked_glop")
+                #else:
+                    #if not ("hit_damage" in item_dict["as_projectile"]):
+                    #    print("[ PyGlops ] WARNING: no ['hit_damage'] in ['as_projectile'] in item--so won't do damage")
         else:
             # must be a item with no use
             pass
         if "droppable" in item_dict:
-            if item_dict["droppable"] != False and item_dict["droppable"] != True:
-                item_dict["droppable"] = is_true(item_dict["droppable"])
-            if not item_dict["droppable"]:
+            print("[ PyGlops ] WARNING in set_as_item_at: droppable is not" + \
+                  " implemented yet--you may have meant drop_enable instead")
+            if not is_true(item_dict["droppable"]):
+                item_dict["drop_enable"] = False
+        if "drop_enable" in item_dict:
+            if (not (item_dict["drop_enable"] is False)) and (not (item_dict["drop_enable"] is True)):
+                item_dict["drop_enable"] = is_true(item_dict["drop_enable"])
+            if not item_dict["drop_enable"]:
                 item_dict["fires_glops"] = list()
                 #TODO: check for fired_sprite_path and fired_sprite_size
                 item_dict["fires_glops"].append(self.glops[i])
@@ -2360,7 +2391,8 @@ class PyGlops:
             if self.glops[i].hit_radius < 0.0:
                 self.glops[i].hit_radius = 0.0 - self.glops[i].hit_radius
         else:
-            print("ERROR: could not read any y values from glop named "+str(this_glop.name))
+            print("ERROR: could not read any y values from glop named " + \
+                  str(this_glop.name))
         #self.glops[i].hit_radius = 1.0
         self._bumpable_indices.append(i)
         return result
@@ -2370,171 +2402,161 @@ class PyGlops:
         try:
             if user_glop is not None:
                 if user_glop.name is None:
-                    user_glop.name = "<None>"
-                    print("[ PyGlops ] ERROR in use_item_at: user_glop.name was None (set to '<None>' for safety)")
+                    user_glop.name = uuid.uuid4().hex_digest()
+                    print("[ PyGlops ] ERROR in use_item_at: " + \
+                          "user_glop.name was None (set to '" + \
+                          user_glop.name + "'" + \
+                          " for safety)")
                 if not (user_glop.name in debug_dict):
                     debug_dict[user_glop.name] = {}
-                # DICT IS NOT CALLABLE WHY WAS THIS HERE user_glop.actor_dict["inventory_items"][inventory_index]
-                this_item = user_glop.actor_dict["inventory_items"][inventory_index]
-                this_glop_index = None
+                item_dict = user_glop.actor_dict["inventory_items"][inventory_index]
                 item_glop = None
-                if "glop_index" in this_item:
-                    this_glop_index = this_item["glop_index"]
+                if "glop_index" in item_dict:
+                    this_glop_index = item_dict["glop_index"]
                     if this_glop_index is not None:
                         item_glop = self.glops[this_glop_index]
+                    #else not a glop--continue anyway
+
                 if item_glop is not None:
-                    if item_glop.item_dict is not None:
+                    if item_glop.item_dict is None:
+                        if get_is_verbose():
+                            print("[ PyGlops ] WARNING in use_item_at: " + \
+                                  "using item_glop with glop_index where" + \
+                                  " glop is not an item (maybe should not " + \
+                                  "be in " + str(user_glop.name) + \
+                                  "'s inventory)")
+#                        if item_glop.item_dict is not None:
+#                            item_dict = item_glop.item_dict
+#                        else:
+#                            print("[ PyGlops ] ERROR in use_item_at: could " + \
+#                                  "not find item_dict in inventory OR item_glop")
+#                    else:
+#                        print("[ PyGlops ] ERROR in use_item_at: could not" + \
+#                              " find item_dict in inventory therefore" + \
+#                              " could not get item_glop")
+
+
+                if item_dict is not None:
+                    if "fire_type" in item_dict:
+                        print("[ PyGlops ] WARNING: fire_type is " + \
+                              "deprecated. Add the use to the item dict's" + \
+                              " 'uses' list instead")
+                        #if item_glop is None, try fires_glops key in dict (see throw_glop):
+                        #if item_glop is None:
+                        #    if item_dict["fire_type"] != "throw_linear":
+                        #        print("[ PyGlops ] WARNING: " + item_dict["fire_type"] + " not implemented, so using throw_linear")
+                        #    self.throw_glop(user_glop, item_dict, original_glop_or_None=None, inventory_index=inventory_index)
+                    is_ready = True
+                    if "cooldown" in item_dict:
+                        is_ready = False
+                        if ("RUNTIME_last_used_time" not in item_dict) or \
+                           (time.time() - item_dict["RUNTIME_last_used_time"] >= item_dict["cooldown"]):
+                            if ("RUNTIME_last_used_time" in item_dict):
+                                is_ready = True
+                            #else Don't assume cooled down when obtained,
+                            # otherwise rapid firing items will be allowed
+                                debug_dict[user_glop.name]["item_dict.cooldown"] = "0.0 #ready"
+                            item_dict["RUNTIME_last_used_time"] = time.time()
+                    else:
+                        debug_dict[user_glop.name]["item_dict.cooldown"] = "None"
+                    if is_ready:
+                        this_use = None
                         drop_enable = False
-                        if "uses" in item_glop.item_dict:
-                            is_ready = True
-                            if "cooldown" in item_glop.item_dict:
-                                is_ready = False
-                                if ("RUNTIME_last_used_time" not in item_glop.item_dict) or (time.time() - item_glop.item_dict["RUNTIME_last_used_time"] >= item_glop.item_dict["cooldown"]):
-                                    if ("RUNTIME_last_used_time" in item_glop.item_dict):
-                                        is_ready = True
-                                    #else Don't assume cooled down when obtained, otherwise rapid firing items will be allowed
-                                    item_glop.item_dict["RUNTIME_last_used_time"] = time.time()
-                                debug_dict[user_glop.name]["this_item.cooldown"] = "0.0 #ready"
+                        if "uses" in item_dict:
+                            if get_verbose_enable():
+                                print("[ PyGlops ] (verbose message) " + \
+                                      f_name + ": '" + str(user_glop.name) + \
+                                      "' using item in slot " + \
+                                      str(user_glop.actor_dict['inventory_index']))
+
+                            if "use_sound" in item_dict:
+                                self.play_sound(item_dict["use_sound"])
+                            if this_use is None:
+                                this_use = item_dict["uses"][0]
+                            if get_verbose_enable():
+                                item_glop_name = None
+                                if item_glop is not None:
+                                    item_glop_name = item_glop.name
+                                    if item_glop_name is None:
+                                        item_glop_name = "ERROR: item_glop" + \
+                                                         ".name is None"
+                                print("[ PyGlops ] (verbose_message in " + \
+                                      "use_item_at) uses:" + \
+                                      str(item_dict["uses"]) + \
+                                      "; item_glop.name:" + str(item_glop_name))
+                            if get_verbose_enable():
+                                print("[ PyGlops ] (verbose message in " + \
+                                      "use_item_at) " + this_use + " " + \
+                                      item_glop.name)
+                            if "throw_" in this_use:  # such as item_dict["throw_arc"]
+                                if (not ("drop_enable" in item_dict)) or \
+                                   item_dict["drop_enable"]:
+                                    drop_enable = True
+                                    self.throw_glop(user_glop,
+                                                    item_dict,
+                                                    item_glop,
+                                                    this_use=this_use,
+                                                    duplicate_enable=False,
+                                                    inventory_index=inventory_index)
+                                else:
+                                    if get_verbose_enable():
+                                        print("[ PyGlops ] using throw_glop" + \
+                                              " with duplicate_enable since" + \
+                                              " not drop_enable")
+                                    self.throw_glop(user_glop,
+                                                    item_dict,
+                                                    item_glop,
+                                                    this_use=this_use,
+                                                    inventory_index=inventory_index)
                             else:
-                                debug_dict[user_glop.name]["this_item.cooldown"] = "None"
-                            if is_ready:
                                 if get_verbose_enable():
-                                    print("[ PyGlops ] (verbose message) " + f_name + ": '" + \
-                                          str(user_glop.name) + "' using item in slot " + \
-                                          str(user_glop.actor_dict['inventory_index']))
-                                if "use_sound" in item_glop.item_dict:
-                                    self.play_sound(item_glop.item_dict["use_sound"])
-                                if this_use is None:
-                                    this_use = item_glop.item_dict["uses"][0]
-                                #print(str(item_glop.item_dict["uses"]) + " " + item_glop.name)
-                                if get_verbose_enable():
-                                    print("[ PyGlops ] (verbose message in use_item_at) " + this_use + " " + item_glop.name)
-                                if "throw_" in this_use:  # such as item_dict["throw_arc"]
-                                    if (not ("droppable" in item_glop.item_dict)) or item_glop.item_dict["droppable"]:
-                                        instance_enable = False
-                                        item_dict = item_glop.item_dict
-                                        fired_glop = item_glop
-                                        if "as_projectile" in fired_glop.item_dict:
-                                            print("[ PyGlops ] WARNING in use_item_at: " + \
-                                                  "as_projectile is deprecated. use " + \
-                                                  "'hit_damage' directly in item_dict and" + \
-                                                  " set item_dict['projectile_var_names']" + \
-                                                  "=['hit_damage'] instead")
-                                        if fired_glop.projectile_dict is not None:
-                                            print("[ PyGlops ] ERROR in use_item_at: " + \
-                                                  "projectile_dict was already present" + \
-                                                  "before thrown (this should never happen)" + \
-                                                  "--will be reset")
-                                        fired_glop.projectile_dict = {}  # should only exist while airborne
-                                        fired_glop.projectile_dict["owner"] = user_glop.name
-                                        fired_glop.projectile_dict["owner_index"] = user_glop.glop_index
-                                        if user_glop.glop_index is None:
-                                            print("[ PyGlops ] ERROR in use_item_at: user_glop.glop_index is None")
-                                        if "projectile_var_names" in item_dict:
-                                            for projectile_var_name in item_dict["projectile_var_names"]:
-                                                fired_glop.projectile_dict[projectile_var_name] = item_dict[projectile_var_name]
-                                        #fired_glop.projectile_dict = get_dict_deepcopy(item_glop.item_dict["as_projectile"])
-                                        fired_glop.bump_enable = True
-                                        fired_glop.in_range_indices = [user_glop.glop_index]
-                                        if fired_glop.hitbox is None:
-                                            fired_glop.calculate_hit_range()
-                                        if get_verbose_enable():
-                                            print("[ PyGlops ] use_item_at set projectile_dict and bump_enable for '" + str(fired_glop.name) + "' and added to _bumpable_indices")
-
-                                        #TODO: why was this nonsense here (in throw_glop_instance):
-                                        #if "owner" in fired_glop.item_dict:
-                                        #    del fired_glop.item_dict["owner"]  # ok since still in projectile_dict if matters
-                                        #if "owner_index" in fired_glop.item_dict:
-                                        #    del fired_glop.item_dict["owner_index"]
-                                        #or useless_string = my_dict.pop('key', None)  # where None causes to return None instead of throwing KeyError if not found
-
-                                        fired_glop._translate_instruction.x = user_glop._translate_instruction.x
-                                        fired_glop._translate_instruction.y = user_glop._translate_instruction.y + user_glop.eye_height
-                                        fired_glop._translate_instruction.z = user_glop._translate_instruction.z
-
-                                        fired_glop.physics_enable = True
-                                        this_speed = 15. # meters/sec
-                                        custom_speed_name = None  # for debugging
-                                        if user_glop.actor_dict is not None:
-                                            if "throw_speed" in user_glop.actor_dict:
-                                                this_speed = user_glop.actor_dict["throw_speed"]
-                                                custom_speed_name = "throw_speed"
-                                        if "projectile_speed" in item_glop.item_dict:
-                                            this_speed = item_glop.item_dict["projectile_speed"]
-                                            custom_speed_name = "projectile_speed"
-                                        if get_verbose_enable():
-                                            if custom_speed_name is None:
-                                                custom_speed_name = "default"
-                                            print("[ PyGlops ] use_item_at throw is using speed " + str(this_speed) + " from " + custom_speed_name)
-
-                                        x_angle = None
-                                        y_angle = None
-                                        z_angle = None
-                                        try:
-                                            x_angle = user_glop._rotate_instruction_x.angle
-                                            if this_use == "throw_arc":
-                                                x_angle += math.radians(30)
-                                            if x_angle > math.radians(90):
-                                                x_angle = math.radians(90)
-                                            fired_glop.y_velocity = this_speed * math.sin(x_angle)
-                                            this_h_speed = this_speed * math.cos(x_angle)
-                                            # horizontal speed is affected by pitch
-                                            fired_glop.x_velocity = this_h_speed * math.cos(user_glop._rotate_instruction_y.angle)
-                                            fired_glop.z_velocity = this_h_speed * math.sin(user_glop._rotate_instruction_y.angle)
-                                        except:
-                                            fired_glop.x_velocity = 0
-                                            fired_glop.z_velocity = 0
-                                            print("[ PyGlop ] ERROR--use_item_at could not finish getting throw x,,z values")
-                                            view_traceback()
-
-                                        fired_glop.visible_enable = True
-
-                                        self.show_glop(this_glop_index)  # adds to display, such as adding mesh to canvas
-                                        fired_glop.physics_enable = True
-                                        fired_glop.bump_enable = True
-                                        # item is bumpable (but only actor can be bumper)
-                                        self._bumpable_indices.append(fired_glop.glop_index)
-
-                                        if not instance_enable:
-                                            event_dict = user_glop.pop_glop_item(inventory_index)
-                                            self.after_selected_item(event_dict)
-                                    else:
-                                        if get_verbose_enable():
-                                            print("[ PyGlops ] using throw_glop_instance since not droppable")
-                                        self.throw_glop_instance(user_glop, item_glop.item_dict, item_glop, this_use=this_use)
-                            else:
-                                debug_dict[user_glop.name]["this_item.cooldown"] = item_glop.item_dict["cooldown"]
-                                #if get_verbose_enable():
-                                #    msg = "[ PyGlops ] item is not ready"
-                                #    if "cooldown" in item_glop.item_dict:
-                                #        msg += " (cooldown in " + str(item_glop.item_dict["cooldown"] - (time.time() - item_glop.item_dict["RUNTIME_last_used_time"]))
-                                #    print(msg)
+                                    print("[ PyGlops ] use is unknown: '" + \
+                                          str(this_use) + \
+                                          "' (triggering on_item_use anyway)")
                         else:
-                            print(str(item_glop.name) + " has no use.")
+                            name_msg = "<no name item>"
+                            if ["name"] in item_dict:
+                                name_msg = str(item_dict["name"])
+                            print("[ PyGlops ] ERROR in use_item_at: " + \
+                                  name_msg + " has no uses " + \
+                                  "(triggering on_item_use anyway).")
+                        self.on_item_use(user_glop, item_dict, this_use)
                         if drop_enable:
                             item_glop.rel = {}
                             if get_verbose_enable():
-                                print("[ PyGlops ] (verbose message) removed relations from item_glop since dropped.")
+                                print("[ PyGlops ] (verbose message) " + \
+                                       "removed relations from item_glop" + \
+                                       " since dropped.")
                     else:
-                        print("[ PyGlops ] ERROR: tried to use a glop that is not an item (this should not be in "+str(user_glop.name)+"'s inventory)")
-                elif "fire_type" in this_item:
-                    #not a glop, so try fires_glops key in dict (see throw_glop_instance)
-                    if this_item["fire_type"] != "throw_linear":
-                        print("[ PyGlops ] WARNING: "+this_item["fire_type"]+" not implemented, so using throw_linear")
-                    self.throw_glop_instance(user_glop, this_item, original_glop_or_None=None)
+                        if "cooldown" in item_dict:
+                            debug_dict[user_glop.name]["item_dict.cooldown"] = item_dict["cooldown"]
+                else:
+                    print("[ PyGlops ] ERROR in use_item_at: " + \
+                          "could not get item_dict from .")
+                    #if get_verbose_enable():
+                    #    msg = "[ PyGlops ] item is not ready"
+                    #    if "cooldown" in item_dict:
+                    #        msg += " (cooldown in " + str(item_dict["cooldown"] - (time.time() - item_dict["RUNTIME_last_used_time"]))
+                    #    print(msg)
             else:
-                print("[ PyGlops] ERROR: user_glop is None in use_item_at")
+                print("[ PyGlops] ERROR in use_item_at: user_glop is None")
         except:
             print("[ PyGlops ] ERROR: Could not finish use_selected:")
-            print("  user_glop.name:"+str(user_glop.name))
-            print('  inventory_index:'+str(inventory_index))
-            print('  len(user_glop.actor_dict["inventory_items"]):'+str(len(user_glop.actor_dict["inventory_items"])))
+            if user_glop is not None:
+                print("  user_glop.name:" + str(user_glop.name))
+                print('  len(user_glop.actor_dict["inventory_items"]):' + \
+                      str(len(user_glop.actor_dict["inventory_items"])))
+            else:
+                print("  user_glop: None")
+            print('  inventory_index:' + str(inventory_index))
             print("  traceback: '''")
             view_traceback()
             print("  '''")
 
     # throw_copy: if did not provide original_glop, item_dict must have fires_glops key that is list of *Glop objects
-    def throw_glop_instance(self, user_glop, item_dict, original_glop_or_None, this_use=None, remove_item_dict=True, set_projectile=True, instance_enable=True):
+    # duplicate_enable: if True, copies the object (by instance); if False, the SAME item will be used and it will leave player's inventory
+    # inventory_index: if None, and droppable (or droppable boolean is not in item_dict), item will not be dropped and warning will be logged to console
+    def throw_glop(self, user_glop, item_dict, original_glop_or_None, this_use=None, remove_item_dict=True, set_projectile=True, duplicate_enable=True, inventory_index=None):
         favorite_pivot = None
         fires_glops = None
         if user_glop is not None:
@@ -2546,34 +2568,35 @@ class PyGlops:
                 print("[ PyGlops ] ERROR in throw_copy: nothing done since cannot get glop to throw from 'fires_glops' key of item_dict nor was original_glop param set")
             if fires_glops is not None:
                 for fires_glop in fires_glops:  # formerly in item_dict["fires_glops"]
-                    if "subscript" not in item_dict:
-                        item_dict["subscript"] = 0
                     if this_use is None:
                         if "uses" in item_dict:
                             for try_use in item_dict["uses"]:
                                 if "throw_" in try_use:
                                     this_use = try_use
-                                    print("[ PyGlops ] WARNING in throw_glop_instance: this_use was not specified, so using " + str(try_use) + " (found in item_dict['uses'])")
+                                    print("[ PyGlops ] WARNING in throw_glop: this_use was not specified, so using " + str(try_use) + " (found in item_dict['uses'])")
                                     break
                             if this_use is None:
-                                print("[ PyGlops ] WARNING in throw_glop_instance: this_use was not specified, and uses did not contain a string containing 'throw_', so using default throw (linear)")
+                                print("[ PyGlops ] WARNING in throw_glop: this_use was not specified, and uses did not contain a string containing 'throw_', so using default throw (linear)")
                         else:
-                            print("[ PyGlops ] WARNING in throw_glop_instance: this_use was not specified, and uses was not in item_dict, so using default throw (linear)")
+                            print("[ PyGlops ] WARNING in throw_glop: this_use was not specified, and uses was not in item_dict, so using default throw (linear)")
                     #if get_verbose_enable():
                     #    print("[ PyGlops ] (verbose message) calling copy_as_mesh_instance for fires_glop")
-                    fired_glop = fires_glop.copy_as_mesh_instance()
+                    if duplicate_enable:
+                        fired_glop = fires_glop.copy_as_mesh_instance()
+                    else:
+                        fired_glop = fires_glop
                     if original_glop_or_None is None or \
                        fired_glop is not original_glop_or_None:
                         fired_glop.name = "fired[" + str(self.fired_count) + "]"
                         self.fired_count += 1
-                    if "as_projectile" in fired_glop.item_dict:
-                        print("[ PyGlops ] WARNING in throw_glop_instance: " + \
+                    if "as_projectile" in item_dict:
+                        print("[ PyGlops ] WARNING in throw_glop: " + \
                               "as_projectile is deprecated. use " + \
                               "'hit_damage' directly in item_dict and" + \
                               " set item_dict['projectile_var_names']" + \
                               "=['hit_damage'] instead")
                     if fired_glop.projectile_dict is not None:
-                        print("[ PyGlops ] ERROR in throw_glop_instance: " + \
+                        print("[ PyGlops ] ERROR in throw_glop: " + \
                               "projectile_dict was already present" + \
                               "before thrown (this should never happen)" + \
                               "--will be reset")
@@ -2581,25 +2604,25 @@ class PyGlops:
                     fired_glop.projectile_dict["owner"] = user_glop.name
                     fired_glop.projectile_dict["owner_index"] = user_glop.glop_index
                     if user_glop.glop_index is None:
-                        print("[ PyGlops ] ERROR in throw_glop_instance: user_glop.glop_index is None")
+                        print("[ PyGlops ] ERROR in throw_glop: user_glop.glop_index is None")
                     if "projectile_var_names" in item_dict:
                         for projectile_var_name in item_dict["projectile_var_names"]:
                             fired_glop.projectile_dict[projectile_var_name] = item_dict[projectile_var_name]
-                    #fired_glop.projectile_dict = get_dict_deepcopy(fired_glop.item_dict["as_projectile"])
+                    #fired_glop.projectile_dict = get_dict_deepcopy(item_dict["as_projectile"])
                     fired_glop.bump_enable = True
                     fired_glop.in_range_indices = [user_glop.glop_index]
 
                     if fired_glop.hitbox is None:
                         fired_glop.calculate_hit_range()
                     if get_verbose_enable():
-                        print("[ PyGlops ] throw_glop_instance set projectile_dict and bump_enable for '" + str(fired_glop.name) + "' and added to _bumpable_indices")
+                        print("[ PyGlops ] throw_glop set projectile_dict and bump_enable for '" + str(fired_glop.name) + "' and added to _bumpable_indices")
                         print("            user_glop.glop_index:" + str(user_glop.glop_index) + "; ")
 
-                    #TODO: why was this nonsense here (in throw_glop_instance):
-                    #if "owner" in fired_glop.item_dict:
-                    #    del fired_glop.item_dict["owner"]  # ok since still in projectile_dict if matters
-                    #if "owner_index" in fired_glop.item_dict:
-                    #    del fired_glop.item_dict["owner_index"]
+                    #TODO: why was this nonsense here (in throw_glop):
+                    #if "owner" in item_dict:
+                    #    del item_dict["owner"]  # ok since still in projectile_dict if matters
+                    #if "owner_index" in item_dict:
+                    #    del item_dict["owner_index"]
                     #or useless_string = my_dict.pop('key', None)  # where None causes to return None instead of throwing KeyError if not found
 
                     fired_glop._translate_instruction.x = user_glop._translate_instruction.x
@@ -2607,26 +2630,26 @@ class PyGlops:
                     fired_glop._translate_instruction.z = user_glop._translate_instruction.z
 
                     fired_glop.physics_enable = True
-                    this_speed = 15.
+                    this_speed = 15.  # meters/sec
                     custom_speed_name = None  # for debugging
                     if user_glop.actor_dict is not None:
                         if "throw_speed" in user_glop.actor_dict:
                             this_speed = user_glop.actor_dict["throw_speed"]
                             custom_speed_name = "throw_speed"
-                    if "projectile_speed" in projectile_dict:
-                        this_speed = projectile_dict["projectile_speed"]
+                    if "projectile_speed" in item_dict:
+                        this_speed = item_dict["projectile_speed"]
                         custom_speed_name = "projectile_speed"
                     if get_verbose_enable():
                         if custom_speed_name is None:
                             custom_speed_name = "default"
-                        print("[ PyGlops ] throw_glop_instance is using speed " + str(this_speed) + " from " + custom_speed_name + " for " + fired_glop.name)
+                        print("[ PyGlops ] throw_glop is using speed " + str(this_speed) + " from " + custom_speed_name + " for " + fired_glop.name)
 
                     x_angle = None
                     y_angle = None
                     z_angle = None
                     try:
                         x_angle = user_glop._rotate_instruction_x.angle
-                        if this_use=="throw_arc":
+                        if this_use == "throw_arc":
                             x_angle += math.radians(30)
                         if x_angle > math.radians(90):
                             x_angle = math.radians(90)
@@ -2638,7 +2661,7 @@ class PyGlops:
                     except:
                         fired_glop.x_velocity = 0
                         fired_glop.z_velocity = 0
-                        print("[ PyGlop ] ERROR--throw_glop_instance could not finish getting throw x,,z values")
+                        print("[ PyGlop ] ERROR--throw_glop could not finish getting throw x,,z values")
                         view_traceback()
 
                     fired_glop.visible_enable = True
@@ -2653,14 +2676,28 @@ class PyGlops:
                             fired_glop_index = self.index_of_mesh(fired_glop.name)
                         fired_glop.glop_index = fired_glop_index
                     else:
-                        if not instance_enable:
-                            print("[ PyGlop ] WARNING in throw_glop_instance: not adding to glop list since already has glop_index (you should use instance_enable=True param if you want an instance)")
+                        if duplicate_enable:
+                            print("[ PyGlop ] WARNING in throw_glop: not adding to glop list fired_glop.glop_index already set (you should use duplicate_enable=True param if you want an instance)")
 
-                    self.show_glop(fired_glop_index)  # adds to display, such as adding mesh to canvas
+                    if fired_glop.dat is not None:
+                        if "links" in fired_glop.dat:
+                            del fired_glop.dat["links"]
+                    self.show_glop(fired_glop.glop_index)  # adds to display, such as adding mesh to canvas
                     fired_glop.physics_enable = True
                     fired_glop.bump_enable = True
                     # item is bumpable (but only actor can be bumper)
                     self._bumpable_indices.append(fired_glop.glop_index)
+
+                    if not duplicate_enable:
+                        if inventory_index is not None:
+                            event_dict = user_glop.pop_glop_item(inventory_index)
+                            self.after_selected_item(event_dict)
+                        else:
+                            print("[ PyGlop ] ERROR in throw_glop: " + \
+                                  "item is droppable on use, but " + \
+                                  "inventory_index param is missing, so " + \
+                                  "item will not be dropped (item will " + \
+                                  "be severely glitched)")
 
                     #TODO: why was this nonsense here:
                     #if favorite_pivot is None:
@@ -2692,7 +2729,7 @@ class PyGlops:
                     #    print("[ debug only ]     name: " + str(self.glops[b_i].name))
                     #    print("[ debug only ]     _translate_instruction: " + str(self.glops[b_i]._translate_instruction.xyz))
         else:
-            print("[ PyGlops ] ERROR in throw_glop_instance: user_glop None")
+            print("[ PyGlops ] ERROR in throw_glop: user_glop None")
 
     def update_item_visual_debug(self):
         if self.player_glop is not None:
@@ -2714,9 +2751,17 @@ class PyGlops:
                 if "inventory_items" in user_glop.actor_dict:
                     if "inventory_index" in user_glop.actor_dict:
                         if user_glop.actor_dict["inventory_index"] > -1:
-                            self.use_item_at(user_glop, user_glop.actor_dict["inventory_index"])
+                            if user_glop.actor_dict["inventory_index"] < len(user_glop.actor_dict["inventory_items"]):
+                                if user_glop.actor_dict["inventory_items"][user_glop.actor_dict["inventory_index"]] is not None:
+                                    self.use_item_at(user_glop, user_glop.actor_dict["inventory_index"])
+                                else:
+                                    if get_verbose_enable():
+                                        print("[ PyGlops ] (verbose message in " + f_name + ": nothing to do since selected inventory slot is None")
+                            else:
+                                print("[ PyGlops ] ERROR in " + f_name + ": inventory_index " + str(user_glop.actor_dict["inventory_index"]) + " is not within inventory list range " + str(len(user_glop.actor_dict["inventory_items"])))
                         else:
-                            print("[ PyGlops ] ERROR in " + f_name + ": user_glop.actor_dict['inventory_index'] is < 0 for " + str(user_glop.name))
+                            if get_verbose_enable():
+                                print("[ PyGlops ] (verbose message) no inventory slot is selected in " + f_name + ": user_glop.actor_dict['inventory_index'] is < 0 for " + str(user_glop.name))
                     else:
                         print("[ PyGlops ] ERROR in " + f_name + ": user_glop.actor_dict['inventory_index'] is not present (actor tried to use item before inventory was ready)")
                 else:
@@ -2747,6 +2792,10 @@ class PyGlops:
         self.glops[index].bump_enable = False
 
     def bump_glop(self, bumpable_name, bumper_name):
+        return None
+
+    #this_use: either is None. or is a string for how the item was used
+    def on_item_use(self, user_glop, item_dict, this_use):
         return None
 
     def attacked_glop(self, attacked_index, attacker_index, projectile_dict):
