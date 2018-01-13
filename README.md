@@ -47,6 +47,8 @@ Control 3D objects and the camera in your 3D Kivy app!
 * pyglops.py: changed usage of whether item drops on use from `["droppable"] = "no"` to `["drop_enable"] = False`
 * pyglops.py: (PyGlop) added `has_item_with_any_use(uses)` method
 * kivyglops.py: (KivyGlops update) fixed ai_enable case (weapon choosing, attacking only if target is glop, etc)
+* pyglops.py: now use `item_dict["projectile_keys"]` to specify any keys (such as hit_damage) from item_dict which should be copied to projectile_dict while traveling
+* pyglops.py: removes owner as should
 (2018-01-11)
 * pyglops.py: (move `is_out_of_range` from `_internal_bump_glop` to `_update` in kivyglops.py and set immediately after checked) fixed issue where is_out_of_range was only being set for items
 * kivyglops.py, pyglops.py: (only bumper [not even bumpable] has or needs hitbox; hitbox is set to None by super calculate_hit_range so stays that way if no override, so check for bumpable_enable before calling calculate_hit_range from _on_change_scale_instruction; check for hitbox before using in apply_vertex_offset; check whether glop_index is usable during calculate_hit_range to make sure it is not used improperly) prevent using glop_index before assigned (since _on_change_scale_instruction happens during append_wobject via _on_change_pivot, before glop is bumpable)
@@ -57,7 +59,7 @@ Control 3D objects and the camera in your 3D Kivy app!
 * removed extra declaration of _run_command in PyGlops
 * pyglops.py: removed redundant call to self._run_semicolon_separated_commands from _internal_bump_glop
 * pyglops.py: (PyGlops) added missing spawn_pex_particles (calls self.ui.spawn_pex_particles)
-* pyglops.py: (if as_projectile in item_dict used, set bump_enable to True--is set to false when obtained) make thrown items bumping work while airborne
+* pyglops.py: (if as_projectile in item_dict used, set bump_enable to True--is set to false when obtained) make thrown items bumping work while traveling (airborne after thrown, etc)
 * pyglops.py: put projectile_dict case before item_dict case in _internal_bump_glop so projectiles that are items work (such as thrown glop items with weapon_dict stored at as_projectile key in item_dict)
 * common.py: now you can do `from common import *` then `set_verbose_enable(True)` for manipulating debug output manually (now False can stay as default during debugging)
 * pyglops.py: now you can set `item_dict["droppable"]` to false for any item to be emitted (produces items which can't be picked up, so that inventory is not duplicated forever)
@@ -74,6 +76,7 @@ Control 3D objects and the camera in your 3D Kivy app!
 * remove redundant call to _init_glop in KivyGlop __init__ (still calls it if super fails)
 * improved monkey: added eyelids, UV mapped eyelids, improved texture for eyes and around eyes
 * now uses _deferred_load_glops to load glops; to be more clear and functional, made separate load, loading, loaded booleans for *_glops_enable
+* pyglops.py: _internal_bump_glop now plays random sound from bumper's `properties["damaged_sound_paths"]`
 (2018-01-09)
 * fresnel.glsl utilize per-object booleans
 * renamed shade-kivyglops-minimal.glsl to kivyglops-testing.glsl
@@ -341,6 +344,8 @@ This spec allows one dict to be used to completely store the Wavefront mtl forma
         * if line in mtl file is `refl -type cube_top file.png` then the dict wmaterial["refl -type cube_top"] will have a list at "values" key which is ["file.png"]; the entire preceding part `refl -type cube_top` will be considered as the command to avoid overlap (to force consistent rule: one instance of command per material).
 
 ### Regression Tests
+* deleting stuff from _bumper_indices or _bumpable_indices while running the bump loop [see "  # can't delete until bump loop is done in update" (set to None instead--they will be cleaned up by update after the bump loop--see #endregion bump loop)
+* calling push_glop_item or push_item without removing it from _bumpable_indices (IF "fit_enable" in return dict)
 * `actor_dict["inventory_list"]` should be `actor_dict["inventory_items"]`
 * make sure all attack uses are in PyGlops.attack_uses (for ai or other purposes)
 * using fired_glop.item_dict in throw_glop where should instead use item_dict param (also, should create fired_glop.projectile_dict, and warn if already exists; projectile_dict is set to None on impact)

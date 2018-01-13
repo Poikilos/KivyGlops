@@ -1,3 +1,10 @@
+* formerly in update_glsl when item hits ground and has projectile_dict:
+```python
+if self.glops[bumpable_index].item_dict is not None and ("as_projectile" not in self.glops[bumpable_index].item_dict):
+    #save projectile settings before setting projectile_dict to None:
+    self.glops[bumpable_index].item_dict["as_projectile"] = self.glops[bumpable_index].projectile_dict
+```
+
 * formerly append_wobject under setting this_face_list
 ```python
                         if this_face_list is not None:

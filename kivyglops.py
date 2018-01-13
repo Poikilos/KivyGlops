@@ -1247,7 +1247,8 @@ class KivyGlops(PyGlops):
     def update(self):
         # KivyGlops.update is called by KivyGlopsWindow.*update* such as update_glsl
         #super(KivyGlops, self).update()
-        #region tried to move to pyglops but didn't work well
+        #region pre-bump ops
+        #NOT: tried to move regions "pre-bump ops" and "bump loop" to pyglops but didn't work well
         #print("coords:"+str(Window.mouse_pos))
         #see also asp and clip_top in init
         #screen_w_arc_theta = 32.0  # actual number is from projectionMatrix matrix
@@ -1449,129 +1450,139 @@ class KivyGlops(PyGlops):
                         # else in range but can't attack
 
             bumper_name = self.glops[bumper_index].name
-
+        #endregion pre-bump ops
+        #region bump loop
         for bumpable_index_index in range(0, len(self._bumpable_indices)):
             bumpable_index = self._bumpable_indices[bumpable_index_index]
-            bumpable_name = self.glops[bumpable_index].name
-            #self.glops[bumpable_index]._temp_bump_enable = True
-            if (self.glops[bumpable_index].item_dict is None) or \
-               (not ("owner_index" in self.glops[bumpable_index].item_dict)) or \
-               (self.glops[bumpable_index].item_dict["owner_index"] is None):
+            if bumpable_index is not None:
+                bumpable_name = self.glops[bumpable_index].name
+                #self.glops[bumpable_index]._temp_bump_enable = True
+                if (self.glops[bumpable_index].item_dict is None) or \
+                   (not ("owner_index" in self.glops[bumpable_index].item_dict)) or \
+                   (self.glops[bumpable_index].item_dict["owner_index"] is None):
 
-                if self.glops[bumpable_index].bump_enable is True:
-                    for bumper_index_index in range(0,len(self._bumper_indices)):
-                        bumper_index = self._bumper_indices[bumper_index_index]
-                        bumper_name = self.glops[bumper_index].name
-                        distance = get_distance_kivyglops(self.glops[bumpable_index], self.glops[bumper_index])
-                        if self.glops[bumpable_index].hit_radius is not None and self.glops[bumpable_index].hit_radius is not None:
-                            total_hit_radius = 0.0
-                            if self.glops[bumpable_index].projectile_dict is not None:
-                                total_hit_radius = self.glops[bumpable_index].hit_radius + self.glops[bumper_index].hit_radius
-                            else:
-                                total_hit_radius = self.glops[bumpable_index].hit_radius + self.glops[bumper_index].reach_radius
-                            if distance <= total_hit_radius:
-                                #print("total_hit_radius:" + str(total_hit_radius))
-                                if not (bumper_index in self.glops[bumpable_index].in_range_indices):
-                                    # (only run if ever moved away from it)
-                                    if get_verbose_enable():
-                                        print("[ KivyGlops ] (verbose message) '" + str(self.glops[bumper_index].name) + "' in range of '" + str(self.glops[bumpable_index].name) + "'")
-                                    if self.glops[bumper_index].bump_enable:
-                                        if (self.glops[bumpable_index].projectile_dict is None) or \
-                                           (self.glops[bumper_index].hitbox is None) or \
-                                           self.glops[bumper_index].hitbox.contains_vec3(get_vec3_from_point(self.glops[bumpable_index]._translate_instruction)):
-                                            #NOTE: already checked
-                                            # bumpable_index bump_enable above
-                                            #print("distance:" + str(total_hit_radius) + " <= total_hit_radius:" + str(total_hit_radius))
-                                            if self.glops[bumpable_index].projectile_dict is None or \
-                                               ("owner" not in self.glops[bumpable_index].projectile_dict) or \
-                                               (self.glops[bumpable_index].projectile_dict["owner"] != self.glops[bumper_index].name):
-                                                self._internal_bump_glop(bumpable_index, bumper_index)
-                                                if get_verbose_enable():
-                                                    print("[ KivyGlops ] " + str(self.glops[bumper_index].name) + " bumped " + str(self.glops[bumpable_index].name))
+                    if self.glops[bumpable_index].bump_enable is True:
+                        for bumper_index_index in range(0,len(self._bumper_indices)):
+                            bumper_index = self._bumper_indices[bumper_index_index]
+                            if bumper_index is not None:
+                                bumper_name = self.glops[bumper_index].name
+                                distance = get_distance_kivyglops(self.glops[bumpable_index], self.glops[bumper_index])
+                                if self.glops[bumpable_index].hit_radius is not None and self.glops[bumpable_index].hit_radius is not None:
+                                    total_hit_radius = 0.0
+                                    if self.glops[bumpable_index].projectile_dict is not None:
+                                        total_hit_radius = self.glops[bumpable_index].hit_radius + self.glops[bumper_index].hit_radius
+                                    else:
+                                        total_hit_radius = self.glops[bumpable_index].hit_radius + self.glops[bumper_index].reach_radius
+                                    if distance <= total_hit_radius:
+                                        #print("total_hit_radius:" + str(total_hit_radius))
+                                        if not (bumper_index in self.glops[bumpable_index].in_range_indices):
+                                            # (only run if ever moved away from it)
+                                            if get_verbose_enable():
+                                                print("[ KivyGlops ] (verbose message) '" + str(self.glops[bumper_index].name) + "' in range of '" + str(self.glops[bumpable_index].name) + "'")
+                                            if self.glops[bumper_index].bump_enable:
+                                                if (self.glops[bumpable_index].projectile_dict is None) or \
+                                                   (self.glops[bumper_index].hitbox is None) or \
+                                                   self.glops[bumper_index].hitbox.contains_vec3(get_vec3_from_point(self.glops[bumpable_index]._translate_instruction)):
+                                                    #NOTE: already checked
+                                                    # bumpable_index bump_enable above
+                                                    #print("distance:" + str(total_hit_radius) + " <= total_hit_radius:" + str(total_hit_radius))
+                                                    if self.glops[bumpable_index].projectile_dict is None or \
+                                                       ("owner" not in self.glops[bumpable_index].projectile_dict) or \
+                                                       (self.glops[bumpable_index].projectile_dict["owner"] != self.glops[bumper_index].name):
+                                                        self._internal_bump_glop(bumpable_index, bumper_index)
+                                                        if get_verbose_enable():
+                                                            print("[ KivyGlops ] " + str(self.glops[bumper_index].name) + " bumped " + str(self.glops[bumpable_index].name))
+                                                    else:
+                                                        if get_verbose_enable():
+                                                            print("[ KivyGlops ] (verbose message) cannot bump own projectile")
+                                                else:
+                                                    global out_of_hitbox_note_enable
+                                                    if out_of_hitbox_note_enable:
+                                                        print("[ KivyGlops ] (debug only--this is normal) within total_hit_radius, but bumpable is not in bumper's hitbox: "+self.glops[bumper_index].hitbox.to_string())
+                                                        out_of_hitbox_note_enable = False
                                             else:
                                                 if get_verbose_enable():
-                                                    print("[ KivyGlops ] (verbose message) cannot bump own projectile")
-                                        else:
-                                            global out_of_hitbox_note_enable
-                                            if out_of_hitbox_note_enable:
-                                                print("[ KivyGlops ] (debug only--this is normal) within total_hit_radius, but bumpable is not in bumper's hitbox: "+self.glops[bumper_index].hitbox.to_string())
-                                                out_of_hitbox_note_enable = False
+                                                    print("[ KivyGlops ] (verbose message) '" + str(self.glops[bumper_index].name) + "' is not a bumper.")
+                                            if not bumper_index in self.glops[bumpable_index].in_range_indices:
+                                                self.glops[bumpable_index].in_range_indices.append(bumper_index)
+                                        #else:
+                                            #print("not out of range yet")
                                     else:
-                                        if get_verbose_enable():
-                                            print("[ KivyGlops ] (verbose message) '" + str(self.glops[bumper_index].name) + "' is not a bumper.")
-                                    if not bumper_index in self.glops[bumpable_index].in_range_indices:
-                                        self.glops[bumpable_index].in_range_indices.append(bumper_index)
-                                #else:
-                                    #print("not out of range yet")
+                                        if bumper_index in self.glops[bumpable_index].in_range_indices:
+                                            self.glops[bumpable_index].in_range_indices.remove(bumper_index)
+                                        if distance < 2:
+                                            #debug only:
+                                            #print("did not bump "+str(bumpable_name)+" (distance:"+str(distance)+"; bumper is at "+str( (self.glops[bumper_index]._translate_instruction.x,self.glops[bumper_index]._translate_instruction.y,self.glops[bumper_index]._translate_instruction.z) )+")")
+                                            pass
+                                        pass
+                                else:
+                                    if missing_radius_warning_enable:
+                                        print("WARNING: Missing radius while checking bumped named "+str(bumpable_name))
+                                        missing_radius_warning_enable = False
                             else:
-                                if bumper_index in self.glops[bumpable_index].in_range_indices:
-                                    self.glops[bumpable_index].in_range_indices.remove(bumper_index)
-                                if distance < 2:
-                                    #debug only:
-                                    #print("did not bump "+str(bumpable_name)+" (distance:"+str(distance)+"; bumper is at "+str( (self.glops[bumper_index]._translate_instruction.x,self.glops[bumper_index]._translate_instruction.y,self.glops[bumper_index]._translate_instruction.z) )+")")
-                                    pass
-                                pass
-                        else:
-                            if missing_radius_warning_enable:
-                                print("WARNING: Missing radius while checking bumped named "+str(bumpable_name))
-                                missing_radius_warning_enable = False
-                if self.glops[bumpable_index]._cached_floor_y is None:
-                    self.glops[bumpable_index]._cached_floor_y = self._world_min_y
-                    #TODO: get from walkmesh instead
-                if self.glops[bumpable_index].physics_enable:
-                    if self.glops[bumpable_index]._cached_floor_y is not None:
-                        if self.glops[bumpable_index]._translate_instruction.y - self.glops[bumpable_index].hit_radius - kEpsilon > self.glops[bumpable_index]._cached_floor_y:
-                            #TODO: why does this make things float? self.glops[bumpable_index]._rotate_instruction_x.angle += 15.
-                            self.glops[bumpable_index]._translate_instruction.x += self.glops[bumpable_index].x_velocity * got_frame_delay
-                            self.glops[bumpable_index]._translate_instruction.y += self.glops[bumpable_index].y_velocity * got_frame_delay
-                            self.glops[bumpable_index]._translate_instruction.z += self.glops[bumpable_index].z_velocity * got_frame_delay
-                            if got_frame_delay > 0.0:
-                                #print("[ KivyGlops ] (verbose message) GRAVITY AFFECTED:"+str(self.glops[bumpable_index]._translate_instruction.y)+" += "+str(self.glops[bumpable_index].y_velocity))
-                                self.glops[bumpable_index].y_velocity -= self._world_grav_acceleration * got_frame_delay
-                                #print("[ KivyGlops ] (verbose message) THEN VELOCITY CHANGED TO:"+str(self.glops[bumpable_index].y_velocity))
-                                #print("[ KivyGlops ] (verbose message) FRAME INTERVAL:"+str(got_frame_delay))
+                                pass  # None will be cleaned up after bump loop
+                    if self.glops[bumpable_index]._cached_floor_y is None:
+                        self.glops[bumpable_index]._cached_floor_y = self._world_min_y
+                        #TODO: get from walkmesh instead
+                    if self.glops[bumpable_index].physics_enable:
+                        if self.glops[bumpable_index]._cached_floor_y is not None:
+                            if self.glops[bumpable_index]._translate_instruction.y - self.glops[bumpable_index].hit_radius - kEpsilon > self.glops[bumpable_index]._cached_floor_y:
+                                #TODO: why does this make things float? self.glops[bumpable_index]._rotate_instruction_x.angle += 15.
+                                self.glops[bumpable_index]._translate_instruction.x += self.glops[bumpable_index].x_velocity * got_frame_delay
+                                self.glops[bumpable_index]._translate_instruction.y += self.glops[bumpable_index].y_velocity * got_frame_delay
+                                self.glops[bumpable_index]._translate_instruction.z += self.glops[bumpable_index].z_velocity * got_frame_delay
+                                if got_frame_delay > 0.0:
+                                    #print("[ KivyGlops ] (verbose message) GRAVITY AFFECTED:"+str(self.glops[bumpable_index]._translate_instruction.y)+" += "+str(self.glops[bumpable_index].y_velocity))
+                                    self.glops[bumpable_index].y_velocity -= self._world_grav_acceleration * got_frame_delay
+                                    #print("[ KivyGlops ] (verbose message) THEN VELOCITY CHANGED TO:"+str(self.glops[bumpable_index].y_velocity))
+                                    #print("[ KivyGlops ] (verbose message) FRAME INTERVAL:"+str(got_frame_delay))
+                                else:
+                                    print("[ KivyGlops ] WARNING: no frame delay is detectable (update normally runs automatically once per frame but seems to be running more often)")
                             else:
-                                print("[ KivyGlops ] WARNING: no frame delay is detectable (update normally runs automatically once per frame but seems to be running more often)")
-                        else:
-                            #TODO: optionally, such as for bottom-heavy items: self.glops[bumpable_index]._rotate_instruction_x.angle = 0.
-                            #if self.glops[bumpable_index].z_velocity > kEpsilon:
-                            if (self.glops[bumpable_index].y_velocity < 0.0 - (kEpsilon + self.glops[bumpable_index].hit_radius)):
-                                #print("  HIT GROUND Y:"+str(self.glops[bumpable_index]._cached_floor_y))
-                                # bump_sound_paths is guaranteed by PyGlop _init_glop to exist
-                                if len(self.glops[bumpable_index].properties["bump_sound_paths"]) > 0:
-                                    rand_i = random.randrange(0,len(self.glops[bumpable_index].properties["bump_sound_paths"]))
-                                    self.play_sound(self.glops[bumpable_index].properties["bump_sound_paths"][rand_i])
-                            if self.glops[bumpable_index].projectile_dict is not None:
-                                if self.glops[bumpable_index].item_dict is not None and ("as_projectile" not in self.glops[bumpable_index].item_dict):
-                                    #save projectile settings before setting projectile_dict to to None:
-                                    self.glops[bumpable_index].item_dict["as_projectile"] = self.glops[bumpable_index].projectile_dict
+                                #TODO: optionally, such as for bottom-heavy items: self.glops[bumpable_index]._rotate_instruction_x.angle = 0.
+                                #if self.glops[bumpable_index].z_velocity > kEpsilon:
+                                if (self.glops[bumpable_index].y_velocity < 0.0 - (kEpsilon + self.glops[bumpable_index].hit_radius)):
+                                    #print("  HIT GROUND Y:"+str(self.glops[bumpable_index]._cached_floor_y))
+                                    # bump_sound_paths is guaranteed by PyGlop _init_glop to exist
+                                    if len(self.glops[bumpable_index].properties["bump_sound_paths"]) > 0:
+                                        rand_i = random.randrange(0,len(self.glops[bumpable_index].properties["bump_sound_paths"]))
+                                        self.play_sound(self.glops[bumpable_index].properties["bump_sound_paths"][rand_i])
                                 if self.glops[bumpable_index].projectile_dict is not None:
-                                    self.glops[bumpable_index].projectile_dict = None
+                                    if self.glops[bumpable_index].projectile_dict is not None:
+                                        self.glops[bumpable_index].projectile_dict = None
 
-                            self.glops[bumpable_index]._translate_instruction.y = self.glops[bumpable_index]._cached_floor_y + self.glops[bumpable_index].hit_radius
-                            if self.glops[bumpable_index].x_velocity != 0.0 or \
-                               self.glops[bumpable_index].y_velocity != 0.0 or \
-                               self.glops[bumpable_index].z_velocity != 0.0:
-                                if get_verbose_enable():
-                                    print("[ KivyGlops ] stopped glop {" + \
-                                          "hit_radius:" + \
-                                          str(self.glops[bumpable_index].hit_radius) + \
-                                          "; glop._cached_floor_y:" + \
-                                          str(self.glops[bumpable_index]._cached_floor_y) + \
-                                          "}")
-                            self.glops[bumpable_index].x_velocity = 0.0
-                            self.glops[bumpable_index].y_velocity = 0.0
-                            self.glops[bumpable_index].z_velocity = 0.0
-                    else:
-                        #no gravity
-                        self.glops[bumpable_index]._translate_instruction.x += self.glops[bumpable_index].x_velocity
-                        self.glops[bumpable_index]._translate_instruction.y += self.glops[bumpable_index].y_velocity
-                        self.glops[bumpable_index]._translate_instruction.z += self.glops[bumpable_index].z_velocity
-            else:  # is in inventory of some actor
-                self.glops[bumpable_index]._translate_instruction.x = self.glops[self.glops[bumpable_index].item_dict["owner_index"]]._translate_instruction.x
-                self.glops[bumpable_index]._translate_instruction.y = self.glops[self.glops[bumpable_index].item_dict["owner_index"]]._translate_instruction.y
-                self.glops[bumpable_index]._translate_instruction.z = self.glops[self.glops[bumpable_index].item_dict["owner_index"]]._translate_instruction.z
-        #endregion tried to move to pyglops but didn't work well
+                                self.glops[bumpable_index]._translate_instruction.y = self.glops[bumpable_index]._cached_floor_y + self.glops[bumpable_index].hit_radius
+                                if self.glops[bumpable_index].x_velocity != 0.0 or \
+                                   self.glops[bumpable_index].y_velocity != 0.0 or \
+                                   self.glops[bumpable_index].z_velocity != 0.0:
+                                    if get_verbose_enable():
+                                        print("[ KivyGlops ] stopped glop {" + \
+                                              "hit_radius:" + \
+                                              str(self.glops[bumpable_index].hit_radius) + \
+                                              "; glop._cached_floor_y:" + \
+                                              str(self.glops[bumpable_index]._cached_floor_y) + \
+                                              "}")
+                                self.glops[bumpable_index].x_velocity = 0.0
+                                self.glops[bumpable_index].y_velocity = 0.0
+                                self.glops[bumpable_index].z_velocity = 0.0
+                        else:
+                            #no gravity
+                            self.glops[bumpable_index]._translate_instruction.x += self.glops[bumpable_index].x_velocity
+                            self.glops[bumpable_index]._translate_instruction.y += self.glops[bumpable_index].y_velocity
+                            self.glops[bumpable_index]._translate_instruction.z += self.glops[bumpable_index].z_velocity
+                else:  # is in inventory of some actor
+                    self.glops[bumpable_index]._translate_instruction.x = self.glops[self.glops[bumpable_index].item_dict["owner_index"]]._translate_instruction.x
+                    self.glops[bumpable_index]._translate_instruction.y = self.glops[self.glops[bumpable_index].item_dict["owner_index"]]._translate_instruction.y
+                    self.glops[bumpable_index]._translate_instruction.z = self.glops[self.glops[bumpable_index].item_dict["owner_index"]]._translate_instruction.z
+            else:
+                pass  # None will be cleaned up later
+        #endregion bump loop
+        for j in reversed(range(len(self._bumpable_indices))):
+            if self._bumpable_indices[j] == None:
+                del(self._bumpable_indices[j])
+        for j in reversed(range(len(self._bumper_indices))):
+            if self._bumper_indices[j] == None:
+                del(self._bumper_indices[j])
 
         #if get_verbose_enable():
             #print("update_glsl...")
