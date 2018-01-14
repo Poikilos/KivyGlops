@@ -1,4 +1,5 @@
 4 Gold Rings PROBLEMS
+(file was moved to personal ownCloud due to license--see "4 Gold Rings (360 Vision at turbosquid) LICENSE.txt"
 * Uses mesh groups (g command)
 * 4 Gold Rings.mtl uses various values for Ns (needs to be implemented)
 * Objects are very far from 0,0,0

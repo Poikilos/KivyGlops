@@ -63,6 +63,9 @@ The operating principle of this project is to focus on completeness. This means 
 * if segfault occurs, maybe camera and look_at location are same
 
 ## Changes
+(2018-01-14)
+* Changed resources license to CC0 to comply with changes to GitHub TOS (see <http://joeyh.name/blog/entry/what_I_would_ask_my_lawyers_about_the_new_Github_TOS/>)--and removed or remade any resources not compatible with CC0.
+    * kivyforest-floor.png was remade from scratch in Krita
 (2018-01-13)
 * use this_dict.get (returns None if missing)  instead of checks for key in a dict, when behavior should be same whether missing or None
 * add inventory_index to item to know whether it is in a player's inventory, and don't delete owner or owner_index until projectile_dict is removed (when lands)
