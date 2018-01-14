@@ -40,7 +40,7 @@ else:
 
 class MainScene(KivyGlops):
 
-    def load_glops(self):
+    def on_load_glops(self):
         test_space_enable = False
         test_medieval_enable = True
         test_shader_enable = False
@@ -123,20 +123,27 @@ class MainScene(KivyGlops):
             #item_dict["uses"].append("throw_arc")
             item_dict["cooldown"] = .7
 
-            barrel_names = self.get_similar_names("barrel")
-            for name in barrel_names:
+            results = self.get_index_lists_by_similar_names(["crate", "barrel"])
+            crate_indices = results["crate"]
+            barrel_indices = results["barrel"]
+
+            barrel_names = []  # stored for debug output
+            for index in barrel_indices:
                 print("Preparing item: " + name)
-                self.set_as_item(name, item_dict)
+                self.set_as_item_at(index, item_dict)
+                barrel_names.append(self.glops[index].name)
 
             #self.play_music("music/edinburgh-loop.ogg")
 
             item_dict["name"] = "crate"
             item_dict["use_sound"] = "sounds/woosh-medium.wav"
+            item_dict["hit_damage"] = .3
+            item_dict["projectile_keys"] = ["hit_damage"]
             if test_infinite_crates:
                 item_dict["droppable"] = False
                 item_dict["cooldown"] = .1
-                #item_dict["fire_type"] = "throw_arc"  #redundant
-            crate_indices = self.get_indices_of_similar_names("crate")
+                item_dict["uses"] = ["throw_linear"]
+
             for index in crate_indices:
                 self.set_as_item_at(index, item_dict)
                 self.add_bump_sound_at(index, "sounds/crate-drop1.wav")
@@ -170,6 +177,7 @@ class MainScene(KivyGlops):
             weapon["fired_sprite_size"] = .5,.5  # width and height in meters
             weapon["uses"] = ["throw_linear"] #weapon["fire_type"] = "throw_arc"
             weapon["hit_damage"] = .3
+            weapon["projectile_keys"] = ["hit_damage"]
             self.add_actor_weapon(player1_index, weapon)
             #self.player_glop = self.glops[player1_index]  # already done by PyGlops __init__
             #test_deepcopy_weapon = self.player_glop.deepcopy_with_my_type(weapon)
@@ -183,25 +191,32 @@ class MainScene(KivyGlops):
             print("[ testing ] " + str(len(enemy_indices)) + " enemies found.")
         #test_deepcopy_weapon = self.player_glop.deepcopy_with_my_type(weapon)
 
-    def attacked_glop(self, attacked_index, attacker_index, weapon_dict):
+    def on_attacked_glop(self, attacked_index, attacker_index, weapon_dict):
         self.glops[attacked_index].actor_dict["hp"] -= weapon_dict["hit_damage"]
         if self.glops[attacked_index].actor_dict["hp"] <= 0:
             self.explode_glop_at(attacked_index, weapon_dict)
-            print("[ testing ] (attacked_glop: after exploding) HP: "+str(self.glops[attacked_index].actor_dict["hp"]))
+            print("[ testing ] (on_attacked_glop: after exploding) HP: "+str(self.glops[attacked_index].actor_dict["hp"]))
         else:
-            print("[ testing ] (attacked_glop) HP: "+str(self.glops[attacked_index].actor_dict["hp"]))
+            print("[ testing ] (on_attacked_glop) HP: "+str(self.glops[attacked_index].actor_dict["hp"]))
 
-    def obtain_glop(self, bumpable_name, bumper_name):
-        if "barrel" in bumpable_name.lower():
+    def on_obtain_glop(self, bumpable_index, bumper_index):
+        if self.glops[bumpable_index].item_dict["name"] == "barrel":
             self.play_sound("sounds/barrel,wooden-pickup.wav")
-        if "crate" in bumpable_name.lower():
+        elif self.glops[bumpable_index].item_dict["name"] == "crate":
             self.play_sound("sounds/crate-pickup.wav")
 
-    #def display_explosion(self, pos, radius, attacked_index, weapon):
-    #    print("display_explosion...Not Yet Implemented")
+    def _deprecated_on_obtain_glop_by_name(self, bumpable_name, bumper_name):
+        pass
+        #if "barrel" in bumpable_name.lower():
+        #    self.play_sound("sounds/barrel,wooden-pickup.wav")
+        #if "crate" in bumpable_name.lower():
+        #    self.play_sound("sounds/crate-pickup.wav")
+
+    #def on_explode_glop(self, pos, radius, attacked_index, weapon):
+    #    print("on_explode_glop...Not Yet Implemented")
     #    pass
 
-    def update_glops(self):
+    def on_update_glops(self):
         if self.selected_glop is not None:
             if self.get_pressed("j"):
                 self.selected_glop.rotate_y_relative(1)
@@ -232,7 +247,7 @@ class MainScene(KivyGlops):
             #print("No glop selected.")
 
 
-        #this_index = get_index_by_name(self.scene.glops, "Suzanne")
+        #this_index = find_by_name(self.scene.glops, "Suzanne")
         #if this_index>-1:
         #    if self.get_pressed("j"):
         #        self.scene.glops[this_index].rotate_y_relative(-1)
@@ -240,7 +255,7 @@ class MainScene(KivyGlops):
         #        self.scene.glops[this_index].rotate_y_relative(1)
         #else:
         #    print("Object not found.")
-        #this_index = get_index_by_name(self.scene.glops, "Suzanne")
+        #this_index = find_by_name(self.scene.glops, "Suzanne")
         #if this_index > -1:
         #    self.scene.glops[this_index].rotate_z_relative(1)
         #    print("using index "+str(this_index))

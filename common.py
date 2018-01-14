@@ -54,7 +54,8 @@ def get_dict_deepcopy(old_dict, depth=0):
 
 valid_path_name_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
 if verbose_enable:
-    print("Using valid_path_name_chars: '" + valid_path_name_chars + "'")
+    print("[ common.py ] (verbose message) Using valid_path_name_chars: '" + \
+          valid_path_name_chars + "'")
 
 def find_any_not(haystack, needles):
     result = -1
@@ -64,14 +65,14 @@ def find_any_not(haystack, needles):
             break
     return result
 
-def good_path_name(bad_path_name):
+def good_path_name(try_path_name):
     result = ""
-    if bad_path_name is not None:
-        for i in range(len(bad_path_name)):
-            if not (bad_path_name[i:i+1] in valid_path_name_chars):
+    if try_path_name is not None:
+        for i in range(len(try_path_name)):
+            if try_path_name[i:i+1] not in valid_path_name_chars:
                 result += "_"
             else:
-                result += bad_path_name[i:i+1]
+                result += try_path_name[i:i+1]
     else:
         result = None
     return result
@@ -93,11 +94,11 @@ def get_by_name(object_list, needle):  # formerly find_by_name
         except:
             #e = sys.exc_info()[0]
             #print("Could not finish get_by_name:" + str(e))
-            print("Could not finish get_by_name:")
+            print("[ common.py ] ERROR--Could not finish get_by_name:")
             view_traceback()
     return result
 
-def get_index_by_name(object_list, needle):
+def find_by_name(object_list, needle):
     result = -1
     for i in range(0,len(object_list)):
         try:
@@ -107,7 +108,7 @@ def get_index_by_name(object_list, needle):
         except:
             #e = sys.exc_info()[0]
             #print("Could not finish get_by_name:" + str(e))
-            print("Could not finish get_index_by_name:")
+            print("[ common.py ] ERROR--Could not finish find_by_name:")
             view_traceback()
     return result
 
@@ -163,6 +164,7 @@ def is_true(val):
         elif val == 1:
             result = True
     except:
-        print("[ common.py ] Could not finish is_true (returning false):")
+        print("[ common.py ] ERROR--Could not finish is_true" + \
+              " (returning false):")
         view_traceback()
     return result

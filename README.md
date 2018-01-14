@@ -14,20 +14,47 @@ Control 3D objects and the camera in your 3D Kivy app!
 ## Usage:
 * Lessons are available at [expertmultimedia.com/usingpython](http://www.expertmultimedia.com/usingpython)
   (click "Python 3," "Tutorials," "Start Learning Now," "Unit 2 (OpenGL)")
+  "Unit 2" will be used to refer Unit 2 of this site in this document.
+* spec for actor_dict:
+  * actor_dict is a dictionary that can contain custom variables such as actor_dict["hp"]
+  * actor_dict will be filled in with required variables when you call set_as_actor_at, but the method will overlay your variables over the defaults, except for builtins with runtime info such as the `actor_dict["state"]` dict which should be left alone.
+  * if you want ai, you must set actor_dict["ai_enable"] = True
+    * if you enable ai, the on_process_ai event will occur every frame before ai variables are checked (but the AI won't do anything unless you set the actor_dict variables during on_process_ai; see the AI section below)
+  (see also "Unit 2" lesson 7)
 * spec for item_dict:
-  * "uses": ("throw_linear" or "throw_arc") how missile behaves
+  * "uses" is a list containing use strings as follows:
+    * uses like "throw_linear" or "throw_arc" or "shoot_linear" causes the item to be thrown
+      * if "throw_" is in the use entry, player's ranges will be used (for example, if you set item_dict["throw_custom"], also set unit_glop.actor_dict["ranges"]["throw_custom"] (if already set as actor, you don't need to do actor_dict["ranges"] = {} for it will already exist as a dict)
+      * if "shoot_" is in the use entry, item's ranges will be used (for example, if you set item_dict["shoot_custom"], also set item_dict["ranges"]={} then item_dict["ranges"]["shoot_custom"])
+      * NOTE: though the units where actor_dict["ai_enable"] is True will attack from that range, physics will determine whether the projectile reaches its target
   * "drop_enable": (True or False, or string like "yes", "no", etc) whether weapon leaves your inventory as soon as you use it (yes for rocks...hopefully you get the idea); considered True if not present
     * special variables used along with drop_enable False:
       "fired_sprite_size": tuple containing 2 floats (example: ` = (0.5, 0.5)`) in meters determining size of sprite in 3D space
       "fired_sprite_path": path to sprite (image will be placed on an automatically-generated square)
+  * "projectile_keys": a list of variables that will be copied to the projectile (if projectile hits, projectile_dict will not be None, and will contain your variables whose keys you listed, when on_attacked_glop occurs)
   * generated members:
-    "subscript": (for debugging) if present in weapon_dict, it is the automatically-generated index of the object within the obj file from which the glop containing the weapon dict was loaded.
     "fires_glops": list of glops that will be fired (generated automatically if you use add_actor_weapon and have fired_sprite_path)
+* attack_uses is a list of strings and can be accessed or changed from within your implementation of KivyGlops using self.attack_uses (first ones in list will be preferred by actors where `actor_dict["ai_enable"]` is true)
 * fit_enable entry in item_event dict returned by push_item denotes whether giving an item to the player was possible (false if inventory was full on games with limited inventory)
 * if you get a stack overflow, maybe one of the dict objects you put on an object contains a reference to the same object then copy or deepcopy_with_my_type was called
 * each program you make should be a subclass of KivyGlops or other PyGlops subclass (if you subclass PyGlops for framework you are using other than Kivy, your *Glops class should have all methods that KivyGlops has since PyGlops expects self to have implemented methods such as load_obj)
 * pyrealtime module (which does not require Kivy) keeps track of keyboard state, allowing getting keystate asynchronously
 * To modify any files (other than examples or tests) see "Developer Notes" section of this file for more information.
+* this_glop.state is for data which should be in saved state such as game save but not in exported object--also you can use item_dict["state"] or actor_dict["state"]; use properties or item_dict or actor_dict directly for permanent data.
+* any glop where glop.actor_dict is not None will be treated as an actor, so use set_as_actor_at instead of creating it yourself, so that the necessary variables will be set for proper engine function.
+* implement attacked_glop_at for unit-targeting attacks
+* implement on_at_rest for whenever items stop being affected by physics (such as for area of effect items such as launched missiles)
+    * NOTE: if a player is hit by the missile, attacked_glop_at will also be called by the engine
+* implement on_update_glops to do stuff every frame, after ai (and remote players in future version) occurs but before physics and constraints are calculated
+
+### AI
+* If you implement the KivyGlops on_process_ai method, you shouldn't move anything otherwise glitches will almost certainly occur. This is not a limitation of the engine--it is a recommendation to be logical, so that you ensure your visuals presented to the player make sense.
+  * Things that you can safely do in on_process_ai include:
+    * cause glop that is an actor to use items (via the use_item_at method of a glop)
+    * set indices and strings that will be used to control the character, such as values at the following keys in glop's actor_dict: "moveto_index", "target_index" which refer to objects in the self.glops list
+  * Things that are not so great but still work:
+    * set a non-ai variable in an actor_dict (such as, modify health--which should probably be done in on_at_rest or attacked_glop_at)
+  * NOTE: after on_process_ai is called, the `actor_dict["target_index"]` will be set to None if the item doesn't have any item where any of the item's uses are in attack_uses, unless you set `actor_dict["unarmed_melee_enable"] = True`
 
 ### Teaching using KivyGlops:
 * update-kivyglops from LAN.bat will only work for students if teacher places KivyGlops in R:\Classes\ComputerProgramming\Examples\KivyGlops
@@ -35,6 +62,37 @@ Control 3D objects and the camera in your 3D Kivy app!
 * if segfault occurs, maybe camera and look_at location are same
 
 ## Changes
+(2018-01-13)
+* use this_dict.get (returns None if missing)  instead of checks for key in a dict, when behavior should be same whether missing or None
+* add inventory_index to item to know whether it is in a player's inventory, and don't delete owner or owner_index until projectile_dict is removed (when lands)
+* reset glop.state (formerly glop.dat) by setting it to [] not {}
+* replace `item_glop.item_dict["RUNTIME_last_used_time"]` with `item_dict["state"]["last_used_time"]`
+* replace `item_dict["glop_index"]` with glop_index INSIDE `item_dict["state"]` which is a dict containing situational data.
+* rename glop.dat to glop.state, and only use for situational data (see Usage section regarding use of state)
+* rename `["tmp"]["glop"]` (for relationship in `glop.state["links"]` dict) to `["state"]["parent_glop"]` for clarity
+* kivyglops.py (KivyGlops update): only make object stick to glop using `glop.state["links"]` NOT owner NOR owner_index
+* now ONLY save "links" in child for consistency
+* rename all index-getting methods to find_*: index_of_mesh to find_glop; common.py: get_index_by_name to find_by_name
+  * the follwing remain same since gets actual sub-object not index:
+    common.py: get_by_name; pyglops.py: get_mesh_by_name
+  * the following remain the same because they get a saved index and don't perform a search:
+    pyglops.py: get_player_glop_index
+* renamed: getAngleBetweenPoints to get_angle_between_points, getMeshByName to get_mesh_by_name
+* renamed overloadable scene event handlers: obtain_glop to _deprecated_on_obtain_glop_by_name (used in "Unit 2" lessons 5, 6 and 9), obtain_glop_at to on_obtain_glop
+* return of get_index_lists_by_similar_names changed from list to dict where keys are same as partial_names param
+* use `x_velocity * got_frame_delay` properly (as opposed to `x_velocity` alone) even if no floor
+* ensure ai and hit detection are done before movement
+* set state variables for choice-based movement, for ai and player the same way (instead of making local variables)
+    * local attack_radius changed to `self.glops[bumper_index]["state"]["acquire_radius"]`
+    * local attack_s changed to `self.glops[bumper_index]["state"]["desired_use"]`
+    * local weapon_index changed to `self.glops[bumper_index]["state"]["desired_item_index"]`
+    * local this_glop_free_enable eliminated (see *_glop.state["at_rest_enable"])
+    * constrain to floor etc after that
+* made flag where all uses containing "shoot_" use item's range instead of player's (affects "Unit 2" lessons 6, 7, and 8)
+* instead of "inventory_index" selected_item_event now has "selected_index" and "fit_at" which is >=0 if fit into inventory (both are indices referring to `actor_dict["inventory_items"]` list); and in push_glop, slot `event["fit_at"]` is automatically selected if no slot (-1) was selected (select_item_event_dict is normally used only by after_selected_item; returned by push_glop_item, push_item, select_next_inventory_slot)
+* renamed attacked_glop to on_attacked_glop (affects "Unit 2" lessons 7, 8, and 9)
+* renamed remaining event handlers you can reimplement to start with `on_`: renamed load_glops to on_load_glops (affects all "Unit 2" lessons), update_glops to on_update_glops (affects "Unit 2" lesson 2), `display_explosion` to `on_explode_glop` (affects "Unit 2" lesson 8), `process_ai` to `on_process_ai` (affects "Unit 2" lesson 9)
+* kivyglops.py: radically improved update method: fixed issues, unified decision-making variables for ai and player; unified physics for all glops
 (2018-01-12)
 * (was sending self.new_glop instead of self.new_material) fix KivyGlopsMaterial not using copy_as_subclass correctly
 * changed default projectile_speed (see also throw_speed) to 15 (was 1.0) for realism (works now, with since now physics is correct--second-based)--still no wind resistance, so things will go rather far
@@ -47,7 +105,7 @@ Control 3D objects and the camera in your 3D Kivy app!
 * pyglops.py: changed usage of whether item drops on use from `["droppable"] = "no"` to `["drop_enable"] = False`
 * pyglops.py: (PyGlop) added `has_item_with_any_use(uses)` method
 * kivyglops.py: (KivyGlops update) fixed ai_enable case (weapon choosing, attacking only if target is glop, etc)
-* pyglops.py: now use `item_dict["projectile_keys"]` to specify any keys (such as hit_damage) from item_dict which should be copied to projectile_dict while traveling
+* pyglops.py: now required to use `item_dict["projectile_keys"]` to specify any keys (such as hit_damage) from item_dict which should be copied to projectile_dict while traveling
 * pyglops.py: removes owner as should
 (2018-01-11)
 * pyglops.py: (move `is_out_of_range` from `_internal_bump_glop` to `_update` in kivyglops.py and set immediately after checked) fixed issue where is_out_of_range was only being set for items
@@ -147,7 +205,7 @@ Control 3D objects and the camera in your 3D Kivy app!
 * (2017-12-11) _internal_bump_glop now calls the new _run_semicolon_separated_commands which calls the new _run_command method, so that these new methods are available to other methods
 * (2017-12-11) give_item_by_keyword_to_player_number and give_item_index_to_player_number methods for manual item transfers without bumping or manually calling _internal_bump_glop
 * (2017-12-11) moved projectile handling to _internal_bump_glop (formerly was directly after the _internal_bump_glop call)
-* (2017-12-11) allow handling the obtain glop event by a new obtain_glop_at instead of obtain_glop in order to have access to the glop indices (you can still handle both if you desire for some reason, but be aware both will fire)
+* (2017-12-11) allow handling the obtain glop event by a new on_obtain_glop instead of _deprecated_on_obtain_glop_by_name in order to have access to the glop indices (you can still handle both if you desire for some reason, but be aware both will fire)
 * (2017-11-06) Your KivyGlopsWindow implementation can now select mesh by name: self.select_mesh_by_name("some_named_mesh") (or filename but shows warning in stdout: self.select_mesh_by_name("somefilename") or self.select_mesh_by_name("somefilename.obj"))
 * (2016-04-29) Switched to using only graphics that are public domain (changed license of modified resources to CC-BY-SA 4.0); such as, removed graphics based on cinder block wall from photoshoptextures.com due to quirky custom license
 * (2016-02-12) Change the PyGlops ObjFile and objfile.py to WObjFile and wobjfile.py (to avoid naming conflict with ObjFile and objfile.py in Kivy examples)
@@ -167,6 +225,8 @@ Control 3D objects and the camera in your 3D Kivy app!
 
 
 ## Known Issues
+* eliminate look_target_glop in favor of a relationship in "links"
+* upload updated version of lessons to website mentioned in Usage section (in the meantime see testing.py for updated code, or see Changes section for anything that says "renamed" or "required")
 * pyglops.py: remove kivy-specific _translate_instruction_* (in throw cases)
 * projectile_speed of `item_dict` or of `item_dict["as_projectile"]` should override throw_speed of actor ONLY if present
 * allow rocks to roll (and keep projectile_dict until they stop) in opengl9
@@ -199,7 +259,7 @@ Control 3D objects and the camera in your 3D Kivy app!
 * deal with situation-dependent members when saving glop:
     * `look_target_glop` which is a reference and for that reason copied by ref
     * `weapon_dict["fires_glops"]` which may be runtime-generated mesh such as texture on square mesh (or "meshes/sprite-square.obj")
-* Add the following code to expertmultimedia.com boundary detection lesson since was removed from KivyGlops __init__ (or add after call to update_glops??):
+* Add the following code to expertmultimedia.com boundary detection lesson since was removed from KivyGlops __init__ (or add after call to on_update_glops??):
   ```This is done axis by axis--the only reason is so that you can do OpenGL boundary detection lesson from expertmultimedia.com starting with this file
     if self.world_boundary_min[0] is not None:
         if self.player_glop._translate_instruction.x < self.world_boundary_min[0]:
@@ -344,7 +404,15 @@ This spec allows one dict to be used to completely store the Wavefront mtl forma
         * if line in mtl file is `refl -type cube_top file.png` then the dict wmaterial["refl -type cube_top"] will have a list at "values" key which is ["file.png"]; the entire preceding part `refl -type cube_top` will be considered as the command to avoid overlap (to force consistent rule: one instance of command per material).
 
 ### Regression Tests
-* deleting stuff from _bumper_indices or _bumpable_indices while running the bump loop [see "  # can't delete until bump loop is done in update" (set to None instead--they will be cleaned up by update after the bump loop--see #endregion bump loop)
+* using `/ self.ui.frames_per_second` for determining distance per frame, where should use `* got_frame_delay` (which is not only in seconds but is the actual frame delay)
+* always use: in_range_indices on bumpable and not bumper, for consistency
+* always do: hit detection & a.i. BEFORE movement/physics (& programmer-overridable events such as on_update_glops), for intuitiveness (the situation that the user sees on the screen is the situation on which AI is based [is what the AI sees], and on which results [such as hitting a platform] are based)
+* checking for .rel or "rel" in child (should check for "links")
+* checking for "links" in parent (should check in child)
+* use of not (x in y) where x and y are anything--(doesn't cause bug, but more readable as) where should be x not in y
+* use of not (x is y) where x and y are anything--(doesn't cause bug, but more readable as) where should be x is not y
+* checking for key in this_dict when answer None is treated same as missing--(doesn't cause bug, but) this_dict.get(key) is python's solution)
+* deleting stuff from _bumper_indices or _bumpable_indices while running the bump loop [see "  # can't delete until bump loop is done in update" (set to None instead--they will be cleaned up by update after the bump loop--see #endregion nested bump loop)
 * calling push_glop_item or push_item without removing it from _bumpable_indices (IF "fit_enable" in return dict)
 * `actor_dict["inventory_list"]` should be `actor_dict["inventory_items"]`
 * make sure all attack uses are in PyGlops.attack_uses (for ai or other purposes)

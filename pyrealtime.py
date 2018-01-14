@@ -46,6 +46,7 @@ class PyRealTimeController:
     def dump(self):
         print(self._keystates)
 
+    #returns: True or False--whether the button or key number is pressed
     def get_pressed(self, index):
         return_pressing = False
         try:

@@ -30,7 +30,7 @@ else:
 
 class MainScene(KivyGlops):
 
-    def load_glops(self):
+    def on_load_glops(self):
         self.load_obj("meshes/stadium,primitive.obj")
 
         walkmesh_names = self.get_similar_names("walkmesh")
@@ -90,7 +90,7 @@ class MainScene(KivyGlops):
             self.add_damaged_sound_at(index, "sounds/chimp-ooh1.wav")
             self.add_damaged_sound_at(index, "sounds/chimp-upset1.wav")
 
-    def attacked_glop(self, attacked_index, attacker_index, weapon_dict):
+    def on_attacked_glop(self, attacked_index, attacker_index, weapon_dict):
         self.glops[attacked_index].actor_dict["hp"] -= weapon_dict["hit_damage"]
         if self.glops[attacked_index].actor_dict["hp"] <= 0:
             self.explode_glop_at(attacked_index, weapon_dict)
@@ -98,13 +98,13 @@ class MainScene(KivyGlops):
         print(str(self.glops[attacked_index].name) + "'s hp: " + \
               str(self.glops[attacked_index].actor_dict["hp"]))
 
-    def obtain_glop(self, bumpable_name, bumper_name):
-        #if "rock" in bumpable_name.lower():
+    def on_obtain_glop(self, bumpable_index, bumper_index):
+        #if self.glops[bumpable_index].item_dict["name"] == "rock":
         #    self.play_sound("sounds/rock-pickup.wav")
         pass
 
-    def update_glops(self):
-        pass
+    #def on_update_glops(self):
+    #    pass
 
 
 scene = MainScene(KivyGlopsWindow())

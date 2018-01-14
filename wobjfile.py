@@ -85,7 +85,7 @@ class WIlluminationModel:
     is_reflection_fresnel = None
     is_reflection_raytrace = None
     is_shadow_cast_onto_invisible_surfaces = None
-    
+
     def __init__(self, number):
         self.set_from_illumination_model_number(number)
 
@@ -243,7 +243,7 @@ class WObject:
         for key in self.face_dicts:
             lines.append(min_tab_string+tab_string+key+":")
             standard_emit_yaml(lines, min_tab_string+tab_string+tab_string, self.face_dicts[key])
-    
+
     def _get_unused_face_list_key(self):
         #key = None
         #while True:
@@ -252,7 +252,7 @@ class WObject:
         #    if this_o_name not in self.wobjects:
         #        break
         #return key
-        
+
         return str(uuid.uuid4())
 
 ILLUMINATIONMODEL_DESCRIPTION_STRINGS = ["Color on and Ambient off","Color on and Ambient on","Highlight on","Reflection on and Ray trace on","Transparency: Glass on, Reflection: Ray trace on","Reflection: Fresnel on and Ray trace on","Transparency: Refraction on, Reflection: Fresnel off and Ray trace on","Transparency: Refraction on, Reflection: Fresnel on and Ray trace on","Reflection on and Ray trace off","Transparency: Glass on, Reflection: Ray trace off","Casts shadows onto invisible surfaces"]
@@ -349,10 +349,10 @@ def get_wmaterial_dict_from_mtl(filename):
                                             elif chunks[0] == "xyz":
                                                 command += " xyz"
                                                 value_enables[0] = False
-                                        
+
                                         wmaterials[this_mtl_name][command] = {}
                                         wmaterials[this_mtl_name][command]["values"] = []
-                                                
+
                                         for i in range(len(chunks)):
                                             #certain keywords are treated as part of the command for the statement (see http://paulbourke.net/dataformats/mtl/)
                                             if value_enables[i]:
@@ -430,7 +430,7 @@ def show_object_faces_msg(this_object, msg_filename):
         else:
             faces_msg = "..."+str(face_count)+" face(s)"
     print(msg_filename + ": object named " + str(this_object.name) + "" + faces_msg)
-    
+
 
 class WObjFile:
 
@@ -441,7 +441,7 @@ class WObjFile:
         self.texcoords_not_2_warning_enable = True
         #self.NYI_s_enable = True
         self.short_name_in_messages_enable = True
-    
+
     def load(self, filename):
         f_name = "load"
         if (self.filename is not None):
@@ -590,7 +590,7 @@ class WObjFile:
                             #this_object.vertices.append(result_v)
                             absolute_v_list.append(result_v)
                             absolute_v_count += 1
-                            #v_offset += 1                            
+                            #v_offset += 1
                         elif this_object is not None:
                             if command=="vt":
                                 args = args_string.split(" ")
@@ -686,7 +686,7 @@ class WObjFile:
                                     this_object.face_dicts[smoothing_key]["s"] = smoothing_mode
                                     this_object.face_dicts[smoothing_key]["faces"] = []
                                     for group_name in group_names:
-                                        if not (group_name in this_object.face_groups):
+                                        if group_name not in this_object.face_groups:
                                             this_object.face_groups[group_name] = []
                                         if not smoothing_key in this_object.face_groups[group_name]:
                                             this_object.face_groups[group_name].append(smoothing_key)
@@ -822,7 +822,7 @@ class WObjFile:
                         #    print(msg_filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) no space after command")
                         prev_command = command
                         prev_usable_command = command
-                        
+
                     else:
                         if len(line_strip)>0:
                             comment_notag = line_strip[1:].strip()
@@ -862,7 +862,7 @@ class WObjFile:
             if len(self.wobjects)<1:
                 print("[ WObjFile ] WARNING: " + f_name + " got 0 objects from '" + msg_filename + "'")
         #else ignore since already has file does not exist error
-            
+
     def _get_unused_wobject_key(self):
         #this_o_name = None
         #while True:

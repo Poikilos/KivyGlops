@@ -189,7 +189,7 @@ void main (void){
 
         self.scene.glops.append(this_glop)
         this_glop.glop_index = len(self.scene.glops) - 1
-        if not (self.scene.glops[this_glop.glop_index] is this_glop:
+        if self.scene.glops[this_glop.glop_index] is not this_glop:
             # deal with multithreading paranoia:
             print("[ ishadereditor.py ] glop_index was wrong, correcting...")
             this_glop.glop_index = None
