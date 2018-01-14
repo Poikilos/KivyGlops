@@ -1,6 +1,7 @@
 # KivyGlops
 Control 3D objects and the camera in your 3D Kivy app!
 <https://github.com/expertmm/KivyGlops>
+The operating principle of this project is to focus on completeness. This means that things will work before they work well. For example: walkmeshes should work before they work with physics; physics should work before they use Bullet; shaders should shade objects with or without textures before they shade objects with physically-based lighting; movement should work before bones and other mesh animations work; meshes should import in a fault-tolerant way before more formats are supported. Because of following this principle, all of those things have worked for a long time even though they are under heavy development. Another benefit of this approach is that you can create your project based on kivyglopsexampleblank.py (save it as a different py file in same folder) then upgrade all of the other files with a new version of KivyGlops and your project will increase in quality, but your project will not have been limited in quantity (scope) by adopting KivyGlops early. I hope that this software inspires you to create more complete publicly-licensed code projects, whether using KivyGlops or not.
 ![Screenshot](https://raw.githubusercontent.com/expertmm/KivyGlops/master/screenshot01.png)
 
 ## Key Features
