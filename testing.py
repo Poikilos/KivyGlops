@@ -41,10 +41,11 @@ else:
     #def __init__(self, **kwargs):
         #super(MainForm, self).__init__(**kwargs)
 
-
+item_dict = None
 class MainScene(KivyGlops):
 
     def on_load_glops(self):
+        global item_dict
         test_space_enable = False
         test_medieval_enable = True
         test_shader_enable = False
@@ -175,7 +176,13 @@ class MainScene(KivyGlops):
             item_dict["name"] = "crate"
             item_dict["use_sound"] = "sounds/woosh-medium.wav"
             item_dict["hit_damage"] = .3
-            item_dict["projectile_keys"] = ["hit_damage"]
+            print("[ testing ] about to create projectile weapon" + \
+                  " without projectile keys to make sure" + \
+                  " projectile_dict received by attacked_glop" + \
+                  " has all user-specified variables (" + \
+                  " the custom on_attack_glop event in here" + \
+                  " will show errors if missing)")
+            #item_dict["projectile_keys"] = ["hit_damage"]
             if test_infinite_crates:
                 item_dict["droppable"] = False
                 item_dict["cooldown"] = .1
@@ -229,6 +236,23 @@ class MainScene(KivyGlops):
         #test_deepcopy_weapon = self.player_glop.deepcopy_with_my_type(weapon)
 
     def on_attacked_glop(self, attacked_index, attacker_index, weapon_dict):
+        missing_key_count = 0
+        if "projectile_keys" in item_dict:
+            for val in item_dict["projectile_keys"]
+                if val not in weapon_dict:
+                    print("[ testing ] projectile_key '" + val + \
+                          "' specified in projectile_keys" + \
+                          " is missing from projectile_dict" + \
+                          " provided to on_attacked_glop event")
+                    missing_key_count += 1
+        else:
+            for key in item_dict:
+                if key not in weapon_dict:
+                    print("[ testing ] projectile_key '" + val + \
+                          "' specified in item_dict" + \
+                          " is missing from projectile_dict" + \
+                          " provided to on_attacked_glop event")
+                    missing_key_count += 1
         self.glops[attacked_index].actor_dict["hp"] -= weapon_dict["hit_damage"]
         if self.glops[attacked_index].actor_dict["hp"] <= 0:
             self.explode_glop_at(attacked_index, weapon_dict)

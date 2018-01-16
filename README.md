@@ -23,7 +23,7 @@ The operating principle of this project is to focus on completeness. This means 
   * if you want ai, you must set actor_dict["ai_enable"] = True
     * if you enable ai, the on_process_ai event will occur every frame before ai variables are checked (but the AI won't do anything unless you set the actor_dict variables during on_process_ai; see the AI section below)
   (see also "Unit 2" lesson 7)
-  * can have clip_enable in actor dict it will be moved to `properties`
+  * can have clip_enable in actor dict: it and any other keys that are in `self.settings["templates"]["actor_properties"]` will be moved to `properties`
 * spec for item_dict:
   * "uses" is a list containing use strings as follows:
     * uses like "throw_linear" or "throw_arc" or "shoot_linear" causes the item to be thrown
@@ -55,7 +55,7 @@ The operating principle of this project is to focus on completeness. This means 
     * if you want to format a tuple, you could do `debug_dict["boss.pos"] = fixed_width(boss.pos, 4, " ")`
     * if you want a new category, make a new dict in debug_dict such as `debug_dict["earth"] = {}` then set your values such as `debug_dict["earth"]["water"] = 71.`
 * to change defaults for properties, actor_dict, and item_dict, see `settings["templates"]`
-    * settings guarantees certain values needed by the engine, so avoid deleting any dicts or values or setting anything to None in the defaults of `settings` or `settings["templates"]` unless you have subclassed PyGlops in a way that you know you don't need the values
+    * settings guarantees certain values needed by the engine (like a class, but more "functional" and easier to automatically load and save only the relevant values in human-readable format), so avoid deleting any dicts or values or setting anything to None in the defaults of `settings` or `settings["templates"]` unless you have subclassed PyGlops in a way that you know you don't need the values
 
 ### AI
 * If you implement the KivyGlops on_process_ai method, you shouldn't move anything otherwise glitches will almost certainly occur. This is not a limitation of the engine--it is a recommendation to be logical, so that you ensure your visuals presented to the player make sense.
@@ -90,8 +90,9 @@ The operating principle of this project is to focus on completeness. This means 
 * fixed view pitch (was adding 90 degrees--should be radians if any--see `view_top =`
 * renamed get_constrained_info_using_walkmeshes to get_walk_info
 * changed choice-based movement from a movement modifier to a velocity modifier
-* migrated hit_radius and reach_radius to dicts
+* migrated hit radius, reach radius, eye height (each with underscores) to dicts
 * moved defaults for actor_dict and properties to `settings["templates"]["actor"]` and `settings["templates"]["properties"]`)
+* added `settings["fallback"]["actor"]["ranged_aquire_radius"]` (20.)
 (2018-01-14)
 * Changed resources license to CC0 to comply with changes to GitHub TOS (see <http://joeyh.name/blog/entry/what_I_would_ask_my_lawyers_about_the_new_Github_TOS/>)--and removed or remade any resources not compatible with CC0.
     * kivyforest-floor.png was remade from scratch in Krita
@@ -131,7 +132,7 @@ The operating principle of this project is to focus on completeness. This means 
     * local stop_this_bumpable_enable eliminated (see *_glop.state["at_rest_event_enable"])
     * constrain to floor etc after that
 * made flag where all uses containing "shoot_" use item's range instead of player's (affects "Unit 2" lessons 6, 7, and 8)
-* instead of "inventory_index" selected_item_event now has "selected_index" and "fit_at" which is >=0 if fit into inventory (both are indices referring to `actor_dict["inventory_items"]` list); and in push_glop, slot `event["fit_at"]` is automatically selected if no slot (-1) was selected (select_item_event_dict is normally used only by after_selected_item; returned by push_glop_item, push_item, select_next_inventory_slot)
+* instead of "inventory_index" selected_item_event now has "selected_index" and "fit_at" which is >=0 if fit into inventory (both are indices referring to `actor_dict["inventory_items"]` list); and in push_glop, slot `event["fit_at"]` is automatically selected if no slot (-1) was selected (select_item_event_dict is normally used only by after_selected_item; returned by push_glop_item, push_item, sel_next_inv_slot)
 * renamed attacked_glop to on_attacked_glop (affects "Unit 2" lessons 7, 8, and 9)
 * renamed remaining event handlers you can reimplement to start with `on_`: renamed load_glops to on_load_glops (affects all "Unit 2" lessons), update_glops to on_update_glops (affects "Unit 2" lesson 2), `display_explosion` to `on_explode_glop` (affects "Unit 2" lesson 8), `process_ai` to `on_process_ai` (affects "Unit 2" lesson 9)
 * kivyglops.py: radically improved update method: fixed issues, unified decision-making variables for ai and player; unified physics for all glops
@@ -449,6 +450,7 @@ This spec allows one dict to be used to completely store the Wavefront mtl forma
         * if line in mtl file is `refl -type cube_top file.png` then the dict wmaterial["refl -type cube_top"] will have a list at "values" key which is ["file.png"]; the entire preceding part `refl -type cube_top` will be considered as the command to avoid overlap (to force consistent rule: one instance of command per material).
 
 ### Regression Tests
+* using `y` + `eye_height` where should be from floor: `minimums[1]` + `eye_height`
 * using degrees where should be radians (such as large numbers on line where angle is set)
 * using the same ancestors to call deepcopy or copy_as_subclass multiple times when should slice to original length first (since deepcopying that would cause pickling error which deepcopy_with_my_type was created to avoid, and calling deepcopy_with_my_type would be a major performance and possibly recursion issue)--see copy_as_subclass for correct usage
 * using `get _is _verbose()` (without spaces [spaces added so doesn't get replaced in README with replace in all open files]) where should be `get_verbose_enable()`

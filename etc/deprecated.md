@@ -1,3 +1,41 @@
+* formerly in set_as_actor_at (not needed since now actor_dict is overlayed onto defaults:
+```python
+            if a_glop.hit_radius is None:
+                if "hit_radius" in actor_dict:
+                    a_glop.hit_radius = actor_dict["hit_radius"]
+                else:
+                    a_glop.hit_radius = .5
+            if "throw_speed" not in a_glop.actor_dict:
+                a_glop.actor_dict["throw_speed"] = 15.
+                # ignored if item has projectile_speed
+            if "target_index" not in a_glop.actor_dict:
+                a_glop.actor_dict["target_index"] = None
+            if "moveto_index" not in a_glop.actor_dict:
+                a_glop.actor_dict["moveto_index"] = None
+            if "target_pos" not in a_glop.actor_dict:
+                a_glop.actor_dict["target_pos"] = None
+            if "land_units_per_second" not in a_glop.actor_dict:
+                a_glop.actor_dict["land_units_per_second"] = 12.5
+                    # since 45 KMh is average (45/60/60*1000)
+            if "ranges" not in a_glop.actor_dict:
+                a_glop.actor_dict["ranges"] = {}
+            if "melee" not in a_glop.actor_dict["ranges"]:
+                a_glop.actor_dict["ranges"]["melee"] = 0.5
+            if "throw_arc" not in a_glop.actor_dict["ranges"]:
+                a_glop.actor_dict["ranges"]["throw_arc"] = 10.
+            if "inventory_index" not in a_glop.actor_dict:
+                a_glop.actor_dict["inventory_index"] = -1
+            if "inventory_items" not in a_glop.actor_dict:
+                a_glop.actor_dict["inventory_items"] = []
+            if "unarmed_melee_enable" not in a_glop.actor_dict:
+                a_glop.actor_dict["unarmed_melee_enable"] = False
+            if "clip_enable" in a_glop.actor_dict:
+                a_glop.properties["clip_enable"] = clip_enable
+                del a_glop.actor_dict["clip_enable"]
+            else:
+                a_glop.properties["clip_enable"] = True
+
+```
 * formerly in update_glsl when item hits ground and has projectile_dict:
 ```python
 if self.glops[bumpable_index].item_dict is not None and ("as_projectile" not in self.glops[bumpable_index].item_dict):
