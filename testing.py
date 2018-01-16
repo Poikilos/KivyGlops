@@ -41,13 +41,13 @@ else:
     #def __init__(self, **kwargs):
         #super(MainForm, self).__init__(**kwargs)
 
-item_dict = None
+item_dict = {}
 class MainScene(KivyGlops):
 
     def on_load_glops(self):
         global item_dict
-        test_space_enable = False
-        test_medieval_enable = True
+        test_space_enable = True
+        test_medieval_enable = False
         test_shader_enable = False
         test_infinite_crates = True
         if test_infinite_crates:
@@ -57,14 +57,14 @@ class MainScene(KivyGlops):
         try_dict["glop"] = KivyGlop()
         print("[ testing ] copying dict with glop...")
         with_glop_dict = try_dict["glop"].deepcopy_with_my_type(try_dict)
-        try_dict["material"] = KivyGlopsMaterial()
+        try_dict["material"] = KivyGlopMaterial()
         print("[ testing ] copying dict with glop and material using glop...")
         with_gm_via_glop_dict = try_dict["glop"].deepcopy_with_my_type(try_dict)
         mat_dict = {}
-        mat_dict["material"] = KivyGlopsMaterial()
+        mat_dict["material"] = KivyGlopMaterial()
         print("[ testing ] copying material using material.copy...")
         with_gm_via_mat_dict = mat_dict["material"].copy()
-        try_dict["glop"].material = KivyGlopsMaterial()
+        try_dict["glop"].material = KivyGlopMaterial()
         del try_dict["material"]
         print("[ testing ] copying dict with glop that has " + \
               "material, using material.copy...")
@@ -152,7 +152,7 @@ class MainScene(KivyGlops):
                 print("[ testing ] Using walkmesh: ")
                 is_ok = self.use_walkmesh(name, hide=True)
 
-            item_dict = dict()
+            #item_dict = dict()
             item_dict["name"] = "barrel"
             item_dict["bump"] = "hide; obtain"
             #item_dict["use"] = "throw_arc"
@@ -202,43 +202,54 @@ class MainScene(KivyGlops):
             print("[ testing ] len(crate_indices): " + str(len(crate_indices)))
             self.set_background_cylmap(os.path.join("maps","sky-texture-seamless.jpg"))
         if test_space_enable:
-            self.set_background_cylmap("starfield1-coryg89.jpg")
+            #self.set_background_cylmap("maps/starfield1-coryg89.jpg")
 
             self.set_fly(True)
             self.set_hud_background("example_hud.png")
-            self.set_background_cylmap("starfield_cylindrical_map.jpg")
-            self.load_obj("spaceship,simple-denapes.obj")
+            self.set_background_cylmap("maps/starfield_cylindrical_map.jpg")
+            self.load_obj("meshes/spaceship,simple-denapes.obj")
 
             ship_info = dict()
             ship_info["hp"] = 1.0
 
             player1_index = self.get_player_glop_index(1)
-            #self.set_as_actor_at(player1_index, ship_info)  # already done by PyGlops or KivyGlops __init__
+            # self.set_as_actor_at(player1_index, ship_info)
+                # already done by PyGlops or KivyGlops __init__
 
             weapon = dict()
             weapon["droppable"] = "no"
-            weapon["fired_sprite_path"] = "blue_jet_bulb.png"
-            weapon["fired_sprite_size"] = .5,.5  # width and height in meters
-            weapon["uses"] = ["throw_linear"] #weapon["fire_type"] = "throw_arc"
+            weapon["fired_sprite_path"] = "sprites/blue_jet_bulb.png"
+            weapon["fired_sprite_size"] = .5,.5
+                # width and height in meters
+            weapon["uses"] = ["throw_linear"]
+                # weapon["fire_type"] = "throw_arc"
             weapon["hit_damage"] = .3
             weapon["projectile_keys"] = ["hit_damage"]
             self.add_actor_weapon(player1_index, weapon)
-            #self.player_glop = self.glops[player1_index]  # already done by PyGlops __init__
-            #test_deepcopy_weapon = self.player_glop.deepcopy_with_my_type(weapon)
-            print("[ testing ] #" + str(player1_index) + " named " + str(self.glops[player1_index].name) + " detected as player")
-            enemy_indices = self.get_indices_by_source_path("spaceship,simple-denapes.obj")
+            # self.player_glop = self.glops[player1_index]
+                # already done by PyGlops __init__
+            # test_deepcopy_weapon = self.player_glop.deepcopy_with_my_type(weapon)
+            print("[ testing ] #" + str(player1_index) + " named "
+                  + str(self.glops[player1_index].name)
+                  + " detected as player")
+            enemy_indices = \
+                self.get_indices_by_source_path(
+                    "spaceship,simple-denapes.obj")
             for i in range(0,len(enemy_indices)):
                 index = enemy_indices[i]
                 self.set_as_actor_at(index, ship_info)
                 self.add_actor_weapon(index, weapon)
-                print("[ testing ] #" + str(index) + " named " + str(self.glops[index].name) + " added as enemy")
-            print("[ testing ] " + str(len(enemy_indices)) + " enemies found.")
+                print("[ testing ] #" + str(index) + " named "
+                      + str(self.glops[index].name) + " added as enemy")
+            print("[ testing ] " + str(len(enemy_indices))
+                  + " enemies found.")
         #test_deepcopy_weapon = self.player_glop.deepcopy_with_my_type(weapon)
 
     def on_attacked_glop(self, attacked_index, attacker_index, weapon_dict):
         missing_key_count = 0
+        global item_dict
         if "projectile_keys" in item_dict:
-            for val in item_dict["projectile_keys"]
+            for val in item_dict["projectile_keys"]:
                 if val not in weapon_dict:
                     print("[ testing ] projectile_key '" + val + \
                           "' specified in projectile_keys" + \

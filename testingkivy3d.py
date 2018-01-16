@@ -86,8 +86,8 @@ class Testing3DWidget(Widget):
         #Rotate(angle=self.freeAngle, origin=(self._calculated_size[0]/2.0,self._calculated_size[1]/2.0))
         self._pivot_point = 0.0, 0.0, 0.0  #self.get_center_average_of_vertices()
         self._pivot_scaled_point = 0.0, 0.0, 0.0
-        self._r_ins = Rotate(0, 1, 0, 0)  #angle, x, y z
-        self._r_ins.origin = self._pivot_scaled_point
+        self._r_ins_x = Rotate(0, 1, 0, 0)  #angle, x, y z
+        self._r_ins_x.origin = self._pivot_scaled_point
         self._r_ins_y = Rotate(0, 0, 1, 0)  #angle, x, y z
         self._r_ins_y.origin = self._pivot_scaled_point
         self._r_ins_z = Rotate(0, 0, 0, 1)  #angle, x, y z
@@ -416,7 +416,7 @@ class TestingKivy3D(BoxLayout):
 
         context.add(this_glop._pushmatrix)
         context.add(this_glop._t_ins)
-        context.add(this_glop._r_ins)
+        context.add(this_glop._r_ins_x)
         context.add(this_glop._r_ins_y)
         context.add(this_glop._r_ins_z)
         context.add(this_glop._s_ins)

@@ -127,7 +127,7 @@ void main (void){
 
     def add_glop(self, this_glop, set_visible_enable=None):
         if set_visible_enable is not None:
-            this_glop.visible_enable = set_visible_enable
+            this_glop.state["visible_enable"] = set_visible_enable
         #context = self._contexts
         #context = self.gl_widget.canvas
         #if self.scene.selected_glop_index is None:
@@ -147,7 +147,7 @@ void main (void){
 
         context.add(this_glop._pushmatrix)
         context.add(this_glop._t_ins)
-        context.add(this_glop._r_ins)
+        context.add(this_glop._r_ins_x)
         context.add(this_glop._r_ins_y)
         context.add(this_glop._r_ins_z)
         context.add(this_glop._s_ins)
@@ -178,7 +178,7 @@ void main (void){
 
         #context.add(PushMatrix())
         #context.add(this_glop._t_ins)
-        #context.add(this_glop._r_ins)
+        #context.add(this_glop._r_ins_x)
         #context.add(this_glop._r_ins_y)
         #context.add(this_glop._r_ins_z)
         #context.add(this_glop._s_ins)
@@ -201,7 +201,7 @@ void main (void){
                 print("                      ERROR: unable to correct index")
         #this_glop.glop_index = len(self.scene.glops) - 1
         self._contexts.add(self.scene.glops[len(self.scene.glops)-1].get_context())  # _contexts is a visible instruction group
-        self.scene.glops[len(self.scene.glops)-1].visible_enable = True
+        self.scene.glops[len(self.scene.glops)-1].state["visible_enable"] = True
 
         if get_verbose_enable():
             print("Appended Glop (count:"+str(len(self.scene.glops))+").")
