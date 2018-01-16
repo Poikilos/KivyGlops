@@ -33,10 +33,14 @@ class MainScene(KivyGlops):
     def on_load_glops(self):
         self.load_obj("meshes/stadium,primitive.obj")
 
-        walkmesh_names = self.get_similar_names("walkmesh")
-        for name in walkmesh_names:
-            print("Found possible walkmesh: "+name)
-            is_ok = self.use_walkmesh(name, hide=True)
+        walkmesh_enable = False
+        if walkmesh_enable:
+            walkmesh_names = self.get_similar_names("walkmesh")
+            for name in walkmesh_names:
+                print("Found possible walkmesh: "+name)
+                is_ok = self.use_walkmesh(name, hide=True)
+        else:
+            print("[ example-stadium ] WARNING: not using walkmesh")
 
         #self.load_obj("player1.obj")
 

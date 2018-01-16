@@ -18,10 +18,12 @@ The operating principle of this project is to focus on completeness. This means 
   "Unit 2" will be used to refer Unit 2 of this site in this document.
 * spec for actor_dict:
   * actor_dict is a dictionary that can contain custom variables such as actor_dict["hp"]
+  * actor_dict sent to set_as_actor_at will be copied (by self.deepcopy_with_my_type [which allows deepcopy of glops within a dict], not by reference), so you can change it later for making similar actors without any problems
   * actor_dict will be filled in with required variables when you call set_as_actor_at, but the method will overlay your variables over the defaults, except for builtins with runtime info such as the `actor_dict["state"]` dict which should be left alone.
   * if you want ai, you must set actor_dict["ai_enable"] = True
     * if you enable ai, the on_process_ai event will occur every frame before ai variables are checked (but the AI won't do anything unless you set the actor_dict variables during on_process_ai; see the AI section below)
   (see also "Unit 2" lesson 7)
+  * can have clip_enable in actor dict it will be moved to `properties`
 * spec for item_dict:
   * "uses" is a list containing use strings as follows:
     * uses like "throw_linear" or "throw_arc" or "shoot_linear" causes the item to be thrown
@@ -47,6 +49,13 @@ The operating principle of this project is to focus on completeness. This means 
 * implement on_at_rest for whenever items stop being affected by physics (such as for area of effect items such as launched missiles)
     * NOTE: if a player is hit by the missile, attacked_glop_at will also be called by the engine
 * implement on_update_glops to do stuff every frame, after ai (and remote players in future version) occurs but before physics and constraints are calculated
+    * For example, if you want a sports game, normally if you get hit by a projectile you don't obtain it (move away and come back and if it is still there, then you can obtain it)--this is realistic since if you got a rock thrown at you and it hits you, you probably won't catch it; maybe some way of overriding this could be implemented for a sports game with a ball, otherwise you can just only allow catching it before it hits you (you could try to catch it in on_update_glops--set projectile_dict to None so it _internal_bump_glop doesn't block obtaining it)
+* to add values to debug screen (F3 to view):
+    * to simply add a value, manipulate the global debug dict such as `debug_dict["time"] = "12:00pm"`
+    * if you want to format a tuple, you could do `debug_dict["boss.pos"] = fixed_width(boss.pos, 4, " ")`
+    * if you want a new category, make a new dict in debug_dict such as `debug_dict["earth"] = {}` then set your values such as `debug_dict["earth"]["water"] = 71.`
+* to change defaults for properties, actor_dict, and item_dict, see `settings["templates"]`
+    * settings guarantees certain values needed by the engine, so avoid deleting any dicts or values or setting anything to None in the defaults of `settings` or `settings["templates"]` unless you have subclassed PyGlops in a way that you know you don't need the values
 
 ### AI
 * If you implement the KivyGlops on_process_ai method, you shouldn't move anything otherwise glitches will almost certainly occur. This is not a limitation of the engine--it is a recommendation to be logical, so that you ensure your visuals presented to the player make sense.
@@ -63,9 +72,37 @@ The operating principle of this project is to focus on completeness. This means 
 * if segfault occurs, maybe camera and look_at location are same
 
 ## Changes
+(2018-01-15)
+* renamed get_nearest_vec3_on_vec3line_using_xz to get_nearest_vec3_and_distance_on_vec3line_using_xz and made return ((x,y,z), distance) instead of (x,y,z,distance)
+* renamed constrain_pos_to_walkmesh to get_walk_info and made it not modify params, only return
+* stopped using get_vec3_from_point in favor of swizzling Translate (via _t_ins.xyz)
+* changed moving_x, moving_y, moving_z to choice_try_vel_multiplier list
+* only use walkmesh when `m_glop.properties["clip_enable"]` is True
+* moved __str__ from PyGlops to PyGlop and gave PyGlops its own
+* added get_location to PyGlop and KivyGlop
+* pyglops.py: in copy_as_subclass, use different copy of ancestor list for each call to deepcopy_with_my_type
+* renamed _translate_instruction to _t_ins, _rotate_instruction_* to _r_ins_*, _scale_instruction to _s_ins
+* changed _world_grav_acceleration to `settings["world_gravity_acceleration"]`,
+  _default_fly_enable to `settings["templates"]["actor"]["fly_enable"]`,
+  _camera_person_number to `settings["camera_perspective_number"]` (and fixed the set_camera_mode method which was setting a local instead of member)
+* changed glop's x_velocity, y_velocity, and z_velocity to `velocity` list
+* kivyglops.py (KivyGlops update): replaced theta and moving_theta with choice_try_theta and choice_result_turn_theta which are also used more consistently
+* fixed view pitch (was adding 90 degrees--should be radians if any--see `view_top =`
+* renamed get_constrained_info_using_walkmeshes to get_walk_info
+* changed choice-based movement from a movement modifier to a velocity modifier
+* migrated hit_radius and reach_radius to dicts
+* moved defaults for actor_dict and properties to `settings["templates"]["actor"]` and `settings["templates"]["properties"]`)
 (2018-01-14)
 * Changed resources license to CC0 to comply with changes to GitHub TOS (see <http://joeyh.name/blog/entry/what_I_would_ask_my_lawyers_about_the_new_Github_TOS/>)--and removed or remade any resources not compatible with CC0.
     * kivyforest-floor.png was remade from scratch in Krita
+* kivyglops.py: Fixed major bug where constrain_glop_to_walkmesh was using z-up (_t_ins.z and pos[2] or mismatched pos index) in some cases
+* kivyglops.py: put `self.on_update_glops()` back into correct scope
+* kivyglops.py: repaired and unified at_rest event (whether bumpable hit bumper or any hit ground)--see the call to `self.on_bump` in update
+* pyglops.py: add bumper_index to bumpable's in_range_indices if has projectile_dict, so target doesn't obtain item right away (see "ball games" in Usage section)
+* renamed on_at_rest_at to `on_bump(self, glop_index, bumper_index_or_None)` (and eliminated `def bump_glop(self, bumpable_name, bumper_name)`)
+* use walkmesh for every object
+* improved reliability of deepcopy_with_my_type and use duck-typing
+* add duck-typing methods _get_is_glop, get_is_glop, _get_is_glop_material, get_is_glop_material, get_class_name to relevant classes
 (2018-01-13)
 * use this_dict.get (returns None if missing)  instead of checks for key in a dict, when behavior should be same whether missing or None
 * add inventory_index to item to know whether it is in a player's inventory, and don't delete owner or owner_index until projectile_dict is removed (when lands)
@@ -84,13 +121,14 @@ The operating principle of this project is to focus on completeness. This means 
 * renamed: getAngleBetweenPoints to get_angle_between_points, getMeshByName to get_mesh_by_name
 * renamed overloadable scene event handlers: obtain_glop to _deprecated_on_obtain_glop_by_name (used in "Unit 2" lessons 5, 6 and 9), obtain_glop_at to on_obtain_glop
 * return of get_index_lists_by_similar_names changed from list to dict where keys are same as partial_names param
-* use `x_velocity * got_frame_delay` properly (as opposed to `x_velocity` alone) even if no floor
+* use `velocity[0] * got_frame_delay` properly (as opposed to `velocity[0]` alone) even if no floor
 * ensure ai and hit detection are done before movement
 * set state variables for choice-based movement, for ai and player the same way (instead of making local variables)
     * local attack_radius changed to `self.glops[bumper_index]["state"]["acquire_radius"]`
     * local attack_s changed to `self.glops[bumper_index]["state"]["desired_use"]`
     * local weapon_index changed to `self.glops[bumper_index]["state"]["desired_item_index"]`
     * local this_glop_free_enable eliminated (see *_glop.state["at_rest_enable"])
+    * local stop_this_bumpable_enable eliminated (see *_glop.state["at_rest_event_enable"])
     * constrain to floor etc after that
 * made flag where all uses containing "shoot_" use item's range instead of player's (affects "Unit 2" lessons 6, 7, and 8)
 * instead of "inventory_index" selected_item_event now has "selected_index" and "fit_at" which is >=0 if fit into inventory (both are indices referring to `actor_dict["inventory_items"]` list); and in push_glop, slot `event["fit_at"]` is automatically selected if no slot (-1) was selected (select_item_event_dict is normally used only by after_selected_item; returned by push_glop_item, push_item, select_next_inventory_slot)
@@ -98,7 +136,7 @@ The operating principle of this project is to focus on completeness. This means 
 * renamed remaining event handlers you can reimplement to start with `on_`: renamed load_glops to on_load_glops (affects all "Unit 2" lessons), update_glops to on_update_glops (affects "Unit 2" lesson 2), `display_explosion` to `on_explode_glop` (affects "Unit 2" lesson 8), `process_ai` to `on_process_ai` (affects "Unit 2" lesson 9)
 * kivyglops.py: radically improved update method: fixed issues, unified decision-making variables for ai and player; unified physics for all glops
 (2018-01-12)
-* (was sending self.new_glop instead of self.new_material) fix KivyGlopsMaterial not using copy_as_subclass correctly
+* (was sending self.new_glop_method instead of self.new_material_method) fix KivyGlopsMaterial not using copy_as_subclass correctly
 * changed default projectile_speed (see also throw_speed) to 15 (was 1.0) for realism (works now, with since now physics is correct--second-based)--still no wind resistance, so things will go rather far
 * added infinite recursion checking to copy_as_subclass & deepcopy_with_my_type (and fixed deepcopy_with_my_type)
 * kivyglops.py: moved code using walkmesh from update to new method: constrain_glop_to_walkmesh
@@ -113,7 +151,7 @@ The operating principle of this project is to focus on completeness. This means 
 * pyglops.py: removes owner as should
 (2018-01-11)
 * pyglops.py: (move `is_out_of_range` from `_internal_bump_glop` to `_update` in kivyglops.py and set immediately after checked) fixed issue where is_out_of_range was only being set for items
-* kivyglops.py, pyglops.py: (only bumper [not even bumpable] has or needs hitbox; hitbox is set to None by super calculate_hit_range so stays that way if no override, so check for bumpable_enable before calling calculate_hit_range from _on_change_scale_instruction; check for hitbox before using in apply_vertex_offset; check whether glop_index is usable during calculate_hit_range to make sure it is not used improperly) prevent using glop_index before assigned (since _on_change_scale_instruction happens during append_wobject via _on_change_pivot, before glop is bumpable)
+* kivyglops.py, pyglops.py: (only bumper [not even bumpable] has or needs hitbox; hitbox is set to None by super calculate_hit_range so stays that way if no override, so check for bumpable_enable before calling calculate_hit_range from _on_change_s_ins; check for hitbox before using in apply_vertex_offset; check whether glop_index is usable during calculate_hit_range to make sure it is not used improperly) prevent using glop_index before assigned (since _on_change_s_ins happens during append_wobject via _on_change_pivot, before glop is bumpable)
 * change copy.deepcopy to get_dict_deepcopy where possible for safety with wierd types and python2
 * fix PyGlop deepcopy_with_my_type (pre-allocate list, use copy or '=', etc)
 * reduced verbosity by checking get_verbose_enable() in more situations
@@ -134,7 +172,7 @@ The operating principle of this project is to focus on completeness. This means 
 * replaced `bump_sound_paths` with `properties["bump_sound_paths"]`
 * created `add_damaged_sound_at` method for PyGlops scene (in properties so available to non-actors)
 * (no longer inherits from Widget) workaround disturbing `'dict' is not callable` error in Kivy 1.9.0
-* pyglops.py: (copy_as_subclass call in copy) fix potentially very bad bug -- `self.copy_as_subclass(self.new_glop, new_material_method)` had 3 params (not correct) 2nd one being another self.new_glop
+* pyglops.py: (copy_as_subclass call in copy) fix potentially very bad bug -- `self.copy_as_subclass(self.new_glop_method, new_material_method)` had 3 params (not correct) 2nd one being another self.new_glop_method
 * remove redundant call to _init_glop in KivyGlop __init__ (still calls it if super fails)
 * improved monkey: added eyelids, UV mapped eyelids, improved texture for eyes and around eyes
 * now uses _deferred_load_glops to load glops; to be more clear and functional, made separate load, loading, loaded booleans for *_glops_enable
@@ -157,7 +195,7 @@ The operating principle of this project is to focus on completeness. This means 
 * renamed set_as_item_by_index to set_as_item_at; set_as_actor_by_index to set_as_actor_at; explode_glop_by_index to explode_glop_at; kill_glop_by_index to kill_glop_at; give_item_by_index_to_player_number to give_item_index_to_player_number; obtain_glop_by_index to obtain_glop_at; add_bump_sound_by_index to add_bump_sound_at; select_mesh_by_index to select_mesh_at
 * changed `set_player_fly(self, fly_enable)` to `set_player_fly(self, player_number, fly_enable)`
 (2018-01-02)
-* changed `new_glop` to `new_material` in KivyGlopsMaterial
+* changed `new_glop_method` to `new_material_method` in KivyGlopsMaterial
 (2018-01-01)
 * changed KivyGlop canvas to default type instead of InstructionGroup
   * commented `self.canvas = InstructionGroup` in KivyGlop `__init__`
@@ -198,14 +236,13 @@ The operating principle of this project is to focus on completeness. This means 
 * (2017-12-19) added ability to load non-standard obj file using commands without params; leave WObject name as None if not specified, & added ability to load non-standard object signaling (AND naming) in obj file AFTER useless g command, (such as, name WObject `some_name` if has `# object some_name then useless comments` on any line before data but after line with just `g` or `o` command but only if no name follows those commands)
 * (2017-12-17) frames_per_second moved from KivyGlops to KivyGlops window since is implementation specific (and so KivyGlops instance doesn't need to exist during KivyGlopsWindow constructor)
 * (2017-12-16) complete shift of most methods from KivyGlopsWindow to PyGlops, or at least KivyGlops if kivy-specific; same for lines from init; same for lines from update_glsl (moved to new PyGlops `update` method)
-* (2017-12-16) renamed create_mesh to new_glop for clarity, and use new_glop to create camera so conversion is not needed (eliminate get_kivyglop_from_pyglop)
+* (2017-12-16) renamed create_mesh to new_glop_method for clarity, and use new_glop_method to create camera so conversion is not needed (eliminate get_kivyglop_from_pyglop)
         * rename get_pyglops_list_from_obj to get_glop_list_from_obj
         * rename get_pyglop_from_wobject to get_glop_from_wobject
 * (2017-12-16) Changed recipe for game so that you subclass KivyGlops instead of KivyGlopsWindow (removes arbitrary border between ui and scene, and changes self.scene. to self. in projects which utilize KivyGlops)
 * (2017-12-11) Began developing a platform-independent spec for the ui object so that PyGlops can specify more platform-independent methods (such as _internal_bump_glop) that push ui directly (ui being the platform-DEPENDENT object such as KivyGlopsWindow, which must inherit from some kind of OS Window or framework Window).
     * so far, ui must include:
-        * ui.bump_glop (bumpable_name, bumper_name)
-        * and in the future, potentially anything else in KivyGlopsWindow (KivyGlopsWindow is the only tested spec at this time, however see Developer Notes section of this file, which should be maintained well)
+        * potentially anything else in KivyGlopsWindow (KivyGlopsWindow is the only tested spec at this time, however see Developer Notes section of this file, which should be maintained well)
 * (2017-12-11) _internal_bump_glop now calls the new _run_semicolon_separated_commands which calls the new _run_command method, so that these new methods are available to other methods
 * (2017-12-11) give_item_by_keyword_to_player_number and give_item_index_to_player_number methods for manual item transfers without bumping or manually calling _internal_bump_glop
 * (2017-12-11) moved projectile handling to _internal_bump_glop (formerly was directly after the _internal_bump_glop call)
@@ -229,6 +266,8 @@ The operating principle of this project is to focus on completeness. This means 
 
 
 ## Known Issues
+* eliminate foot_reach in favor of using hitbox
+* did not test air-move or double-jump in on_update_glops
 * eliminate look_target_glop in favor of a relationship in "links"
 * upload updated version of lessons to website mentioned in Usage section (in the meantime see testing.py for updated code, or see Changes section for anything that says "renamed" or "required")
 * pyglops.py: remove kivy-specific _translate_instruction_* (in throw cases)
@@ -266,14 +305,14 @@ The operating principle of this project is to focus on completeness. This means 
 * Add the following code to expertmultimedia.com boundary detection lesson since was removed from KivyGlops __init__ (or add after call to on_update_glops??):
   ```This is done axis by axis--the only reason is so that you can do OpenGL boundary detection lesson from expertmultimedia.com starting with this file
     if self.world_boundary_min[0] is not None:
-        if self.player_glop._translate_instruction.x < self.world_boundary_min[0]:
-            self.player_glop._translate_instruction.x = self.world_boundary_min[0]
+        if self.player_glop._t_ins.x < self.world_boundary_min[0]:
+            self.player_glop._t_ins.x = self.world_boundary_min[0]
     if self.world_boundary_min[1] is not None:
-        if self.player_glop._translate_instruction.y < self.world_boundary_min[1]: #this is done only for this axis, just so that you can do OpenGL 6 lesson using this file (boundary detection)
-            self.player_glop._translate_instruction.y = self.world_boundary_min[1]
+        if self.player_glop._t_ins.y < self.world_boundary_min[1]: #this is done only for this axis, just so that you can do OpenGL 6 lesson using this file (boundary detection)
+            self.player_glop._t_ins.y = self.world_boundary_min[1]
     if self.world_boundary_min[2] is not None:
-        if self.player_glop._translate_instruction.z < self.world_boundary_min[2]: #this is done only for this axis, just so that you can do OpenGL 6 lesson using this file (boundary detection)
-            self.player_glop._translate_instruction.z = self.world_boundary_min[2]```
+        if self.player_glop._t_ins.z < self.world_boundary_min[2]: #this is done only for this axis, just so that you can do OpenGL 6 lesson using this file (boundary detection)
+            self.player_glop._t_ins.z = self.world_boundary_min[2]```
 * eventually remove projectiles (though pop method of list takes from left, change _bumpable_indices to a deque for better pop performance):
   ```
   from collections import deque
@@ -368,8 +407,9 @@ uniform mat4 projection_mat;  //derived from self.canvas["projection_mat"] = pro
                 _contexts
                 _contexts.remove(this_glop.get_context())
                 canvas
+        def update_debug_label(self)  # sets debug screen text to content of debug_dict
 * Subclass of KivyGlops must have:
-    * a new_glop method which returns your subclass of PyGlop (NOT of PyGlops), unless you are handling the `super(MySubclassOfGlop, self).__init__(self.new_glop)` (where MySubclassOfGlop is your class) `self.new_glop param` in your subclass' `__init__` method another way.
+    * a new_glop_method method which returns your subclass of PyGlop (NOT of PyGlops), unless you are handling the `super(MySubclassOfGlop, self).__init__(self.new_glop_method)` (where MySubclassOfGlop is your class) `self.new_glop_method param` in your subclass' `__init__` method another way.
 * All subclasses of PyGlops should overload __init__, call super at beginning of it, and glops_init at end of it, like KivyGlops does.
 * PyGlops module (which does not require Kivy) loads obj files using intermediate WObjFile class (planned: save&load native PyGlops files), and provides base classes for all classes in KivyGlops module
 
@@ -381,6 +421,7 @@ uniform mat4 projection_mat;  //derived from self.canvas["projection_mat"] = pro
 * Canvas is a subclass of InstructionGroup
 * shader values can be set using `set_state` and a subcontext can be created using `push_state` in ContextInstruction
 * InstructionGroup has `insert(index, instruction)` and `remove(index)` and a list named `children`
+* Subclasses of anything in pyglops.py should have a get_class_name method as part of duck-typing warnings in copy_* and get_*deepcopy* methods
 
 ### wmaterial dict spec
 This dict replaces deprecated WMaterial class in wobjfile.py.
@@ -408,6 +449,9 @@ This spec allows one dict to be used to completely store the Wavefront mtl forma
         * if line in mtl file is `refl -type cube_top file.png` then the dict wmaterial["refl -type cube_top"] will have a list at "values" key which is ["file.png"]; the entire preceding part `refl -type cube_top` will be considered as the command to avoid overlap (to force consistent rule: one instance of command per material).
 
 ### Regression Tests
+* using degrees where should be radians (such as large numbers on line where angle is set)
+* using the same ancestors to call deepcopy or copy_as_subclass multiple times when should slice to original length first (since deepcopying that would cause pickling error which deepcopy_with_my_type was created to avoid, and calling deepcopy_with_my_type would be a major performance and possibly recursion issue)--see copy_as_subclass for correct usage
+* using `get _is _verbose()` (without spaces [spaces added so doesn't get replaced in README with replace in all open files]) where should be `get_verbose_enable()`
 * using `/ self.ui.frames_per_second` for determining distance per frame, where should use `* got_frame_delay` (which is not only in seconds but is the actual frame delay)
 * always use: in_range_indices on bumpable and not bumper, for consistency
 * always do: hit detection & a.i. BEFORE movement/physics (& programmer-overridable events such as on_update_glops), for intuitiveness (the situation that the user sees on the screen is the situation on which AI is based [is what the AI sees], and on which results [such as hitting a platform] are based)

@@ -182,7 +182,7 @@ class WMaterial:
 
 * formerly from kivyglops.py, but (PROBABLY) not needed since pyglops.py version of this method checks for type(self) instead of PyGlops now:
 ```python
-def get_dict_deepcopy_with_my_type(self, old_dict, copy_my_type_by_reference_enable=False):
+def get_dict_deepcopy_with_my_type(self, old_dict, ref_my_type_enable=False):
         new_dict = None
         #if type(old_dict) is dict:
         new_dict = None
@@ -197,7 +197,7 @@ def get_dict_deepcopy_with_my_type(self, old_dict, copy_my_type_by_reference_ena
         #will fail if neither dict nor list (let it fail)
         for this_key in keys:
             if isinstance(old_dict[this_key], KivyGlop):
-                if copy_my_type_by_reference_enable:
+                if ref_my_type_enable:
                     if isinstance(new_dict, dict):
                         new_dict[this_key] = old_dict[this_key]
                     else:
@@ -205,16 +205,16 @@ def get_dict_deepcopy_with_my_type(self, old_dict, copy_my_type_by_reference_ena
                 else:
                     copy_of_var = None
                     if self.material is not None:
-                        copy_of_var = old_dict[this_key].copy(self.new_glop, self.material.new_material)
+                        copy_of_var = old_dict[this_key].copy(self.new_glop_method, self.material.new_material_method)
                     else:
-                        copy_of_var = old_dict[this_key].copy(self.new_glop, None)
+                        copy_of_var = old_dict[this_key].copy(self.new_glop_method, None)
                     if isinstance(new_dict, dict):
                         new_dict[this_key] = copy_of_var
                     else:
                         new_dict.append(copy_of_var)
             #TODO?: elif isinstance(old_dict[this_key], KivyGlopsMaterial)
             elif isinstance(old_dict[this_key], list):
-                new_dict[this_key] = get_dict_deepcopy_with_my_type(old_dict[this_key], copy_my_type_by_reference_enable)
+                new_dict[this_key] = get_dict_deepcopy_with_my_type(old_dict[this_key], ref_my_type_enable)
             else:
                 new_dict[this_key] = get_dict_deepcopy(old_dict[this_key])
         return new_dict
@@ -226,7 +226,7 @@ def get_dict_deepcopy_with_my_type(self, old_dict, copy_my_type_by_reference_ena
         self.camera_ay = 0
 ```
 
-* instead, use new_glop method (never use `= PyGlop(`) to avoid needing this
+* instead, use new_glop_method method (never use `= PyGlop(`) to avoid needing this
 ```python
 def get_kivyglop_from_pyglop(this_pyglop):
     this_kivyglop = KivyGlop()
@@ -247,9 +247,9 @@ def get_kivyglop_from_pyglop(this_pyglop):
     this_kivyglop.reach_radius = this_pyglop.reach_radius
     this_kivyglop.is_out_of_range = this_pyglop.is_out_of_range
     this_kivyglop.physics_enable = this_pyglop.physics_enable
-    this_kivyglop.x_velocity = this_pyglop.x_velocity
-    this_kivyglop.y_velocity = this_pyglop.y_velocity
-    this_kivyglop.z_velocity = this_pyglop.z_velocity
+    this_kivyglop.velocity[0] = this_pyglop.velocity[0]
+    this_kivyglop.velocity[1] = this_pyglop.velocity[1]
+    this_kivyglop.velocity[2] = this_pyglop.velocity[2]
     this_kivyglop._cached_floor_y = this_pyglop._cached_floor_y
     this_kivyglop.infinite_inventory_enable = this_pyglop.infinite_inventory_enable
     this_kivyglop.bump_sounds = this_pyglop.bump_sounds

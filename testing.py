@@ -1,4 +1,8 @@
+"""PyGlops is a game engine for python. It is "abstract" so in most
+cases classes here need to be subclassed to be useful (see KivyGlops)
+"""
 
+__author__ = 'Jake Gustafson'
 from kivy.app import App
 from kivy.core.window import Window
 from kivy.uix.widget import Widget
@@ -48,6 +52,39 @@ class MainScene(KivyGlops):
         if test_infinite_crates:
             if not test_medieval_enable:
                 print("test_infinite_crates requires test_medieval_enable")
+        try_dict = {}
+        try_dict["glop"] = KivyGlop()
+        print("[ testing ] copying dict with glop...")
+        with_glop_dict = try_dict["glop"].deepcopy_with_my_type(try_dict)
+        try_dict["material"] = KivyGlopsMaterial()
+        print("[ testing ] copying dict with glop and material using glop...")
+        with_gm_via_glop_dict = try_dict["glop"].deepcopy_with_my_type(try_dict)
+        mat_dict = {}
+        mat_dict["material"] = KivyGlopsMaterial()
+        print("[ testing ] copying material using material.copy...")
+        with_gm_via_mat_dict = mat_dict["material"].copy()
+        try_dict["glop"].material = KivyGlopsMaterial()
+        del try_dict["material"]
+        print("[ testing ] copying dict with glop that has " + \
+              "material, using material.copy...")
+        with_glop_with_gm_dict = try_dict["glop"].deepcopy_with_my_type(try_dict)
+        print("[ testing ] making actor_glop...")
+        actor = {}
+        #actor["hp"] = 1.
+        actor_glop = KivyGlop()
+        self.ui.add_glop(actor_glop)
+        print("[ testing ] setting actor which calls deepcopy_with_my_type...")
+        self.set_as_actor_at(actor_glop.glop_index, actor)
+
+        print("[ testing ] making item_glop...")
+        item = {}
+        #item["name"] = "something"
+        item_glop = KivyGlop()
+        self.ui.add_glop(item_glop)
+        print("[ testing ] setting item which calls deepcopy_with_my_type...")
+        self.set_as_item_at(item_glop.glop_index, item)
+
+
         #NOTE: default gl_widget shader is already loaded by KivyGlops
         #self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','simple1b.glsl'))
         #self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','shade-normal-only.glsl'))  # partially working

@@ -1,18 +1,7 @@
+"""This provides simple dependency-free access to OBJ files and
+certain 3D math operations.
 """
-This provides simple dependency-free access to OBJ files and certain 3D math operations.
-#Illumination models (as per OBJ format standard):
-# 0. Color on and Ambient off
-# 1. Color on and Ambient on [binary:0001]
-# 2. Highlight on [binary:0010]
-# 3. Reflection on and Ray trace on [binary:0011]
-# 4. Transparency: Glass on, Reflection: Ray trace on [binary:0100]
-# 5. Reflection: Fresnel on and Ray trace on [binary:0101]
-# 6. Transparency: Refraction on, Reflection: Fresnel off and Ray trace on [binary:0110]
-# 7. Transparency: Refraction on, Reflection: Fresnel on and Ray trace on [binary:0111]
-# 8. Reflection on and Ray trace off [binary:1000]
-# 9. Transparency: Glass on, Reflection: Ray trace off [binary:1001]
-# 10. Casts shadows onto invisible surfaces [binary:1010]
-"""
+__author__ = 'Jake Gustafson'
 
 import os
 import sys  # exception etc
@@ -70,7 +59,18 @@ def get_fvec7(values,start_index=0):
 
 #class WObjFile (see further down) most accurately represents the obj file format (except indices start at 0 in WObject instead of 1 which file uses). It contains a list of WObjects (each WObject has only the material it needs from the mtl file)
 
-
+# Illumination models (as per OBJ format standard):
+# 0. Color on and Ambient off
+# 1. Color on and Ambient on [binary:0001]
+# 2. Highlight on [binary:0010]
+# 3. Reflection on and Ray trace on [binary:0011]
+# 4. Transparency: Glass on, Reflection: Ray trace on [binary:0100]
+# 5. Reflection: Fresnel on and Ray trace on [binary:0101]
+# 6. Transparency: Refraction on, Reflection: Fresnel off and Ray trace on [binary:0110]
+# 7. Transparency: Refraction on, Reflection: Fresnel on and Ray trace on [binary:0111]
+# 8. Reflection on and Ray trace off [binary:1000]
+# 9. Transparency: Glass on, Reflection: Ray trace off [binary:1001]
+# 10. Casts shadows onto invisible surfaces [binary:1010]
 class WIlluminationModel:
 
     number = None
@@ -159,16 +159,31 @@ class WColorArgInfo:
 #use the "Ka" statement, the "Ka spectral" statement, or the "Ka xyz"
 #statement. Tip These statements are mutually exclusive.
 color_arg_type_strings = list()
-color_arg_type_strings.append(WColorArgInfo("type","type",1,1,["type, such as type of reflection"]))
-color_arg_type_strings.append(WColorArgInfo("spectral","spectral curve",1,2,["filename","factor"]))
-color_arg_type_strings.append(WColorArgInfo("xyz","specifies that the values are in CIEXYZ colorspace",3,3,["X as in CIEXYZ","Y as in CIEXYZ","Z as in CIEXYZ"]))
-color_arg_type_strings.append(WColorArgInfo("blendu","blend U in map",1,1,["on|off"]))
-color_arg_type_strings.append(WColorArgInfo("blendv","blend V in map",1,1,["on|off"]))
-color_arg_type_strings.append(WColorArgInfo("clamp","clamp to 0-1 in UV range",1,1,["on|off"]))
-color_arg_type_strings.append(WColorArgInfo("cc","color correction (only for map_Ka, map_Kd, and map_Ks)",1,1,["on|off"]))
-color_arg_type_strings.append(WColorArgInfo("mm","base gain",2,2,["black level|white level (processed before black level, so acts as range)"]))
-color_arg_type_strings.append(WColorArgInfo("t","turbulence (post-processes tiled textures to hide seem)",2,3,["u","v","w"]))
-color_arg_type_strings.append(WColorArgInfo("texres","resizes texture before using, such as for NPOT textures; if used, image is forced to a square",2,3,["pixel count"]))
+color_arg_type_strings.append(WColorArgInfo("type",
+    "type", 1, 1, ["type, such as type of reflection"]))
+color_arg_type_strings.append(WColorArgInfo("spectral",
+    "spectral curve", 1, 2, ["filename","factor"]))
+color_arg_type_strings.append(WColorArgInfo("xyz",
+    "specifies that the values are in CIEXYZ colorspace", 3, 3,
+    ["X as in CIEXYZ","Y as in CIEXYZ","Z as in CIEXYZ"]))
+color_arg_type_strings.append(WColorArgInfo("blendu",
+    "blend U in map", 1, 1, ["on|off"]))
+color_arg_type_strings.append(WColorArgInfo("blendv",
+    "blend V in map", 1, 1, ["on|off"]))
+color_arg_type_strings.append(WColorArgInfo("clamp",
+    "clamp to 0-1 in UV range", 1, 1, ["on|off"]))
+color_arg_type_strings.append(WColorArgInfo("cc",
+    "color correction (only for map_Ka, map_Kd, and map_Ks)", 1, 1,
+    ["on|off"]))
+color_arg_type_strings.append(WColorArgInfo("mm",
+    "base gain", 2, 2,
+    ["black level|white level (processed before black level, so acts as range)"]))
+color_arg_type_strings.append(WColorArgInfo("t",
+    "turbulence (post-processes tiled textures to hide seem)", 2, 3,
+    ["u","v","w"]))
+color_arg_type_strings.append(WColorArgInfo("texres",
+    "resizes texture before using, such as for NPOT textures; if used, image is forced to a square",
+    2, 3, ["pixel count"]))
 
 
 #see also override in pyglops.py and kivyglops.py; formerly dumpAsYAMLArray

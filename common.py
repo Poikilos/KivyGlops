@@ -11,6 +11,7 @@ def get_verbose_enable():
 
 def set_verbose_enable(enable):
     global verbose_enable
+    print("[ common.py ] NOTE: set verbose: " + str(enable))
     verbose_enable = enable
 
 class ScopeInfo:
@@ -77,9 +78,26 @@ def good_path_name(try_path_name):
         result = None
     return result
 
-def view_traceback():
+# makes each column visible_width characters wide, sacrificing extra
+# characters at end.
+# spacing is added between columns
+# so total width of each column plus spacing (except for last column)
+# would be visible_width + len(spacing)
+def fixed_width(vals, visible_width, spacing):
+    result = ""
+    fixed_width = visible_width + len(spacing)
+    for original_val in vals:
+        val = str(original_val)
+        if result != "":
+            result += spacing
+        if len(val) < visible_width:
+            val += " " * (visible_width - len(val))
+        result += val[:fixed_width]
+    return result
+
+def view_traceback(indent=""):
     ex_type, ex, tb = sys.exc_info()
-    print(str(ex_type)+" "+str(ex)+": ")
+    print(indent + str(ex_type) + " " + str(ex) + ": ")
     traceback.print_tb(tb)
     del tb
     print("")
