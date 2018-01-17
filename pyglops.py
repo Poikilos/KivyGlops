@@ -95,7 +95,7 @@ tab_string = "  "
 #kivy-trackball objloader (version with no MTL loader) by nskrypnik
 #objloader from kivy-rotation3d (version with placeholder mtl loader) by nskrypnik
 
-#TODO:
+# TODO:
 #-remove resource_find but still make able to find mtl file under Kivy somehow
 
 from wobjfile import *
@@ -277,7 +277,7 @@ def get_distance_vec2_to_vec2line_xz(a, b, c):
 #returns distance from point a to line bc
 def get_distance_vec2_to_vec2line(a, b, c):
     #from ADOConnection on stackoverflow answered Nov 18 '13 at 22:37
-    #this commented part is the expanded version of the same answer (both versions are given in answer)
+    # this commented part is the expanded version of the same answer (both versions are given in answer)
     #// normalize points
     #Point cn = new Point(c[0] - a[0], c[1] - a[1]);
     #Point bn = new Point(b[0] - a[0], b[1] - a[1]);
@@ -367,7 +367,7 @@ def is_in_triangle_coords(px, py, p0x, p0y, p1x, p1y, p2x, p2y):
     Area = 1/2*(-p1y*p2x + p0y*(-p1x + p2x) + p0x*(p1y - p2y) + p1x*p2y)
     s = 1/(2*Area)*(p0y*p2x - p0x*p2y + (p2y - p0y)*px + (p0x - p2x)*py)
     t = 1/(2*Area)*(p0x*p1y - p0y*p1x + (p0y - p1y)*px + (p1x - p0x)*py)
-#    #TODO: fix situation where it fails when clockwise (see discussion at http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle )
+#    # TODO: fix situation where it fails when clockwise (see discussion at http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle )
     return  s>kEpsilon and t>kEpsilon and 1-s-t>kEpsilon
 
 #swizzled to xz (uses index 0 and 2 of vec3)
@@ -377,7 +377,7 @@ def is_in_triangle_xz(check_vec3, a_vec3, b_vec3, c_vec3):
     Area = 1/2*(-b_vec3[2]*c_vec3[0] + a_vec3[2]*(-b_vec3[0] + c_vec3[0]) + a_vec3[0]*(b_vec3[2] - c_vec3[2]) + b_vec3[0]*c_vec3[2])
     s = 1/(2*Area)*(a_vec3[2]*c_vec3[0] - a_vec3[0]*c_vec3[2] + (c_vec3[2] - a_vec3[2])*check_vec3[0] + (a_vec3[0] - c_vec3[0])*check_vec3[2])
     t = 1/(2*Area)*(a_vec3[0]*b_vec3[2] - a_vec3[2]*b_vec3[0] + (a_vec3[2] - b_vec3[2])*check_vec3[0] + (b_vec3[0] - a_vec3[0])*check_vec3[2])
-#    #TODO: fix situation where it fails when clockwise (see discussion at http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle )
+#    # TODO: fix situation where it fails when clockwise (see discussion at http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle )
     return  s>kEpsilon and t>kEpsilon and 1-s-t>kEpsilon
 
 #swizzled to xz (uses index 0 and 2 of vec3)
@@ -388,7 +388,7 @@ def is_in_triangle_vec2(check_vec2, a_vec2, b_vec2, c_vec2):
     if Area>kEpsilon or Area<-kEpsilon:
         s = 1/(2*Area)*(a_vec2[1]*c_vec2[0] - a_vec2[0]*c_vec2[1] + (c_vec2[1] - a_vec2[1])*check_vec2[0] + (a_vec2[0] - c_vec2[0])*check_vec2[1])
         t = 1/(2*Area)*(a_vec2[0]*b_vec2[1] - a_vec2[1]*b_vec2[0] + (a_vec2[1] - b_vec2[1])*check_vec2[0] + (b_vec2[0] - a_vec2[0])*check_vec2[1])
-    #    #TODO: fix situation where it fails when clockwise (see discussion at http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle )
+    #    # TODO: fix situation where it fails when clockwise (see discussion at http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle )
         return  s>kEpsilon and t>kEpsilon and 1-s-t>kEpsilon
     else:
         return False
@@ -500,19 +500,19 @@ class PyGlop:
     indices = None
     #opacity = None  moved to material.diffuse_color 4th channel
 
-    #region runtime variables
+    # region runtime variables
     glop_index = None  # set by add_glop
-    #endregion runtime variables
+    # endregion runtime variables
 
-    #region vars based on OpenGL ES 1.1 MOVED TO material
+    # region vars based on OpenGL ES 1.1 MOVED TO material
     #ambient_color = None  # vec4
     #diffuse_color = None  # vec4
     #specular_color = None  # vec4
     ##emissive_color = None  # vec4
     #specular_exponent = None  # float
-    #endregion vars based on OpenGL ES 1.1 MOVED TO material
+    # endregion vars based on OpenGL ES 1.1 MOVED TO material
 
-    #region calculated from vertex_format
+    # region calculated from vertex_format
     _POSITION_OFFSET = None
     _NORMAL_OFFSET = None
     _TEXCOORD0_OFFSET = None
@@ -523,7 +523,7 @@ class PyGlop:
     TEXCOORD0_INDEX = None
     TEXCOORD1_INDEX = None
     COLOR_INDEX = None
-    #endregion calculated from vertex_format
+    # endregion calculated from vertex_format
 
     def __init__(self, default_templates=None):
         self._init_glop(default_templates=default_templates)
@@ -624,7 +624,7 @@ class PyGlop:
             self.material.ambient_color = (0.0, 0.0, 0.0, 1.0)
             self.material.specular_color = (1.0, 1.0, 1.0, 1.0)
             self.material.specular_coefficent = 16.0
-            #self.material.opacity = 1.0
+            # self.material.opacity = 1.0
 
             # TODO: find out where this code goes
             # (was here for unknown reason)
@@ -699,7 +699,7 @@ class PyGlop:
             target._max_coords = self._max_coords
                 # bounding cube maximums in local coordinates
             target._pivot_point = self._pivot_point
-                #TODO: (?) asdf eliminate _pivot_point--instead always
+                # TODO: (?) asdf eliminate _pivot_point--instead always
                 # use 0,0,0 and move vertices to change pivot; currently
                 # calculated from average of vertices if was imported
                 # from obj
@@ -713,7 +713,7 @@ class PyGlop:
             target.actor_dict = self.deepcopy_with_my_type(self.actor_dict, ancestors=ancestors[:orig_ancestors_len], depth=depth+1)
             target.properties["bump_enable"] = self.properties["bump_enable"]
             target.properties["reach_radius"] = self.properties["reach_radius"]
-            #target.state["in_range_indices"] = [] #self.state["in_range_indices"]
+            #target.state["in_range_indices"] = [] # self.state["in_range_indices"]
             target.properties["physics_enable"] = self.properties["physics_enable"]
             target.state["velocity"][0] = self.state["velocity"][0]
             target.state["velocity"][1] = self.state["velocity"][1]
@@ -984,7 +984,7 @@ class PyGlop:
         self.properties["hitbox"] = None
 
     def on_process_ai(self, glop_index):
-        #this should be implemented in the subclass
+        # this should be implemented in the subclass
         pass
 
     def apply_vertex_offset(self, this_point):
@@ -1011,9 +1011,9 @@ class PyGlop:
                 this_vertex_relative_distance = get_distance_vec3(self.vertices[v_offset+self._POSITION_OFFSET:], this_point)
                 if this_vertex_relative_distance > self.properties["hit_radius"]:
                     self.properties["hit_radius"] = this_vertex_relative_distance
-                #self.vertices[v_offset+self._POSITION_OFFSET+0] -= this_point[0]
-                #self.vertices[v_offset+self._POSITION_OFFSET+1] -= this_point[1]
-                #self.vertices[v_offset+self._POSITION_OFFSET+2] -= this_point[2]
+                # self.vertices[v_offset+self._POSITION_OFFSET+0] -= this_point[0]
+                # self.vertices[v_offset+self._POSITION_OFFSET+1] -= this_point[1]
+                # self.vertices[v_offset+self._POSITION_OFFSET+2] -= this_point[2]
                 v_offset += self.vertex_depth
         else:
             print("[ PyGlop ] WARNING in apply_vertex_offset: " + \
@@ -1130,7 +1130,7 @@ class PyGlop:
                         len(self.actor_dict["inventory_items"]) and \
                         item_glop_index>=0:
                     #select_item_event_dict["fit_enable"] = True
-                    #self.actor_dict["inventory_items"].pop(item_glop_index)
+                    # self.actor_dict["inventory_items"].pop(item_glop_index)
                     self.actor_dict["inventory_items"][item_glop_index] = \
                         EMPTY_ITEM
                     if item_glop_index == 0:
@@ -1470,14 +1470,14 @@ class PyGlop:
                 self.material.diffuse_color = get_fvec4_from_svec3(wmaterial["Kd"]["values"], opacity) if ("Kd" in wmaterial) else self.material.diffuse_color
             else:
                 self.material.diffuse_color = get_fvec4_from_svec_any_len(wmaterial["Kd"]["values"]) if ("Kd" in wmaterial) else self.material.diffuse_color
-            #self.material.diffuse_color = [float(v) for v in self.material.diffuse_color]
+            # self.material.diffuse_color = [float(v) for v in self.material.diffuse_color]
             self.material.ambient_color = get_fvec4_from_svec_any_len(wmaterial["Ka"]["values"]) if ("Ka" in wmaterial) else self.material.ambient_color
             self.material.specular_color = get_fvec4_from_svec_any_len(wmaterial["Ks"]["values"]) if ("Ks" in wmaterial) else self.material.specular_color
             if "Ns" in wmaterial:
                 self.material.specular_coefficent = float(wmaterial["Ns"]["values"][0])
-            #TODO: store as diffuse color alpha instead: self.opacity = wmaterial.get('d')
-            #TODO: store as diffuse color alpha instead: if self.opacity is None:
-            #TODO: store as diffuse color alpha instead:     self.opacity = 1.0 - float(wmaterial.get('Tr', 0.0))
+            # TODO: store as diffuse color alpha instead: self.opacity = wmaterial.get('d')
+            # TODO: store as diffuse color alpha instead: if self.opacity is None:
+            # TODO: store as diffuse color alpha instead:     self.opacity = 1.0 - float(wmaterial.get('Tr', 0.0))
             if "map_Ka" in wmaterial:
                 self.material.properties["ambient_path"] = wmaterial["map_Ka"]["values"][0]
             if "map_Kd" in wmaterial:
@@ -1503,7 +1503,7 @@ class PyGlop:
             view_traceback()
 
     #def calculate_normals(self):
-        ##this does not work. The call to calculate_normals is even commented out at <https://github.com/kivy/kivy/blob/master/examples/3Drendering/objloader.py> 20 Mar 2014. 16 Apr 2015.
+        ## this does not work. The call to calculate_normals is even commented out at <https://github.com/kivy/kivy/blob/master/examples/3Drendering/objloader.py> 20 Mar 2014. 16 Apr 2015.
         #for i in range(int(len(self.indices) / (self.vertex_depth))):
             #fi = i * self.vertex_depth
             #v1i = self.indices[fi]
@@ -1526,9 +1526,9 @@ class PyGlop:
             #n[2] = u[0] * v[1] - u[1] * v[0]
 
             #for k in range(3):
-                #self.vertices[v1i + 3 + k] = n[k]
-                #self.vertices[v2i + 3 + k] = n[k]
-                #self.vertices[v3i + 3 + k] = n[k]
+                # self.vertices[v1i + 3 + k] = n[k]
+                # self.vertices[v2i + 3 + k] = n[k]
+                # self.vertices[v3i + 3 + k] = n[k]
 
     def emit_yaml(self, lines, min_tab_string):
         #lines.append(min_tab_string+this_name+":")
@@ -1633,7 +1633,7 @@ class PyGlop:
         self.TEXCOORD1_INDEX = -1
         self.COLOR_INDEX = -1
 
-        #this_pyglop.vertex_depth = 0
+        # this_pyglop.vertex_depth = 0
         offset = 0
         temp_vertex = list()
         for i in range(0,len(self.vertex_format)):
@@ -1673,14 +1673,14 @@ class PyGlop:
         if this_wobject.face_dicts is not None:
             self.source_path = this_wobject.source_path
             #from vertex_format above:
-            #self.vertex_format = [
+            # self.vertex_format = [
                 #(b'a_position', , 'float'),  # Munshi prefers vec4 (Kivy prefers vec3)
                 #(b'a_texcoord0', , 'float'),  # Munshi prefers vec4 (Kivy prefers vec2); vTexCoord0; available if enable_tex[0] is true
                 #(b'a_texcoord1', , 'float'),  # Munshi prefers vec4 (Kivy prefers vec2);  available if enable_tex[1] is true
                 #(b'a_color', 4, 'float'),  # vColor (diffuse color of vertex)
                 #(b'a_normal', 3, 'float')  # vNormal; Munshi prefers vec3 (Kivy also prefers vec3)
                 #]
-            #self.on_vertex_format_change()
+            # self.on_vertex_format_change()
             IS_SELF_VFORMAT_OK = True
             if self._POSITION_OFFSET<0:
                 IS_SELF_VFORMAT_OK = False
@@ -1709,19 +1709,19 @@ class PyGlop:
                     zero_vertex.append(0.0)
                 if (self.vertex_format[self.POSITION_INDEX][VFORMAT_VECTOR_LEN_INDEX]>3):
                     zero_vertex[3] = 1.0
-                    #NOTE: this is done since usually if len is 3, simple.glsl included with kivy converts it to vec4 appending 1.0:
+                    # NOTE: this is done since usually if len is 3, simple.glsl included with kivy converts it to vec4 appending 1.0:
                     #attribute vec3 v_pos;
                     #void main (void) {
                     #vec4(v_pos,1.0);
-                #this_offset = self.COLOR_OFFSET
+                # this_offset = self.COLOR_OFFSET
                 channel_count = self.vertex_format[self.COLOR_INDEX][VFORMAT_VECTOR_LEN_INDEX]
                 for channel_subindex in range(0,channel_count):
-                    zero_vertex[self.COLOR_OFFSET+channel_subindex] = -1.0  # -1.0 for None #TODO: asdf flag a different way (other than negative) to work with fake standard shader
+                    zero_vertex[self.COLOR_OFFSET+channel_subindex] = -1.0  # -1.0 for None # TODO: asdf flag a different way (other than negative) to work with fake standard shader
 
 
                 participle="accessing object from list"
-                #this_wobject = self.glops[index]
-                #self.name = None
+                # this_wobject = self.glops[index]
+                # self.name = None
                 this_name = ""
                 try:
                     if this_wobject.name is not None:
@@ -1762,7 +1762,7 @@ class PyGlop:
                     #detecting vertex component offsets is required since indices in an obj file are sometimes relative to the first index in the FILE not the object
                     for key in this_wobject.face_dicts:
                         this_face_list = this_wobject.face_dicts[key]["faces"]
-                        #TODO: implement this_wobject.face_dicts[key]["s"] which can be "on" or "off" or None
+                        # TODO: implement this_wobject.face_dicts[key]["s"] which can be "on" or "off" or None
                         participle = "before processing faces"
                         dest_vertex_index = 0
                         face_count = 0
@@ -1868,7 +1868,7 @@ class PyGlop:
                                         view_traceback()
 
                                     participle = "combining components"
-                                    #vertex_components = [v[0], v[1], v[2], normal[0], normal[1], normal[2], texcoord[0], 1 - texcoord[1]] #TODO: why does kivy-rotation3d version have texcoord[1] instead of 1 - texcoord[1]
+                                    #vertex_components = [v[0], v[1], v[2], normal[0], normal[1], normal[2], texcoord[0], 1 - texcoord[1]] # TODO: why does kivy-rotation3d version have texcoord[1] instead of 1 - texcoord[1]
                                     vertex_components = list()
                                     for i in range(0,self.vertex_depth):
                                         vertex_components.append(0.0)
@@ -1893,14 +1893,14 @@ class PyGlop:
                                             abs_index += 1
                                     else:
                                         #default to transparent vertex color
-                                        #TODO: overlay vertex color using material color as base
+                                        # TODO: overlay vertex color using material color as base
                                         for element_index in range(0,4):
                                             vertex_components[self.COLOR_OFFSET+element_index] = 0.0
                                     #print("    - " + str(vertex_components))  # debug only
                                     self.vertices.extend(vertex_components)
                                     source_face_vertex_count += 1
                                     vertexinfo_index += 1
-                                #end while vertexinfo_index in face
+                                # endwhile vertexinfo_index in face
 
                                 participle = "combining triangle indices"
                                 vertexinfo_index = 0
@@ -1964,18 +1964,18 @@ class PyGlop:
             #             this_wobject.wmaterial = this_wobject.mtl.get(this_wobject.obj_material)
             #         if this_wobject.wmaterial is not None and this_wobject.wmaterial:
             #             this_wobject.set_textures_from_wmaterial(this_wobject.wmaterial)
-                    #self.glops[self._current_object] = mesh
+                    # self.glops[self._current_object] = mesh
                     #mesh.calculate_normals()
-                    #self.faces = []
+                    # self.faces = []
 
             #         if (len(this_wobject.normals)<1):
-            #             this_wobject.calculate_normals()  #this does not work. The call to calculate_normals is even commented out at <https://github.com/kivy/kivy/blob/master/examples/3Drendering/objloader.py> 20 Mar 2014. 16 Apr 2015.
+            #             this_wobject.calculate_normals()  # this does not work. The call to calculate_normals is even commented out at <https://github.com/kivy/kivy/blob/master/examples/3Drendering/objloader.py> 20 Mar 2014. 16 Apr 2015.
             else:
                 print("ERROR in " + f_name + ": bad vertex format specified in glop, no vertices could be added")
         else:
             print("WARNING in " + f_name + ": ignoring wobject where face_groups is None (a default face group is made on load if did not exist).")
-    #end def append_wobject
-#end class PyGlop
+    # enddef append_wobject
+# endclass PyGlop
 
 class PyGlopMaterial:
     #update copy constructor if adding/changing copyable members
@@ -1983,13 +1983,13 @@ class PyGlopMaterial:
     name = None
     mtlFileName = None  # mtl file path (only if based on WMaterial of WObject)
 
-    #region vars based on OpenGL ES 1.1
+    # region vars based on OpenGL ES 1.1
     ambient_color = None  # vec4
     diffuse_color = None  # vec4
     specular_color = None  # vec4
     emissive_color = None  # vec4
     specular_exponent = None  # float
-    #endregion vars based on OpenGL ES 1.1
+    # endregion vars based on OpenGL ES 1.1
 
     def __init__(self):
         self.properties = {}
@@ -2131,7 +2131,7 @@ def new_tuple(length, fill_start=0, fill_len=-1, fill_value=1.0):
 
 
 class PyGlopsLight:
-    #region vars based on OpenGL ES 1.1
+    # region vars based on OpenGL ES 1.1
     position = None  # vec4 light position for a point/spot light or normalized dir. for a directional light
     ambient_color = None  # vec4
     diffuse_color = None  # vec4
@@ -2141,7 +2141,7 @@ class PyGlopsLight:
     spot_exponent = None  # float
     spot_cutoff_angle = None  # float
     compute_distance_attenuation = None  # bool
-    #endregion vars based on OpenGL ES 1.1
+    # endregion vars based on OpenGL ES 1.1
 
     def __init__(self):
        self.position = (0.0, 0.0, 0.0, 0.0)
@@ -2210,6 +2210,7 @@ class PyGlops:
         self.materials = []
         self._bumper_indices = []
         self._bumpable_indices = []
+        self._actor_indices = []
 
     def __str__(self):
         return "PyGlops engine"
@@ -2225,7 +2226,7 @@ class PyGlops:
               "set_gravity_enable or set_player_fly instead (" + \
               "calling set_gravity_enable(" + str(not enable) + ")")
         self.set_gravity_enable(not enable)
-        #self.settings["templates"]["actor"]["fly_enable"] = enable
+        # self.settings["templates"]["actor"]["fly_enable"] = enable
 
     def get_fly_by_name(self, glop_name):
         result = is_true(self.settings["globals"]["fly_enables"].get(glop_name))
@@ -2259,7 +2260,7 @@ class PyGlops:
 
     def update(self):
         print("WARNING: update should be implemented by a subclass since it assumes there is a realtime game or graphics implementation")
-    #end update
+    # endupdate
 
     def get_verbose_enable(self):
         return get_verbose_enable()
@@ -2446,7 +2447,7 @@ class PyGlops:
             else:
                 print("WARNING: failed to find new invisible " + str(type(w_glop)) + " weapon (no 'fired_sprite_path' in item_dict")
         item_dict["fires_glops"] = list()
-        #TODO: remove redundancy by using set_as_item (which now checks for fires_glops)
+        # TODO: remove redundancy by using set_as_item (which now checks for fires_glops)
         if "name" not in item_dict or item_dict["name"] is None:
             item_dict["name"] = "Primary Weapon"
         if indices is not None:
@@ -2509,7 +2510,7 @@ class PyGlops:
         bumpable_name = bumped_glop.name
 
         #result =
-        #NOTE: on_at_rest should already have been called
+        # NOTE: on_at_rest should already have been called
         #if result is not None:
             #if "bumpable_name" in result:
             #    bumpable_name = result["bumpable_name"]
@@ -2545,7 +2546,7 @@ class PyGlops:
                 #    print("bumper:" + str(bumper_glop._t_ins.xyz) +
                 #          "; bumped:" + str(bumped_glop._t_ins.xyz))
             #if "bump" in bumped_glop.item_dict:
-            #NOTE ignore bumped_glop.state["in_range_indices"] list
+            # NOTE ignore bumped_glop.state["in_range_indices"] list
             # since firing at point blank range is ok.
             #if bumper_glop is not None:
             #    print("[ debug only ] projectile bumped by object " + str(bumper_name))
@@ -2578,7 +2579,7 @@ class PyGlops:
                            ("owner_index" not in bumped_glop.item_dict) or \
                            (bumped_glop.item_dict["owner_index"] is None):
                             if bumped_glop.item_dict["bump"] is not None:
-                                #self._run_semicolon_separated_commands(bumped_glop.item_dict["bump"], bumpable_index, bumper_index);
+                                # self._run_semicolon_separated_commands(bumped_glop.item_dict["bump"], bumpable_index, bumper_index);
                                 commands = bumped_glop.item_dict["bump"].split(";")
                                 for command in commands:
                                     command = command.strip()
@@ -2638,12 +2639,12 @@ class PyGlops:
     def get_player_glop_index(self, player_number):
         result = None
         if self._player_glop_index is not None:
-            #TODO: check player_number instead
+            # TODO: check player_number instead
             result = self._player_glop_index
         else:
             if self.player_glop is not None:
                 for i in range(0, len(self.glops)):
-                    #TODO: check player_number instead
+                    # TODO: check player_number instead
                     if self.glops[i] is self.player_glop:
                         result = i
                         self._player_glop_index = i
@@ -2715,6 +2716,7 @@ class PyGlops:
 
             a_glop.calculate_hit_range()
             self._bumper_indices.append(index)
+            self._actor_indices.append(index)
             a_glop.properties["bump_enable"] = True
             a_glop.properties["physics_enable"] = True
             if get_verbose_enable():
@@ -2762,13 +2764,13 @@ class PyGlops:
                         result=self.glops[index]
         return result
 
-    def get_glop_list_from_obj(self, source_path, new_glop_method, pivot_to_geometry_enable=True):  # load_obj(self, source_path): #TODO: ? swapyz=False):
+    def get_glop_list_from_obj(self, source_path, new_glop_method, pivot_to_geometry_enable=True):  # load_obj(self, source_path): # TODO: ? swapyz=False):
         participle = "(before initializing)"
         linePlus1 = 1
         #firstMeshIndex = len(self.glops)
         results = None
         try:
-            #self.lastCreatedMesh = None
+            # self.lastCreatedMesh = None
             participle = "checking path"
             if os.path.exists(source_path):
                 results = []  # create now, so that if None, that means source_path didn't exist
@@ -2934,7 +2936,7 @@ class PyGlops:
                 drop_enable = False
         if not drop_enable:
             item_dict["fires_glops"] = list()
-            #TODO: check for fired_sprite_path and fired_sprite_size
+            # TODO: check for fired_sprite_path and fired_sprite_size
             item_dict["fires_glops"].append(self.glops[i])
             if get_verbose_enable():
                 print("[ PyGlops ] (verbose message in set_as_item_at) " + \
@@ -2975,7 +2977,7 @@ class PyGlops:
                   + " not a problem unless you meant to make a"
                   + " visible item):")
             view_traceback(indent="            ")
-        #self.glops[i].properties["hit_radius"] = 1.0
+        # self.glops[i].properties["hit_radius"] = 1.0
         self._bumpable_indices.append(i)
         return result
 
@@ -3313,7 +3315,7 @@ class PyGlops:
                                   " directly after adding to glops")
                             fired_glop_index = self.index_of_mesh(fired_glop.name)
                         fired_glop.glop_index = fired_glop_index
-                        #NOTE: show_glop is done below in all cases
+                        # NOTE: show_glop is done below in all cases
                     else:
                         if duplicate_enable:
                             print("[ PyGlop ] WARNING in throw_glop: not adding to glop list fired_glop.glop_index already set (you should use duplicate_enable=True param if you want an instance)")
@@ -3339,7 +3341,8 @@ class PyGlops:
                         # If not duplicate_enable, remove links
                         # (necessary since made no copy).
                         if inventory_index is not None:
-                            event_dict = user_glop.pop_glop_item(inventory_index)
+                            event_dict = user_glop.pop_glop_item(
+                                inventory_index)
                             event_dict["calling method"] = throw_glop
                             self.after_selected_item(event_dict)
                         else:
@@ -3372,7 +3375,7 @@ class PyGlops:
                     self._bumpable_indices.append(fired_glop.glop_index)
 
 
-                    #TODO: why was this nonsense here:
+                    # TODO: why was this nonsense here:
                     #if favorite_pivot is None:
                     #    favorite_pivot = fired_glop._t_ins.xyz
                     #fired_glop._t_ins.x += fired_glop._t_ins.x - favorite_pivot[0]
@@ -3380,7 +3383,7 @@ class PyGlops:
                     #fired_glop._t_ins.z += fired_glop._t_ins.z - favorite_pivot[2]
 
                     #x_off, z_off = get_rect_from_polar_rad(this_speed, user_glop._r_ins_y.angle)
-                    #this_h_speed = this_speed * math.cos(user_glop._r_ins_x.angle)
+                    # this_h_speed = this_speed * math.cos(user_glop._r_ins_x.angle)
                     #fired_glop.state["velocity"][0] = x_off
                     #fired_glop.state["velocity"][2] = z_off
                     # x_off, y_off = \
@@ -3479,7 +3482,7 @@ class PyGlops:
     #def bump_glop(self, bumpable_name, bumper_name):
     #    return None
 
-    #this_use: either is None. or is a string for how the item was used
+    # this_use: either is None. or is a string for how the item was used
     def on_item_use(self, user_glop, item_dict, this_use):
         return None
 
@@ -3491,7 +3494,7 @@ class PyGlops:
               "the subclass which would know how to damage or " + \
               "calculate defense or other properties")
         #trivial example:
-        #self.glops[attacked_index].actor_dict["hp"] -= projectile_dict["hit_damage"]
+        # self.glops[attacked_index].actor_dict["hp"] -= projectile_dict["hit_damage"]
         #if self.glops[attacked_index].actor_dict["hp"] <= 0:
         #    self.explode_glop_at(attacked_index)
         return None
@@ -3513,13 +3516,19 @@ class PyGlops:
         for this_glop in self._walkmeshes:
             face_i = 0
             indices_count = len(this_glop.indices)
+            # assumes tris
             while (face_i<indices_count):
-                v_offset = this_glop.indices[face_i]*this_glop.vertex_depth
-                a_vertex = this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+0], this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+1], this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+2]
-                v_offset = this_glop.indices[face_i+1]*this_glop.vertex_depth
-                b_vertex = this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+0], this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+1], this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+2]
-                v_offset = this_glop.indices[face_i+2]*this_glop.vertex_depth
-                c_vertex = this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+0], this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+1], this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+2]
+                wrpo0 = v_offset+this_glop._POSITION_OFFSET+0
+                wrpo1 = v_offset+this_glop._POSITION_OFFSET+1
+                wrpo2 = v_offset+this_glop._POSITION_OFFSET+2
+                gvd = this_glop.vertex_depth
+                verts = this_glop.vertices
+                v_offset = this_glop.indices[face_i]*gvd
+                a_vertex = verts[wrpo0], verts[wrpo1], verts[wrpo2]
+                v_offset = this_glop.indices[face_i+1]*gvd
+                b_vertex = verts[wrpo0], verts[wrpo1], verts[wrpo2]
+                v_offset = this_glop.indices[face_i+2]*gvd
+                c_vertex = verts[wrpo0], verts[wrpo1], verts[wrpo2]
                 #side_a_distance = get_distance_vec3_xz(pos, a_vertex, b_vertex)
                 #side_b_distance = get_distance_vec3_xz(pos, b_vertex, c_vertex)
                 #side_c_distance = get_distance_vec3_xz(pos, c_vertex, a_vertex)
@@ -3546,23 +3555,23 @@ class PyGlops:
     def get_nearest_walkmesh_vertex_using_xz(self, pos):
         result = None
         second_nearest_pt = None
-        for this_glop in self._walkmeshes:
-            X_i = this_glop._POSITION_OFFSET + 0
-            Y_i = this_glop._POSITION_OFFSET + 1
-            Z_i = this_glop._POSITION_OFFSET + 2
+        for w_glop in self._walkmeshes:
+            X_i = w_glop._POSITION_OFFSET + 0
+            Y_i = w_glop._POSITION_OFFSET + 1
+            Z_i = w_glop._POSITION_OFFSET + 2
             X_abs_i = X_i
             Y_abs_i = Y_i
             Z_abs_i = Z_i
-            v_len = len(this_glop.vertices)
+            v_len = len(w_glop.vertices)
             distance_min = None
             while X_abs_i < v_len:
-                distance = math.sqrt( (pos[0]-this_glop.vertices[X_abs_i+0])**2 + (pos[2]-this_glop.vertices[X_abs_i+2])**2 )
+                distance = math.sqrt( (pos[0]-w_glop.vertices[X_abs_i+0])**2 + (pos[2]-w_glop.vertices[X_abs_i+2])**2 )
                 if (result is None) or (distance_min) is None or (distance<distance_min):
                     #if result is not None:
                         #second_nearest_pt = result[0],result[1],result[2]
-                    result = this_glop.vertices[X_abs_i+0], this_glop.vertices[X_abs_i+1], this_glop.vertices[X_abs_i+2]
+                    result = w_glop.vertices[X_abs_i+0], w_glop.vertices[X_abs_i+1], w_glop.vertices[X_abs_i+2]
                     distance_min = distance
-                X_abs_i += this_glop.vertex_depth
+                X_abs_i += w_glop.vertex_depth
 
             #DOESN'T WORK since second_nearest_pt may not be on edge
             #if second_nearest_pt is not None:
@@ -3572,7 +3581,7 @@ class PyGlops:
             #    distance1_weight = distance1/distance_total
             #    distance2_weight = distance2/distance_total
             #    result = result[0]*distance1_weight+second_nearest_pt[0]*distance2_weight, result[1]*distance1_weight+second_nearest_pt[1]*distance2_weight, result[2]*distance1_weight+second_nearest_pt[2]*distance2_weight
-                #TODO: use second_nearest_pt to get nearest location along the edge instead of warping to a vertex
+                # TODO: use second_nearest_pt to get nearest location along the edge instead of warping to a vertex
         return result
 
     def is_in_any_walkmesh_xz(self, check_vec3):
@@ -3585,14 +3594,14 @@ class PyGlops:
         check_vec2 = check_vec3[X_i], check_vec3[second_i]
         walkmesh_i = 0
         while walkmesh_i < len(self._walkmeshes):
-            this_glop = self._walkmeshes[walkmesh_i]
-            X_i = this_glop._POSITION_OFFSET + 0
-            second_i = this_glop._POSITION_OFFSET + 2
+            w_glop = self._walkmeshes[walkmesh_i]
+            X_i = w_glop._POSITION_OFFSET + 0
+            second_i = w_glop._POSITION_OFFSET + 2
             poly_side_count = 3
-            poly_count = int(len(this_glop.indices)/poly_side_count)
+            poly_count = int(len(w_glop.indices)/poly_side_count)
             poly_offset = 0
             for poly_index in range(0,poly_count):
-                if (  is_in_triangle_vec2( check_vec2, (this_glop.vertices[this_glop.indices[poly_offset]*this_glop.vertex_depth+X_i],this_glop.vertices[this_glop.indices[poly_offset]*this_glop.vertex_depth+second_i]), (this_glop.vertices[this_glop.indices[poly_offset+1]*this_glop.vertex_depth+X_i],this_glop.vertices[this_glop.indices[poly_offset+1]*this_glop.vertex_depth+second_i]), (this_glop.vertices[this_glop.indices[poly_offset+2]*this_glop.vertex_depth+X_i],this_glop.vertices[this_glop.indices[poly_offset+2]*this_glop.vertex_depth+second_i]) )  ):
+                if (  is_in_triangle_vec2( check_vec2, (w_glop.vertices[w_glop.indices[poly_offset]*w_glop.vertex_depth+X_i],w_glop.vertices[w_glop.indices[poly_offset]*w_glop.vertex_depth+second_i]), (w_glop.vertices[w_glop.indices[poly_offset+1]*w_glop.vertex_depth+X_i],w_glop.vertices[w_glop.indices[poly_offset+1]*w_glop.vertex_depth+second_i]), (w_glop.vertices[w_glop.indices[poly_offset+2]*w_glop.vertex_depth+X_i],w_glop.vertices[w_glop.indices[poly_offset+2]*w_glop.vertex_depth+second_i]) )  ):
                     result = dict()
                     result["walkmesh_index"] = walkmesh_i
                     result["polygon_offset"] = poly_offset

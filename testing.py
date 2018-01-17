@@ -86,28 +86,28 @@ class MainScene(KivyGlops):
         self.set_as_item_at(item_glop.glop_index, item)
 
 
-        #NOTE: default gl_widget shader is already loaded by KivyGlops
-        #self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','simple1b.glsl'))
-        #self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','shade-normal-only.glsl'))  # partially working
-        #self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','shade-texture-only.glsl'))
-        #self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','shade-kivyglops-minimal.glsl'))
-        #self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','fresnel.glsl'))
+        # NOTE: default gl_widget shader is already loaded by KivyGlops
+        # self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','simple1b.glsl'))
+        # self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','shade-normal-only.glsl'))  # partially working
+        # self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','shade-texture-only.glsl'))
+        # self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','shade-kivyglops-minimal.glsl'))
+        # self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','fresnel.glsl'))
 
-        #self.load_obj("barrels triangulated (Costinus at turbosquid).obj")
-        #self.load_obj("barrel.obj")
-        #self.load_obj("WarehouseOfFruit_by_Expertmm.obj")
-        #self.load_obj("pyramid.obj")
-        #self.load_obj("testnurbs-all-textured.obj")
-        #self.load_obj("orion.obj")
-        #self.load_obj("etc/problematic mesh files/4 Gold Rings.obj", centered=True)  # self.load_obj("4 Gold Rings.obj")
-        #self.load_obj("KivyForest.obj")
-        #self.load_obj("pedestal-suzanne.obj")
-        #self.load_obj("colonnato.obj") #has memory errors and takes several minutes to load
-        #self.load_obj("OfficeInterior.obj")
+        # self.load_obj("barrels triangulated (Costinus at turbosquid).obj")
+        # self.load_obj("barrel.obj")
+        # self.load_obj("WarehouseOfFruit_by_Expertmm.obj")
+        # self.load_obj("pyramid.obj")
+        # self.load_obj("testnurbs-all-textured.obj")
+        # self.load_obj("orion.obj")
+        # self.load_obj("etc/problematic mesh files/4 Gold Rings.obj", centered=True)  # self.load_obj("4 Gold Rings.obj")
+        # self.load_obj("KivyForest.obj")
+        # self.load_obj("pedestal-suzanne.obj")
+        # self.load_obj("colonnato.obj") #has memory errors and takes several minutes to load
+        # self.load_obj("OfficeInterior.obj")
 
-        #self.load_obj("OfficeInteriorWalkmesh.obj")
+        # self.load_obj("OfficeInteriorWalkmesh.obj")
         #walkmesh_names = self.get_similar_names("floor")
-        #self.load_obj("OfficeInterior.obj")
+        # self.load_obj("OfficeInterior.obj")
         #for name in walkmesh_names:
         #    print("Found possible walkmesh: "+name)
         #    is_ok = self.use_walkmesh(name, hide=True)
@@ -119,14 +119,14 @@ class MainScene(KivyGlops):
 
         if test_medieval_enable:
 
-            #self.load_obj(os.path.join(profile_path,"ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-lowpoly.obj"))
-            #self.load_obj(os.path.join(profile_path,"ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-minimal.obj"))
-            #self.load_obj(os.path.join(profile_path,"ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-techdemo.obj"))
-            #self.load_obj("R:\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-lowpoly.obj")
-            #self.load_obj("R:\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-minimal.obj")
-            #self.load_obj("R:\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-techdemo.obj")
-            #self.load_obj("etc\\problematic mesh files\\medseaport1b-floor_glrepeat.obj")
-            #self.load_obj("medseaport1b-lowpoly.obj")
+            # self.load_obj(os.path.join(profile_path,"ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-lowpoly.obj"))
+            # self.load_obj(os.path.join(profile_path,"ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-minimal.obj"))
+            # self.load_obj(os.path.join(profile_path,"ownCloud\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-techdemo.obj"))
+            # self.load_obj("R:\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-lowpoly.obj")
+            # self.load_obj("R:\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-minimal.obj")
+            # self.load_obj("R:\\Meshes\\Environments,Outdoor-Manmade\\Medieval Kind of Seaport by tokabilitor (CC0)\\medseaport1b-techdemo.obj")
+            # self.load_obj("etc\\problematic mesh files\\medseaport1b-floor_glrepeat.obj")
+            # self.load_obj("medseaport1b-lowpoly.obj")
             #seaport_name = "medseaport1b-techdemo.obj"
             seaport_name = "medseaport1b-techdemo.obj"
             #seaport_name = "medseaport1b-door.obj"
@@ -143,7 +143,7 @@ class MainScene(KivyGlops):
                 print("[ testing ] ERROR: can't find '" + seaport_name + "'")
             #medseaport1b-lowpoly (including dependencies) is available from http://www.expertmultimedia.com/usingpython/resources/Environments,Outdoor-Manmade/seaport.zip
 
-            #self.load_obj("medseaport1b-minimal.obj")
+            # self.load_obj("medseaport1b-minimal.obj")
 
             # If you already have existing walkmesh code, keep that instead of
             # typing this section, but change "floor" to "walkmesh"
@@ -171,7 +171,7 @@ class MainScene(KivyGlops):
                 self.set_as_item_at(index, item_dict)
                 barrel_names.append(self.glops[index].name)
 
-            #self.play_music("music/edinburgh-loop.ogg")
+            # self.play_music("music/edinburgh-loop.ogg")
 
             item_dict["name"] = "crate"
             item_dict["use_sound"] = "sounds/woosh-medium.wav"
@@ -202,7 +202,7 @@ class MainScene(KivyGlops):
             print("[ testing ] len(crate_indices): " + str(len(crate_indices)))
             self.set_background_cylmap(os.path.join("maps","sky-texture-seamless.jpg"))
         if test_space_enable:
-            #self.set_background_cylmap("maps/starfield1-coryg89.jpg")
+            # self.set_background_cylmap("maps/starfield1-coryg89.jpg")
 
             self.set_fly(True)
             self.set_hud_background("example_hud.png")
@@ -264,12 +264,18 @@ class MainScene(KivyGlops):
                           " is missing from projectile_dict" + \
                           " provided to on_attacked_glop event")
                     missing_key_count += 1
-        self.glops[attacked_index].actor_dict["hp"] -= weapon_dict["hit_damage"]
-        if self.glops[attacked_index].actor_dict["hp"] <= 0:
-            self.explode_glop_at(attacked_index, weapon_dict)
-            print("[ testing ] (on_attacked_glop: after exploding) HP: "+str(self.glops[attacked_index].actor_dict["hp"]))
+
+        if attacked_index is not None:
+            self.glops[attacked_index].actor_dict["hp"] -= weapon_dict["hit_damage"]
+            if self.glops[attacked_index].actor_dict["hp"] <= 0:
+                self.explode_glop_at(attacked_index)
+                print("[ testing ] (on_attacked_glop: after exploding) HP: "+str(self.glops[attacked_index].actor_dict["hp"]))
+            else:
+                print("[ testing ] (on_attacked_glop) HP: "+str(self.glops[attacked_index].actor_dict["hp"]))
         else:
-            print("[ testing ] (on_attacked_glop) HP: "+str(self.glops[attacked_index].actor_dict["hp"]))
+            # projectile hit environmental obstacle (no glop was hit)
+            print("[ opengl7 ] projectile hit environmental obstacle")
+
 
     def on_obtain_glop(self, bumpable_index, bumper_index):
         if self.glops[bumpable_index].item_dict["name"] == "barrel":
@@ -319,7 +325,7 @@ class MainScene(KivyGlops):
             #print("No glop selected.")
 
 
-        #this_index = find_by_name(self.scene.glops, "Suzanne")
+        # this_index = find_by_name(self.scene.glops, "Suzanne")
         #if this_index>-1:
         #    if self.get_pressed("j"):
         #        self.scene.glops[this_index].rotate_y_relative(-1)
@@ -327,14 +333,14 @@ class MainScene(KivyGlops):
         #        self.scene.glops[this_index].rotate_y_relative(1)
         #else:
         #    print("Object not found.")
-        #this_index = find_by_name(self.scene.glops, "Suzanne")
+        # this_index = find_by_name(self.scene.glops, "Suzanne")
         #if this_index > -1:
         #    self.scene.glops[this_index].rotate_z_relative(1)
         #    print("using index "+str(this_index))
         #else:
         #    print("Not found.")
 
-        #this_glop = get_by_name(self.scene.glops, "Suzanne")
+        # this_glop = get_by_name(self.scene.glops, "Suzanne")
         #if this_glop is not None:
         #    this_glop.rotate_z_relative(1)
         #else:

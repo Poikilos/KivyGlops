@@ -138,7 +138,7 @@ class WIlluminationModel:
             self.number = None
         return result
 
-#this is not needed, since it is just a spec (use sub dict in material dict instead)
+# this is not needed, since it is just a spec (use sub dict in material dict instead)
 class WColorArgInfo:
 
     _param = None
@@ -335,8 +335,8 @@ def get_wmaterial_dict_from_mtl(filename):
                                             wmaterials[this_mtl_name]["tmp"]["directory"] = os.path.dirname(os.path.abspath(this_mtl_filename))
                                         if not os.path.isdir(wmaterials[this_mtl_name]["tmp"]["directory"]):
                                             print("[ WObjFile ] WARNING: could not find directory for relative paths in '" + filename + "' so using '" + str(os.path.isdir(wmaterials[this_mtl_name]["tmp"]["directory"]) + "'"))
-                                        #this_mesh_folder_path = os.path.dirname(os.path.abspath(filename))
-                                        #this_mtl_path = this_mtl_filename
+                                        # this_mesh_folder_path = os.path.dirname(os.path.abspath(filename))
+                                        # this_mtl_path = this_mtl_filename
                                         #if (len(this_mesh_folder_path)>0):
                                         #    this_mtl_path = os.path.join(this_mesh_folder_path, this_mtl_filename)
                                         #wmaterials[this_mtl_name].file_path = this_mtl_path  # to make finding texture images easier later
@@ -347,7 +347,7 @@ def get_wmaterial_dict_from_mtl(filename):
                                         value_enables = [True] * len(chunks)  # whether the values are values of the command (false if already used as arg or value of arg); start as None so they will not all be the same reference?
                                         #for i in range(len(value_enables)):
                                         #    value_enables = True
-                                        #NOTE: values after arg are part of arg UNLESS at end, such as in "d -halo 0.6600" where 0.66 is a value for the command (of d)
+                                        # NOTE: values after arg are part of arg UNLESS at end, such as in "d -halo 0.6600" where 0.66 is a value for the command (of d)
                                         #so first grab args and values of args:
                                         option_key = None
                                         debug_offset = len(command) + 1
@@ -413,7 +413,7 @@ def get_wmaterial_dict_from_mtl(filename):
                                     comments = []
                                 comments.append(comment_notag)
                 line_counting_number += 1
-            #end for lines in file
+            # end for lines in file
         else:
             print("ERROR in get_wmaterial_dict_from_mtl: missing file or cannot access '"+filename+"'")
     except:
@@ -454,7 +454,7 @@ class WObjFile:
         self.wobjects = None
         self.wmaterials = None
         self.texcoords_not_2_warning_enable = True
-        #self.NYI_s_enable = True
+        # self.NYI_s_enable = True
         self.short_name_in_messages_enable = True
 
     def load(self, filename):
@@ -501,24 +501,24 @@ class WObjFile:
                 vt_map = None
                 vn_map = None
                 this_o_name = None
-                #this_face_group = None
+                # this_face_group = None
                 group_names = ["default"]  # formerly this_face_group_name
                 smoothing_param = None
-                #this_face_group_key = None
+                # this_face_group_key = None
                 for line in open(filename, "r"):
                     line_strip = line.strip()
                     while ("\t" in line_strip):
                         line_strip = line_strip.replace("\t", " ")
                     while ("  " in line):
                         line = line.replace("  ", " ")
-                    if (len(line_strip)>0) and (line_strip[0]!="#"):
+                    if (len(line_strip)>0) and (line_strip[0] != "#"):
                         if this_object is not None:
                             this_object.has_any_data_enable = True
                         space_index = line_strip.find(" ")
                         args_string = ""
                         if space_index>-1:
                             command = line_strip[:space_index]
-                            if len(line_strip) >= (space_index+1):  #TODO: audit this weird check
+                            if len(line_strip) >= (space_index+1):  # TODO: audit this weird check
                                 args_string = line_strip[space_index+1:].strip()
                         else:
                             command = line_strip
@@ -555,9 +555,11 @@ class WObjFile:
                                 group_names = ["default"]  # as per spec
                         elif command=="v":
                             if prev_usable_command != command:
-                                #this is non-spec to account for non-spec v commands that aren't preceded by `o` command
+                                # this is non-spec to account for
+                                # non-spec v commands that aren't
+                                # preceded by `o` command
                                 if this_object is not None:
-                                    #NOTE: this_object.name is guaranteed
+                                    # NOTE: this_object.name is guaranteed
                                     self.wobjects[this_object.name] = this_object
                                     show_object_faces_msg(this_object, msg_filename)
                                     this_object = None
@@ -585,7 +587,7 @@ class WObjFile:
                                     #comments[:] = []
                                     del comments[:]
                                     #comments.clear()  # requires python 3.3 or later
-                            #NOTE: references a v by vertex# are relative to file instead of 'o', but this is detected & fixed at end of this method (for each object discovered) since file may not match spec
+                            # NOTE: references a v by vertex# are relative to file instead of 'o', but this is detected & fixed at end of this method (for each object discovered) since file may not match spec
                             if this_object.vertices is None:
                                 this_object.vertices = list()
                             args = args_string.split(" ")
@@ -602,7 +604,7 @@ class WObjFile:
                                     result_v = get_fvec3( (args[0], 0.0, args[1]) )  #assume x,z for 2d vert
                                 if len(args)>=1:
                                     result_v = get_fvec3( (args[0], 0.0, 0.0) )  #assume x,z for 2d vert
-                            #this_object.vertices.append(result_v)
+                            # this_object.vertices.append(result_v)
                             absolute_v_list.append(result_v)
                             absolute_v_count += 1
                             #v_offset += 1
@@ -624,21 +626,21 @@ class WObjFile:
                                         print("(this is the last texcoords input warning that will be shown)")
                                         print("")
                                         self.texcoords_not_2_warning_enable = False
-                                #this_object.texcoords.append(result_vt)
+                                # this_object.texcoords.append(result_vt)
                                 absolute_vt_list.append(result_vt)
                                 absolute_vt_count += 1
                                 #still increment since is reference to index obj file:
                                 #vt_offset += 1
 
                             elif command=="vn":
-                                #NOTE: presence of normals supercedes smoothing groups
+                                # NOTE: presence of normals supercedes smoothing groups
                                 args = args_string.split(" ")
                                 result_vn = (0.0, 0.0, 0.0)
                                 if len(args)>=3:
                                     result_vn = get_fvec3(args)
                                 if len(args)!=3:
                                     print(msg_filename + " (" + str(line_counting_number) + ",0): (INPUT ERROR) normal must have 3 coordinates: '" + args_string + "'")
-                                #this_object.normals.append(result_vn)
+                                # this_object.normals.append(result_vn)
                                 absolute_vn_list.append(result_vn)
                                 absolute_vn_count += 1
                                 #vn_offset += 1
@@ -837,7 +839,6 @@ class WObjFile:
                         #    print(msg_filename+" ("+str(line_counting_number)+",0): (INPUT ERROR) no space after command")
                         prev_command = command
                         prev_usable_command = command
-
                     else:
                         if len(line_strip)>0:
                             comment_notag = line_strip[1:].strip()
@@ -847,7 +848,8 @@ class WObjFile:
                                 else:
                                     comments.append(comment_notag)
                                 words = comment_notag.split(" ")
-                                if (words is not None) and (len(words) > 1):
+                                if (words is not None) and \
+                                        (len(words) > 1):
                                     if words[0].lower() == "object":
                                         if this_o_name is None:
                                             this_o_name = words[1]
@@ -855,10 +857,10 @@ class WObjFile:
                                             print("NOTICE: skipping non-standard commented name '" + words[1] + "' since was already specified as '" + this_o_name + "'")
                         prev_command = None
                     line_counting_number += 1
-                #end for lines in file
-                #NOTE: "finalize_obj" code is no longer needed since offsets were already applied above and original format is kept intact (indices instead of opengl-style vertex info array)
+                # end for lines in file
+                # NOTE: "finalize_obj" code is no longer needed since offsets were already applied above and original format is kept intact (indices instead of opengl-style vertex info array)
                 if this_object is not None:
-                    #NOTE: this_object.name is guaranteed
+                    # NOTE: this_object.name is guaranteed
                     self.wobjects[this_object.name] = this_object
                     show_object_faces_msg(this_object, msg_filename)
                     print("[ WObjFile ] '" + msg_filename + "' has a total of " + str(len(absolute_v_list)) + " vertices loaded as " + str(individuated_v_count) + " vertices")
@@ -879,7 +881,7 @@ class WObjFile:
         #else ignore since already has file does not exist error
 
     def _get_unused_wobject_key(self):
-        #this_o_name = None
+        # this_o_name = None
         #while True:
         #    this_o_name = "untitled_wobject_" + str(self.untitled_number)
         #    self.untitled_number += 1

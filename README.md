@@ -72,6 +72,11 @@ The operating principle of this project is to focus on completeness. This means 
 * if segfault occurs, maybe camera and look_at location are same
 
 ## Changes
+(2018-01-17)
+* added dereferences (see `mgp` and `sg` and others) to increase performance and help with PEP8 line length
+* moved `settings['globals']['camera_perspective_number']`
+* used continue when possible to decrease nesting indentation
+* renamed `emit_debug_to_dict` to `debug_to`
 (2018-01-16)
 * broke movement, wait for next update
 * moved most or all required defaults for PyGlop to settings global
@@ -191,7 +196,7 @@ The operating principle of this project is to focus on completeness. This means 
 * renamed print_location to log_camera_info
 * consolidated get_verbose_enable() to be in one file only (common.py)
 * pyglops.py: removed uses of `Logger` to `print` to be framework-independent
-* eliminated scene.log_camera_info(); created kivyglop.emit_debug_to_dict(dict); moved ui's camera_walk_units_per_second and camera_turn_radians_per_second to *_glop.actor_dict["land_units_per_second"] and "land_degrees_per_second" (player_glop in this case); changed their per_frame equivalents to local variables in kivyglops.update
+* eliminated scene.log_camera_info(); created kivyglop.debug_to(dict); moved ui's camera_walk_units_per_second and camera_turn_radians_per_second to *_glop.actor_dict["land_units_per_second"] and "land_degrees_per_second" (player_glop in this case); changed their per_frame equivalents to local variables in kivyglops.update
 * move `self.camera_walk_units_per_second = 12.0` to actor_dict
 * move `self.camera_turn_radians_per_second = math.radians(90.0)` to actor_dict
 * fixed issue where projectile sprites not visible (probably a refactoring bug)
@@ -272,6 +277,7 @@ The operating principle of this project is to focus on completeness. This means 
 
 
 ## Known Issues
+* add pathing for processing `actor_dict["target_pos"]` (even if not ai_enable, in case of strategy game where target_pos is set on a player-controlled glop)
 * implement seperable_offsets for explosions
 * eliminate foot_reach in favor of using hitbox
 * did not test air-move or double-jump in on_update_glops
@@ -293,7 +299,7 @@ The operating principle of this project is to focus on completeness. This means 
 * fix nonworking ishadereditor.py (finish 3D version)
 * pivot_to_geometry_enable is broken (must be left at default True): (defaults for pivot_to_geometry_enable are flipped since broken) pyglops.py: (append_wobject) make self.transform_pivot_to_geometry() optional, for optimization and predictability (added to set_as_item where pivot_to_geometry_enable; also added that option, to set_as_item, load_obj, get_glop_list_from_obj, append_wobject)
 * renamed etc/kivyglops-mini-deprecated.py to testingkivy3d.py and MinimalKivyGlopsWindow class in it to TestingKivy3D
-* see `context.add(this_glop._color_instruction)  #TODO: asdf add as uniform instead`
+* see `context.add(this_glop._color_instruction)  # TODO: asdf add as uniform instead`
 * Only load unique textures once (see "Loaded texture")
 * if object has upward momentum, shouldn't stick to ground (is set near ground if player is near ground during `def use_selected`)
 * pyglops.py: (`update`) throw_linear vs throw_arc setting is ignored (instead, gravity is always applied to missile if _cached_floor_y is present, which is present if there is a walkmesh, in which case ground_y is calculated then object's _cached_floor_y is set to ground_y)
@@ -315,10 +321,10 @@ The operating principle of this project is to focus on completeness. This means 
         if self.player_glop._t_ins.x < self.world_boundary_min[0]:
             self.player_glop._t_ins.x = self.world_boundary_min[0]
     if self.world_boundary_min[1] is not None:
-        if self.player_glop._t_ins.y < self.world_boundary_min[1]: #this is done only for this axis, just so that you can do OpenGL 6 lesson using this file (boundary detection)
+        if self.player_glop._t_ins.y < self.world_boundary_min[1]: # this is done only for this axis, just so that you can do OpenGL 6 lesson using this file (boundary detection)
             self.player_glop._t_ins.y = self.world_boundary_min[1]
     if self.world_boundary_min[2] is not None:
-        if self.player_glop._t_ins.z < self.world_boundary_min[2]: #this is done only for this axis, just so that you can do OpenGL 6 lesson using this file (boundary detection)
+        if self.player_glop._t_ins.z < self.world_boundary_min[2]: # this is done only for this axis, just so that you can do OpenGL 6 lesson using this file (boundary detection)
             self.player_glop._t_ins.z = self.world_boundary_min[2]```
 * eventually remove projectiles (though pop method of list takes from left, change _bumpable_indices to a deque for better pop performance):
   ```
@@ -468,7 +474,7 @@ This spec allows one dict to be used to completely store the Wavefront mtl forma
 * use of not (x in y) where x and y are anything--(doesn't cause bug, but more readable as) where should be x not in y
 * use of not (x is y) where x and y are anything--(doesn't cause bug, but more readable as) where should be x is not y
 * checking for key in this_dict when answer None is treated same as missing--(doesn't cause bug, but) this_dict.get(key) is python's solution)
-* deleting stuff from _bumper_indices or _bumpable_indices while running the bump loop [see "  # can't delete until bump loop is done in update" (set to None instead--they will be cleaned up by update after the bump loop--see #endregion nested bump loop)
+* deleting stuff from _bumper_indices or _bumpable_indices while running the bump loop [see "  # can't delete until bump loop is done in update" (set to None instead--they will be cleaned up by update after the bump loop--see # endregion nested bump loop)
 * calling push_glop_item or push_item without removing it from _bumpable_indices (IF "fit_enable" in return dict)
 * `actor_dict["inventory_list"]` should be `actor_dict["inventory_items"]`
 * make sure all attack uses are in PyGlops.settings["globals"]["attack_uses"] (for ai or other purposes)

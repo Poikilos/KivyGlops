@@ -21,16 +21,16 @@ from kivy.factory import Factory
 
 no_width_error_enable = True
 
-#region globals pasted from common.py
+# region globals pasted from common.py
 def view_traceback(indent=""):
     ex_type, ex, tb = sys.exc_info()
     print(indent + str(ex_type) + " " + str(ex) + ": ")
     traceback.print_tb(tb)
     del tb
     print("")
-#endregion globals pasted from common.py
+# endregion globals pasted from common.py
 
-#region globals pasted from PyGlops
+# region globals pasted from PyGlops
 #from kivyops import *
 V_POS_INDEX = 0
 V_TC0_INDEX = 1
@@ -54,7 +54,7 @@ def normalize_3d_by_ref(this_vec3):
     else:
         this_vec3[1] = 1.0  # give some kind of normal for 0,0,0
 
-#endregion globals pasted from PyGlops
+# endregion globals pasted from PyGlops
 
 
 #class GLWidget(Widget):
@@ -78,13 +78,13 @@ class Testing3DWidget(Widget):
                               ]
         self.on_vertex_format_change()
 
-        #self.canvas = RenderContext()
-        #self.canvas = RenderContext(compute_normal_mat=True)
+        # self.canvas = RenderContext()
+        # self.canvas = RenderContext(compute_normal_mat=True)
         self.canvas = InstructionGroup()
 
         self._calculated_size = (1.0,1.0)  #finish this--or skip since only needed for getting pivot point
         #Rotate(angle=self.freeAngle, origin=(self._calculated_size[0]/2.0,self._calculated_size[1]/2.0))
-        self._pivot_point = 0.0, 0.0, 0.0  #self.get_center_average_of_vertices()
+        self._pivot_point = 0.0, 0.0, 0.0  # self.get_center_average_of_vertices()
         self._pivot_scaled_point = 0.0, 0.0, 0.0
         self._r_ins_x = Rotate(0, 1, 0, 0)  #angle, x, y z
         self._r_ins_x.origin = self._pivot_scaled_point
@@ -93,7 +93,7 @@ class Testing3DWidget(Widget):
         self._r_ins_z = Rotate(0, 0, 0, 1)  #angle, x, y z
         self._r_ins_z.origin = self._pivot_scaled_point
         self._s_ins = Scale(1.0,1.0,1.0)
-        #self._s_ins.origin = self._pivot_point
+        # self._s_ins.origin = self._pivot_point
         self._t_ins = Translate(0, 0, 0)
         self._color_instruction = Color(1.0, 0.0, 1.0, 1.0)  # TODO: eliminate this in favor of canvas["mat_diffuse_color"]
 
@@ -262,7 +262,7 @@ class Testing3DWidget(Widget):
         self.TEXCOORD1_INDEX = -1
         self.COLOR_INDEX = -1
 
-        #this_pyglop.vertex_depth = 0
+        # this_pyglop.vertex_depth = 0
         offset = 0
         temp_vertex = list()
         for i in range(0,len(self.vertex_format)):
@@ -326,28 +326,28 @@ class TestingKivy3D(BoxLayout):
                   " keyboard (keyboard may not be present).")
             view_traceback()
 
-        #self.bind(on_touch_down=self.canvasTouchDown)
+        # self.bind(on_touch_down=self.canvasTouchDown)
 
         self.gl_widget.canvas = RenderContext(compute_normal_mat=True)
         self.gl_widget.canvas["_world_light_dir"] = (0.0, 0.5, 1.0)
         self.gl_widget.canvas["_world_light_dir_eye_space"] = (0.0, 0.5, 1.0) #rotated in update_glsl
         self.gl_widget.canvas["camera_light_multiplier"] = (1.0, 1.0, 1.0, 1.0)
-        #self.gl_widget.canvas.shader.source = resource_find('simple1b.glsl')
-        #self.gl_widget.canvas.shader.source = resource_find('shade-kivyops-standard.glsl')  # NOT working
-        #self.gl_widget.canvas.shader.source = resource_find('shade-normal-only.glsl') #partially working
-        #self.gl_widget.canvas.shader.source = resource_find('shade-texture-only.glsl')
-        #self.gl_widget.canvas.shader.source = resource_find('shade-kivyops-minimal.glsl')  # NOT working
+        # self.gl_widget.canvas.shader.source = resource_find('simple1b.glsl')
+        # self.gl_widget.canvas.shader.source = resource_find('shade-kivyops-standard.glsl')  # NOT working
+        # self.gl_widget.canvas.shader.source = resource_find('shade-normal-only.glsl') #partially working
+        # self.gl_widget.canvas.shader.source = resource_find('shade-texture-only.glsl')
+        # self.gl_widget.canvas.shader.source = resource_find('shade-kivyops-minimal.glsl')  # NOT working
 
 
-        #self.canvas.shader.source = resource_find('simple.glsl')
-        #self.canvas.shader.source = resource_find('simple1b.glsl')
-        #self.canvas.shader.source = resource_find('shade-kivyops-standard.glsl')
-        #self.canvas.shader.source = resource_find('shade-normal-only.glsl')
-        #self.canvas.shader.source = resource_find('shade-texture-only.glsl')
-        #self.canvas.shader.source = resource_find('shade-kivyops-minimal.glsl')
-        #self.canvas.shader.source = resource_find('fresnel.glsl')
+        # self.canvas.shader.source = resource_find('simple.glsl')
+        # self.canvas.shader.source = resource_find('simple1b.glsl')
+        # self.canvas.shader.source = resource_find('shade-kivyops-standard.glsl')
+        # self.canvas.shader.source = resource_find('shade-normal-only.glsl')
+        # self.canvas.shader.source = resource_find('shade-texture-only.glsl')
+        # self.canvas.shader.source = resource_find('shade-kivyops-minimal.glsl')
+        # self.canvas.shader.source = resource_find('fresnel.glsl')
 
-        #self.gl_widget.canvas.shader.source = resource_find('simple1b.glsl')
+        # self.gl_widget.canvas.shader.source = resource_find('simple1b.glsl')
         self.gl_widget.canvas.shader.source = resource_find('fresnel.glsl')
 
         #formerly, .obj was loaded here using load_obj (now calling program does that)
@@ -364,31 +364,31 @@ class TestingKivy3D(BoxLayout):
 
         self.finalize_canvas()
         self.add_widget(self.gl_widget)
-        #self.hud_form.rows = 1
+        # self.hud_form.rows = 1
         self.add_widget(self.hud_form)
 
         self.debug_label = Factory.Label(text="...")
         self.hud_form.add_widget(self.debug_label)
         self.hud_form.add_widget(self.hud_buttons_form)
-        #self.inventory_prev_button = Factory.Button(text="<", id="inventory_prev_button", size_hint=(.2,1.0), on_press=self.inventory_prev_button_press)
+        # self.inventory_prev_button = Factory.Button(text="<", id="inventory_prev_button", size_hint=(.2,1.0), on_press=self.inventory_prev_button_press)
         self.use_button = Factory.Button(text="0: Empty", id="use_button", size_hint=(.2,1.0), on_press=self.inventory_use_button_press)
-        #self.inventory_next_button = Factory.Button(text=">", id="inventory_next_button", size_hint=(.2,1.0), on_press=self.inventory_next_button_press)
-        #self.hud_buttons_form.add_widget(self.inventory_prev_button)
+        # self.inventory_next_button = Factory.Button(text=">", id="inventory_next_button", size_hint=(.2,1.0), on_press=self.inventory_next_button_press)
+        # self.hud_buttons_form.add_widget(self.inventory_prev_button)
         self.hud_buttons_form.add_widget(self.use_button)
-        #self.hud_buttons_form.add_widget(self.inventory_next_button)
+        # self.hud_buttons_form.add_widget(self.inventory_next_button)
 
-        #Window.bind(on_motion=self.on_motion)  #TODO ?: formerly didn't work, but maybe failed since used Window. instead of self--see <https://kivy.org/docs/api-kivy.input.motionevent.html>
+        #Window.bind(on_motion=self.on_motion)  # TODO ?: formerly didn't work, but maybe failed since used Window. instead of self--see <https://kivy.org/docs/api-kivy.input.motionevent.html>
 
         Clock.schedule_interval(self.update_glsl, 1.0 / self.frames_per_second)
 
-        #self._touches = []
+        # self._touches = []
 
-        #self.scene = KivyGlops()
-        #self.scene = ObjFile(resource_find("monkey.obj"))
-        #self.scene.load_obj(resource_find("barrels triangulated (Costinus at turbosquid).obj"))
-        #self.scene.load_obj(resource_find("barrel.obj"))
-        #self.scene.load_obj(resource_find("KivyGlopsDemoScene.obj"))
-        #self.scene.load_obj("testnurbs-all-textured.obj")
+        # self.scene = KivyGlops()
+        # self.scene = ObjFile(resource_find("monkey.obj"))
+        # self.scene.load_obj(resource_find("barrels triangulated (Costinus at turbosquid).obj"))
+        # self.scene.load_obj(resource_find("barrel.obj"))
+        # self.scene.load_obj(resource_find("KivyGlopsDemoScene.obj"))
+        # self.scene.load_obj("testnurbs-all-textured.obj")
 
         self.this_op = Testing3DWidget()
         #with self.canvas:
@@ -409,7 +409,7 @@ class TestingKivy3D(BoxLayout):
     def add_op(self, this_op, set_visible_enable=None):
         this_glop = this_op
         context = this_glop.get_context()
-        #region pasted from KivyGlops add_glop
+        # region pasted from KivyGlops add_glop
         this_glop._pushmatrix = PushMatrix()
         this_glop._updatenormalmatrix = UpdateNormalMatrix()
         this_glop._popmatrix = PopMatrix()
@@ -421,7 +421,7 @@ class TestingKivy3D(BoxLayout):
         context.add(this_glop._r_ins_z)
         context.add(this_glop._s_ins)
         context.add(this_glop._updatenormalmatrix)
-        #context.add(this_glop._color_instruction)  #TODO: asdf add as uniform instead
+        #context.add(this_glop._color_instruction)  # TODO: asdf add as uniform instead
         #not needed for Testing3DWidget since _axes_mesh is already a Mesh of axes
         #if this_glop._mesh is None:
         #    this_glop.generate_kivy_mesh()
@@ -439,18 +439,18 @@ class TestingKivy3D(BoxLayout):
         context.add(this_glop._popmatrix)
         #if self.scene.glops is None:
         #    self.scene.glops = list()
-        #endregion pasted from KivyGlops add_glop
+        # endregion pasted from KivyGlops add_glop
 
-        #self._contexts.add(this_glop.get_context())  # really just self.this_op.canvas (in testingkivy3d.py)
+        # self._contexts.add(this_glop.get_context())  # really just self.this_op.canvas (in testingkivy3d.py)
         try:
-            #self._contexts.add(this_glop.canvas)
+            # self._contexts.add(this_glop.canvas)
             self._contexts.add(context)
             pass
         except:
             print("[ TestingKivy3D ] add_op could not finish adding instructiongroup")
             view_traceback()
 
-        #self._contexts.remove(this_glop.get_context()) #  to hide
+        # self._contexts.remove(this_glop.get_context()) #  to hide
 
     def inventory_use_button_press(self, instance):
         print("Pressed button " + instance.text)
@@ -483,7 +483,7 @@ class TestingKivy3D(BoxLayout):
                 print("[ TestingKivy3D ] ERROR in update_glsl: Failed to get width.")
                 no_width_error_enable = False
 
-        clip_top = 0.06  #NOTE: 0.03 is ~1.72 degrees, if that matters
+        clip_top = 0.06  # NOTE: 0.03 is ~1.72 degrees, if that matters
         # formerly field_of_view_factor
         # was changed to .03 when projection_near was changed from 1 to .1
         # was .3 when projection_near was 1
@@ -509,9 +509,9 @@ class TestingKivy3D(BoxLayout):
         self.gl_widget.canvas["camera_world_pos"] = [self.camera_translate_instruction.x, self.camera_translate_instruction.y, self.camera_translate_instruction.z]
         self.gl_widget.canvas['ambient_light'] = (0.1, 0.1, 0.1)
 
-        #self.canvas['projection_mat'] = projectionMatrix
-        #self.canvas['diffuse_light'] = (1.0, 1.0, 0.8)
-        #self.canvas['ambient_light'] = (0.1, 0.1, 0.1)
+        # self.canvas['projection_mat'] = projectionMatrix
+        # self.canvas['diffuse_light'] = (1.0, 1.0, 0.8)
+        # self.canvas['ambient_light'] = (0.1, 0.1, 0.1)
         self.rot.angle += 1
 
     def dump_pyglop(self, m):
@@ -533,7 +533,7 @@ class TestingKivy3D(BoxLayout):
         # #    self.scene.ops[i].append_dump(lines, tabString)
         # #m = list(self.scene.objects.values())[0]
         # m = self.scene.ops[0]
-        # #self.dump_pyglop(m)
+        # # self.dump_pyglop(m)
 
         # UpdateNormalMatrix()
         # self.mesh = Mesh(
@@ -545,7 +545,7 @@ class TestingKivy3D(BoxLayout):
         # PopMatrix()
 
     def _on_keyboard_up(self, keyboard, keycode):
-        #self.scene.player1_controller.set_pressed(keycode[0], keycode[1], False)
+        # self.scene.player1_controller.set_pressed(keycode[0], keycode[1], False)
         #print('Released key ' + str(keycode))
         self.player_velocity[0] = 0.0
         self.player_velocity[1] = 0.0

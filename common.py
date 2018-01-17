@@ -20,7 +20,7 @@ class ScopeInfo:
     line_number = -1
 
 def get_yaml_from_literal_value(val):
-    #TODO: add yaml escape sequences (see expertmm MoneyForesight for example)
+    # TODO: add yaml escape sequences (see expertmm MoneyForesight for example)
     if type(val).__name__ == "string":
         val = "\"" + val.replace("\"", "\\\"") + "\""
     else:
@@ -28,7 +28,7 @@ def get_yaml_from_literal_value(val):
     return val
 
 def get_literal_value_from_yaml(val):
-    #TODO: process yaml escape sequences (see expertmm MoneyForesight for example)
+    # TODO: process yaml escape sequences (see expertmm MoneyForesight for example)
     val=val.strip()
     if len(val)>2:
         if val[0:1]=="\"" and val[-1:]=="\"":

@@ -41,7 +41,7 @@ class ShaderEditor(FloatLayout):
     vs = StringProperty('''
 #ifdef GL_ES
     precision highp float;
-#endif
+# endif
 
 attribute vec4  a_position;
 attribute vec4  a_color;
@@ -82,7 +82,7 @@ void main (void) {
 //https://www.youtube.com/watch?v=WMHpBpjWUlY
 #ifdef GL_ES
     precision highp float;
-#endif
+# endif
 
 varying vec4 frag_color;
 varying vec2 uv_vec;
@@ -140,7 +140,7 @@ void main (void){
         this_mesh_name = ""
         if this_glop.name is not None:
             this_mesh_name = this_glop.name
-        #this_glop._s_ins = Scale(0.6)
+        # this_glop._s_ins = Scale(0.6)
         this_glop._pushmatrix = PushMatrix()
         this_glop._updatenormalmatrix = UpdateNormalMatrix()
         this_glop._popmatrix = PopMatrix()
@@ -153,17 +153,17 @@ void main (void){
         context.add(this_glop._s_ins)
         context.add(this_glop._updatenormalmatrix)
 
-        #context.add(this_glop._color_instruction)  #TODO: asdf add as uniform instead
+        #context.add(this_glop._color_instruction)  # TODO: asdf add as uniform instead
         if this_glop._mesh is None:
             #verts, indices = this_glop.generate_kivy_mesh()
             print("WARNING: glop had no mesh, so was generated when added to render context. Please ensure it is a KivyGlop and not a PyGlop (however, vertex indices misread could also lead to missing Mesh object).")
         #print("_color_instruction.r,.g,.b,.a: "+str( [this_glop._color_instruction.r, this_glop._color_instruction.g, this_glop._color_instruction.b, this_glop._color_instruction.a] ))
         #print("u_color: "+str(this_glop.material.diffuse_color))
-        #this_glop.generate_axes()
-        #this_glop._axes_mesh.
+        # this_glop.generate_axes()
+        # this_glop._axes_mesh.
         if this_glop._axes_mesh is not None:
             #context.add(this_glop._axes_mesh)  # debug only
-            #this_glop._mesh = this_glop._axes_mesh  # debug only
+            # this_glop._mesh = this_glop._axes_mesh  # debug only
             pass
 
         if this_glop._mesh is not None:
@@ -199,7 +199,7 @@ void main (void){
                     break
             if this_glop.glop_index is None:
                 print("                      ERROR: unable to correct index")
-        #this_glop.glop_index = len(self.scene.glops) - 1
+        # this_glop.glop_index = len(self.scene.glops) - 1
         self._contexts.add(self.scene.glops[len(self.scene.glops)-1].get_context())  # _contexts is a visible instruction group
         self.scene.glops[len(self.scene.glops)-1].state["visible_enable"] = True
 
@@ -218,12 +218,12 @@ void main (void){
         self.gl_widget.vs = vs
 
     def update_vs_to_vs_codeinput(self, instance, value):
-        #self.vs = self.vs_codeinput.text
+        # self.vs = self.vs_codeinput.text
         self.vs = value  # self.vs_codeinput.text
         print("update_vs_to_vs_codeinput")
 
     def update_fs_to_fs_codeinput(self, instance, value):
-        #self.fs = self.fs_codeinput.text
+        # self.fs = self.fs_codeinput.text
         self.fs = value  # self.fs_codeinput.text
         print("update_fs_to_fs_codeinput")
 
