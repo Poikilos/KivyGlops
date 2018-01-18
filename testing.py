@@ -245,6 +245,14 @@ class MainScene(KivyGlops):
                   + " enemies found.")
         #test_deepcopy_weapon = self.player_glop.deepcopy_with_my_type(weapon)
 
+    def on_bump(self, glop_index, bumper_index):
+        print("[ testing ] '" + self.glops[glop_index].name
+              + "' was bumped by '" + self.glops[bumper_index] + "'")
+
+    def on_bump_world(self, glop_index, description):
+        print("[ testing ] '" + self.glops[glop_index].name
+              + "' was bumped by world '" + description + "'")
+
     def on_attacked_glop(self, attacked_index, attacker_index, weapon_dict):
         missing_key_count = 0
         global item_dict

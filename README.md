@@ -79,7 +79,7 @@ The operating principle of this project is to focus on completeness. This means 
 * used continue when possible to decrease nesting indentation
 * renamed `emit_debug_to_dict` to `debug_to`
 * added get_thetas_vec3 function for where glop.look_at is too specific
-* replaced rotation_multiplier_y with glop state's new key `state["look_dest_thetas"]` dimension lists, formerly `choice_try_theta_multipliers`; eliminated look_theta_multipliers
+* replaced rotation_multiplier_y with glop state's new key `state["look_dest_thetas"]` dimension lists, formerly `choice_try_theta` formerly `choice_try_theta_multipliers`; eliminated look_theta_multipliers
 * renamed get_location to get_pos; added get_angles, set_pos and set_angles methods to make accessing info from instructions standard between implementations if PyGlop*
 * renamed state's at_rest_enable to on_ground_enable for clarity, since could still be rolling even if True
 * (moved append_wobject from incorrect location [PyGlops] to KivyGlop) fix issue where color not set by KivyGlop's override of append_wobject

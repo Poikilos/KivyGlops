@@ -27,15 +27,15 @@ settings["world"] = {}
 settings["world"]["gravity_enable"] = True
     # formerly globals world_gravity_enable
 settings["world"]["gravity"] = 9.8
-    # formerly globals world_gravity_acceleration
+    # formerly globals world_gravity
 settings["world"]["ground"] = 0.0  # only used if no walkmesh
 settings["world"]["density"] = 0.0
-settings["world"]["minimums"] = []
+settings["world"]["minimums"] = [0., 0., 0.]
 settings["world"]["minimums"][0] = sys.float_info.min
 settings["world"]["minimums"][1] = -15  # such as for when to die
     # formerly settings["globals"]["world_bottom"]
 settings["world"]["minimums"][2] = sys.float_info.min
-settings["world"]["maximums"] = []
+settings["world"]["maximums"] = [0., 0., 0.]
 settings["world"]["maximums"][0] = sys.float_info.max
 settings["world"]["maximums"][1] = sys.float_info.max
 settings["world"]["maximums"][2] = sys.float_info.max
@@ -3560,14 +3560,21 @@ class PyGlops:
         #print("NOTICE: subclass of PyGlops can implement on_update_glops")
         pass
 
-    def killed_glop(self, index, projectile_dict):
+    def on_killed_glop(self, index, projectile_dict):
         pass
-        #print("[ PyGlops ] subclass can implement killed_glop")
+        if get_is_verbose():
+            print("[ PyGlops ] (verbose message in on_killed_glop)"
+                  " subclass can implement on_killed_glop")
 
     def kill_glop_at(self, index, projectile_dict=None):
-        self.killed_glop(index, projectile_dict)
         self.hide_glop(self.glops[index])
-        self.glops[index].properties["bump_enable"] = False
+        self.on_killed_glop(index, projectile_dict)
+        # self.glops[index].properties["bump_enable"] = False
+        if self.glops[index].actor_dict is not None:
+            self.glops[index].actor_dict["alive_enable"] = False
+        else:
+            print("[ PyGlop ] WARNING in kill_glop_at: '"
+                  + self.glops[index].name + "' is not an actor")
 
     #def bump_glop(self, bumpable_name, bumper_name):
     #    return None
@@ -3576,7 +3583,12 @@ class PyGlops:
     def on_item_use(self, user_glop, item_dict, this_use):
         return None
 
-    def on_bump(self, glop_index, bumper_index_or_None):
+    def on_bump(self, glop_index, bumper_index):
+        return None
+
+    # bumped into world (normally "ground"--though that
+    # could be edge of walkmesh too)
+    def on_bump_world(self, glop_index, description):
         return None
 
     def on_attacked_glop(self, attacked_index, attacker_index, projectile_dict):

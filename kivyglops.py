@@ -815,7 +815,7 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
             if self.properties["hit_radius"] is None:
                 self.properties["hit_radius"] = .4444  # flag value
             print("[ KivyGlop ] hitbox skipped since vertices None.")
-            continue
+            return None
         vertex_count = int(len(self.vertices)/self.vertex_depth)
         if vertex_count>0:
             v_offset = 0
@@ -1735,7 +1735,7 @@ class KivyGlops(PyGlops):
                         # eye height and jump height etc
                 if walk_info["pos"][1] - corrected_pos[1] <= kEpsilon:
                     walk_info["on_ground_enable"] = True
-                elif walk_info["pos"][1] - corrected_pos[1] > kEpsilon
+                elif walk_info["pos"][1] - corrected_pos[1] > kEpsilon:
                     # use kEpsilon as a deadzone so that floating
                     # point errors don't cause physics and hence many
                     # at_rest events
@@ -2106,9 +2106,10 @@ class KivyGlops(PyGlops):
                 lups = mgad.get("land_units_per_second")
             if lups is None:
                 lups = sta["land_units_per_second"]
-            land_units_per_frame = lups * got_frame_delay
-            if land_units_per_frame <= 0.:
-                land_units_per_frame = 0.
+            # land units per frame:
+            lupf = lups * got_frame_delay
+            if lupf <= 0.:
+                lupf = 0.
                 global show_zero_walk_upf_warning_enable
                 # TODO: why does next line show exception if not
                 # declared as global manually??
@@ -2122,10 +2123,10 @@ class KivyGlops(PyGlops):
                 ldps = mgad.get("land_degrees_per_second")
             if ldps is None:
                 ldps = sta["land_degrees_per_second"]
-            land_radians_per_frame = \
-                math.radians(ldps) * got_frame_delay
-            if land_radians_per_frame <= 0.:
-                land_radians_per_frame = 0.
+            # land radians per frame:
+            lrpf = math.radians(ldps) * got_frame_delay
+            if lrpf <= 0.:
+                lrpf = 0.
                 global show_zero_degrees_pf_warning_enable
                 if show_zero_degrees_pf_warning_enable:
                     print("[ KivyGlops ] WARNING in update: zero "
@@ -2312,25 +2313,31 @@ class KivyGlops(PyGlops):
                             # when moving diagonally
                         # print("[ KivyGlops ] WARNING in update:"
                               # " clipped >100% movement")
-                    choice_world_vel_mult[0] = moving_r_multiplier
+                    choice_world_vel_mult[0] = moving_r_multiplier \
                                                * math.cos(mgts[1])
-                    choice_world_vel_mult[2] = moving_r_multiplier
+                    choice_world_vel_mult[2] = moving_r_multiplier \
                                                * math.sin(mgts[1])
                     # choice_local* VARS SHOULD NOT BE USED AFTER THIS
                     # SINCE THEY ARE NOT NEEDED FOR ANYTHING ELSE.
                     choice_world_vel_mult[1] = choice_local_vel_mult[1]
                     # TODO: asdf fix choice_world_vel_mult[1]??
 
-                    choice_world_r_vel = \
-                        land_units_per_frame * moving_r_multiplier
+                    choice_world_r_vel = lupf * moving_r_multiplier
                     radial_xz_velocity = math.sqrt((mgsv[0] * mgsv[0])
                                          + (mgsv[2] * mgsv[2]))
-                    if choice_world_r_vel + radial_xz_velocity > \
-                            land_units_per_frame:
+                    if choice_world_r_vel + radial_xz_velocity > lupf:
                         choice_world_r_vel -= (
                             (choice_world_r_vel
                              + radial_xz_velocity)
-                            - land_units_per_frame
+                            - lupf
+                        )
+                    elif choice_world_r_vel + radial_xz_velocity < \
+                            -lupf:
+                        # TODO: asdf check this math
+                        choice_world_r_vel += (
+                            (choice_world_r_vel
+                             + radial_xz_velocity)
+                            - -lupf
                         )
                     if choice_world_r_vel < kEpsilon:
                         choice_world_r_vel = 0.0
@@ -2339,16 +2346,16 @@ class KivyGlops(PyGlops):
                     # is not needed (?) or remove these comments if
                     # works now
                     # choice_world_deltas[0] = \
-                        # land_units_per_frame*moving_r_multiplier * \
+                        # lupf*moving_r_multiplier * \
                         #     math.cos(
                         #         m_glop._r_ins_y.angle
                         #         + mgts[1]
                         #         + math.radians(-90))
                     # choice_world_deltas[1] = \
-                        # land_units_per_frame * \
+                        # lupf * \
                         #     choice_world_vel_mult[1]
                     # choice_world_deltas[2] = \
-                        # land_units_per_frame * moving_r_multiplier * \
+                        # lupf * moving_r_multiplier * \
                         # math.sin(m_glop._r_ins_y.angle
                         #     + mgts[1]
                         #     + math.radians(-90))
@@ -2356,7 +2363,7 @@ class KivyGlops(PyGlops):
                         choice_world_r_vel * \
                         math.cos(mgts[1])
                     choice_world_deltas[1] = \
-                        land_units_per_frame * \
+                        lupf * \
                         choice_world_vel_mult[1]
                     choice_world_deltas[2] = \
                         choice_world_r_vel * \
@@ -2420,39 +2427,39 @@ class KivyGlops(PyGlops):
 
                 # else:
                 #     self.camera_glop._t_ins.x += \
-                #         self.land_units_per_frame * \
+                #         self.lupf * \
                 #         choice_local_vel_mult[0]
                 #     self.camera_glop._t_ins.z += \
-                #         self.land_units_per_frame * \
+                #         self.lupf * \
                 #         choice_local_vel_mult[2]
 
 
-                if mgs["look_theta_multipliers"][1] != 0.0:
-                    delta_y = \
-                        land_radians_per_frame
-                        * choice_try_theta_multipliers[1]
-                    m_glop._r_ins_y.angle += delta_y
-                    # origin_distance = math.sqrt(
-                        # m_glop._t_ins.x*m_glop._t_ins.x
-                        # + m_glop._t_ins.z*m_glop._t_ins.z)
-                    # m_glop._t_ins.x -= \
-                        # origin_distance * math.cos(delta_y)
-                    # m_glop._t_ins.z -= \
-                        # origin_distance * math.sin(delta_y)
-                if choice_try_theta is not None:
-                    choice_world_turn_theta = choice_try_theta
-                if choice_world_turn_theta is not None:
-                #if land_units_per_frame is not None:
-                    m_glop._r_ins_y.angle = choice_world_turn_theta
-                        # TODO: use land_radians_per_frame instead
-                        # of turning instantly
+                # TODO:? if mgs["look_theta_multipliers"][1] != 0.0:
+                    # delta_y = \
+                        # lrpf \
+                        # * choice_try_theta_multipliers[1]
+                    # m_glop._r_ins_y.angle += delta_y
+                # if choice_try_theta_multipliers is not None:
+                    # choice_world_turn_theta = \
+                        # choice_try_theta_multipliers[1]
+                if mgs["look_dest_thetas"] is not None:
+                #if lupf is not None:
+                    delta_theta = mgs["look_dest_thetas"][1] \
+                                  - m_glop._r_ins_y.angle
+                    if delta_theta > lrpf:
+                        delta_theta = lrpf
+                    elif delta_theta < -lrpf:
+                        delta_theta = -lrpf
+                    m_glop._r_ins_y.angle += delta_theta
+                    m_glop._r_ins_y.angle = \
+                        angle_trunc(m_glop._r_ins_y.angle)
                     # m_glop._t_ins.x += choice_local_vel_mult[0]
                     # m_glop._t_ins.z += choice_local_vel_mult[2]
                 # else:
                 #     print("[ KivyGlops ] ERROR in update:"
                 #           " choice_world_turn_theta was set"
                 #           " for unit, but engine forgot to set"
-                #           " land_units_per_frame")
+                #           " lupf")
             # end else at rest and can control own movement
             if choice_moved_enable:
                 check_pos_enable = True
@@ -2502,7 +2509,10 @@ class KivyGlops(PyGlops):
                         # is not None
                     mgs["at_rest_event_enable"] = False
                     bumper_index = mgs.get("bumped_by_index")
-                    self.on_bump(motivated_index, bumper_index)
+                    if bumper_index is not None:
+                        self.on_bump(motivated_index, bumper_index)
+                    else:
+                        self.on_bump_world(motivated_index, "ground")
                     # TODO: optionally, such as for bottom-heavy
                     # items: m_glop._r_ins_x.angle = 0.
                     # if mgsv[2] > kEpsilon:
@@ -2617,7 +2627,7 @@ class KivyGlops(PyGlops):
                         offset_theta = get_angle_vec2(src_2D_pos,
                                                       dst_2D_pos)
                         # https://www.mathopenref.com/arclength.html
-                        al = TAU * mgp["hit_radius"]
+                        al = TAU * mgp["hit_radius"] \
                              * (offset_theta / TAU)
                         # Simplifies if have radians & central angle
                         # but central angle is always acute
@@ -2644,7 +2654,7 @@ class KivyGlops(PyGlops):
                             # + str(m_glop._t_ins.y)
                             # + " += " + str(mgsv[1]))
                         mgsv[1] -= \
-                            sw["gravity_acceleration"] * \
+                            sw["gravity"] * \
                                 got_frame_delay
                         # print("[ KivyGlops ]" + VMSG
                             # + "THEN VELOCITY CHANGED TO:"
@@ -3663,10 +3673,10 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             pass  #keyboard.release()
         # elif keycode[1] == 'w':
             # self.scene.player_glop._t_ins.z += \
-                # self.land_units_per_frame
+                # self.lupf
         # elif keycode[1] == 's':
             # self.scene.player_glop._t_ins.z -= \
-                # self.land_units_per_frame
+                # self.lupf
         # elif text == 'a':
             # self.scene.player1_controller["left"] = True
             # self.choice_local_vel_mult[0] = -1.0
