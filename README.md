@@ -77,6 +77,11 @@ The operating principle of this project is to focus on completeness. This means 
 * moved `settings['globals']['camera_perspective_number']`
 * used continue when possible to decrease nesting indentation
 * renamed `emit_debug_to_dict` to `debug_to`
+* added get_thetas_vec3 function for where glop.look_at is too specific
+* replaced rotation_multiplier_y with glop state's new key `state["look_dest_thetas"]` dimension lists, formerly `choice_try_theta_multipliers`; eliminated look_theta_multipliers
+* renamed get_location to get_pos; added get_angles, set_pos and set_angles methods to make accessing info from instructions standard between implementations if PyGlop*
+* renamed state's at_rest_enable to on_ground_enable for clarity, since could still be rolling even if True
+* (moved append_wobject from incorrect location [PyGlops] to KivyGlop) fix issue where color not set by KivyGlop's override of append_wobject
 (2018-01-16)
 * broke movement, wait for next update
 * moved most or all required defaults for PyGlop to settings global
@@ -86,13 +91,13 @@ The operating principle of this project is to focus on completeness. This means 
 * renamed get_nearest_vec3_on_vec3line_using_xz to get_nearest_vec3_and_distance_on_vec3line_using_xz and made return ((x,y,z), distance) instead of (x,y,z,distance)
 * renamed constrain_pos_to_walkmesh to get_walk_info and made it not modify params, only return
 * stopped using get_vec3_from_point in favor of swizzling Translate (via _t_ins.xyz)
-* changed moving_x, moving_y, moving_z to choice_try_vel_multiplier list
+* changed moving_x, moving_y, moving_z to choice_local_vel_mult list
 * only use walkmesh when `m_glop.properties["clip_enable"]` is True
 * moved __str__ from PyGlops to PyGlop and gave PyGlops its own
-* added get_location to PyGlop and KivyGlop
+* added get_pos to PyGlop and KivyGlop
 * pyglops.py: in copy_as_subclass, use different copy of ancestor list for each call to deepcopy_with_my_type
 * renamed _translate_instruction to _t_ins, _rotate_instruction_* to _r_ins_*, _scale_instruction to _s_ins
-* changed _world_grav_acceleration to `settings["globals"]["world_gravity_acceleration"]`,
+* changed _world_grav_acceleration to `settings["world"]["gravity"]`,
   _default_fly_enable to `settings["templates"]["actor"]["fly_enable"]`,
   _camera_person_number to `settings["globals"]["camera_perspective_number"]` (and fixed the set_camera_mode method which was setting a local instead of member)
 * changed glop's x_velocity, y_velocity, and z_velocity to `velocity` list
@@ -138,7 +143,7 @@ The operating principle of this project is to focus on completeness. This means 
     * local attack_radius changed to `self.glops[bumper_index]["state"]["acquire_radius"]`
     * local attack_s changed to `self.glops[bumper_index]["state"]["desired_use"]`
     * local weapon_index changed to `self.glops[bumper_index]["state"]["desired_item_index"]`
-    * local this_glop_free_enable eliminated (see *_glop.state["at_rest_enable"])
+    * local this_glop_free_enable eliminated (see *_glop.state["on_ground_enable"])
     * local stop_this_bumpable_enable eliminated (see *_glop.state["at_rest_event_enable"])
     * constrain to floor etc after that
 * made flag where all uses containing "shoot_" use item's range instead of player's (affects "Unit 2" lessons 6, 7, and 8)
@@ -462,6 +467,7 @@ This spec allows one dict to be used to completely store the Wavefront mtl forma
         * if line in mtl file is `refl -type cube_top file.png` then the dict wmaterial["refl -type cube_top"] will have a list at "values" key which is ["file.png"]; the entire preceding part `refl -type cube_top` will be considered as the command to avoid overlap (to force consistent rule: one instance of command per material).
 
 ### Regression Tests
+* `[x]`, `[y]`, or `[z]` where should be `[0]`, `[1]`, or `[2]`
 * using `y` + `eye_height` where should be from floor: `minimums[1]` + `eye_height`
 * using degrees where should be radians (such as large numbers on line where angle is set)
 * using the same ancestors to call deepcopy or copy_as_subclass multiple times when should slice to original length first (since deepcopying that would cause pickling error which deepcopy_with_my_type was created to avoid, and calling deepcopy_with_my_type would be a major performance and possibly recursion issue)--see copy_as_subclass for correct usage

@@ -5,6 +5,9 @@ __author__ = 'Jake Gustafson'
 
 import os
 import math
+import sys
+TAU = math.pi * 2.
+NEG_TAU = -TAU
 import random
 #from docutils.utils.math.math2html import VerticalSpace
 #import traceback
@@ -16,6 +19,33 @@ import timeit
 from timeit import default_timer as best_timer
 import time
 settings = {}
+settings["globals"] = {}
+settings["globals"]["attack_uses"] = ["throw_arc", "throw_linear", "melee"]
+settings["globals"]["camera_perspective_number"] = 1
+    # is changed in PyGlops init
+settings["world"] = {}
+settings["world"]["gravity_enable"] = True
+    # formerly globals world_gravity_enable
+settings["world"]["gravity"] = 9.8
+    # formerly globals world_gravity_acceleration
+settings["world"]["ground"] = 0.0  # only used if no walkmesh
+settings["world"]["density"] = 0.0
+settings["world"]["minimums"] = []
+settings["world"]["minimums"][0] = sys.float_info.min
+settings["world"]["minimums"][1] = -15  # such as for when to die
+    # formerly settings["globals"]["world_bottom"]
+settings["world"]["minimums"][2] = sys.float_info.min
+settings["world"]["maximums"] = []
+settings["world"]["maximums"][0] = sys.float_info.max
+settings["world"]["maximums"][1] = sys.float_info.max
+settings["world"]["maximums"][2] = sys.float_info.max
+settings["world"]["friction_divisor"] = 1.2
+    # formerly settings["globals"]["world_friction_divisor"]
+settings["world"]["cor"] = 1.2  # coefficient of restitution
+                                # bounce_max_y_new / bounce_y_max_orig
+#settings["world"]["gravity_enable"] = None  # None since
+                                             # use_walkmesh_at
+                                             # checks for None
 settings["templates"] = {}
 settings["templates"]["actor"] = {}
 settings["templates"]["actor"]["land_units_per_second"] = 12.
@@ -40,6 +70,13 @@ settings["templates"]["actor"]["unarmed_melee_enable"] = \
 settings["templates"]["properties"] = {}  # glop.properties
 settings["templates"]["properties"]["hit_radius"] = .5
 settings["templates"]["properties"]["clip_enable"] = False
+settings["templates"]["properties"]["cor"] = 0.0  # see ["world"]["cor"]
+settings["templates"]["properties"]["expand_min"] = 0.0
+settings["templates"]["properties"]["expand_max"] = 0.0
+settings["templates"]["properties"]["expanded"] = 0.0
+    # negative for compressed
+settings["templates"]["properties"]["expanded_vec"] = 0.0
+    # angle from which it is compressed (for bounce etc)
 settings["templates"]["actor_properties"] = {}
 #settings["templates"]["actor_properties"]["hit_radius"] = .5
 settings["templates"]["actor_properties"]["clip_enable"] = True
@@ -50,7 +87,7 @@ settings["templates"]["properties"]["damaged_sound_paths"] = []
 settings["templates"]["state"] = {}
 settings["templates"]["state"]["links"] = []  # list of relationship dicts
 settings["templates"]["state"]["constrained_enable"] = False
-settings["templates"]["state"]["at_rest_enable"] = False
+settings["templates"]["state"]["on_ground_enable"] = False
 settings["templates"]["state"]["at_rest_event_enable"] = False
 settings["templates"]["properties"]["hit_radius"] = 0.1524  # .5' equals .1524m
 settings["templates"]["properties"]["clip_enable"] = False
@@ -75,15 +112,6 @@ settings["templates"]["state"]["velocity"] = [0., 0., 0.]
 settings["templates"]["state"]["velocity"][0] = 0.0
 settings["templates"]["state"]["velocity"][1] = 0.0
 settings["templates"]["state"]["velocity"][2] = 0.0
-settings["globals"] = {}
-settings["globals"]["attack_uses"] = ["throw_arc", "throw_linear", "melee"]
-settings["globals"]["camera_perspective_number"] = 1  # is changed in PyGlops init
-settings["globals"]["world_gravity_enable"] = True
-settings["globals"]["world_gravity_acceleration"] = 9.8
-settings["globals"]["world_bottom"] = 0.0
-#settings["globals"]["world_gravity_enable"] = None  # None since
-                                              # use_walkmesh_at
-                                              # checks for None
 
 tab_string = "  "
 
@@ -186,10 +214,16 @@ def get_rect_from_polar_rad(r, theta):
 
 def angle_trunc(a):
     while a < 0.0:
-        a += math.pi * 2
+        a += TAU
     return a
 
 # angle_trunc and get_angle_between_points edited Jul 19 '15 at 20:12  answered Sep 28 '11 at 16:10  Peter O. <http://stackoverflow.com/questions/7586063/how-to-calculate-the-angle-between-a-line-and-the-horizontal-axis>. 29 Apr 2016
+
+def get_angle_vec2(src_pos, dest_pos):
+    deltaY = dest_pos[1] - src_pos[1]
+    deltaX = dest_pos[0] - src_pos[0]
+    return angle_trunc(math.atan2(deltaY, deltaX))
+
 def get_angle_between_points(x_orig, y_orig, x_landmark, y_landmark):
     deltaY = y_landmark - y_orig
     deltaX = x_landmark - x_orig
@@ -201,6 +235,34 @@ def get_angle_between_two_vec3_xz(a, b):
     deltaX = b[0] - a[0]
     return angle_trunc(math.atan2(deltaY, deltaX))
 
+# default_thetas: only default_thetas[2] is used, but if not provided,
+# roll (results[2]) angle will be 0 (since roll can't be calculated
+# using 2 points)
+def get_thetas_vec3(src_pos, dst_pos, default_thetas=None):
+    results = [0., 0., 0.]
+    if default_thetas is not None and default_thetas[2] is not None:
+        results[2] = default_thetas[2]
+    #pitch = src_pos[0]
+    #yaw = src_pos[1]
+    if len(dst_pos) > 2:
+        src_pos[0] = get_angle_between_points(self._t_ins.y,
+                                         self._t_ins.z,
+                                         dst_pos[1], dst_pos[2])
+        src_pos[1] = get_angle_between_points(self._t_ins.x,
+                                       self._t_ins.z,
+                                       dst_pos[0], dst_pos[2])
+    else:
+        src_pos[1] = get_angle_between_points(self._t_ins.x,
+                                       self._t_ins.z,
+                                       dst_pos[0], dst_pos[1])
+        if default_thetas is not None and default_thetas[0] is not None:
+            results[0] = default_thetas[0]
+        if get_verbose_enable():
+            print("[ pyglops.py ] (verbose message in look_at_pos)"
+                  " got 2D coords, so only y angle (results[1]) could"
+                  " be calculated. The other angles in results have"
+                  " been set to default_thetas if present otherwise 0.")
+    return results
 # returns (pos, distance) where pos is closest position on line segment
 # bc from point a, swizzled to 2d on xz plane (y of return is  a[1])
 def get_nearest_vec3_and_distance_on_vec3line_using_xz(a, b, c): #formerly PointSegmentDistanceSquared
@@ -530,10 +592,22 @@ class PyGlop:
 
     def __str__(self):
         return str(type(self)) + " named " + str(self.name) + " at " + \
-               str(self.get_location())
+               str(self.get_pos())
 
-    def get_location(self):
-        print("[ PyGlop ] WARNING: implement get_location in subclass")
+    def get_pos(self):
+        print("[ PyGlop ] WARNING: implement get_pos in subclass")
+        return None
+
+    def set_pos(self, pos):
+        print("[ PyGlop ] WARNING: implement set_pos in subclass")
+        return None
+
+    def get_angles(self):
+        print("[ PyGlop ] WARNING: implement get_angles in subclass")
+        return None
+
+    def set_angles(self, thetas):
+        print("[ PyGlop ] WARNING: implement set_angles in subclass")
         return None
 
     def get_is_glop_hitbox(self, o):
@@ -1958,14 +2032,14 @@ class PyGlop:
                           str(source_face_index) + " in " + f_name + ": ")
                     view_traceback()
 
-                        #print("vertices after extending: "+str(this_wobject.vertices))
-                        #print("indices after extending: "+str(this_wobject.indices))
+                        # print("vertices after extending: "+str(this_wobject.vertices))
+                        # print("indices after extending: "+str(this_wobject.indices))
             #         if this_wobject.mtl is not None:
             #             this_wobject.wmaterial = this_wobject.mtl.get(this_wobject.obj_material)
             #         if this_wobject.wmaterial is not None and this_wobject.wmaterial:
             #             this_wobject.set_textures_from_wmaterial(this_wobject.wmaterial)
                     # self.glops[self._current_object] = mesh
-                    #mesh.calculate_normals()
+                    # mesh.calculate_normals()
                     # self.faces = []
 
             #         if (len(this_wobject.normals)<1):
@@ -1974,8 +2048,8 @@ class PyGlop:
                 print("ERROR in " + f_name + ": bad vertex format specified in glop, no vertices could be added")
         else:
             print("WARNING in " + f_name + ": ignoring wobject where face_groups is None (a default face group is made on load if did not exist).")
-    # enddef append_wobject
-# endclass PyGlop
+    # end def append_wobject
+# end class PyGlop
 
 class PyGlopMaterial:
     #update copy constructor if adding/changing copyable members
@@ -2216,7 +2290,7 @@ class PyGlops:
         return "PyGlops engine"
 
     def get_has_gravity(self):
-        return self.settings["globals"]["world_gravity_enable"] is True
+        return self.settings["world"]["gravity_enable"] is True
 
     def get_class_name(self):
         return "PyGlops"
@@ -2233,10 +2307,10 @@ class PyGlops:
 
     # gravitational acceleration in meters per second squared
     def set_gravity(self, gravity_mss):
-        self.settings["globals"]["world_gravity_acceleration"] = gravity_mss
+        self.settings["world"]["gravity"] = gravity_mss
 
     def set_gravity_enable(self, enable):
-        self.settings["globals"]["world_gravity_enable"] = enable
+        self.settings["world"]["gravity_enable"] = enable
 
     # camera does not move automatically (you may move it yourself)
     def CAMERA_FREE(self):
@@ -2259,7 +2333,9 @@ class PyGlops:
     #    return False
 
     def update(self):
-        print("WARNING: update should be implemented by a subclass since it assumes there is a realtime game or graphics implementation")
+        print("WARNING: update should be implemented by a subclass"
+              " since it assumes there is a realtime game and/or"
+              " graphical output")
     # endupdate
 
     def get_verbose_enable(self):
@@ -2270,8 +2346,11 @@ class PyGlops:
             self.ui.spawn_pex_particles(path, pos, radius, duration_seconds)
         else:
             print("[ " + str(type(self)) + " ] ERROR in spawn_pex_particles: self.ui is None")
-   # This method overrides object bump code, and gives the item to the player (mimics "obtain" event)
-    # cause player to obtain the item found first by keyword, then hide the item (overrides object bump code)
+
+    # This method overrides object bump code, and gives the item to the
+    # player (mimics "obtain" event)
+    # cause player to obtain the item found first by keyword, then hide
+    # the item (overrides object bump code)
     def give_item_by_keyword_to_player_number(self, player_number, keyword, allow_owned_enable=False):
         indices = get_indices_of_similar_names(keyword, allow_owned_enable=allow_owned_enable)
         result = False
@@ -2829,12 +2908,14 @@ class PyGlops:
             result = "z"
         return result
 
-    def set_as_item(self, glop_name, template_dict, pivot_to_geometry_enable=False):
+    def set_as_item(self, glop_name, template_dict,
+            pivot_to_geometry_enable=False):
         result = False
         if glop_name is not None:
             for i in range(0,len(self.glops)):
                 if self.glops[i].name == glop_name:
-                    return self.set_as_item_at(i, template_dict, pivot_to_geometry_enable=pivot_to_geometry_enable)
+                    return self.set_as_item_at(i, template_dict,
+                        pivot_to_geometry_enable=pivot_to_geometry_enable)
                     break
 
     def add_damaged_sound_at(self, i, path):
@@ -2871,17 +2952,19 @@ class PyGlops:
                     #del item_dict["use"]["throw_arc"]
                     #item_dict["use"]["attack"]
                     if "projectile_keys" not in item_dict:
-                        print("[ PyGlops ] WARNING in " + f_name + ": no" + \
-                              " ['projectile_keys'] in item, so if thrown," + \
-                              " projectile_dict will have all you gave " + \
+                        print("[ PyGlops ] WARNING in " + \
+                              f_name + ": no ['projectile_keys'] in" + \
+                              " item, so if thrown, projectile_dict" + \
+                              " will have all you gave " + \
                               str(item_dict) + " available to " + \
-                              "on_attacked_glop so hopefulll you" + \
+                              "on_attacked_glop so hopefully you" + \
                               " didn't put anything big in there (" + \
                               " it gets deepcopied if" + \
                               " drop_enable=False)!")
                         item_dict["projectile_keys"] = []
                         projectile_dict_template = \
-                            self.ui.dummy_glop.deepcopy_with_my_type(item_dict)
+                            self.ui.dummy_glop.deepcopy_with_my_type(
+                                item_dict)
                         for copy_key in projectile_dict_template:
                             item_dict["projectile_keys"].append(
                                 projectile_dict_template[copy_key])
@@ -3256,12 +3339,14 @@ class PyGlops:
 
                     fired_glop._t_ins.x = user_glop._t_ins.x
                     if user_glop.properties["hitbox"] is not None:
-                        fired_glop._t_ins.y = (user_glop.properties["hitbox"].minimums[1]
-                                               + user_glop.properties["eye_height"]
+                        fired_glop._t_ins.y = (
+                            user_glop.properties["hitbox"].minimums[1]
+                            + user_glop.properties["eye_height"]
                         )
                     else:
-                        fired_glop._t_ins.y = (user_glop.properties["hit_radius"]
-                                               + user_glop.properties["eye_height"]
+                        fired_glop._t_ins.y = (
+                            user_glop.properties["hit_radius"]
+                            + user_glop.properties["eye_height"]
                         )
                     fired_glop._t_ins.z = user_glop._t_ins.z
 
@@ -3269,7 +3354,8 @@ class PyGlops:
                     custom_speed_name = None  # for debugging
                     if user_glop.actor_dict is not None:
                         if "throw_speed" in user_glop.actor_dict:
-                            this_speed = user_glop.actor_dict["throw_speed"]
+                            this_speed = \
+                                user_glop.actor_dict["throw_speed"]
                             custom_speed_name = "throw_speed"
                     if "projectile_speed" in item_dict:
                         this_speed = item_dict["projectile_speed"]
@@ -3277,7 +3363,10 @@ class PyGlops:
                     if get_verbose_enable():
                         if custom_speed_name is None:
                             custom_speed_name = "default"
-                        print("[ PyGlops ] throw_glop is using speed " + str(this_speed) + " from " + custom_speed_name + " for " + fired_glop.name)
+                        print("[ PyGlops ] throw_glop is using " + \
+                              "speed " + str(this_speed) + " from " + \
+                              custom_speed_name + " for " + \
+                              fired_glop.name)
 
                     x_angle = None
                     y_angle = None
@@ -3369,7 +3458,7 @@ class PyGlops:
 
                     self.show_glop(fired_glop.glop_index)  # adds to display, such as adding mesh to canvas
                     fired_glop.properties["physics_enable"] = True
-                    fired_glop.state["at_rest_enable"] = False
+                    fired_glop.state["on_ground_enable"] = False
                     fired_glop.properties["bump_enable"] = True
                     # item is bumpable (but only actor can be bumper)
                     self._bumpable_indices.append(fired_glop.glop_index)
