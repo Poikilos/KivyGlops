@@ -89,7 +89,8 @@ settings["templates"]["actor_properties"]["physics_enable"] = True
 settings["templates"]["actor_properties"]["bump_enable"] = True
 settings["templates"]["actor"] = {}
 settings["templates"]["actor"]["land_units_per_second"] = 12.
-settings["templates"]["actor"]["land_degrees_per_second"] = 90.
+settings["templates"]["actor"]["land_degrees_per_second"] = 720.
+    # unless you're Tara Lipinski 2 rotations per second is pretty good
 settings["templates"]["actor"]["fly_enable"] = False
 settings["templates"]["actor"]["throw_speed"] = \
     15. # ignored if item has projectile_speed
@@ -168,6 +169,12 @@ def normalize_3d_by_ref(this_vec3):
         this_vec3[1] = -1.0  # give some kind of normal for 0,0,0
         this_vec3[2] = 0.0
 
+def degrees_list(vals):
+    result = []
+    for val in vals:
+        result.append(math.degrees(val))
+    return result
+
 def get_fvec4_from_svec3(vals, last_value):
     results = None
     try:
@@ -216,8 +223,9 @@ def get_rect_from_polar_rad(r, theta):
     return x,y
 
 def angle_trunc(a):
-    while a < 0.0:
-        a += TAU
+    # while a < 0.0:
+        # a += TAU
+    # I'm no longer certain of the merits of this function so return a:
     return a
 
 # angle_trunc and get_angle_between_points edited Jul 19 '15 at 20:12  answered Sep 28 '11 at 16:10  Peter O. <http://stackoverflow.com/questions/7586063/how-to-calculate-the-angle-between-a-line-and-the-horizontal-axis>. 29 Apr 2016

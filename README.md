@@ -72,6 +72,8 @@ The operating principle of this project is to focus on completeness. This means 
 * if segfault occurs, maybe camera and look_at location are same
 
 ## Changes
+(2018-01-18)
+* (see get_look_angles_from_2d; was using x_rad for y angle as should but was getting -18 instead of -180 when turning left) turn left should turn as far as right using mouse
 (2018-01-17)
 * working on physics and movement, probably still broken--wait for update; renamed choice vars as choice_local* and choice_world* since mixing up between local and world coords was the main bug; eliminated choice_world_move_theta since (to make momentum work) current _r_ins_y.angle should be used (aka `mgts[1]`)
 * added dereferences (see `mgp` and `sg` and others) to increase performance and help with PEP8 line length

@@ -2435,9 +2435,7 @@ class KivyGlops(PyGlops):
 
 
                 # TODO:? if mgs["look_theta_multipliers"][1] != 0.0:
-                    # delta_y = \
-                        # lrpf \
-                        # * choice_try_theta_multipliers[1]
+                    # delta_y = lrpf * choice_try_theta_multipliers[1]
                     # m_glop._r_ins_y.angle += delta_y
                 # if choice_try_theta_multipliers is not None:
                     # choice_world_turn_theta = \
@@ -2451,8 +2449,8 @@ class KivyGlops(PyGlops):
                     elif delta_theta < -lrpf:
                         delta_theta = -lrpf
                     m_glop._r_ins_y.angle += delta_theta
-                    m_glop._r_ins_y.angle = \
-                        angle_trunc(m_glop._r_ins_y.angle)
+                    # TODO: m_glop._r_ins_y.angle = \
+                    #     angle_trunc(m_glop._r_ins_y.angle)
                     # m_glop._t_ins.x += choice_local_vel_mult[0]
                     # m_glop._t_ins.z += choice_local_vel_mult[2]
                 # else:
@@ -2607,6 +2605,12 @@ class KivyGlops(PyGlops):
                              src_pos[1] + mgsv[1] * got_frame_delay,
                              src_pos[2] + mgsv[2] * got_frame_delay
                 )
+                if get_verbose_enable():
+                    if mgad is not None and mgp["roll_enable"]:
+                        print("[ KivyGlops ] WARNING in update:"
+                              + " roll_enable is True for actor"
+                              + " '" + m_glop.name + "'")
+
                 if mgs["on_ground_enable"] and \
                    mgp.get("hit_radius") is not None and \
                    mgp["hit_radius"] > 0 and\
@@ -3271,7 +3275,10 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
     def get_look_angles_from_2d(self, pos):
         # global debug_dict  # from common.py
         x_angle = (-math.pi
-                   + (float(pos[0]) / float(self.width-1)) * TAU)
+                   + ((float(pos[0]) / float(self.width-1))
+                      * TAU))
+        # if x_angle < 0.:
+        #     x_angle = TAU + x_angle
         y_angle = (-(math.pi/2.0)
                    + (float(pos[1])/float(self.height-1))
                    * (math.pi))
@@ -3459,34 +3466,73 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                             view_right_ratio, view_top_ratio,
                             view_left_ratio, view_top_ratio
                         )
-
+                pcgs = None  # player-controlled glop state
+                pgs = None
+                cgs = None
                 try:
-                    x_rad, y_rad = \
-                        self.get_look_angles_from_2d(Window.mouse_pos)
                     pgs = self.scene.player_glop.state
-                    if pgs.get("look_dest_thetas") is None:
-                        pgs["look_dest_thetas"] = [0., 0., 0.]
-                    # set y from screen x, and set z from screen y:
-                    pgs["look_dest_thetas"][1] = x_rad
-                    pgs["look_dest_thetas"][0] = y_rad
+                    cgs = self.scene.camera_glop.state
+                    sg = self.scene.settings["globals"]
+                    try:
+                        x_rad, y_rad = \
+                            self.get_look_angles_from_2d(
+                                Window.mouse_pos)
+                        pcgs = pgs
+                        if sg["camera_perspective_number"] == \
+                                self.scene.CAMERA_FIRST_PERSON():
+                            pcgs = pgs
+                        else:
+                            pcgs = cgs
+                        if pcgs.get("look_dest_thetas") is None:
+                            pcgs["look_dest_thetas"] = [0., 0., 0.]
+                        # set y from screen x, and
+                        # set z from screen y:
+                        pcgs["look_dest_thetas"][1] = x_rad
+                        pcgs["look_dest_thetas"][0] = y_rad
+                        if "View" not in debug_dict:
+                            debug_dict["View"] = {}
+                        debug_dict["View"]["screen_angles.xy"] = \
+                            degrees_list((x_rad, y_rad))
+                    except:
+                        # probably no mouse
+                        if get_verbose_enable():
+                            print("[ KivyGlopsWindow ] update_glsl could"
+                                  " not finish using mouse_pos (this is ok"
+                                  " if you are not using a mouse")
+                            view_traceback()
+                        pass
                 except:
-                    # probably no mouse
+                    # camera and/or player is not ready
                     if get_verbose_enable():
-                        print("[ KivyGlopsWindow ] update_glsl could"
-                              " not finish using mouse_pos (this is ok"
-                              " if you are not using a mouse")
+                        print("[ KivyGlopsWindow ] (verbose message"
+                              + " in update_glsl) camera or player"
+                              + " glop not ready yet.")
                         view_traceback()
                     pass
                 # self.scene.player_glop._r_ins_y.angle = x_rad
                 # self.scene.player_glop._r_ins_x.angle = y_rad
                 if "camera_glop" not in debug_dict:
-                    debug_dict["camera_glop"] = dict()
+                    debug_dict["camera_glop"] = {}
+                if cgs is not None and \
+                        cgs.get("look_dest_thetas") is not None:
+                    debug_dict["camera_glop"]["dst_angles"] = \
+                        fixed_width(
+                            degrees_list(
+                                cgs["look_dest_thetas"]), 6, " ")
                 if "View" not in debug_dict:
-                    debug_dict["View"] = dict()
+                    debug_dict["View"] = {}
+                if "player_glop" not in debug_dict:
+                    debug_dict["player_glop"] = {}
+                if pgs is not None and \
+                        pgs.get("look_dest_thetas") is not None:
+                    debug_dict["player_glop"]["dst_angles"] = \
+                        fixed_width(
+                            degrees_list(
+                                pgs["look_dest_thetas"]), 6, " ")
 
                 debug_dict["View"]["camera xyz: "] = \
                     fixed_width(
-                        self.scene.camera_glop._t_ins.xyz, 4, " ")
+                        self.scene.camera_glop._t_ins.xyz, 6, " ")
                 if self._average_fps is not None:
                     debug_dict["View"]["fps"] = str(self._average_fps)
                 # global debug_dict

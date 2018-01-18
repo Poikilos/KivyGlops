@@ -247,7 +247,8 @@ class MainScene(KivyGlops):
 
     def on_bump(self, glop_index, bumper_index):
         print("[ testing ] '" + self.glops[glop_index].name
-              + "' was bumped by '" + self.glops[bumper_index] + "'")
+              + "' was bumped by '" + self.glops[bumper_index].name
+              + "'")
 
     def on_bump_world(self, glop_index, description):
         print("[ testing ] '" + self.glops[glop_index].name
