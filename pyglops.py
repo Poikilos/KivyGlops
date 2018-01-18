@@ -47,6 +47,46 @@ settings["world"]["cor"] = 1.2  # coefficient of restitution
                                              # use_walkmesh_at
                                              # checks for None
 settings["templates"] = {}
+# settings["templates"]["properties"]["hitbox"] = PyGlopHitBox()
+    # see further down (after class PyGlopHitBox) for hitbox
+settings["templates"]["properties"] = {}  # glop.properties
+settings["templates"]["properties"]["hit_radius"] = .5
+settings["templates"]["properties"]["clip_enable"] = False
+settings["templates"]["properties"]["roll_enable"] = True
+    # roll while touching ground and moving
+settings["templates"]["properties"]["cor"] = 0.0  # see ["world"]["cor"]
+settings["templates"]["properties"]["expand_min"] = 0.0
+settings["templates"]["properties"]["expand_max"] = 0.0
+settings["templates"]["properties"]["expanded"] = 0.0
+    # negative for compressed
+settings["templates"]["properties"]["hit_radius"] = 0.1524  # .5' equals .1524m
+settings["templates"]["properties"]["clip_enable"] = False
+settings["templates"]["properties"]["separable_offsets"] = []  # if more than one submesh is
+                             # in vertices, chunks are saved
+                             # in here, such as to assist
+                             # with explosions
+settings["templates"]["properties"]["physics_enable"] = False
+settings["templates"]["properties"]["infinite_inventory_enable"] = True
+# settings["templates"]["properties"]["eye_height"] = 0.0
+    # or 1.7 since 5'10" person is
+    # ~1.77m, and eye down a bit
+settings["templates"]["properties"]["eye_height"] = 1.7  # 1.7 since 5'10" person is ~1.77m,
+                       # and eye down a bit
+# settings["templates"]["properties"]["reach_radius"] = 0.381  # 2.5' .381m
+settings["templates"]["properties"]["reach_radius"] = 2.5
+settings["templates"]["properties"]["bump_enable"] = False
+settings["templates"]["properties"]["hit_radius"] = .2
+settings["templates"]["properties"]["expanded_vec"] = 0.0
+    # angle from which it is compressed (for bounce etc)
+settings["templates"]["properties"]["bump_sound_paths"] = []
+settings["templates"]["properties"]["damaged_sound_paths"] = []
+    # even if not an actor
+settings["templates"]["actor_properties"] = {}
+#settings["templates"]["actor_properties"]["hit_radius"] = .5
+settings["templates"]["actor_properties"]["clip_enable"] = True
+settings["templates"]["actor_properties"]["roll_enable"] = False
+settings["templates"]["actor_properties"]["physics_enable"] = True
+settings["templates"]["actor_properties"]["bump_enable"] = True
 settings["templates"]["actor"] = {}
 settings["templates"]["actor"]["land_units_per_second"] = 12.
 settings["templates"]["actor"]["land_degrees_per_second"] = 90.
@@ -63,50 +103,13 @@ settings["templates"]["actor"]["ranges"]["melee"] = 0.5
 settings["templates"]["actor"]["ranges"]["throw_arc"] = 10.
 settings["templates"]["actor"]["inventory_index"] = -1
 settings["templates"]["actor"]["inventory_items"] = []
-settings["templates"]["actor"]["unarmed_melee_enable"] = \
-    False
-# settings["templates"]["properties"]["hitbox"] = PyGlopHitBox()
-    # see further down (after class PyGlopHitBox) for hitbox
-settings["templates"]["properties"] = {}  # glop.properties
-settings["templates"]["properties"]["hit_radius"] = .5
-settings["templates"]["properties"]["clip_enable"] = False
-settings["templates"]["properties"]["cor"] = 0.0  # see ["world"]["cor"]
-settings["templates"]["properties"]["expand_min"] = 0.0
-settings["templates"]["properties"]["expand_max"] = 0.0
-settings["templates"]["properties"]["expanded"] = 0.0
-    # negative for compressed
-settings["templates"]["properties"]["expanded_vec"] = 0.0
-    # angle from which it is compressed (for bounce etc)
-settings["templates"]["actor_properties"] = {}
-#settings["templates"]["actor_properties"]["hit_radius"] = .5
-settings["templates"]["actor_properties"]["clip_enable"] = True
-
-settings["templates"]["properties"]["bump_sound_paths"] = []
-settings["templates"]["properties"]["damaged_sound_paths"] = []
-    # even if not an actor
+settings["templates"]["actor"]["unarmed_melee_enable"] = False
 settings["templates"]["state"] = {}
 settings["templates"]["state"]["links"] = []  # list of relationship dicts
 settings["templates"]["state"]["constrained_enable"] = False
 settings["templates"]["state"]["on_ground_enable"] = False
 settings["templates"]["state"]["at_rest_event_enable"] = False
-settings["templates"]["properties"]["hit_radius"] = 0.1524  # .5' equals .1524m
-settings["templates"]["properties"]["clip_enable"] = False
-settings["templates"]["properties"]["separable_offsets"] = []  # if more than one submesh is
-                             # in vertices, chunks are saved
-                             # in here, such as to assist
-                             # with explosions
 settings["templates"]["state"]["visible_enable"] = True
-settings["templates"]["properties"]["physics_enable"] = False
-settings["templates"]["properties"]["infinite_inventory_enable"] = True
-# settings["templates"]["properties"]["eye_height"] = 0.0
-    # or 1.7 since 5'10" person is
-    # ~1.77m, and eye down a bit
-settings["templates"]["properties"]["eye_height"] = 1.7  # 1.7 since 5'10" person is ~1.77m,
-                       # and eye down a bit
-# settings["templates"]["properties"]["reach_radius"] = 0.381  # 2.5' .381m
-settings["templates"]["properties"]["reach_radius"] = 2.5
-settings["templates"]["properties"]["bump_enable"] = False
-settings["templates"]["properties"]["hit_radius"] = .2
 settings["templates"]["state"]["in_range_indices"] = []
 settings["templates"]["state"]["velocity"] = [0., 0., 0.]
 settings["templates"]["state"]["velocity"][0] = 0.0
@@ -551,7 +554,6 @@ class PyGlop:
     bump_enable = None
     reach_radius = None
     in_range_indices = None  # ONLY set if bumpable (not bumper)
-    physics_enable = None
     _cached_floor_y = None
     infinite_inventory_enable = None
     look_target_glop = None
@@ -2770,7 +2772,8 @@ class PyGlops:
                 self.settings["templates"]["actor_properties"])
             d_actor_dict = a_glop.deepcopy_with_my_type(
                 self.settings["templates"]["actor"])
-
+            # NOTE: already has ["templates"]["properties"] via
+            # glop __init__
             for key in d_properties:
                 a_glop.properties[key] = d_properties[key]
             for key in d_actor_dict:
@@ -2796,8 +2799,6 @@ class PyGlops:
             a_glop.calculate_hit_range()
             self._bumper_indices.append(index)
             self._actor_indices.append(index)
-            a_glop.properties["bump_enable"] = True
-            a_glop.properties["physics_enable"] = True
             if get_verbose_enable():
                 print("[ PyGlops ] Set [" + str(index) + "] '" + \
                       str(a_glop.name) + "' as bumper")

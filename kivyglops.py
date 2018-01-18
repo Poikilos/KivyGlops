@@ -1733,10 +1733,9 @@ class KivyGlops(PyGlops):
                     walk_info["pos"][2] = corrected_pos[2]
                         # TODO: check y (vertical) axis against
                         # eye height and jump height etc
-                if walk_info["pos"][1] - corrected_pos[1] < kEpsilon:
+                if walk_info["pos"][1] - corrected_pos[1] <= kEpsilon:
                     walk_info["on_ground_enable"] = True
-                else:
-                    # Hovering higher than kEpsilon--
+                elif walk_info["pos"][1] - corrected_pos[1] > kEpsilon
                     # use kEpsilon as a deadzone so that floating
                     # point errors don't cause physics and hence many
                     # at_rest events
@@ -2142,12 +2141,12 @@ class KivyGlops(PyGlops):
             if "look_dest_thetas" not in mgs:
                 mgs["look_dest_thetas"] = None
             # mgs["look_theta_multipliers"] = [0., 0., 0.]
+            mgts = m_glop.get_angles()
             if mgad is not None and mgad["target_pos"] is not None:
                 # If has target_pos, auto-move to target without
                 # intervention even if is player-controlled glop.
                 src_pos = m_glop.get_pos()
                 dst_pos = mgad["target_pos"]
-                mgts = m_glop.get_angles()
                 mgs["look_dest_thetas"] = get_thetas_vec3(
                     src_pos,
                     dst_pos,
@@ -2276,7 +2275,7 @@ class KivyGlops(PyGlops):
             # (see else case below).
             check_pos_enable = False
             choice_moved_enable = False
-            choice_result_deltas = [0.0, 0.0, 0.0]
+            choice_world_deltas = [0.0, 0.0, 0.0]
 
             # if m_glop.look_target_glop is not None:
                # m_glop.look_at(m_glop.look_target_glop)
@@ -2296,16 +2295,12 @@ class KivyGlops(PyGlops):
                 # xz coords of edges of 16x16 square are:
                 # move in the direction you are facing
 
-                choice_result_move_theta = None
+                choice_world_vel_mult = [0., 0., 0.]
                 if choice_local_vel_mult[0] != 0.0 or \
                         choice_local_vel_mult[1] != 0.0 or \
                         choice_local_vel_mult[2] != 0.0:
                     # makes movement relative to rotation
-                    # (which alaso limits speed when moving diagonally):
-                    choice_result_move_theta = \
-                        theta_radians_from_rectangular(
-                            choice_local_vel_mult[0],
-                            choice_local_vel_mult[2])
+                    # (which also limits speed when moving diagonally):
                     moving_r_multiplier = \
                         math.sqrt((choice_local_vel_mult[0]
                                    * choice_local_vel_mult[0])
@@ -2317,46 +2312,55 @@ class KivyGlops(PyGlops):
                             # when moving diagonally
                         # print("[ KivyGlops ] WARNING in update:"
                               # " clipped >100% movement")
-                    choice_result_r_vel = \
+                    choice_world_vel_mult[0] = moving_r_multiplier
+                                               * math.cos(mgts[1])
+                    choice_world_vel_mult[2] = moving_r_multiplier
+                                               * math.sin(mgts[1])
+                    # choice_local* VARS SHOULD NOT BE USED AFTER THIS
+                    # SINCE THEY ARE NOT NEEDED FOR ANYTHING ELSE.
+                    choice_world_vel_mult[1] = choice_local_vel_mult[1]
+                    # TODO: asdf fix choice_world_vel_mult[1]??
+
+                    choice_world_r_vel = \
                         land_units_per_frame * moving_r_multiplier
                     radial_xz_velocity = math.sqrt((mgsv[0] * mgsv[0])
                                          + (mgsv[2] * mgsv[2]))
-                    if choice_result_r_vel + radial_xz_velocity > \
+                    if choice_world_r_vel + radial_xz_velocity > \
                             land_units_per_frame:
-                        choice_result_r_vel -= (
-                            (choice_result_r_vel
+                        choice_world_r_vel -= (
+                            (choice_world_r_vel
                              + radial_xz_velocity)
                             - land_units_per_frame
                         )
-                    if choice_result_r_vel < kEpsilon:
-                        choice_result_r_vel = 0.0
+                    if choice_world_r_vel < kEpsilon:
+                        choice_world_r_vel = 0.0
 
                     # TODO: reprogram so adding math.radians(-90)
                     # is not needed (?) or remove these comments if
                     # works now
-                    # choice_result_deltas[0] = \
+                    # choice_world_deltas[0] = \
                         # land_units_per_frame*moving_r_multiplier * \
                         #     math.cos(
                         #         m_glop._r_ins_y.angle
-                        #         + choice_result_move_theta
+                        #         + mgts[1]
                         #         + math.radians(-90))
-                    # choice_result_deltas[1] = \
+                    # choice_world_deltas[1] = \
                         # land_units_per_frame * \
-                        #     choice_local_vel_mult[1]
-                    # choice_result_deltas[2] = \
+                        #     choice_world_vel_mult[1]
+                    # choice_world_deltas[2] = \
                         # land_units_per_frame * moving_r_multiplier * \
                         # math.sin(m_glop._r_ins_y.angle
-                        #     + choice_result_move_theta
+                        #     + mgts[1]
                         #     + math.radians(-90))
-                    choice_result_deltas[0] = \
-                        choice_result_r_vel * \
-                        math.cos(choice_result_move_theta)
-                    choice_result_deltas[1] = \
+                    choice_world_deltas[0] = \
+                        choice_world_r_vel * \
+                        math.cos(mgts[1])
+                    choice_world_deltas[1] = \
                         land_units_per_frame * \
-                        choice_local_vel_mult[1]
-                    choice_result_deltas[2] = \
-                        choice_result_r_vel * \
-                        math.sin(choice_result_move_theta)
+                        choice_world_vel_mult[1]
+                    choice_world_deltas[2] = \
+                        choice_world_r_vel * \
+                        math.sin(mgts[1])
 
                     # if (m_glop._t_ins.x + move_by_x > \
                     #         self._world_cube.get_max_x()):
@@ -2399,9 +2403,9 @@ class KivyGlops(PyGlops):
                           # + " and "
                           # + str(self.world_boundary_max))
                 for axis_i in range(0,3):
-                    if choice_result_deltas[axis_i] != 0.0:
+                    if choice_world_deltas[axis_i] != 0.0:
                         choice_moved_enable = True
-                        mgsv[axis_i] += choice_result_deltas[axis_i]
+                        mgsv[axis_i] += choice_world_deltas[axis_i]
             # end if at rest can move self
                 for axis_i in range(0,3):
                     if mgsv[axis_i] != 0.0:
@@ -2436,17 +2440,17 @@ class KivyGlops(PyGlops):
                     # m_glop._t_ins.z -= \
                         # origin_distance * math.sin(delta_y)
                 if choice_try_theta is not None:
-                    choice_result_turn_theta = choice_try_theta
-                if choice_result_turn_theta is not None:
+                    choice_world_turn_theta = choice_try_theta
+                if choice_world_turn_theta is not None:
                 #if land_units_per_frame is not None:
-                    m_glop._r_ins_y.angle = choice_result_turn_theta
+                    m_glop._r_ins_y.angle = choice_world_turn_theta
                         # TODO: use land_radians_per_frame instead
                         # of turning instantly
                     # m_glop._t_ins.x += choice_local_vel_mult[0]
                     # m_glop._t_ins.z += choice_local_vel_mult[2]
                 # else:
                 #     print("[ KivyGlops ] ERROR in update:"
-                #           " choice_result_turn_theta was set"
+                #           " choice_world_turn_theta was set"
                 #           " for unit, but engine forgot to set"
                 #           " land_units_per_frame")
             # end else at rest and can control own movement
@@ -2595,8 +2599,9 @@ class KivyGlops(PyGlops):
                 )
                 if mgs["on_ground_enable"] and \
                    mgp.get("hit_radius") is not None and \
-                   mgp["hit_radius"] > 0:
-                    # then roll
+                   mgp["hit_radius"] > 0 and\
+                   mgp["roll_enable"]:
+                    # then roll, only if not actor (mgad is None)
                     # TODO: rolling friction (here or elsewhere)
                     # TODO: project into object space for accuracy
                     thetas = m_glop.get_thetas()
@@ -2678,9 +2683,9 @@ class KivyGlops(PyGlops):
             #   # choice_local_vel_mult[2] != 0.0:
                 # did NOT necessarily move (deltas already checked)
             if (not mgs["on_ground_enable"]):
-                if choice_result_deltas[0] != 0.0 or \
-                   choice_result_deltas[1] != 0.0 or \
-                   choice_result_deltas[2] != 0.0:
+                if choice_world_deltas[0] != 0.0 or \
+                   choice_world_deltas[1] != 0.0 or \
+                   choice_world_deltas[2] != 0.0:
                     # then already did check_pos_enable when set
                     if get_verbose_enable():
                         prev_on_ground_enable = \
@@ -2720,14 +2725,13 @@ class KivyGlops(PyGlops):
                     dd["player_glop"] = {}
                 dd["player_glop"]["check_pos_enable"] = \
                     check_pos_enable
-            if check_pos_enable and \
-               mgp["clip_enable"]:
-                world_bottom_enable = True
+            if check_pos_enable and mgp["clip_enable"]:
+                const_ground_enable = True
                 walk_info = None
                 walkmesh_enable = True  # false for debug only
                 if walkmesh_enable:
                     if len(self._walkmeshes) > 0:
-                        world_bottom_enable = False
+                        const_ground_enable = False
                         #constrained_pos = [m_glop._t_ins.x,
                         #                   m_glop._t_ins.y,
                         #                   m_glop._t_ins.z]
@@ -2752,7 +2756,7 @@ class KivyGlops(PyGlops):
 
                     else:
                         walkmesh_enable = False
-                if world_bottom_enable:
+                if const_ground_enable:
                     walk_info = {}
                     walk_info["pos"] = [
                         m_glop._t_ins.x, \
@@ -2768,7 +2772,7 @@ class KivyGlops(PyGlops):
                         ]
                     if corrected_pos[1] < sw["ground"]:
                         corrected_pos[1] = sw["ground"]
-                    hit_bottom_enable = None
+                    hit_ground_enable = None
                     if not height_only_enable:
                         walk_info["change_enable"] = True
                         walk_info["pos"][0] = corrected_pos[0]
@@ -2779,13 +2783,13 @@ class KivyGlops(PyGlops):
                     if walk_info["pos"][1] - corrected_pos[1] < \
                             kEpsilon:
                         walk_info["on_ground_enable"] = True
-                    else:
+                    elif walk_info["pos"][1] - corrected_pos[1] > \
+                            kEpsilon:
                         # Hovering higher than kEpsilon--
                         # use kEpsilon as a deadzone so that
                         # floating point errors don't cause physics
                         # and hence many at_rest events
                         walk_info["on_ground_enable"] = False
-                        pass
 
                     if corrected_pos[1] > walk_info["pos"][1]:
                         walk_info["change_enable"] = True
@@ -2798,16 +2802,12 @@ class KivyGlops(PyGlops):
 
                 on_ground_enable = walk_info.get("on_ground_enable")
                 if on_ground_enable is not None:
-                    if mgs["on_ground_enable"] != \
-                            on_ground_enable:
-                        mgs["on_ground_enable"] = \
-                            on_ground_enable
+                    if mgs["on_ground_enable"] != on_ground_enable:
+                        mgs["on_ground_enable"] = on_ground_enable
                         if on_ground_enable:
-                            mgs["at_rest_event_enable"] = \
-                                True
-                            # Do it here so that frame of hit
-                            # is shown to player and ai
-                            # BEFORE event happens
+                            mgs["at_rest_event_enable"] = True
+                            # frame of hit is shown to player and ai
+                            # BEFORE event is handled
                         else:
                             pass
                             # mgs[
@@ -2815,6 +2815,8 @@ class KivyGlops(PyGlops):
                             #     ] = True
                             # TODO: (?) make an on_not_at_rest event
                 if walk_info["change_enable"]:
+                    # frame of hit is shown to player and ai
+                    # BEFORE event is handled
                     m_glop._t_ins.x = walk_info["pos"][0]
                     #if on_ground_enable is True:
                     m_glop._t_ins.y = walk_info["pos"][1]

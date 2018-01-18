@@ -73,6 +73,7 @@ The operating principle of this project is to focus on completeness. This means 
 
 ## Changes
 (2018-01-17)
+* working on physics and movement, probably still broken--wait for update; renamed choice vars as choice_local* and choice_world* since mixing up between local and world coords was the main bug; eliminated choice_world_move_theta since (to make momentum work) current _r_ins_y.angle should be used (aka `mgts[1]`)
 * added dereferences (see `mgp` and `sg` and others) to increase performance and help with PEP8 line length
 * moved `settings['globals']['camera_perspective_number']`
 * used continue when possible to decrease nesting indentation
@@ -101,7 +102,7 @@ The operating principle of this project is to focus on completeness. This means 
   _default_fly_enable to `settings["templates"]["actor"]["fly_enable"]`,
   _camera_person_number to `settings["globals"]["camera_perspective_number"]` (and fixed the set_camera_mode method which was setting a local instead of member)
 * changed glop's x_velocity, y_velocity, and z_velocity to `velocity` list
-* kivyglops.py (KivyGlops update): replaced theta and moving_theta with choice_try_theta and choice_result_turn_theta which are also used more consistently
+* kivyglops.py (KivyGlops update): replaced theta and moving_theta with choice_try_theta and choice_world_turn_theta which are also used more consistently
 * fixed view pitch (was adding 90 degrees--should be radians if any--see `view_top =`
 * renamed get_constrained_info_using_walkmeshes to get_walk_info
 * changed choice-based movement from a movement modifier to a velocity modifier
