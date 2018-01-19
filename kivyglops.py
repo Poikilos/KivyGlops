@@ -223,10 +223,10 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
                 self._r_ins_y.angle,
                 self._r_ins_z.angle)
 
-    def set_angles(self, thetas):
-        self._r_ins_x.angle = thetas[0]
-        self._r_ins_y.angle = thetas[1]
-        self._r_ins_z.angle = thetas[2]
+    def set_angles(self, angles):
+        self._r_ins_x.angle = angles[0]
+        self._r_ins_y.angle = angles[1]
+        self._r_ins_z.angle = angles[2]
 
     def get_pos(self):
         return (self._t_ins.xyz)
@@ -236,10 +236,18 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
         self._t_ins.y = pos[1]
         self._t_ins.z = pos[2]
 
+    def set_angle(self, axis_index, angle):
+        if axis_index == 0:
+            self._r_ins_x.angle = axis_index
+        elif axis_index == 1:
+            self._r_ins_y.angle = axis_index
+        elif axis_index == 2:
+            self._r_ins_z.angle = axis_index
+
     def append_wobject(self, this_wobject,
-                       pivot_to_geometry_enable=True):
+                       pivot_to_g_enable=True):
         super(KivyGlop, self).append_wobject(this_wobject,
-            pivot_to_geometry_enable=pivot_to_geometry_enable)
+            pivot_to_g_enable=pivot_to_g_enable)
         if self.material is not None:
             self._color_instruction = Color(
                 self.material.diffuse_color[0],
@@ -1424,7 +1432,7 @@ class KivyGlops(PyGlops):
         self.play_sound(path, loop=loop)
 
     def load_obj(self, source_path, swapyz_enable=False, centered=False,
-            pivot_to_geometry_enable=True):
+            pivot_to_g_enable=True):
         self.ui.suspend_debug_label_update(True)
         load_obj_start_s = best_timer()
         results = None
@@ -1510,7 +1518,7 @@ class KivyGlops(PyGlops):
                                     # Remove uuid hex digest-named files
                                     os.remove(sub_path)
                         for index in range(0,len(new_glops)):
-                            if pivot_to_geometry_enable:
+                            if pivot_to_g_enable:
                                 # apply pivot point (so that glop's
                                 # _t_ins is actually the center)
                                 some_name = ""
@@ -1660,7 +1668,7 @@ class KivyGlops(PyGlops):
         walk_info["change_enable"] = False
         if len(self._walkmeshes)>0:
             walkmesh_result = \
-                self.get_container_walkmesh_and_poly_index_xz(this_pos)
+                self.get_walkmesh_info_xz(this_pos)
             corrected_pos = None
             if walkmesh_result is None:
                 # if self.prev_inbounds_camera_translate is not None:
@@ -1953,7 +1961,7 @@ class KivyGlops(PyGlops):
             if bumpable_index is None:
                 continue
             item_glop = self.glops[bumpable_index]
-            bumpable_name = item_glop.name
+            egn = item_glop.name
             igp = item_glop.properties
             igs = item_glop.state
             if not igp["bump_enable"]:
@@ -1966,7 +1974,7 @@ class KivyGlops(PyGlops):
                     continue
                 actor_glop = self.glops[bumper_index]
                 agp = actor_glop.properties
-                bumper_name = actor_glop.name
+                rgn = actor_glop.name
                 distance = get_distance_kivyglops(item_glop,
                     actor_glop)
                 if igp["hit_radius"] is not None and \
@@ -2044,7 +2052,7 @@ class KivyGlops(PyGlops):
                         if distance < 2:
                             # debug only:
                             # print("did not bump "
-                                # + str(bumpable_name)
+                                # + str(egn)
                                 # + " (distance:"
                                 # + str(distance)
                                 # + "; bumper is at "
@@ -2058,7 +2066,7 @@ class KivyGlops(PyGlops):
                             + " update: Missing radius "
                             + "while bumped bumpable "
                             + "named "
-                            + str(bumpable_name))
+                            + str(egn))
                         missing_radius_warning_enable = \
                             False
             # end for bumper
@@ -2139,16 +2147,16 @@ class KivyGlops(PyGlops):
             choice_local_vel_mult = [0., 0., 0.] # 1.0 is max
                                                  # joystick tilt:
                                                  # normally [0],[2]
-            if "look_dest_thetas" not in mgs:
-                mgs["look_dest_thetas"] = None
+            if "dst_angles" not in mgs:
+                mgs["dst_angles"] = None
             # mgs["look_theta_multipliers"] = [0., 0., 0.]
-            mgts = m_glop.get_angles()
-            if mgad is not None and mgad["target_pos"] is not None:
+            mgas = m_glop.get_angles()
+            if mgad is not None and mgad.get("target_pos") is not None:
                 # If has target_pos, auto-move to target without
                 # intervention even if is player-controlled glop.
                 src_pos = m_glop.get_pos()
                 dst_pos = mgad["target_pos"]
-                mgs["look_dest_thetas"] = get_thetas_vec3(
+                mgs["dst_angles"] = get_angles_vec3(
                     src_pos,
                     dst_pos,
                     m_glop.get_angles()
@@ -2168,7 +2176,7 @@ class KivyGlops(PyGlops):
                     if distance > mgs["acquire_radius"]:
                         # # global velocity
                         # vmx, vmy = get_rect_from_polar_rad(
-                            # tilt, mgts[1])  # use current y angle
+                            # tilt, mgas[1])  # use current y angle
                                             # # to prevent instant strafe
                         # choice_local_vel_mult[0] = vmx
                         # choice_local_vel_mult[2] = vmy
@@ -2192,8 +2200,7 @@ class KivyGlops(PyGlops):
                             view_traceback()
                     else:
                         if not mgad["unarmed_melee_enable"]:
-                            mgad["target_index"] = \
-                                None
+                            mgad["target_index"] = None
                 else:
                     print("[ KivyGlops ] ERROR in update:"
                           " 'target_pos' was set but the engine"
@@ -2217,16 +2224,16 @@ class KivyGlops(PyGlops):
                     tilt *= 2.
                 if self.player1_controller.get_pressed(
                         self.ui.get_keycode("a")):
-                    choice_local_vel_mult[0] = 1.  # full speed
+                    choice_local_vel_mult[0] = -1.  # full speed
                                                    # so same as
                                                    # virtual
                                                    # shoulder button
                 elif self.player1_controller.get_pressed(
                         self.ui.get_keycode("d")):
-                    choice_local_vel_mult[0] = -1.  # full speed
-                                                    # so same as
-                                                    # virtual
-                                                    # shoulder button
+                    choice_local_vel_mult[0] = 1.  # full speed
+                                                   # so same as
+                                                   # virtual
+                                                   # shoulder button
                 if self.player1_controller.get_pressed(
                         self.ui.get_keycode("w")):
                     # if self.get_fly_by_name(m_glop.name):
@@ -2314,31 +2321,31 @@ class KivyGlops(PyGlops):
                         # print("[ KivyGlops ] WARNING in update:"
                               # " clipped >100% movement")
                     choice_world_vel_mult[0] = moving_r_multiplier \
-                                               * math.cos(mgts[1])
+                                               * math.cos(mgas[1])
                     choice_world_vel_mult[2] = moving_r_multiplier \
-                                               * math.sin(mgts[1])
+                                               * math.sin(mgas[1])
                     # choice_local* VARS SHOULD NOT BE USED AFTER THIS
                     # SINCE THEY ARE NOT NEEDED FOR ANYTHING ELSE.
+                    # TODO: make relative to rotation for fly mode only:
                     choice_world_vel_mult[1] = choice_local_vel_mult[1]
-                    # TODO: asdf fix choice_world_vel_mult[1]??
 
                     choice_world_r_vel = lupf * moving_r_multiplier
                     radial_xz_velocity = math.sqrt((mgsv[0] * mgsv[0])
                                          + (mgsv[2] * mgsv[2]))
-                    if choice_world_r_vel + radial_xz_velocity > lupf:
-                        choice_world_r_vel -= (
-                            (choice_world_r_vel
-                             + radial_xz_velocity)
-                            - lupf
-                        )
-                    elif choice_world_r_vel + radial_xz_velocity < \
-                            -lupf:
-                        # TODO: asdf check this math
-                        choice_world_r_vel += (
-                            (choice_world_r_vel
-                             + radial_xz_velocity)
-                            - -lupf
-                        )
+                    if choice_world_r_vel + radial_xz_velocity < -lupf:
+                        choice_world_r_vel = 0.
+                        # choice_world_r_vel += (
+                            # (choice_world_r_vel
+                             # + radial_xz_velocity)
+                            # - -lupf
+                        # )
+                    elif choice_world_r_vel + radial_xz_velocity > lupf:
+                        choice_world_r_vel = 0.
+                        # choice_world_r_vel -= (
+                            # (choice_world_r_vel
+                             # + radial_xz_velocity)
+                            # - lupf
+                        # )
                     if choice_world_r_vel < kEpsilon:
                         choice_world_r_vel = 0.0
 
@@ -2349,7 +2356,7 @@ class KivyGlops(PyGlops):
                         # lupf*moving_r_multiplier * \
                         #     math.cos(
                         #         m_glop._r_ins_y.angle
-                        #         + mgts[1]
+                        #         + mgas[1]
                         #         + math.radians(-90))
                     # choice_world_deltas[1] = \
                         # lupf * \
@@ -2357,18 +2364,17 @@ class KivyGlops(PyGlops):
                     # choice_world_deltas[2] = \
                         # lupf * moving_r_multiplier * \
                         # math.sin(m_glop._r_ins_y.angle
-                        #     + mgts[1]
+                        #     + mgas[1]
                         #     + math.radians(-90))
-                    choice_world_deltas[0] = \
-                        choice_world_r_vel * \
-                        math.cos(mgts[1])
-                    choice_world_deltas[1] = \
-                        lupf * \
-                        choice_world_vel_mult[1]
-                    choice_world_deltas[2] = \
-                        choice_world_r_vel * \
-                        math.sin(mgts[1])
-
+                    choice_world_deltas[0] = (choice_world_r_vel
+                                              * math.cos(mgas[1])
+                    )
+                    choice_world_deltas[1] = (lupf
+                                              * choice_world_vel_mult[1]
+                    )
+                    choice_world_deltas[2] = (choice_world_r_vel
+                                              * math.sin(mgas[1])
+                    )
                     # if (m_glop._t_ins.x + move_by_x > \
                     #         self._world_cube.get_max_x()):
                     #     move_by_x = \
@@ -2416,22 +2422,22 @@ class KivyGlops(PyGlops):
             # end if at rest can move self
                 for axis_i in range(0,3):
                     if mgsv[axis_i] != 0.0:
-                        #set _t_ins via set_coord:
+                        # set _t_ins via set_coord:
                         m_glop.set_coord(axis_i, mgsv[axis_i])
 
 
                 # self.prev_inbounds_camera_translate = \
-                #     self.camera_glop._t_ins.x,
-                #     self.camera_glop._t_ins.y,
-                #     self.camera_glop._t_ins.z
+                    # self.camera_glop._t_ins.x,
+                    # self.camera_glop._t_ins.y,
+                    # self.camera_glop._t_ins.z
 
                 # else:
-                #     self.camera_glop._t_ins.x += \
-                #         self.lupf * \
-                #         choice_local_vel_mult[0]
-                #     self.camera_glop._t_ins.z += \
-                #         self.lupf * \
-                #         choice_local_vel_mult[2]
+                    # self.camera_glop._t_ins.x += \
+                        # self.lupf * \
+                        # choice_local_vel_mult[0]
+                    # self.camera_glop._t_ins.z += \
+                        # self.lupf * \
+                        # choice_local_vel_mult[2]
 
 
                 # TODO:? if mgs["look_theta_multipliers"][1] != 0.0:
@@ -2440,24 +2446,27 @@ class KivyGlops(PyGlops):
                 # if choice_try_theta_multipliers is not None:
                     # choice_world_turn_theta = \
                         # choice_try_theta_multipliers[1]
-                if mgs["look_dest_thetas"] is not None:
-                #if lupf is not None:
-                    delta_theta = mgs["look_dest_thetas"][1] \
-                                  - m_glop._r_ins_y.angle
-                    if delta_theta > lrpf:
-                        delta_theta = lrpf
-                    elif delta_theta < -lrpf:
-                        delta_theta = -lrpf
-                    m_glop._r_ins_y.angle += delta_theta
-                    # TODO: m_glop._r_ins_y.angle = \
-                    #     angle_trunc(m_glop._r_ins_y.angle)
-                    # m_glop._t_ins.x += choice_local_vel_mult[0]
-                    # m_glop._t_ins.z += choice_local_vel_mult[2]
-                # else:
-                #     print("[ KivyGlops ] ERROR in update:"
-                #           " choice_world_turn_theta was set"
-                #           " for unit, but engine forgot to set"
-                #           " lupf")
+                for a_i in range(3):
+                    if mgs["dst_angles"] is not None:
+                    #if lupf is not None:
+                        delta_theta = mgs["dst_angles"][a_i] - mgas[a_i]
+                        if delta_theta > lrpf:
+                            delta_theta = lrpf
+                        elif delta_theta < -lrpf:
+                            delta_theta = -lrpf
+                        if delta_theta > kEpsilon or \
+                                delta_theta < -kEpsilon:
+                            m_glop.set_angle(a_i,
+                                             mgas[a_i] + delta_theta)
+                        # TODO: m_glop._r_ins_y.angle = \
+                            # angle_trunc(m_glop._r_ins_y.angle)
+                        # m_glop._t_ins.x += choice_local_vel_mult[0]
+                        # m_glop._t_ins.z += choice_local_vel_mult[2]
+                    # else:
+                        # print("[ KivyGlops ] ERROR in update:"
+                              # " choice_world_turn_theta was set"
+                              # " for unit, but engine forgot to set"
+                              # " lupf")
             # end else at rest and can control own movement
             if choice_moved_enable:
                 check_pos_enable = True
@@ -2563,9 +2572,9 @@ class KivyGlops(PyGlops):
                     if mgid is not None:
                         if mgid["state"].get("owner") is not None:
                             del mgid["state"]["owner"]
-                        if mgid["state"].get("owner_index") is not \
+                        if mgid["state"].get("owner_key") is not \
                                 None:
-                            del mgid["state"]["owner_index"]
+                            del mgid["state"]["owner_key"]
 
                     # m_glop._t_ins.y = m_glop._cached_floor_y
                     #                   + mgp["hit_radius"]
@@ -2618,7 +2627,7 @@ class KivyGlops(PyGlops):
                     # then roll, only if not actor (mgad is None)
                     # TODO: rolling friction (here or elsewhere)
                     # TODO: project into object space for accuracy
-                    thetas = m_glop.get_thetas()
+                    angles = m_glop.get_angles()
                     rolling_vec_indicies = (0, 2)
                     rvtis = (2, 1)  # rolling vector theta indices
                     rvps = ((0, 2), (1, 2))  # rolling vector planes
@@ -2637,14 +2646,14 @@ class KivyGlops(PyGlops):
                         # but central angle is always acute
                         # so doesn't provide info useful to engine:
                         # al = mgp["hit_radius"] * offset_c
-                        thetas[rvi] += al
+                        angles[rvi] += al
                         # TODO: why does changing rotation
                         # make things hit ground too high?
-                        if (thetas[rvi] > TAU):
-                            thetas[rvi] -= TAU
-                        elif (thetas[rvi] < NEG_TAU):
-                            thetas[rvi] += TAU
-                    m_glop.set_thetas(thetas)
+                        if (angles[rvi] > TAU):
+                            angles[rvi] -= TAU
+                        elif (angles[rvi] < NEG_TAU):
+                            angles[rvi] += TAU
+                    m_glop.set_angles(angles)
                 # do even if "on_ground_enable" since may be rolling
                 m_glop.set_pos(dst_pos)
 
@@ -3483,12 +3492,12 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                             pcgs = pgs
                         else:
                             pcgs = cgs
-                        if pcgs.get("look_dest_thetas") is None:
-                            pcgs["look_dest_thetas"] = [0., 0., 0.]
+                        if pcgs.get("dst_angles") is None:
+                            pcgs["dst_angles"] = [0., 0., 0.]
                         # set y from screen x, and
                         # set z from screen y:
-                        pcgs["look_dest_thetas"][1] = x_rad
-                        pcgs["look_dest_thetas"][0] = y_rad
+                        pcgs["dst_angles"][1] = x_rad
+                        pcgs["dst_angles"][0] = y_rad
                         if "View" not in debug_dict:
                             debug_dict["View"] = {}
                         debug_dict["View"]["screen_angles.xy"] = \
@@ -3514,21 +3523,20 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                 if "camera_glop" not in debug_dict:
                     debug_dict["camera_glop"] = {}
                 if cgs is not None and \
-                        cgs.get("look_dest_thetas") is not None:
+                        cgs.get("dst_angles") is not None:
                     debug_dict["camera_glop"]["dst_angles"] = \
                         fixed_width(
                             degrees_list(
-                                cgs["look_dest_thetas"]), 6, " ")
+                                cgs["dst_angles"]), 6, " ")
                 if "View" not in debug_dict:
                     debug_dict["View"] = {}
                 if "player_glop" not in debug_dict:
                     debug_dict["player_glop"] = {}
                 if pgs is not None and \
-                        pgs.get("look_dest_thetas") is not None:
+                        pgs.get("dst_angles") is not None:
                     debug_dict["player_glop"]["dst_angles"] = \
-                        fixed_width(
-                            degrees_list(
-                                pgs["look_dest_thetas"]), 6, " ")
+                        fixed_width(degrees_list(pgs["dst_angles"]),
+                                    6, " ")
 
                 debug_dict["View"]["camera xyz: "] = \
                     fixed_width(

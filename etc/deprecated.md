@@ -1,3 +1,35 @@
+* this was tacked onto the end of the else case (else keys is None) in deepcopy_with_my_type:
+```python
+                # try:
+                    # if get_verbose_enable():
+                        # print("[ PyGlop ] Calling copy.deepcopy on "
+                              # + str(type(od)))
+                    # new_dict = copy.deepcopy(od)
+                # except:
+                    # try:
+                        # if isinstance(od, type(self)) and \
+                                # depth >= 2:
+                            # new_dict = None
+                            # print("[ PyGlop ] deepcopy_with_my_type
+                                  # + "manually avoided infinite"
+                                  # + " recursion by refusing to copy"
+                                  # + " a " + str(type(self)) + " at"
+                                  # + " recursion depth " + str(depth))
+                        # else:
+                            # new_dict = od.copy()
+                        # print("[ PyGlop ] (verbose message in"
+                              # + " deepcopy_with_my_type) using"
+                              # + " '.copy()' for "
+                              # + str(type(od)))
+                    # except:
+                        # new_dict = od
+                        # if get_verbose_enable():
+                            # print("[ PyGlop ] (verbose message in "
+                                  # + "deepcopy_with_my_type) using "
+                                  # + "'=' for " + str(type(od)))
+
+```
+
 * formerly in set_as_actor_at (not needed since now actor_dict is overlayed onto defaults:
 ```python
             if a_glop.hit_radius is None:

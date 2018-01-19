@@ -74,14 +74,15 @@ The operating principle of this project is to focus on completeness. This means 
 ## Changes
 (2018-01-18)
 * (see get_look_angles_from_2d; was using x_rad for y angle as should but was getting -18 instead of -180 when turning left) turn left should turn as far as right using mouse
+* PEP8 line length, and related early returns (for decreased indentation), pre-dereferencing, and pre-calculation optimizations
 (2018-01-17)
-* working on physics and movement, probably still broken--wait for update; renamed choice vars as choice_local* and choice_world* since mixing up between local and world coords was the main bug; eliminated choice_world_move_theta since (to make momentum work) current _r_ins_y.angle should be used (aka `mgts[1]`)
+* working on physics and movement, probably still broken--wait for update; renamed choice vars as choice_local* and choice_world* since mixing up between local and world coords was the main bug; eliminated choice_world_move_theta since (to make momentum work) current _r_ins_y.angle should be used (aka `mgas[1]`)
 * added dereferences (see `mgp` and `sg` and others) to increase performance and help with PEP8 line length
 * moved `settings['globals']['camera_perspective_number']`
 * used continue when possible to decrease nesting indentation
 * renamed `emit_debug_to_dict` to `debug_to`
-* added get_thetas_vec3 function for where glop.look_at is too specific
-* replaced rotation_multiplier_y with glop state's new key `state["look_dest_thetas"]` dimension lists, formerly `choice_try_theta` formerly `choice_try_theta_multipliers`; eliminated look_theta_multipliers
+* added get_angles_vec3 function for where glop.look_at is too specific
+* replaced rotation_multiplier_y with glop state's new key `state["dst_angles"]` dimension lists, formerly `choice_try_theta` formerly `choice_try_theta_multipliers`; eliminated look_theta_multipliers
 * renamed get_location to get_pos; added get_angles, set_pos and set_angles methods to make accessing info from instructions standard between implementations if PyGlop*
 * renamed state's at_rest_enable to on_ground_enable for clarity, since could still be rolling even if True
 * (moved append_wobject from incorrect location [PyGlops] to KivyGlop) fix issue where color not set by KivyGlop's override of append_wobject
@@ -91,7 +92,7 @@ The operating principle of this project is to focus on completeness. This means 
   in pyglops.py (PyGlop normally uses settings determined there during
   _init_glop)
 (2018-01-15)
-* renamed get_nearest_vec3_on_vec3line_using_xz to get_nearest_vec3_and_distance_on_vec3line_using_xz and made return ((x,y,z), distance) instead of (x,y,z,distance)
+* renamed get_nearest_vec3_on_vec3line_using_xz to get_near_line_info_xz and made return ((x,y,z), distance) instead of (x,y,z,distance)
 * renamed constrain_pos_to_walkmesh to get_walk_info and made it not modify params, only return
 * stopped using get_vec3_from_point in favor of swizzling Translate (via _t_ins.xyz)
 * changed moving_x, moving_y, moving_z to choice_local_vel_mult list
@@ -118,19 +119,19 @@ The operating principle of this project is to focus on completeness. This means 
 * kivyglops.py: put `self.on_update_glops()` back into correct scope
 * kivyglops.py: repaired and unified at_rest event (whether bumpable hit bumper or any hit ground)--see the call to `self.on_bump` in update
 * pyglops.py: add bumper_index to bumpable's in_range_indices if has projectile_dict, so target doesn't obtain item right away (see "ball games" in Usage section)
-* renamed on_at_rest_at to `on_bump(self, glop_index, bumper_index_or_None)` (and eliminated `def bump_glop(self, bumpable_name, bumper_name)`)
+* renamed on_at_rest_at to `on_bump(self, glop_index, bumper_index_or_None)` (and eliminated `def bump_glop(self, egn, rgn)`)
 * use walkmesh for every object
 * improved reliability of deepcopy_with_my_type and use duck-typing
 * add duck-typing methods _get_is_glop, get_is_glop, _get_is_glop_material, get_is_glop_material, get_class_name to relevant classes
 (2018-01-13)
 * use this_dict.get (returns None if missing)  instead of checks for key in a dict, when behavior should be same whether missing or None
-* add inventory_index to item to know whether it is in a player's inventory, and don't delete owner or owner_index until projectile_dict is removed (when lands)
+* add inventory_index to item to know whether it is in a player's inventory, and don't delete owner or owner_key until projectile_dict is removed (when lands)
 * reset glop.state (formerly glop.dat) by setting it to [] not {}
 * replace `item_glop.item_dict["RUNTIME_last_used_time"]` with `item_dict["state"]["last_used_time"]`
 * replace `item_dict["glop_index"]` with glop_index INSIDE `item_dict["state"]` which is a dict containing situational data.
 * rename glop.dat to glop.state, and only use for situational data (see Usage section regarding use of state)
 * rename `["tmp"]["glop"]` (for relationship in `glop.state["links"]` dict) to `["state"]["parent_glop"]` for clarity
-* kivyglops.py (KivyGlops update): only make object stick to glop using `glop.state["links"]` NOT owner NOR owner_index
+* kivyglops.py (KivyGlops update): only make object stick to glop using `glop.state["links"]` NOT owner NOR owner_key
 * now ONLY save "links" in child for consistency
 * rename all index-getting methods to find_*: index_of_mesh to find_glop; common.py: get_index_by_name to find_by_name
   * the follwing remain same since gets actual sub-object not index:
@@ -305,7 +306,7 @@ The operating principle of this project is to focus on completeness. This means 
   see example-stadium for more info
 * pyglops.py (PyGlops __init__): implement _player_indices (already a list)
 * fix nonworking ishadereditor.py (finish 3D version)
-* pivot_to_geometry_enable is broken (must be left at default True): (defaults for pivot_to_geometry_enable are flipped since broken) pyglops.py: (append_wobject) make self.transform_pivot_to_geometry() optional, for optimization and predictability (added to set_as_item where pivot_to_geometry_enable; also added that option, to set_as_item, load_obj, get_glop_list_from_obj, append_wobject)
+* pivot_to_g_enable is broken (must be left at default True): (defaults for pivot_to_g_enable are flipped since broken) pyglops.py: (append_wobject) make self.transform_pivot_to_geometry() optional, for optimization and predictability (added to set_as_item where pivot_to_g_enable; also added that option, to set_as_item, load_obj, get_glop_list_from_obj, append_wobject)
 * renamed etc/kivyglops-mini-deprecated.py to testingkivy3d.py and MinimalKivyGlopsWindow class in it to TestingKivy3D
 * see `context.add(this_glop._color_instruction)  # TODO: asdf add as uniform instead`
 * Only load unique textures once (see "Loaded texture")
@@ -470,6 +471,7 @@ This spec allows one dict to be used to completely store the Wavefront mtl forma
         * if line in mtl file is `refl -type cube_top file.png` then the dict wmaterial["refl -type cube_top"] will have a list at "values" key which is ["file.png"]; the entire preceding part `refl -type cube_top` will be considered as the command to avoid overlap (to force consistent rule: one instance of command per material).
 
 ### Regression Tests
+* always do: set index [3] (4th index) of vertex to 1.0 in order for matrix operations to work properly, especially before shader accesses the vertices
 * `[x]`, `[y]`, or `[z]` where should be `[0]`, `[1]`, or `[2]`
 * using `y` + `eye_height` where should be from floor: `minimums[1]` + `eye_height`
 * using degrees where should be radians (such as large numbers on line where angle is set)

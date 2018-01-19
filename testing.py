@@ -137,7 +137,7 @@ class MainScene(KivyGlops):
             if seaport_path is None:
                 seaport_path = os.path.join(testing_path, seaport_name)
             if os.path.isfile(seaport_path):
-                self.load_obj(seaport_path, pivot_to_geometry_enable=True)
+                self.load_obj(seaport_path, pivot_to_g_enable=True)
             else:
                 #try_path
                 print("[ testing ] ERROR: can't find '" + seaport_name + "'")
@@ -292,11 +292,11 @@ class MainScene(KivyGlops):
         elif self.glops[bumpable_index].item_dict["name"] == "crate":
             self.play_sound("sounds/crate-pickup.wav")
 
-    def _deprecated_on_obtain_glop_by_name(self, bumpable_name, bumper_name):
+    def _deprecated_on_obtain_glop_by_name(self, egn, rgn):
         pass
-        #if "barrel" in bumpable_name.lower():
+        #if "barrel" in egn.lower():
         #    self.play_sound("sounds/barrel,wooden-pickup.wav")
-        #if "crate" in bumpable_name.lower():
+        #if "crate" in egn.lower():
         #    self.play_sound("sounds/crate-pickup.wav")
 
     #def on_explode_glop(self, pos, radius, attacked_index, weapon):
