@@ -236,17 +236,31 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
         self._t_ins.y = pos[1]
         self._t_ins.z = pos[2]
 
+    def get_angle(self, axis_index):
+        if axis_index == 0:
+            return self._r_ins_x.angle
+        elif axis_index == 1:
+            return self._r_ins_y.angle
+        elif axis_index == 2:
+            return self._r_ins_z.angle
+        return None
+
     def set_angle(self, axis_index, angle):
         if axis_index == 0:
-            self._r_ins_x.angle = axis_index
+            self._r_ins_x.angle = angle
         elif axis_index == 1:
-            self._r_ins_y.angle = axis_index
+            self._r_ins_y.angle = angle
         elif axis_index == 2:
-            self._r_ins_z.angle = axis_index
+            self._r_ins_z.angle = angle
+        else:
+            print("[ KivyGlop ] ERROR in set_angle: "
+                  + str(axis_index) + " is out of range (dimension"
+                  + " should be 0, 1, or 2)")
 
     def append_wobject(self, this_wobject,
                        pivot_to_g_enable=True):
-        super(KivyGlop, self).append_wobject(this_wobject,
+        super(KivyGlop, self).append_wobject(
+            this_wobject,
             pivot_to_g_enable=pivot_to_g_enable)
         if self.material is not None:
             self._color_instruction = Color(
@@ -2294,8 +2308,10 @@ class KivyGlops(PyGlops):
                 #     + str(
                 #         get_vec3_from_point(self.camera_glop._t_ins))
             mgsv = mgs["velocity"]
+            ar_enable = False
             if mgs["on_ground_enable"] or \
                     self.get_fly_by_name(m_glop.name):
+                ar_enable = True
                 # can control own movement
                 # (do not use look_dest_theta directly since wasn't
                 # turned all the way in that direction until after the
@@ -2446,18 +2462,24 @@ class KivyGlops(PyGlops):
                 # if choice_try_theta_multipliers is not None:
                     # choice_world_turn_theta = \
                         # choice_try_theta_multipliers[1]
-                for a_i in range(3):
-                    if mgs["dst_angles"] is not None:
+
+                if mgs["dst_angles"] is not None:
+                    for a_i in range(3):
                     #if lupf is not None:
                         delta_theta = mgs["dst_angles"][a_i] - mgas[a_i]
                         if delta_theta > lrpf:
                             delta_theta = lrpf
                         elif delta_theta < -lrpf:
                             delta_theta = -lrpf
-                        if delta_theta > kEpsilon or \
-                                delta_theta < -kEpsilon:
-                            m_glop.set_angle(a_i,
-                                             mgas[a_i] + delta_theta)
+                        # if delta_theta > kEpsilon or \
+                                # delta_theta < -kEpsilon:
+                        new_a = mgas[a_i] + delta_theta
+                        m_glop.set_angle(a_i,
+                                         mgas[a_i] + delta_theta)
+                        if m_glop.get_angle(a_i) != new_a:
+                            print("FAILED to set angle "
+                                  + str(m_glop.get_angle(a_i))
+                                  + " to " + str(new_a))
                         # TODO: m_glop._r_ins_y.angle = \
                             # angle_trunc(m_glop._r_ins_y.angle)
                         # m_glop._t_ins.x += choice_local_vel_mult[0]
@@ -2467,7 +2489,32 @@ class KivyGlops(PyGlops):
                               # " choice_world_turn_theta was set"
                               # " for unit, but engine forgot to set"
                               # " lupf")
+                m_glop.set_angles(mgas)  # debug only
+
             # end else at rest and can control own movement
+
+            pcgs = None
+            if motivated_index == self.get_player_glop_index(1):
+                if sg["camera_perspective_number"] == \
+                        self.CAMERA_FIRST_PERSON():
+                    pcgs = self.player_glop.state
+                else:
+                    pcgs = self.camera_glop.state
+
+                if pcgs is not None and \
+                        pcgs.get("dst_angles") is not None:
+                    if "Player" not in debug_dict:
+                        debug_dict["Player"] = {}
+                    debug_dict["Player"]["dst_angles"] = \
+                        fixed_width(
+                            degrees_list(
+                                pcgs["dst_angles"]), 6, " ")
+                    debug_dict["Player"]["angles"] = \
+                        fixed_width(
+                            degrees_list(
+                                m_glop.get_angles()), 6, " ")
+                    debug_dict["Player"]["free"] = ar_enable
+
             if choice_moved_enable:
                 check_pos_enable = True
             #if (not mgs["on_ground_enable"]) or \
@@ -3501,7 +3548,8 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                         if "View" not in debug_dict:
                             debug_dict["View"] = {}
                         debug_dict["View"]["screen_angles.xy"] = \
-                            degrees_list((x_rad, y_rad))
+                            fixed_width(degrees_list((x_rad, y_rad)),
+                                        5, " ")
                     except:
                         # probably no mouse
                         if get_verbose_enable():
@@ -3522,21 +3570,21 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                 # self.scene.player_glop._r_ins_x.angle = y_rad
                 if "camera_glop" not in debug_dict:
                     debug_dict["camera_glop"] = {}
-                if cgs is not None and \
-                        cgs.get("dst_angles") is not None:
-                    debug_dict["camera_glop"]["dst_angles"] = \
-                        fixed_width(
-                            degrees_list(
-                                cgs["dst_angles"]), 6, " ")
+                # if cgs is not None and \
+                        # cgs.get("dst_angles") is not None:
+                    # debug_dict["camera_glop"]["dst_angles"] = \
+                        # fixed_width(
+                            # degrees_list(
+                                # cgs["dst_angles"]), 6, " ")
                 if "View" not in debug_dict:
                     debug_dict["View"] = {}
                 if "player_glop" not in debug_dict:
                     debug_dict["player_glop"] = {}
-                if pgs is not None and \
-                        pgs.get("dst_angles") is not None:
-                    debug_dict["player_glop"]["dst_angles"] = \
-                        fixed_width(degrees_list(pgs["dst_angles"]),
-                                    6, " ")
+                # if pgs is not None and \
+                        # pgs.get("dst_angles") is not None:
+                    # debug_dict["player_glop"]["dst_angles"] = \
+                        # fixed_width(degrees_list(pgs["dst_angles"]),
+                                    # 6, " ")
 
                 debug_dict["View"]["camera xyz: "] = \
                     fixed_width(

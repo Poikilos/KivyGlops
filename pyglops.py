@@ -712,6 +712,10 @@ class PyGlop:
     def set_pos(self, pos):
         print("[ PyGlop ] ERROR: implement set_pos in subclass")
 
+    def get_angle(self, axis_i):
+        print("[ PyGlop ] ERROR: implement get_angle in subclass")
+        return None
+
     def set_angle(self, axis_index, angle):
         print("[ PyGlop ] ERROR: implement set_angle in subclass")
 
@@ -1502,11 +1506,10 @@ class PyGlop:
                     name = this_item_dict["name"]
                 sied["name"] = name
                 # print("item event: "+str(sied))
-                sied["calling method"] = \
-                    "sel_next_inv_slot"
+                sied["calling method"] = "sel_next_inv_slot"
                 # print("Selected " + this_item_dict["name"] + " "
-                    # + proper_name + " in slot " + \
-                # str(ad["inventory_index"]))
+                    # + proper_name + " in slot "
+                    # + str(ad["inventory_index"]))
                 item_count = 0
                 for index in range(0, len(ad["inventory_items"])):
                     if ad["inventory_items"][index]["name"] != \
@@ -1519,13 +1522,13 @@ class PyGlop:
                 sied["fit_enable"] = False
                 debug_dict["Player"]["inv scroll msg"] = "0 items."
         else:
-            print("[ PyGlop ] ERROR in sel_next_inv_slot: " + \
+            print("[ PyGlop ] ERROR in sel_next_inv_slot: "
                   " cannot perform function on non-actor")
         return sied
 
     def _on_change_pivot(self, previous_point=(0.0,0.0,0.0)):
         # should be implemented by subclass
-        print("[ PyGlop ] your subclass should implement" + \
+        print("[ PyGlop ] your subclass should implement"
               " _on_change_pivot")
         pass
 
@@ -1551,20 +1554,26 @@ class PyGlop:
                         if not os.path.exists(result):
                             try_path = os.path.join(
                                 os.path.dirname(
-                                    os.path.abspath(self.source_path)),
-                                    result)  #
+                                    os.path.abspath(self.source_path)
+                                ),
+                                result
+                            )
                             if os.path.exists(try_path):
                                 result = try_path
                             else:
-                                print("Could not find texture" + \
-                                      " (tried '" + str(try_path) + "'")
+                                print(
+                                    "[ PyGlop ] ERROR in"
+                                    + " get_texture_diffuse_path: Could"
+                                    + " not find texture (tried '"
+                                    + str(try_path) + "'"
+                                )
         except:
             print("Could not finish get_texture_diffuse_path:")
             view_traceback()
         if result is None:
             if get_verbose_enable():
-                print("NOTE: no diffuse texture specified in glop" + \
-                      " named '" + str(self.name) + "'")
+                print("NOTE: no diffuse texture specified in glop"
+                      + " named '" + str(self.name) + "'")
         return result
 
     def get_min_x(self):
@@ -2251,7 +2260,8 @@ class PyGlop:
                         try:
                             if this_wobject.texcoords is not None:
                                 # if (texcoord_index is not None) and \
-                                        # (texcoords_offset is not None):
+                                        # (texcoords_offset \
+                                        #  is not None:
                                     # participle = (
                                         # "getting texcoord"
                                         # + "components at "
@@ -2420,29 +2430,33 @@ class PyGlop:
                         dest_vertex_index += source_face_vertex_count - relative_source_face_vertex_index
                     source_face_index += 1
             participle = "generating pivot point"
-            #if self.properties["hitbox"] is not None:
-            #    print("[ PyGlop ] WARNING: self.properties["hitbox"] is not None" + \
-            #          " already during append_wobject")
+            # if self.properties["hitbox"] is not None:
+                # print("[ PyGlop ] WARNING: self."
+                      # 'properties["hitbox"] is not None'
+                      # " already during append_wobject")
             if pivot_to_g_enable:
                 self.transform_pivot_to_geometry()
-            #else:
-            #    print("ERROR: can't use pyglop since already has vertices (len(self.indices)>=1)")
+            # else:
+                # print("ERROR: can't use pyglop since already has vertices (len(self.indices)>=1)")
 
         except:  # Exception as e:
-            #print("Could not finish " + participle + \
-            #      " at source_face_index " + str(source_face_index) + \
-            #      " in " + f_name + ": " + str(e))
-            print("[ PyGlop ] ERROR--could not finish " + \
-                  participle + " at source_face_index " + \
-                  str(source_face_index) + " in " + f_name + ": ")
+            # print("[ PyGlop ] ERROR in append_wobject"
+                  # + "--Could not finish " + participle
+                  # + " at source_face_index "
+                  # + str(source_face_index)
+                  # + " in " + f_name + ": " + str(e))
+            print("[ PyGlop ] ERROR--could not finish "
+                  + participle + " at source_face_index "
+                  + str(source_face_index) + " in " + f_name + ": ")
             view_traceback()
 
                 # print("vertices after extending: "+str(this_wobject.vertices))
                 # print("indices after extending: "+str(this_wobject.indices))
-    #         if this_wobject.mtl is not None:
-    #             this_wobject.wmaterial = this_wobject.mtl.get(this_wobject.obj_material)
-    #         if this_wobject.wmaterial is not None and this_wobject.wmaterial:
-    #             this_wobject.set_textures_from_wmaterial(this_wobject.wmaterial)
+            # if this_wobject.mtl is not None:
+                # this_wobject.wmaterial = \
+                    # this_wobject.mtl.get(this_wobject.obj_material)
+            # if this_wobject.wmaterial is not None and this_wobject.wmaterial:
+                # this_wobject.set_textures_from_wmaterial(this_wobject.wmaterial)
             # self.glops[self._current_object] = mesh
             # mesh.calculate_normals()
             # self.faces = []
