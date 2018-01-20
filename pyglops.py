@@ -91,17 +91,18 @@ settings["templates"]["actor_properties"]["roll_enable"] = False
 settings["templates"]["actor_properties"]["physics_enable"] = True
 settings["templates"]["actor_properties"]["bump_enable"] = True
 settings["templates"]["actor"] = {}
-settings["templates"]["actor"]["land_units_per_second"] = 12.
+settings["templates"]["actor"]["land_speed"] = 12.
+settings["templates"]["actor"]["land_accel"] = 12.
 settings["templates"]["actor"]["land_degrees_per_second"] = 720.
     # unless you're Tara Lipinski 2 rotations per second is pretty good
 settings["templates"]["actor"]["fly_enable"] = False
-settings["templates"]["actor"]["throw_speed"] = \
-    15. # ignored if item has projectile_speed
+settings["templates"]["actor"]["throw_speed"] = 15.
+    # ignored if item has projectile_speed
 settings["templates"]["actor"]["target_index"] = None
 settings["templates"]["actor"]["moveto_index"] = None
 settings["templates"]["actor"]["target_pos"] = None
-settings["templates"]["actor"]["land_units_per_second"] = \
-    12.5  #since 45 KMh is average (45/60/60*1000)
+settings["templates"]["actor"]["land_speed"] = 12.5
+    # since 45 KMh is average (45/60/60*1000)
 settings["templates"]["actor"]["ranges"] = {}
 settings["templates"]["actor"]["ranges"]["melee"] = 0.5
 settings["templates"]["actor"]["ranges"]["throw_arc"] = 10.
@@ -155,12 +156,27 @@ EMPTY_ITEM = dict()
 EMPTY_ITEM["name"] = "Empty"
 
 
-kEpsilon = 1.0E-14 # adjust to suit.  If you use floats, you'll
-                   # probably want something like 1.0E-7 (added
-                   # by expertmm)
-#kEpsilon = 1.0E-7 # adjust to suit.  If you use floats, you'll
+kEpsilon = 1.0E-6 # adjust to suit.  If you use floats, you'll
+                  # probably want something like 1.0E-7 (added
+                  # by expertmm [tested: using 1.0E-6 since python 3
+                  # fails to set 3.1415927 to 3.1415926
+                  # see delta_theta in KivyGlops]
+# kEpsilon = 1.0E-7 # adjust to suit.  If you use floats, you'll
                   # probably want something like 1.0E-7 (added
                   # by expertmm)
+
+# returns true if difference is between -kEpsilon and kEpsilon
+def fequals(f1, f2):
+    if f1 > f2:
+        return (f1 - f2) <= kEpsilon
+    return (f2 - f1) <= kEpsilon
+    # kEpsilon = 1.0E-6 is recommended, since
+    # if kEpsilon is 1.0E-7,
+    # < FAILS sometimes:
+        # says 2.5911259 not 2.5911258 after '='
+        # and
+    # <= FAILS sometimes for negatives:
+        # says -3.0629544 not -3.0629545 after '='
 
 def normalize_3d_by_ref(this_vec3):
     # see <https://stackoverflow.com/questions/23303598
@@ -292,15 +308,15 @@ def get_angles_vec3(src_pos, dst_pos, default_angles=None):
     # pitch = src_pos[0]
     # yaw = src_pos[1]
     if len(dst_pos) > 2:
-        src_pos[0] = get_angle_between_points(self._t_ins.y,
-                                         self._t_ins.z,
+        results[0] = get_angle_between_points(src_pos[1],
+                                         src_pos[2],
                                          dst_pos[1], dst_pos[2])
-        src_pos[1] = get_angle_between_points(self._t_ins.x,
-                                       self._t_ins.z,
+        results[1] = get_angle_between_points(src_pos[0],
+                                       src_pos[2],
                                        dst_pos[0], dst_pos[2])
     else:
-        src_pos[1] = get_angle_between_points(self._t_ins.x,
-                                       self._t_ins.z,
+        results[2] = get_angle_between_points(src_pos[0],
+                                       src_pos[1],
                                        dst_pos[0], dst_pos[1])
         if default_angles is not None and default_angles[0] is not None:
             results[0] = default_angles[0]
@@ -525,7 +541,7 @@ def PointInsideTriangle2_vec2(check_pt,tri):
 
 def is_in_triangle_coords(px, py, p0x, p0y, p1x, p1y, p2x, p2y):
     # IsInTriangle_Barymetric
-    # kEpsilon = 1.0E-14 # adjust to suit.  If you use floats, you'll
+    # kEpsilon = 1.0E-7 # adjust to suit.  If you use floats, you'll
     # probably want something like 1E-7f (added by expertmm)
     Area = 1/2*(-p1y*p2x + p0y*(-p1x + p2x) + p0x*(p1y - p2y) + p1x*p2y)
     s = 1/(2*Area)*(p0y*p2x - p0x*p2y + (p2y - p0y)*px + (p0x - p2x)*py)
@@ -538,7 +554,7 @@ def is_in_triangle_coords(px, py, p0x, p0y, p1x, p1y, p2x, p2y):
 #swizzled to xz (uses index 0 and 2 of vec3)
 def is_in_triangle_xz(check_vec3, a_vec3, b_vec3, c_vec3):
     # IsInTriangle_Barymetric
-    # kEpsilon = 1.0E-14 # adjust to suit.  If you use floats, you'll
+    # kEpsilon = 1.0E-7 # adjust to suit.  If you use floats, you'll
     # probably want something like 1E-7f (added by expertmm)
     Area = 1/2*(-b_vec3[2]*c_vec3[0] + a_vec3[2]*(-b_vec3[0] + c_vec3[0]) + a_vec3[0]*(b_vec3[2] - c_vec3[2]) + b_vec3[0]*c_vec3[2])
     s = 1/(2*Area)*(a_vec3[2]*c_vec3[0] - a_vec3[0]*c_vec3[2] + (c_vec3[2] - a_vec3[2])*check_vec3[0] + (a_vec3[0] - c_vec3[0])*check_vec3[2])
@@ -551,7 +567,7 @@ def is_in_triangle_xz(check_vec3, a_vec3, b_vec3, c_vec3):
 #swizzled to xz (uses index 0 and 2 of vec3)
 def is_in_triangle_vec2(check_vec2, a_vec2, b_vec2, c_vec2):
 #    IsInTriangle_Barymetric
-    # kEpsilon = 1.0E-14 # adjust to suit.  If you use floats, you'll
+    # kEpsilon = 1.0E-7 # adjust to suit.  If you use floats, you'll
     # probably want something like 1E-7f (added by expertmm)
     Area = 1/2*(-b_vec2[1]*c_vec2[0] + a_vec2[1]*(-b_vec2[0] + c_vec2[0]) + a_vec2[0]*(b_vec2[1] - c_vec2[1]) + b_vec2[0]*c_vec2[1])
     if Area>kEpsilon or Area<-kEpsilon:
@@ -763,8 +779,8 @@ class PyGlop:
         try:
             self.properties = {}
             self.state = {}
-            if default_templates is None:
-                print("[ PyGlop ] ERROR in _init_glop: "
+            if default_templates is None and get_verbose_enable():
+                print("[ PyGlop ] (verbose message in _init_glop) "
                       + "missing default_templates param. Try setting"
                       + " to dict with required"
                       + " variables, such as:"
@@ -1710,7 +1726,7 @@ class PyGlop:
             elif "Tr" in wmaterial:
                 opacity = 1.0 - float(wmaterial["Tr"]["values"][0])
             if opacity is not None:
-                if "Kd" in material:
+                if "Kd" in wmaterial:
                     Kd = wmaterial["Kd"]["values"]
                     self.material.diffuse_color = \
                         get_fvec4_from_svec3(Kd, opacity)
@@ -2066,7 +2082,7 @@ class PyGlop:
         zero_vertex = list()
         for index in range(0,self.vertex_depth):
             zero_vertex.append(0.0)
-        if (vf[pi][VFORMAT_VECTOR_LEN_INDEX]>3):
+        if (vf[p_i][VFORMAT_VECTOR_LEN_INDEX]>3):
             zero_vertex[3] = 1.0
             # NOTE: this is done since usually if len is 3,
             # simple.glsl included with kivy converts it to
@@ -2988,6 +3004,8 @@ class PyGlops:
                 "meshes/sprite-square.obj", pivot_to_g_enable=True)
         else:
             w_glop = self.new_glop_method()
+            w_glop.glop_index = len(self.glops)
+            w_glop.state["glop_index"] = w_glop.glop_index
             self.glops.append(w_glop)
             indices = [len(self.glops)-1]
             if self.glops[indices[0]] is not w_glop:
@@ -3314,6 +3332,7 @@ class PyGlops:
                 self.settings["templates"]["actor_properties"])
             d_actor_dict = a_glop.deepcopy_with_my_type(
                 self.settings["templates"]["actor"])
+            a_glop.state["glop_index"] = index
             # NOTE: already has ["templates"]["properties"] via
             # glop __init__
             for key in d_properties:
@@ -3573,6 +3592,7 @@ class PyGlops:
         self.preprocess_item(item_dict, sender_name="set_as_item_at")
         self.glops[i].item_dict["glop_name"] = self.glops[i].name
         self.glops[i].item_dict["state"]["glop_index"] = i
+        self.glops[i].state["glop_index"] = i
         drop_enable = True
         if "drop_enable" in item_dict:
             if not is_true(item_dict["drop_enable"]):
@@ -4013,6 +4033,8 @@ class PyGlops:
                             fired_glop_index = \
                                 self.index_of_mesh(fired_glop.name)
                         fired_glop.glop_index = fired_glop_index
+                        fired_glop.state["glop_index"] = \
+                            fired_glop_index
                         # NOTE: show_glop is done below in all cases
                     else:
                         if duplicate_enable:
@@ -4197,7 +4219,7 @@ class PyGlops:
                       + 'user_glop.actor_dict["inventory_index"]'
                       + " is < 0 for " + str(user_glop.name))
             return
-        if ugad["inventory_index"] < len(ugad["inventory_items"]):
+        if ugad["inventory_index"] >= len(ugad["inventory_items"]):
             print("[ PyGlops ] ERROR in " + f_name
                   + ": inventory_index " + str(ugad["inventory_index"])
                   + " is not within inventory list range "

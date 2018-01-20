@@ -228,13 +228,14 @@ class MainScene(KivyGlops):
             self.add_actor_weapon(player1_index, weapon)
             # self.player_glop = self.glops[player1_index]
                 # already done by PyGlops __init__
-            # test_deepcopy_weapon = self.player_glop.deepcopy_with_my_type(weapon)
+            # test_deepcopy_weapon = \
+                # self.player_glop.deepcopy_with_my_type(weapon)
             print("[ testing ] #" + str(player1_index) + " named "
                   + str(self.glops[player1_index].name)
                   + " detected as player")
-            enemy_indices = \
-                self.get_indices_by_source_path(
-                    "spaceship,simple-denapes.obj")
+            enemy_indices = self.get_indices_by_source_path(
+                "spaceship,simple-denapes.obj"
+            )
             for i in range(0,len(enemy_indices)):
                 index = enemy_indices[i]
                 self.set_as_actor_at(index, ship_info)
@@ -243,7 +244,8 @@ class MainScene(KivyGlops):
                       + str(self.glops[index].name) + " added as enemy")
             print("[ testing ] " + str(len(enemy_indices))
                   + " enemies found.")
-        #test_deepcopy_weapon = self.player_glop.deepcopy_with_my_type(weapon)
+        # test_deepcopy_weapon = \
+            # self.player_glop.deepcopy_with_my_type(weapon)
 
     def on_bump(self, glop_index, bumper_index):
         print("[ testing ] '" + self.glops[glop_index].name
@@ -254,7 +256,8 @@ class MainScene(KivyGlops):
         print("[ testing ] '" + self.glops[glop_index].name
               + "' was bumped by world '" + description + "'")
 
-    def on_attacked_glop(self, attacked_index, attacker_index, weapon_dict):
+    def on_attacked_glop(self, attacked_index, attacker_index,
+                         weapon_dict):
         missing_key_count = 0
         global item_dict
         if "projectile_keys" in item_dict:

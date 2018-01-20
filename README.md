@@ -72,6 +72,8 @@ The operating principle of this project is to focus on completeness. This means 
 * if segfault occurs, maybe camera and look_at location are same
 
 ## Changes
+(2018-01-19)
+* renamed land_units_per_second to land_speed
 (2018-01-18)
 * (see get_look_angles_from_2d; was using x_rad for y angle as should but was getting -18 instead of -180 when turning left) turn left should turn as far as right using mouse
 * PEP8 line length, and related early returns (for decreased indentation), pre-dereferencing, and pre-calculation optimizations
@@ -146,7 +148,7 @@ The operating principle of this project is to focus on completeness. This means 
 * set state variables for choice-based movement, for ai and player the same way (instead of making local variables)
     * local attack_radius changed to `self.glops[bumper_index]["state"]["acquire_radius"]`
     * local attack_s changed to `self.glops[bumper_index]["state"]["desired_use"]`
-    * local weapon_index changed to `self.glops[bumper_index]["state"]["desired_item_index"]`
+    * local weapon_index changed to `self.glops[bumper_index]["state"]["choice_ii"]`
     * local this_glop_free_enable eliminated (see *_glop.state["on_ground_enable"])
     * local stop_this_bumpable_enable eliminated (see *_glop.state["at_rest_event_enable"])
     * constrain to floor etc after that
@@ -205,7 +207,7 @@ The operating principle of this project is to focus on completeness. This means 
 * renamed print_location to log_camera_info
 * consolidated get_verbose_enable() to be in one file only (common.py)
 * pyglops.py: removed uses of `Logger` to `print` to be framework-independent
-* eliminated scene.log_camera_info(); created kivyglop.debug_to(dict); moved ui's camera_walk_units_per_second and camera_turn_radians_per_second to *_glop.actor_dict["land_units_per_second"] and "land_degrees_per_second" (player_glop in this case); changed their per_frame equivalents to local variables in kivyglops.update
+* eliminated scene.log_camera_info(); created kivyglop.debug_to(dict); moved ui's camera_walk_units_per_second and camera_turn_radians_per_second to *_glop.actor_dict["land_speed"] and "land_degrees_per_second" (player_glop in this case); changed their per_frame equivalents to local variables in kivyglops.update
 * move `self.camera_walk_units_per_second = 12.0` to actor_dict
 * move `self.camera_turn_radians_per_second = math.radians(90.0)` to actor_dict
 * fixed issue where projectile sprites not visible (probably a refactoring bug)

@@ -512,7 +512,7 @@ class TestingKivy3D(BoxLayout):
         # self.canvas['projection_mat'] = projectionMatrix
         # self.canvas['diffuse_light'] = (1.0, 1.0, 0.8)
         # self.canvas['ambient_light'] = (0.1, 0.1, 0.1)
-        self.rot.angle += 1
+        # self.rot.angle += 1
 
     def dump_pyglop(self, m):
         this_list = list()

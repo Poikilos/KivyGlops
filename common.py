@@ -78,6 +78,17 @@ def good_path_name(try_path_name):
         result = None
     return result
 
+# displays 2D array in fixed-width format as string result with
+# newline characters in between each row
+# (uses fixed_width function on each row)
+def fixed_widths(val_lists, visible_width, spacing):
+    result = ""
+    delim = ""
+    for vals in val_lists:
+        result += fixed_width(vals, visible_width, spacing)
+    delim = "\n"
+    return result
+
 # makes each column visible_width characters wide, sacrificing extra
 # characters at end.
 # spacing is added between columns
@@ -101,6 +112,15 @@ def view_traceback(indent=""):
     traceback.print_tb(tb)
     del tb
     print("")
+
+def get_traceback(indent=""):
+    ex_type, ex, tb = sys.exc_info()
+    result = indent + str(ex_type) + " " + str(ex) + ": " + "\n"
+    #traceback.print_tb(tb)
+    result += str(tb)
+    del tb
+    return result
+
 
 def get_by_name(object_list, needle):  # formerly find_by_name
     result = None

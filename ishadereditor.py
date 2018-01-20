@@ -200,6 +200,7 @@ void main (void){
             if this_glop.glop_index is None:
                 print("                      ERROR: unable to correct index")
         # this_glop.glop_index = len(self.scene.glops) - 1
+        this_glop.state["glop_index"] = this_glop.glop_index
         self._contexts.add(self.scene.glops[len(self.scene.glops)-1].get_context())  # _contexts is a visible instruction group
         self.scene.glops[len(self.scene.glops)-1].state["visible_enable"] = True
 
