@@ -1216,7 +1216,6 @@ class KivyGlops(PyGlops):
     selected_glop = None
     selected_glop_index = None
     mode = None
-    env_rectangle = None
     controllers = None
     player1_controller = None
     _previous_world_light_dir = None
@@ -1233,6 +1232,8 @@ class KivyGlops(PyGlops):
         self._load_glops_enable = False
         self._loading_glops_enable = False
         self._loaded_glops_enable = False
+        self.env_orig_rect = None
+        self.env_rectangle = None
         self.ui = new_ui
         if self.ui is None:
             print("[ KivyGlops ] FATAL ERROR in __init__: KivyGlops"
@@ -1391,11 +1392,11 @@ class KivyGlops(PyGlops):
     def set_background_cylmap(self, path):
         # self.load_obj("env_sphere.obj")
         # self.load_obj("maps/gi/etc/sky_sphere.obj")
-        #env_indices = self.get_indices_by_source_path("env_sphere.obj")
-        #for i in range(0,len(env_indices)):
-        #    index = env_indices[i]
-        #    print("Preparing sky object "+str(index))
-        #    self.ui.glops[index].set_texture_diffuse(path)
+        # env_indices = self.get_indices_by_source_path("env_sphere.obj")
+        # for i in range(0,len(env_indices)):
+            # index = env_indices[i]
+            # print("Preparing sky object "+str(index))
+            # self.ui.glops[index].set_texture_diffuse(path)
         if self.env_rectangle is not None:
             self.ui.canvas.before.remove(self.env_rectangle)
             self.env_rectangle = None
@@ -1408,6 +1409,7 @@ class KivyGlops(PyGlops):
                 #texture.wrap = repeat
                 # self.env_rectangle = Rectangle(texture=texture)
                 self.env_rectangle = Rectangle(source=path)
+                self.env_orig_rect = Rectangle(source=path)
                 self.env_rectangle.texture.wrap = "repeat"
                 self.ui.canvas.before.add(self.env_rectangle)
             else:
@@ -3490,180 +3492,6 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                   " your App's build method:")
             print("return scene.ui  # (not mainform)")
             sys.exit(1)
-        if update_enable:
-            if self.scene._loaded_glops_enable:
-                self.hud_form.pos = 0.0, 0.0
-                self.hud_form.size = Window.size
-                if self.hud_bg_rect is not None:
-                    self.hud_bg_rect.size = self.hud_form.size
-                    self.hud_bg_rect.pos = self.hud_form.pos
-
-                # process input before self.scene.update():
-                try:
-                    pgs = self.scene.player_glop.state
-                    cgs = self.scene.camera_glop.state
-                    sg = self.scene.settings["globals"]
-                    try:
-                        x_rad, y_rad = \
-                            self.get_look_angles_from_2d(
-                                Window.mouse_pos)
-                        pcgs = pgs
-                        if sg["camera_perspective_number"] == \
-                                self.scene.CAMERA_FIRST_PERSON():
-                            pcgs = pgs
-                        else:
-                            pcgs = cgs
-                        if pcgs.get("dst_angles") is None:
-                            pcgs["dst_angles"] = [0., 0., 0.]
-                        # set y from screen x, and
-                        # set z from screen y:
-                        pcgs["dst_angles"][1] = x_rad
-                        pcgs["dst_angles"][0] = y_rad
-                        if "View" not in debug_dict:
-                            debug_dict["View"] = {}
-                        # ONLY show 2D info (3D info is shown by update)
-                        debug_dict["View"]["screen_angles.xy"] = \
-                            fixed_width(degrees_list((x_rad, y_rad)),
-                                        5, " ")
-                    except:
-                        # probably no mouse
-                        if get_verbose_enable():
-                            print("[ KivyGlopsWindow ] update_glsl could"
-                                  " not finish using mouse_pos (this is ok"
-                                  " if you are not using a mouse")
-                            view_traceback()
-                        pass
-                except:
-                    # camera and/or player is not ready
-                    if get_verbose_enable():
-                        print("[ KivyGlopsWindow ] (verbose message"
-                              + " in update_glsl) camera or player"
-                              + " glop not ready yet.")
-                        view_traceback()
-                    pass
-
-                self.scene.update()
-
-                if self._fps_last_frame_tick is not None:
-                    # NOTE: best_timer() is a second
-                    actual_frame_interval = \
-                        best_timer() - self._fps_last_frame_tick
-                    self._fps_accumulated_time += actual_frame_interval
-                    self._fps_accumulated_count += 1
-                    if self._fps_accumulated_time > .5:
-                        self._average_fps = (
-                            1.0
-                            / (self._fps_accumulated_time
-                               / float(self._fps_accumulated_count))
-                        )
-                        self._fps_accumulated_time = 0.0
-                        self._fps_accumulated_count = 0
-                    if actual_frame_interval > 0.0:
-                        actual_fps = 1.0 / actual_frame_interval
-                self._fps_last_frame_tick = best_timer()
-                if not self.scene._visual_debug_enable:
-                    self.debug_label.opacity = 0.0
-                else:
-                    self.debug_label.opacity = 1.0
-
-                if self.scene.env_rectangle is not None:
-                    if self.screen_w_arc_theta is not None and \
-                            self.screen_h_arc_theta is not None:
-                        # then calculate environment mapping variables
-                        # region old way (does not repeat)
-                        # env_h_ratio = \
-                            # TAU / self.screen_h_arc_theta
-                        # env_w_ratio = env_h_ratio * math.pi
-                        # self.scene.env_rectangle.size = \
-                            # (Window.size[0]*env_w_ratio,
-                             # Window.size[1]*env_h_ratio)
-                        # self.scene.env_rectangle.pos = \
-                            # (-(self.camera_glop._r_ins_y.angle / TAU
-                               # * self.scene.env_rectangle.size[0]),
-                             # -(self.camera_glop._r_ins_x.angle / TAU
-                               # * self.scene.env_rectangle.size[1]))
-                        # endregion old way (does not repeat)
-                        self.scene.env_rectangle.size = Window.size
-                        self.scene.env_rectangle.pos = 0.0, 0.0
-                        view_right = (
-                            self.screen_w_arc_theta / 2.0
-                            + self.scene.camera_glop._r_ins_y.angle
-                        )
-                        view_left = view_right - self.screen_w_arc_theta
-                        view_top = (
-                            self.screen_h_arc_theta / 2.0
-                            + self.scene.camera_glop._r_ins_x.angle
-                            # + math.radians(90.0)
-                        )
-                        view_bottom = view_top - self.screen_h_arc_theta
-                        view_right_ratio = view_right / TAU
-                        view_left_ratio = view_left / TAU
-                        view_top_ratio = view_top / TAU
-                        view_bottom_ratio = view_bottom / TAU
-                        # tex_coords order:u,      v,      u + w,  v,
-                                         # u + w,  v + h,  u,      v + h
-                        # as per
-                        # https://kivy.org/planet/2014/02
-                        # /using-tex_coords-in-kivy-for-fun-and-profit/
-                        self.scene.env_rectangle.tex_coords = (
-                            view_left_ratio, view_bottom_ratio,
-                            view_right_ratio, view_bottom_ratio,
-                            view_right_ratio, view_top_ratio,
-                            view_left_ratio, view_top_ratio
-                        )
-                pcgs = None  # player-controlled glop state
-                pgs = None
-                cgs = None
-                # self.scene.player_glop._r_ins_y.angle = x_rad
-                # self.scene.player_glop._r_ins_x.angle = y_rad
-                if "camera_glop" not in debug_dict:
-                    debug_dict["camera_glop"] = {}
-                # if cgs is not None and \
-                        # cgs.get("dst_angles") is not None:
-                    # debug_dict["camera_glop"]["dst_angles"] = \
-                        # fixed_width(
-                            # degrees_list(
-                                # cgs["dst_angles"]), 6, " ")
-                if "View" not in debug_dict:
-                    debug_dict["View"] = {}
-                if "player_glop" not in debug_dict:
-                    debug_dict["player_glop"] = {}
-                # if pgs is not None and \
-                        # pgs.get("dst_angles") is not None:
-                    # debug_dict["player_glop"]["dst_angles"] = \
-                        # fixed_width(degrees_list(pgs["dst_angles"]),
-                                    # 6, " ")
-
-                debug_dict["View"]["camera xyz: "] = \
-                    fixed_width(
-                        self.scene.camera_glop._t_ins.xyz, 6, " ")
-                if self._average_fps is not None:
-                    debug_dict["View"]["fps"] = str(self._average_fps)
-                # global debug_dict
-                # if "player_glop" not in debug_dict:
-                #     debug_dict["player_glop"] = {}
-                # debug_dict["player_glop"]["_r_ins_x.angle"] = \
-                #     str(_r_ins_x.angle)
-                # debug_dict["player_glop"]["_r_ins_y.angle"] = \
-                #     str(_r_ins_y.angle)
-                # debug_dict["player_glop"]["_r_ins_z.angle"] = \
-                #     str(_r_ins_z.angle)
-                # self.ui.update_debug_label()
-
-
-                # forcibly use parent info (should not be needed if
-                # use_parent_projection use_parent_modelview
-                # use_parent_frag_modelview options of RenderContext
-                # constructor for canvas of children)
-                # for i in range(len(self.scene.glops)):
-                    # this is VERY slow
-                    # this_glop = self.scene.glops[i]
-                    # this_glop.set_uniform(
-                    #     "modelview_mat", self.scene.modelViewMatrix)
-                    # this_glop.set_uniform(
-                    #     "camera_world_pos",
-                    #     self.scene.camera_glop._t_ins.xyz)
-            # else not loaded yet so don't try to use gl_widget or glops
         if not self.scene._loaded_glops_enable:
             self.debug_label.opacity = 1.0
             self.scene._load_glops_enable = False
@@ -3675,6 +3503,197 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             if not self.scene._loading_glops_enable:
                 self.scene._loading_glops_enable = True
                 Clock.schedule_once(self._deferred_load_glops, 0.)
+            return
+        if not update_enable:
+            return
+            # not loaded yet so don't try to use gl_widget or glops
+
+        self.hud_form.pos = 0.0, 0.0
+        self.hud_form.size = Window.size
+        if self.hud_bg_rect is not None:
+            self.hud_bg_rect.size = self.hud_form.size
+            self.hud_bg_rect.pos = self.hud_form.pos
+
+        # process input before self.scene.update():
+        try:
+            pgs = self.scene.player_glop.state
+            cgs = self.scene.camera_glop.state
+            sg = self.scene.settings["globals"]
+            try:
+                x_rad, y_rad = \
+                    self.get_look_angles_from_2d(
+                        Window.mouse_pos)
+                pcgs = pgs
+                if sg["camera_perspective_number"] == \
+                        self.scene.CAMERA_FIRST_PERSON():
+                    pcgs = pgs
+                else:
+                    pcgs = cgs
+                if pcgs.get("dst_angles") is None:
+                    pcgs["dst_angles"] = [0., 0., 0.]
+                # set y from screen x, and
+                # set z from screen y:
+                pcgs["dst_angles"][1] = x_rad
+                pcgs["dst_angles"][0] = y_rad
+                if "View" not in debug_dict:
+                    debug_dict["View"] = {}
+                # ONLY show 2D info (3D info is shown by update)
+                debug_dict["View"]["screen_angles.xy"] = \
+                    fixed_width(degrees_list((x_rad, y_rad)),
+                                5, " ")
+            except:
+                # probably no mouse
+                if get_verbose_enable():
+                    print("[ KivyGlopsWindow ] update_glsl could"
+                          " not finish using mouse_pos (this is ok"
+                          " if you are not using a mouse")
+                    view_traceback()
+                pass
+        except:
+            # camera and/or player is not ready
+            if get_verbose_enable():
+                print("[ KivyGlopsWindow ] (verbose message"
+                      + " in update_glsl) camera or player"
+                      + " glop not ready yet.")
+                view_traceback()
+            pass
+
+        self.scene.update()
+
+        if self._fps_last_frame_tick is not None:
+            # NOTE: best_timer() is a second
+            actual_frame_interval = \
+                best_timer() - self._fps_last_frame_tick
+            self._fps_accumulated_time += actual_frame_interval
+            self._fps_accumulated_count += 1
+            if self._fps_accumulated_time > .5:
+                self._average_fps = (
+                    1.0
+                    / (self._fps_accumulated_time
+                       / float(self._fps_accumulated_count))
+                )
+                self._fps_accumulated_time = 0.0
+                self._fps_accumulated_count = 0
+            if actual_frame_interval > 0.0:
+                actual_fps = 1.0 / actual_frame_interval
+        self._fps_last_frame_tick = best_timer()
+        if not self.scene._visual_debug_enable:
+            self.debug_label.opacity = 0.0
+        else:
+            self.debug_label.opacity = 1.0
+
+        if self.scene.env_rectangle is not None and \
+           self.screen_w_arc_theta is not None and \
+           self.screen_h_arc_theta is not None:
+            # then calculate environment mapping variables
+            # region old way (does not repeat)
+            # env_h_ratio = \
+                # TAU / self.screen_h_arc_theta
+            # env_w_ratio = env_h_ratio * math.pi
+            # self.scene.env_rectangle.size = \
+                # (Window.size[0]*env_w_ratio,
+                 # Window.size[1]*env_h_ratio)
+            # self.scene.env_rectangle.pos = \
+                # (-(self.camera_glop._r_ins_y.angle / TAU
+                   # * self.scene.env_rectangle.size[0]),
+                 # -(self.camera_glop._r_ins_x.angle / TAU
+                   # * self.scene.env_rectangle.size[1]))
+            # endregion old way (does not repeat)
+            # stretch_enable = False
+            # if stretch_enable:
+            self.scene.env_rectangle.pos = 0.0, 0.0
+            view_right = (
+                self.screen_w_arc_theta / 2.0
+                + self.scene.camera_glop._r_ins_y.angle
+            )
+            view_left = view_right - self.screen_w_arc_theta
+            view_top = (
+                self.screen_h_arc_theta / 2.0
+                + self.scene.camera_glop._r_ins_x.angle
+                # + math.radians(90.0)
+            )
+            view_bottom = view_top - self.screen_h_arc_theta
+            view_right_ratio = view_right / TAU
+            view_left_ratio = view_left / TAU
+            # NOTE: use math.pi instead of TAU for top to bottom ratio,
+            # since looking straight up to straight down is 180:
+            view_top_ratio = view_top / math.pi
+            view_bottom_ratio = view_bottom / math.pi
+
+            self.scene.env_rectangle.size = Window.size
+            # orig_w = self.scene.env_orig_rect.size[0]
+            # orig_h = self.scene.env_orig_rect.size[1]
+            # # view_ratio = Window.size[0] / Window.size[1]
+            # image_ratio = (
+                # self.scene.env_orig_rect.size[0]
+                # / self.scene.env_orig_rect.size[1]
+            # )
+            # used_x_mult = view_right_ratio - view_left_ratio
+            # used_y_mult = view_bottom_ratio - view_top_ratio
+            # used_ratio = used_x_mult / used_y_mult
+            # if "View" not in debug_dict:
+                # debug_dict["View"] = {}
+            # debug_dict["View"]["image_ratio"] = '%.2f' % image_ratio
+            # debug_dict["View"]["env_used_ratio"] = '%.2f' % used_ratio
+            # tex_coords order:u,      v,      u + w,  v,
+                             # u + w,  v + h,  u,      v + h
+            # as per
+            # https://kivy.org/planet/2014/02
+            # /using-tex_coords-in-kivy-for-fun-and-profit/
+            self.scene.env_rectangle.tex_coords = (
+                view_left_ratio, view_bottom_ratio,
+                view_right_ratio, view_bottom_ratio,
+                view_right_ratio, view_top_ratio,
+                view_left_ratio, view_top_ratio
+            )
+        pcgs = None  # player-controlled glop state
+        pgs = None
+        cgs = None
+        # self.scene.player_glop._r_ins_y.angle = x_rad
+        # self.scene.player_glop._r_ins_x.angle = y_rad
+        # if cgs is not None and \
+                # cgs.get("dst_angles") is not None:
+            # debug_dict["camera_glop"]["dst_angles"] = \
+                # fixed_width(
+                    # degrees_list(
+                        # cgs["dst_angles"]), 6, " ")
+        if "player_glop" not in debug_dict:
+            debug_dict["player_glop"] = {}
+        # if pgs is not None and \
+                # pgs.get("dst_angles") is not None:
+            # debug_dict["player_glop"]["dst_angles"] = \
+                # fixed_width(degrees_list(pgs["dst_angles"]),
+                            # 6, " ")
+
+        debug_dict["View"]["camera xyz: "] = \
+            fixed_width(
+                self.scene.camera_glop._t_ins.xyz, 6, " ")
+        if self._average_fps is not None:
+            debug_dict["View"]["fps"] = str(self._average_fps)
+        # global debug_dict
+        # if "player_glop" not in debug_dict:
+        #     debug_dict["player_glop"] = {}
+        # debug_dict["player_glop"]["_r_ins_x.angle"] = \
+        #     str(_r_ins_x.angle)
+        # debug_dict["player_glop"]["_r_ins_y.angle"] = \
+        #     str(_r_ins_y.angle)
+        # debug_dict["player_glop"]["_r_ins_z.angle"] = \
+        #     str(_r_ins_z.angle)
+        # self.ui.update_debug_label()
+
+
+        # forcibly use parent info (should not be needed if
+        # use_parent_projection use_parent_modelview
+        # use_parent_frag_modelview options of RenderContext
+        # constructor for canvas of children)
+        # for i in range(len(self.scene.glops)):
+            # this is VERY slow
+            # this_glop = self.scene.glops[i]
+            # this_glop.set_uniform(
+            #     "modelview_mat", self.scene.modelViewMatrix)
+            # this_glop.set_uniform(
+            #     "camera_world_pos",
+            #     self.scene.camera_glop._t_ins.xyz)
 
     def _deferred_load_glops(self, dt):
         if get_verbose_enable():

@@ -372,6 +372,7 @@ The operating principle of this project is to focus on completeness. This means 
     _map_displacement = None  # disp
     _map_decal = None # decal: stencil; defaults to 'matte' channel of image
     _map_reflection = None  # refl; can be -type sphere
+* cylindrical-mapped backgrounds should be pi-ratio so they don't repeat (such as 3142 x 1000) since the engine refuses to stretch them (by design)
 
 ## Planned Features
 * support surf and mg commands in OBJ
@@ -473,6 +474,7 @@ This spec allows one dict to be used to completely store the Wavefront mtl forma
         * if line in mtl file is `refl -type cube_top file.png` then the dict wmaterial["refl -type cube_top"] will have a list at "values" key which is ["file.png"]; the entire preceding part `refl -type cube_top` will be considered as the command to avoid overlap (to force consistent rule: one instance of command per material).
 
 ### Regression Tests
+* `debug[` where should be `debug_dict[`
 * always do: set index [3] (4th index) of vertex to 1.0 in order for matrix operations to work properly, especially before shader accesses the vertices
 * `[x]`, `[y]`, or `[z]` where should be `[0]`, `[1]`, or `[2]`
 * using `y` + `eye_height` where should be from floor: `minimums[1]` + `eye_height`
