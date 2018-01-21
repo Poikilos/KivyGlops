@@ -911,7 +911,7 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
 
     def _on_change_pivot(self, previous_point=(0.0,0.0,0.0)):
         super(KivyGlop, self)._on_change_pivot(
-            previous_point=previous_point)
+            previous_point=previous_point, class_name="KivyGlop")
         print("[ KivyGlop ] (verbose message in _on_change_pivot)"
               + " from " + str(previous_point))
         self._on_change_s_ins()  # does calculate_hit_range
@@ -1410,7 +1410,9 @@ class KivyGlops(PyGlops):
                 # self.env_rectangle = Rectangle(texture=texture)
                 self.env_rectangle = Rectangle(source=path)
                 self.env_orig_rect = Rectangle(source=path)
-                self.env_rectangle.texture.wrap = "repeat"
+                # default is clamp_to_edge
+                # self.env_rectangle.texture.wrap = "repeat"
+                self.env_rectangle.texture.wrap = "mirrored_repeat"
                 self.ui.canvas.before.add(self.env_rectangle)
             else:
                 print("ERROR in set_background_cylmap: "
@@ -2829,9 +2831,9 @@ class KivyGlops(PyGlops):
 
             # if mgp["physics_enable"]:
             if player_e:
-                if not "player_glop" in dd:
-                    dd["player_glop"] = {}
-                dd["player_glop"]["check_pos_enable"] = \
+                if not "Player" in dd:
+                    dd["Player"] = {}
+                dd["Player"]["check_pos_enable"] = \
                     check_pos_enable
             if check_pos_enable and mgp["clip_enable"]:
                 const_ground_enable = True
@@ -2855,11 +2857,11 @@ class KivyGlops(PyGlops):
                                  mgp["hit_radius"]))
                         if (motivated_index == \
                                 self.get_player_glop_index(1)):
-                            if "player_glop" not in dd:
-                                dd["player_glop"] = {}
-                            dd["player_glop"]["walkmesh_via"] = \
+                            if "Player" not in dd:
+                                dd["Player"] = {}
+                            dd["Player"]["walkmesh_via"] = \
                                 walk_info["walkmesh_via"]
-                            dd["player_glop"]["feet_y"] = \
+                            dd["Player"]["feet_y"] = \
                                 walk_info["feet_y"]
 
                     else:
@@ -3380,7 +3382,6 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             debug_dict["camera_glop"] = {}
         if "View" not in debug_dict:
             debug_dict["View"] = {}
-        debug_dict["View"]["NOTE"] = "should match camera_glop"
         debug_dict["View"]["mouse_pos"] = str(pos)
         debug_dict["View"]["size"] = str( (self.width, self.height) )
         debug_dict["View"]["pitch,yaw"] = \
@@ -3521,8 +3522,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             sg = self.scene.settings["globals"]
             try:
                 x_rad, y_rad = \
-                    self.get_look_angles_from_2d(
-                        Window.mouse_pos)
+                    self.get_look_angles_from_2d(Window.mouse_pos)
                 pcgs = pgs
                 if sg["camera_perspective_number"] == \
                         self.scene.CAMERA_FIRST_PERSON():
@@ -3539,8 +3539,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                     debug_dict["View"] = {}
                 # ONLY show 2D info (3D info is shown by update)
                 debug_dict["View"]["screen_angles.xy"] = \
-                    fixed_width(degrees_list((x_rad, y_rad)),
-                                5, " ")
+                    fixed_width(degrees_list((x_rad, y_rad)), 5, " ")
             except:
                 # probably no mouse
                 if get_verbose_enable():
@@ -3608,26 +3607,55 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             )
             view_left = view_right - self.screen_w_arc_theta
             view_top = (
-                self.screen_h_arc_theta / 2.0
-                + self.scene.camera_glop._r_ins_x.angle
+                self.scene.camera_glop._r_ins_x.angle
+                + self.screen_h_arc_theta / 2.0
                 # + math.radians(90.0)
             )
             view_bottom = view_top - self.screen_h_arc_theta
-            view_right_ratio = view_right / TAU
-            view_left_ratio = view_left / TAU
+
+            orig_w = self.scene.env_orig_rect.size[0]
+            orig_h = self.scene.env_orig_rect.size[1]
+            # view_ratio = Window.size[0] / Window.size[1]
+            image_ratio = (
+                self.scene.env_orig_rect.size[0]
+                / self.scene.env_orig_rect.size[1]
+            )
+            image_inv_ratio = 1. / image_ratio
+
+            # ratios from bottom left:
+            # freedom of rotation
+            # left (-180) to right (180) is double of height:
+            # straight down (-90) to straight up (90)
+            view_left_ratio = (view_left + math.pi) / TAU
+            view_right_ratio = (view_right + math.pi) / TAU
+            # debug_dict["View"]["view_left_ratio"] = view_left_ratio
+            # debug_dict["View"]["view_right_ratio"] = view_right_ratio
+            # view_right_ratio = \
+                # view_left_ratio + (self.screen_w_arc_theta / TAU)
             # NOTE: use math.pi instead of TAU for top to bottom ratio,
             # since looking straight up to straight down is 180:
-            view_top_ratio = view_top / math.pi
-            view_bottom_ratio = view_bottom / math.pi
+            view_bottom_ratio = (view_bottom + (math.pi / 2.)) / math.pi
+            maintain_aspect_ratio_enable = False
+            if maintain_aspect_ratio_enable:
+                ratios_x_diff = view_right - view_left
+                view_top_ratio = (
+                    view_bottom_ratio
+                    + image_inv_ratio * ratios_x_diff
+                )
+            else:
+                # view_top_ratio = (
+                    # view_bottom_ratio
+                    # + (self.screen_h_arc_theta / math.pi)
+                # )
+                # view_top_ratio = (view_top + (math.pi / 2.)) / math.pi
+                view_top_ratio = (view_top + (math.pi / 2.)) / math.pi
+
+            if "View" not in debug_dict:
+                debug_dict["View"] = {}
+            debug_dict["View"]["view_top_ratio"] = view_top_ratio
+            debug_dict["View"]["view_bottom_ratio"] = view_bottom_ratio
 
             self.scene.env_rectangle.size = Window.size
-            # orig_w = self.scene.env_orig_rect.size[0]
-            # orig_h = self.scene.env_orig_rect.size[1]
-            # # view_ratio = Window.size[0] / Window.size[1]
-            # image_ratio = (
-                # self.scene.env_orig_rect.size[0]
-                # / self.scene.env_orig_rect.size[1]
-            # )
             # used_x_mult = view_right_ratio - view_left_ratio
             # used_y_mult = view_bottom_ratio - view_top_ratio
             # used_ratio = used_x_mult / used_y_mult
@@ -3640,6 +3668,10 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             # as per
             # https://kivy.org/planet/2014/02
             # /using-tex_coords-in-kivy-for-fun-and-profit/
+            # tex_coords order:u,      v,
+                             # u + w,  v,
+                             # u + w,  v + h,
+                             # u,      v + h
             self.scene.env_rectangle.tex_coords = (
                 view_left_ratio, view_bottom_ratio,
                 view_right_ratio, view_bottom_ratio,
@@ -3657,11 +3689,11 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                 # fixed_width(
                     # degrees_list(
                         # cgs["dst_angles"]), 6, " ")
-        if "player_glop" not in debug_dict:
-            debug_dict["player_glop"] = {}
+        if "Player" not in debug_dict:
+            debug_dict["Player"] = {}
         # if pgs is not None and \
                 # pgs.get("dst_angles") is not None:
-            # debug_dict["player_glop"]["dst_angles"] = \
+            # debug_dict["Player"]["dst_angles"] = \
                 # fixed_width(degrees_list(pgs["dst_angles"]),
                             # 6, " ")
 
@@ -3671,13 +3703,13 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         if self._average_fps is not None:
             debug_dict["View"]["fps"] = str(self._average_fps)
         # global debug_dict
-        # if "player_glop" not in debug_dict:
-        #     debug_dict["player_glop"] = {}
-        # debug_dict["player_glop"]["_r_ins_x.angle"] = \
+        # if "Player" not in debug_dict:
+        #     debug_dict["Player"] = {}
+        # debug_dict["Player"]["_r_ins_x.angle"] = \
         #     str(_r_ins_x.angle)
-        # debug_dict["player_glop"]["_r_ins_y.angle"] = \
+        # debug_dict["Player"]["_r_ins_y.angle"] = \
         #     str(_r_ins_y.angle)
-        # debug_dict["player_glop"]["_r_ins_z.angle"] = \
+        # debug_dict["Player"]["_r_ins_z.angle"] = \
         #     str(_r_ins_z.angle)
         # self.ui.update_debug_label()
 

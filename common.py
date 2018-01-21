@@ -2,6 +2,7 @@ import sys
 import traceback
 import copy
 import string
+import inspect
 
 verbose_enable = False
 debug_dict = dict()  # constantly-changing variables, for visual debug
@@ -89,6 +90,7 @@ def fixed_widths(val_lists, visible_width, spacing):
     delim = "\n"
     return result
 
+fixed_width_warnings = {}
 # makes each column visible_width characters wide, sacrificing extra
 # characters at end.
 # spacing is added between columns
@@ -103,6 +105,19 @@ def fixed_width(vals, visible_width, spacing):
             result += spacing
         if len(val) < visible_width:
             val += " " * (visible_width - len(val))
+        else:
+            if "." in val[fixed_width:]:
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                fixed_width_warnings[calframe[1][3]] = True
+                if not calframe[1][3] in fixed_width_warnings:
+                    # raise ValueError
+                    print("[ common.py ] ERROR: fixed width "
+                          + str(fixed_width) + " is too small"
+                          + "--missed significant figures in "
+                          + str(val) + " (sender: " + calframe[1][3]
+                          + ")"
+                    )
         result += val[:fixed_width]
     return result
 

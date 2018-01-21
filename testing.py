@@ -71,19 +71,25 @@ class MainScene(KivyGlops):
         with_glop_with_gm_dict = try_dict["glop"].deepcopy_with_my_type(try_dict)
         print("[ testing ] making actor_glop...")
         actor = {}
-        #actor["hp"] = 1.
+        # actor["hp"] = 1.
         actor_glop = KivyGlop()
+        actor_glop.name = "InvisibleTestDummyAtOrigin_Actor"
         self.ui.add_glop(actor_glop)
         print("[ testing ] setting actor which calls deepcopy_with_my_type...")
         self.set_as_actor_at(actor_glop.glop_index, actor)
+        print("[ testing ] actor now has the following defaults: "
+              + str(actor_glop.actor_dict))
 
         print("[ testing ] making item_glop...")
         item = {}
-        #item["name"] = "something"
+        # item["name"] = "something"
         item_glop = KivyGlop()
+        item_glop.name = "InvisibleTestDummyAtOrigin_Item"
         self.ui.add_glop(item_glop)
         print("[ testing ] setting item which calls deepcopy_with_my_type...")
         self.set_as_item_at(item_glop.glop_index, item)
+        print("[ testing ] item now has the following defaults: "
+              + str(item_glop.item_dict))
 
 
         # NOTE: default gl_widget shader is already loaded by KivyGlops
@@ -204,7 +210,8 @@ class MainScene(KivyGlops):
         if test_space_enable:
             # self.set_background_cylmap("maps/starfield1-coryg89.jpg")
 
-            self.set_fly(True)
+            self.set_gravity(True)
+            self.set_player_fly(1, True)
             self.set_hud_background("example_hud.png")
             self.set_background_cylmap("maps/starfield_cylindrical_map.jpg")
             self.load_obj("meshes/spaceship,simple-denapes.obj")
@@ -217,6 +224,7 @@ class MainScene(KivyGlops):
                 # already done by PyGlops or KivyGlops __init__
 
             weapon = dict()
+            weapon["name"] = "missile"
             weapon["droppable"] = "no"
             weapon["fired_sprite_path"] = "sprites/blue_jet_bulb.png"
             weapon["fired_sprite_size"] = .5,.5
@@ -278,12 +286,17 @@ class MainScene(KivyGlops):
                     missing_key_count += 1
 
         if attacked_index is not None:
-            self.glops[attacked_index].actor_dict["hp"] -= weapon_dict["hit_damage"]
-            if self.glops[attacked_index].actor_dict["hp"] <= 0:
-                self.explode_glop_at(attacked_index)
-                print("[ testing ] (on_attacked_glop: after exploding) HP: "+str(self.glops[attacked_index].actor_dict["hp"]))
+            dg = self.glops[attacked_index]
+            if "hp" in dg.actor_dict:
+                dg.actor_dict["hp"] -= weapon_dict["hit_damage"]
+                if dg.actor_dict["hp"] <= 0:
+                    self.explode_glop_at(attacked_index)
+                    print("[ testing ] (on_attacked_glop: after exploding) HP: "+str(dg.actor_dict["hp"]))
+                else:
+                    print("[ testing ] (on_attacked_glop) HP: "+str(dg.actor_dict["hp"]))
             else:
-                print("[ testing ] (on_attacked_glop) HP: "+str(self.glops[attacked_index].actor_dict["hp"]))
+                print("[ testing ] ERROR: no hp in '" + dg.name
+                      + "'s actor dict: " + str(dg.actor_dict))
         else:
             # projectile hit environmental obstacle (no glop was hit)
             print("[ opengl7 ] projectile hit environmental obstacle")

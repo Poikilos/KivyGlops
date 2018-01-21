@@ -1542,10 +1542,13 @@ class PyGlop:
                   " cannot perform function on non-actor")
         return sied
 
-    def _on_change_pivot(self, previous_point=(0.0,0.0,0.0)):
+    def _on_change_pivot(self, previous_point=(0.0,0.0,0.0),
+                         class_name="PyGlop"):
         # should be implemented by subclass
-        print("[ PyGlop ] your subclass should implement"
-              " _on_change_pivot")
+        if class_name == "PyGlop":
+            print("[ PyGlop ] WARNING in _on_change_pivot:"
+                  " your subclass should implement"
+                  " _on_change_pivot")
         pass
 
     def get_context(self):
@@ -2752,7 +2755,14 @@ class PyGlops:
 
     # gravitational acceleration in meters per second squared
     def set_gravity(self, gravity_mss):
-        self.settings["world"]["gravity"] = gravity_mss
+        if gravity_mss is True or gravity_mss is False:
+            self.set_gravity_enable(gravity_mss)
+            print("[ PyGlops ] ERROR in set_gravity: you said "
+                  + str(gravity_mss) + " but should have sent a"
+                  + " number. Try set_gravity_enable instead"
+                  + " (called automatically for now)")
+        else:
+            self.settings["world"]["gravity"] = gravity_mss
 
     def set_gravity_enable(self, enable):
         self.settings["world"]["gravity_enable"] = enable
@@ -3619,6 +3629,12 @@ class PyGlops:
         this_glop = self.glops[i]
         tgp = self.glops[i].properties
         tgv = this_glop.vertices
+        self._bumpable_indices.append(i)
+        if tgv is None:
+            print("[ PyGlops ] WARNING: new item has no vertices"
+                  " (setting hit_radius to 0)")
+            tgp["hit_radius"] = 0.
+            return result
         try:
             vertex_count = int(len(tgv)/this_glop.vertex_depth)
             v_offset = 0
@@ -3647,11 +3663,11 @@ class PyGlops:
                   + " visible item):")
             view_traceback(indent="            ")
         # tgp["hit_radius"] = 1.0
-        self._bumpable_indices.append(i)
         return result
 
     def use_item_at(self, user_glop, inventory_index, this_use=None):
         f_name = "use_item_at"
+        VMSG = " (verbose message in use_item_at) "
         try:
             if user_glop is None:
                 print(
@@ -3683,8 +3699,8 @@ class PyGlops:
                 item_glop_name = item_glop.name
                 if item_glop.item_dict is None:
                     if get_verbose_enable():
-                        print("[ PyGlops ] WARNING in use_item_at:"
-                              + " using item_glop with glop_index"
+                        print("[ PyGlops ]" + VMSG
+                              + "using item_glop with glop_index"
                               + " where glop is not an item (maybe"
                               + " should not be in "
                               + str(user_glop.name)
@@ -3704,7 +3720,7 @@ class PyGlops:
                 print("[ PyGlops ] ERROR in use_item_at: "
                       "could not get item_dict from .")
                 # if get_verbose_enable():
-                    # msg = "[ PyGlops ] item is not ready"
+                    # msg = "[ PyGlops ]" + VMSG + "item is not ready"
                     # if "cooldown" in item_dict:
                         # msg += (
                             # " (cooldown in "
@@ -3761,8 +3777,8 @@ class PyGlops:
                 this_use = None
                 if "uses" in item_dict:
                     if get_verbose_enable():
-                        print("[ PyGlops ] (verbose message) "
-                              + f_name + ": '" + str(user_glop.name)
+                        print("[ PyGlops ]" + VMSG
+                              + "'" + str(user_glop.name)
                               + "' using item in slot "
                               + str(ugad["inventory_index"]))
 
@@ -3776,17 +3792,15 @@ class PyGlops:
                             item_glop_name = (
                                 "<ERROR: item_glop.name is None>"
                             )
-                            print("[ PyGlop ] item has no name:"
+                            print("[ PyGlop ]" + VMSG
+                                  + "item has no glop_name:"
                                   + str(item_dict))
-                        #verbose message in use_item_at
-                        print("[ PyGlops ] (verbose message in "
-                              + "use_item_at) uses:"
+                        print("[ PyGlops ]" + VMSG + "uses:"
                               + str(item_dict["uses"])
                               + "; item_glop.name:"
                               + str(item_glop_name))
                     if get_verbose_enable():
-                        print("[ PyGlops ] (verbose message in "
-                              + "use_item_at) " + this_use + " "
+                        print("[ PyGlops ]" + VMSG + this_use + " "
                               + item_glop_name)
                     if ("throw" in this_use) or ("shoot" in this_use):
                         if ("drop_enable" not in item_dict) or \
@@ -3804,9 +3818,10 @@ class PyGlops:
                                 inventory_index=inventory_index)
                         else:
                             if get_verbose_enable():
-                                print("[ PyGlops ] using throw_glop"
-                                      " with duplicate_enable since"
-                                      " not drop_enable")
+                                print("[ PyGlops ]" + VMSG
+                                      + "using throw_glop"
+                                      + " with duplicate_enable since"
+                                      + " not drop_enable")
                             self.throw_glop(user_glop,
                                             item_dict,
                                             item_glop,
@@ -3814,8 +3829,8 @@ class PyGlops:
                                             inventory_index=inventory_index)
                     else:
                         if get_verbose_enable():
-                            print("[ PyGlops ] use is unknown: '"
-                                  + str(this_use)
+                            print("[ PyGlops ]" + VMSG
+                                  + "use is unknown: '" + str(this_use)
                                   + "' (triggering on_item_use anyway)")
                 else:
                     name_msg = "<no name item>"
@@ -3854,6 +3869,7 @@ class PyGlops:
     def throw_glop(self, user_glop, item_dict, original_glop_or_None,
             this_use=None, remove_item_dict=True, set_projectile=True,
             duplicate_enable=True, inventory_index=None):
+        VMSG = " (verbose message in throw_glop) "
         og = original_glop_or_None
         favorite_pivot = None
         fires_glops = None
@@ -3900,9 +3916,9 @@ class PyGlops:
                                   " in item_dict, so using default"
                                   " throw (linear)")
                     # if get_verbose_enable():
-                        # print("[ PyGlops ] (verbose message) "
-                              # "calling copy_as_mesh_instance for"
-                              # "fires_glop")
+                        # print("[ PyGlops ]" + VMSG
+                              # + "calling copy_as_mesh_instance for"
+                              # + "fires_glop")
                     if duplicate_enable:
                         fired_glop = fires_glop.copy_as_mesh_instance()
                     else:
@@ -3947,11 +3963,13 @@ class PyGlops:
                     if fired_glop.properties["hitbox"] is None:
                         fired_glop.calculate_hit_range()
                     if get_verbose_enable():
-                        print("[ PyGlops ] throw_glop set"
-                              + "projectile_dict and bump_enable for"
-                              + " '" + str(fired_glop.name)
+                        print("[ PyGlops ]" + VMSG
+                              + "set projectile_dict"
+                              + " and bump_enable for '"
+                              + str(fired_glop.name)
                               + "' and added to _bumpable_indices")
-                        print("            user_glop.glop_index:"
+                        print("            for item used by"
+                              + " user_glop.glop_index:"
                               + str(user_glop.glop_index) + "; ")
 
                     fired_glop._t_ins.x = user_glop._t_ins.x
@@ -3980,7 +3998,8 @@ class PyGlops:
                     if get_verbose_enable():
                         if custom_speed_name is None:
                             custom_speed_name = "default"
-                        print("[ PyGlops ] throw_glop is using "
+                        print("[ PyGlops ]" + VMSG
+                              + "throw_glop is using "
                               + "speed " + str(this_speed) + " from "
                               + custom_speed_name + " for "
                               + fired_glop.name)
@@ -4081,9 +4100,9 @@ class PyGlops:
                             if len(og.state["links"]) > 0:
                                 og.state["links"] = []
                             if get_verbose_enable():
-                                print("[ PyGlops ] (verbose message) "
-                                      "removed relations from item_glop"
-                                      " since left inventory.")
+                                print("[ PyGlops ]" + VMSG + "removed"
+                                      + " relations from item_glop"
+                                      + " since left inventory.")
                         else:
                             print("[ PyGlops ] WARNING in throw_glop: "
                                   "did not remove relations from"
@@ -4161,9 +4180,9 @@ class PyGlops:
         if self.player_glop.actor_dict is None:
             return
         pgad = self.player_glop.actor_dict
-        if "player_glop" not in debug_dict:
-            debug_dict["player_glop"] = {}
-        ddp = debug_dict["player_glop"]
+        if "Player" not in debug_dict:
+            debug_dict["Player"] = {}
+        ddp = debug_dict["Player"]
         if pgad["inventory_index"] < 0:
             ddp["selected_item"] = "<no slot selected>"
             return
