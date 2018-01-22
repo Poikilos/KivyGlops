@@ -72,6 +72,8 @@ The operating principle of this project is to focus on completeness. This means 
 * if segfault occurs, maybe camera and look_at location are same
 
 ## Changes
+(2018-01-21)
+* (kivyglops.py KivyGlops set_background_cylmap) changed texture_wrap for world cylmap from 'repeat' to 'mirrored_repeat' to better simulate cylindrical mapping
 (2018-01-19)
 * renamed land_units_per_second to land_speed
 (2018-01-18)

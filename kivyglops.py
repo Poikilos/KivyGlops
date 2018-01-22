@@ -1234,6 +1234,7 @@ class KivyGlops(PyGlops):
         self._loaded_glops_enable = False
         self.env_orig_rect = None
         self.env_rectangle = None
+        self.env_flip_enable = False
         self.ui = new_ui
         if self.ui is None:
             print("[ KivyGlops ] FATAL ERROR in __init__: KivyGlops"
@@ -1389,7 +1390,7 @@ class KivyGlops(PyGlops):
     def set_hud_background(self, path):
         self.ui.set_hud_background(path)
 
-    def set_background_cylmap(self, path):
+    def set_background_cylmap(self, path, unflip_enable=True):
         # self.load_obj("env_sphere.obj")
         # self.load_obj("maps/gi/etc/sky_sphere.obj")
         # env_indices = self.get_indices_by_source_path("env_sphere.obj")
@@ -1414,6 +1415,12 @@ class KivyGlops(PyGlops):
                 # self.env_rectangle.texture.wrap = "repeat"
                 self.env_rectangle.texture.wrap = "mirrored_repeat"
                 self.ui.canvas.before.add(self.env_rectangle)
+                self.env_flip_enable = unflip_enable
+                # doesn't work:
+                # if unflip_enable:
+                    # self.env_rectangle.texture.flip_vertical()
+                    # print("[ KivyGlops ] (debug only in "
+                          # "set_background_cylmap) unflipped image")
             else:
                 print("ERROR in set_background_cylmap: "
                       + original_path + " not found in search path")
@@ -3672,6 +3679,10 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                              # u + w,  v,
                              # u + w,  v + h,
                              # u,      v + h
+            if self.scene.env_flip_enable:
+                # Since using mirrored_repeat, adding 1 should flip:
+                view_bottom_ratio += 1.0
+                view_top_ratio += 1.0
             self.scene.env_rectangle.tex_coords = (
                 view_left_ratio, view_bottom_ratio,
                 view_right_ratio, view_bottom_ratio,
