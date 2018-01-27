@@ -226,67 +226,88 @@ The operating principle of this project is to focus on completeness. This means 
   * changed uses of texture0_enable to use canvas as dict
   * changed init to set it to RenderContext
   * kivyglops.py (KivyGlop) changed init to manually call _init_glop after __init__ since with multiple inheritance, super only calls first inherited object (first type in parenthesis on `class` line); renamed PyGlop __init__ to _init_glop; changed order of inheritance to `Widget, PyGlop`
-* (2017-12-28) renamed _meshes to _contexts for clarity (but _meshes is used other places as an actual list of Mesh objects)
-* (2017-12-28) moved glop canvas editing from KivyGlops.add_glop to KivyGlop.prepare_canvas
-* (2017-12-28) added optional set_visible_enable param to add_glop (and made default not set visible to True)
-* (2017-12-27) ishadereditor.py: made it use KivyGlops; renamed viewer to gl_widget
-* (2017-12-27) fully implemented face grouping from complete OBJ spec including multiple groups (`g` with no param means "default" group, and no `g` at all means "default" group)
-* (2017-12-27) renamed set_textures_from_mtl_dict to set_textures_from_wmaterial
-* (2017-12-27) eliminated numerical indices for objects in WObjFile object (changed self.wobjects from list to dict), and name property of WObject
-* (2017-12-27) In mtl loader, renamed `args_string`, `args` & `param` to `options_string`, `options` & `option` for clarity, since mtl spec calls the chunks following the command values: option if starts with hyphen, args if follow option, and values if is part of statement (or command) [1]
-* (2017-12-27) transitioned from material classes to material dict--see "wmaterial dict spec" subheading under "Developer Notes" (since dict can just be interpreted later; and so 100% of data can be loaded even if mtl file doesn't follow spec)
-* (2017-12-26) started implementing "carry" and dict-ify KivyGlops savable members ("tmp" dict member should not be saved)
-* (2017-12-26) fixed issue where cooldown last used time wasn't set before item was first used (now is ready upon first time ever added to an inventory)
-* (2017-12-22) refactored global get_glop_from_wobject into *Glop append_wobject to assist with overriding, and with expandability (in case multi submesh glops are needed later)
-* (2017-12-22) renamed is_possible to fit_enable
-* (2017-12-22) get_indices_by_source_path now checks against original_path (as passed to load_obj; non-normalized) in addition to processed path
-* (2017-12-21) split `rotate_view_relative` into `rotate_camera_relative` and `rotate_player_relative`; moved them to KivyGlops since they use Kivy OpenGL instructions; renamed rotate_view_relative_around_point to rotate_relative_around_point and forces you to specify a glop as first parameter (still needs to be edited in major way to rotate around the point instead of assuming things about the object)
-* (2017-12-21) fix issue where add_actor_weapon uses player_glop instead of the glop referenced by the glop_index param (bug was exposed by camera_glop and player_glop being separated)
-* (2017-12-21) separated player_glop from camera_glop (see PyGlops __init__) and keys now move player instead of camera (if most recent param sent to self.set_camera_person was self.CAMERA_FIRST_PERSON(), which is done by default)
-* (2017-12-21) (fixed issue introduced by refactoring) translate instruction should be copied by value not reference for glop
-* (2017-12-21) changed emit_yaml methods since an object shouldn't need to know its own context to save (for example, should be allowable to have data members directly indented under line equal to "-")
-* (2017-12-21) renamed *append_dump to *emit_yaml
-* (2017-12-21) changed `Color(Color(1.0, 1.0, 1.0, 1.0))` to `Color(1.0, 1.0, 1.0, 1.0)`
-* (2017-12-21) added copy constructors to PyGlops, PyGlopMaterial, and where appropriate, subclasses
-* (2017-12-21) renamed bump_sounds to bump_sound_paths for clarity
-* (2017-12-21) renamed get_dict_deepcopy_except_my_type to deepcopy_with_my_type and made it work for either list or dict (and should work for any subclass since checks for type(self), so was eliminated from subclass)
-* (2017-12-20) Changed to more permissive license (see [LICENSE](https://github.com/expertmm/KivyGlops/blob/master/LICENSE))
-* (2017-12-20) updated kivyglopstesting.py to account for refactoring
-* (2017-12-20) renamed kivyglopsminimal.py to etc/kivyglops-mini-deprecated.py
-* (2017-12-19) wobjfile.py: elimintated smoothing_group in favor of this_face_group_type and this_face_group_name (this_face_group_type "s" is a smoothing group)
-* (2017-12-19) wobjfile.py: always use face groups, to accomodate face groups feature of OBJ spec [1]; added more fault-tolerance to by creating vertex list whenever first vertex of a list is declared, and creating face groups whenever first face of a list is declared
-* (2017-12-19) standardized emit_yaml methods (and use standard_emit_yaml when necessary) for consistent yaml and consistent coding: (list, tab, name [, data | self])
-* (2017-12-19) store vertex_group_type in WObject (for future implementation)
-* (2017-12-19) added ability to load non-standard obj file using commands without params; leave WObject name as None if not specified, & added ability to load non-standard object signaling (AND naming) in obj file AFTER useless g command, (such as, name WObject `some_name` if has `# object some_name then useless comments` on any line before data but after line with just `g` or `o` command but only if no name follows those commands)
-* (2017-12-17) frames_per_second moved from KivyGlops to KivyGlops window since is implementation specific (and so KivyGlops instance doesn't need to exist during KivyGlopsWindow constructor)
-* (2017-12-16) complete shift of most methods from KivyGlopsWindow to PyGlops, or at least KivyGlops if kivy-specific; same for lines from init; same for lines from update_glsl (moved to new PyGlops `update` method)
-* (2017-12-16) renamed create_mesh to new_glop_method for clarity, and use new_glop_method to create camera so conversion is not needed (eliminate get_kivyglop_from_pyglop)
-        * rename get_pyglops_list_from_obj to get_glop_list_from_obj
-        * rename get_pyglop_from_wobject to get_glop_from_wobject
-* (2017-12-16) Changed recipe for game so that you subclass KivyGlops instead of KivyGlopsWindow (removes arbitrary border between ui and scene, and changes self.scene. to self. in projects which utilize KivyGlops)
-* (2017-12-11) Began developing a platform-independent spec for the ui object so that PyGlops can specify more platform-independent methods (such as _internal_bump_glop) that push ui directly (ui being the platform-DEPENDENT object such as KivyGlopsWindow, which must inherit from some kind of OS Window or framework Window).
-    * so far, ui must include:
-        * potentially anything else in KivyGlopsWindow (KivyGlopsWindow is the only tested spec at this time, however see Developer Notes section of this file, which should be maintained well)
-* (2017-12-11) _internal_bump_glop now calls the new _run_semicolon_separated_commands which calls the new _run_command method, so that these new methods are available to other methods
-* (2017-12-11) give_item_by_keyword_to_player_number and give_item_index_to_player_number methods for manual item transfers without bumping or manually calling _internal_bump_glop
-* (2017-12-11) moved projectile handling to _internal_bump_glop (formerly was directly after the _internal_bump_glop call)
-* (2017-12-11) allow handling the obtain glop event by a new on_obtain_glop instead of _deprecated_on_obtain_glop_by_name in order to have access to the glop indices (you can still handle both if you desire for some reason, but be aware both will fire)
-* (2017-11-06) Your KivyGlopsWindow implementation can now select mesh by name: self.select_mesh_by_name("some_named_mesh") (or filename but shows warning in stdout: self.select_mesh_by_name("somefilename") or self.select_mesh_by_name("somefilename.obj"))
-* (2016-04-29) Switched to using only graphics that are public domain (changed license of modified resources to CC-BY-SA 4.0); such as, removed graphics based on cinder block wall from photoshoptextures.com due to quirky custom license
-* (2016-02-12) Change the PyGlops ObjFile and objfile.py to WObjFile and wobjfile.py (to avoid naming conflict with ObjFile and objfile.py in Kivy examples)
-* (2016-02-04) Finish separating (native) PyGlop from (Wavefront(R)) WObject for many reasons including: avoid storing redundant data; keep track of what format of data is stored in list members; allow storage of strict obj format; allow conversion back&forth or to other formats being sure of what o3d contains
-* (2016-02-04) Rename *MesherMesh types to *Glop to avoid confusion with (Kivy's) Mesh type which is stored in *o3d._mesh
-* (2016-01-10) Created new classes to hold the data from newobj and newmtl files, in order to keep strict obj+mtl data, separately from native opengl-style class
-* (2015-05-12) Included a modified testnurbs file (with added textures and improved geometry); removed orion
-* (2015-04-15) for clarity and less dependence on OBJ format, refactored object.vertices to object._vertex_strings, and refactored object.mesh.vertices to object.vertices
-* (2015-04-15) changed "Material_orion.png" to "Material_orion" in orion.obj and orion.mtl to avoid confusion (it is a material object name, not a filename)
-* (2015-04-15) added line to orion.obj: mtllib orion.mtl
-* (2015-04-13) made pyramid in testnurbs-textured.obj into a true solid (had 0-sized triangles on bottom edges that had one face), simplified it manually, and made sides equilateral from side view
-* (2015-04-13) no longer crashes on missing texture
-* (2015-04-10) implemented mtl loader from kivy-rotation3d
-* (2015-04-08) restarted from kivy-trackball-python3 (all old code disposed)
-* (2015-04-06) changed vertex_format tuples from string,int,string to bytestring,int,string
-* (2015-04-06) ran 2to3 (originally based on nskrypnik's kivy-rotation3d), which only had to change objloader (changes raise to function notation, and map(a,b) to map(list(a,b)) )
+(2017-12-28)
+* added optional set_visible_enable param to add_glop (and made default not set visible to True)
+* moved glop canvas editing from KivyGlops.add_glop to KivyGlop.prepare_canvas
+* renamed _meshes to _contexts for clarity (but _meshes is used other places as an actual list of Mesh objects)
+(2017-12-27)
+* transitioned from material classes to material dict--see "wmaterial dict spec" subheading under "Developer Notes" (since dict can just be interpreted later; and so 100% of data can be loaded even if mtl file doesn't follow spec)
+* In mtl loader, renamed `args_string`, `args` & `param` to `options_string`, `options` & `option` for clarity, since mtl spec calls the chunks following the command values: option if starts with hyphen, args if follow option, and values if is part of statement (or command) [1]
+* eliminated numerical indices for objects in WObjFile object (changed self.wobjects from list to dict), and name property of WObject
+* renamed set_textures_from_mtl_dict to set_textures_from_wmaterial
+* fully implemented face grouping from complete OBJ spec including multiple groups (`g` with no param means "default" group, and no `g` at all means "default" group)
+* ishadereditor.py: made it use KivyGlops; renamed viewer to gl_widget
+(2017-12-26)
+* fixed issue where cooldown last used time wasn't set before item was first used (now is ready upon first time ever added to an inventory)
+* started implementing "carry" and dict-ify KivyGlops savable members ("tmp" dict member should not be saved)
+(2017-12-22)
+* get_indices_by_source_path now checks against original_path (as passed to load_obj; non-normalized) in addition to processed path
+* renamed is_possible to fit_enable
+* refactored global get_glop_from_wobject into *Glop append_wobject to assist with overriding, and with expandability (in case multi submesh glops are needed later)
+(2017-12-21)
+* renamed get_dict_deepcopy_except_my_type to deepcopy_with_my_type and made it work for either list or dict (and should work for any subclass since checks for type(self), so was eliminated from subclass)
+* renamed bump_sounds to bump_sound_paths for clarity
+* added copy constructors to PyGlops, PyGlopMaterial, and where appropriate, subclasses
+* changed `Color(Color(1.0, 1.0, 1.0, 1.0))` to `Color(1.0, 1.0, 1.0, 1.0)`
+* renamed *append_dump to *emit_yaml
+* changed emit_yaml methods since an object shouldn't need to know its own context to save (for example, should be allowable to have data members directly indented under line equal to "-")
+* (fixed issue introduced by refactoring) translate instruction should be copied by value not reference for glop
+* separated player_glop from camera_glop (see PyGlops __init__) and keys now move player instead of camera (if most recent param sent to self.set_camera_person was self.CAMERA_FIRST_PERSON(), which is done by default)
+* fix issue where add_actor_weapon uses player_glop instead of the glop referenced by the glop_index param (bug was exposed by camera_glop and player_glop being separated)
+* split `rotate_view_relative` into `rotate_camera_relative` and `rotate_player_relative`; moved them to KivyGlops since they use Kivy OpenGL instructions; renamed rotate_view_relative_around_point to rotate_relative_around_point and forces you to specify a glop as first parameter (still needs to be edited in major way to rotate around the point instead of assuming things about the object)
+(2017-12-20)
+* renamed kivyglopsminimal.py to etc/kivyglops-mini-deprecated.py
+* updated kivyglopstesting.py to account for refactoring
+* Changed to more permissive license (see [LICENSE](https://github.com/expertmm/KivyGlops/blob/master/LICENSE))
+(2017-12-19)
+* added ability to load non-standard obj file using commands without params; leave WObject name as None if not specified, & added ability to load non-standard object signaling (AND naming) in obj file AFTER useless g command, (such as, name WObject `some_name` if has `# object some_name then useless comments` on any line before data but after line with just `g` or `o` command but only if no name follows those commands)
+* store vertex_group_type in WObject (for future implementation)
+* standardized emit_yaml methods (and use standard_emit_yaml when necessary) for consistent yaml and consistent coding: (list, tab, name [, data | self])
+* wobjfile.py: always use face groups, to accomodate face groups feature of OBJ spec [1]; added more fault-tolerance to by creating vertex list whenever first vertex of a list is declared, and creating face groups whenever first face of a list is declared
+* wobjfile.py: elimintated smoothing_group in favor of this_face_group_type and this_face_group_name (this_face_group_type "s" is a smoothing group)
+(2017-12-17)
+* frames_per_second moved from KivyGlops to KivyGlops window since is implementation specific (and so KivyGlops instance doesn't need to exist during KivyGlopsWindow constructor)
+(2017-12-16)
+* Changed recipe for game so that you subclass KivyGlops instead of KivyGlopsWindow (removes arbitrary border between ui and scene, and changes self.scene. to self. in projects which utilize KivyGlops)
+* renamed create_mesh to new_glop_method for clarity, and use new_glop_method to create camera so conversion is not needed (eliminate get_kivyglop_from_pyglop)
+  * rename get_pyglops_list_from_obj to get_glop_list_from_obj
+  * rename get_pyglop_from_wobject to get_glop_from_wobject
+* complete shift of most methods from KivyGlopsWindow to PyGlops, or at least KivyGlops if kivy-specific; same for lines from init; same for lines from update_glsl (moved to new PyGlops `update` method)
+(2017-12-11)
+* allow handling the obtain glop event by a new on_obtain_glop instead of _deprecated_on_obtain_glop_by_name in order to have access to the glop indices (you can still handle both if you desire for some reason, but be aware both will fire)
+* moved projectile handling to _internal_bump_glop (formerly was directly after the _internal_bump_glop call)
+* give_item_by_keyword_to_player_number and give_item_index_to_player_number methods for manual item transfers without bumping or manually calling _internal_bump_glop
+* _internal_bump_glop now calls the new _run_semicolon_separated_commands which calls the new _run_command method, so that these new methods are available to other methods
+* Began developing a platform-independent spec for the ui object so that PyGlops can specify more platform-independent methods (such as _internal_bump_glop) that push ui directly (ui being the platform-DEPENDENT object such as KivyGlopsWindow, which must inherit from some kind of OS Window or framework Window).
+  * so far, ui must include:
+    * potentially anything else in KivyGlopsWindow (KivyGlopsWindow is the only tested spec at this time, however see Developer Notes section of this file, which should be maintained well)
+(2017-11-06)
+* Your KivyGlopsWindow implementation can now select mesh by name: self.select_mesh_by_name("some_named_mesh") (or filename but shows warning in stdout: self.select_mesh_by_name("somefilename") or self.select_mesh_by_name("somefilename.obj"))
+(2016-04-29)
+* Switched to using only graphics that are public domain (changed license of modified resources to CC-BY-SA 4.0); such as, removed graphics based on cinder block wall from photoshoptextures.com due to quirky custom license
+(2016-02-12)
+* Change the PyGlops ObjFile and objfile.py to WObjFile and wobjfile.py (to avoid naming conflict with ObjFile and objfile.py in Kivy examples)
+(2016-02-04)
+* Rename *MesherMesh types to *Glop to avoid confusion with (Kivy's) Mesh type which is stored in *o3d._mesh
+* Finish separating (native) PyGlop from (Wavefront(R)) WObject for many reasons including: avoid storing redundant data; keep track of what format of data is stored in list members; allow storage of strict obj format; allow conversion back&forth or to other formats being sure of what o3d contains
+(2016-01-10)
+* Created new classes to hold the data from newobj and newmtl files, in order to keep strict obj+mtl data, separately from native opengl-style class
+(2015-05-12)
+* Included a modified testnurbs file (with added textures and improved geometry); removed orion
+(2015-04-15)
+* added line to orion.obj: mtllib orion.mtl
+* changed "Material_orion.png" to "Material_orion" in orion.obj and orion.mtl to avoid confusion (it is a material object name, not a filename)
+* for clarity and less dependence on OBJ format, refactored object.vertices to object._vertex_strings, and refactored object.mesh.vertices to object.vertices
+(2015-04-13)
+* no longer crashes on missing texture
+* made pyramid in testnurbs-textured.obj into a true solid (had 0-sized triangles on bottom edges that had one face), simplified it manually, and made sides equilateral from side view
+(2015-04-10)
+* implemented mtl loader from kivy-rotation3d
+(2015-04-08)
+* restarted from kivy-trackball-python3 (all old code disposed)
+(2015-04-06)
+* ran 2to3 (originally based on nskrypnik's kivy-rotation3d), which only had to change objloader (changes raise to function notation, and map(a,b) to map(list(a,b)) )
+* changed vertex_format tuples from string,int,string to bytestring,int,string
 
 
 ## Known Issues
