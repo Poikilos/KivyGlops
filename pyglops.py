@@ -662,7 +662,7 @@ class PyGlop:
     material = None
     _min_coords = None  #bounding cube minimums in local coordinates
     _max_coords = None  #bounding cube maximums in local coordinates
-    _pivot_point = None  # TODO: asdf eliminate this--instead always use
+    _pivot_point = None  # TODO: (?) eliminate this--instead always use
                          # 0,0,0 and move vertices to change pivot;
                          # currently calculated from average of vertices
                          # if was imported from obj
@@ -915,7 +915,7 @@ class PyGlop:
             target._max_coords = self._max_coords
                 # bounding cube maximums in local coordinates
             target._pivot_point = self._pivot_point
-                # TODO: (?) asdf eliminate _pivot_point--instead always
+                # TODO: (?) eliminate _pivot_point--instead always
                 # use 0,0,0 and move vertices to change pivot; currently
                 # calculated from average of vertices if was imported
                 # from obj
@@ -2181,10 +2181,7 @@ class PyGlop:
                         + str(len(this_face_list)) + " face(s) from "
                         + str(type(this_face_list)) + " " + key)
                 for this_wobject_this_face in this_face_list:
-                    # print("  -  # in " + key)  # debug only
                     participle = "getting face components"
-                    # print("face[" + str(source_face_index) + "]: "
-                          # + participle)
 
                     # DOES triangulate faces of more than 3 vertices
                     # (connects each loose point to first vertex and
@@ -2396,17 +2393,16 @@ class PyGlop:
                                 vertex_components[self._TEXCOORD0_OFFSET+element_index] = texcoord[element_index]
 
                         if len(v)>3:
-                            #use extended vertex info (color) from nonstandard obj file
+                            # use extended vertex info (color) from nonstandard obj file
                             abs_index = 0
                             for element_index in range(4,len(v)):
                                 vertex_components[self.COLOR_OFFSET+abs_index] = v[element_index]
                                 abs_index += 1
                         else:
-                            #default to transparent vertex color
+                            # default to transparent vertex color
                             # TODO: overlay vertex color using material color as base
                             for element_index in range(0,4):
                                 vertex_components[self.COLOR_OFFSET+element_index] = 0.0
-                        #print("    - " + str(vertex_components))  # debug only
                         self.vertices.extend(vertex_components)
                         source_face_vertex_count += 1
                         vertexinfo_index += 1
@@ -3134,7 +3130,7 @@ class PyGlops:
             #if "rgn" in result:
             #    rgn = result["rgn"]
 
-        #if egn is not None and rgn is not None:
+        # if egn is not None and rgn is not None:
         if eg.projectile_dict is not None:
             egpd = eg.projectile_dict
             if rg is not None:
@@ -3144,7 +3140,8 @@ class PyGlops:
                     self.play_sound(
                         rg.properties["damaged_sound_paths"][rand_i])
             if get_verbose_enable():
-                print("[ PyGlops ] PROJECTILE HIT _internal_bump_glop"
+                print("[ PyGlops ] (debug only in _internal_bump_glop"
+                      " PROJECTILE HIT _internal_bump_glop"
                       " found projectile_dictbump")  # debug only
             if bumper_index is not None:
                 self.on_attacked_glop(bumper_index,
@@ -3198,8 +3195,6 @@ class PyGlops:
                 return
 
             if eg.properties["bump_enable"]:
-                #if "rock" in eg.name.lower():
-                    # debug only
                 if eg.projectile_dict is not None:
                     this_flag = bad_flag
                 elif egid is not None and "as_projectile" in egid:
@@ -4164,13 +4159,6 @@ class PyGlops:
                     # fired_glop._t_ins.y += \
                         # user_glop.properties["eye_height"]/2
 
-                    #print("[ debug only ] bumpers:")
-                    # for b_i in self._bumper_indices:  # debug only
-                        # print("[ debug only ]   - ")
-                        # print("[ debug only ]     name: "
-                              # + str(self.glops[b_i].name))
-                        # print("[ debug only ]     _t_ins: "
-                              # + str(self.glops[b_i]._t_ins.xyz))
         else:
             print("[ PyGlops ] ERROR in throw_glop: user_glop None")
 
@@ -4470,15 +4458,9 @@ class PyGlops:
             results = list()
             for this_glop in self.glops:
                 checked_count += 1
-                # print("checked " + this_glop.name.lower())
                 if this_glop.name is not None:
                     if partial_name_lower in this_glop.name.lower():
                         results.append(this_glop.name)
-                    # else:
-                        # print("[ PyGlops ] (debug only in"
-                        #     + "get_similar_names): name "
-                        #     + str(this_glop.name) + " does not"
-                        #     + " contain " + partial_name)
                 else:
                     print("ERROR in get_similar_names: a glop was None")
         else:

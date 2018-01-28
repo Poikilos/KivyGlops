@@ -806,8 +806,9 @@ class WObjFile:
                                     this_face.append([vertex_number,texcoord_number,normal_number])  # this is OBJ vertex_format
                                 this_object.face_dicts[smoothing_key]["faces"].append(this_face)
                                 if added_face_msg_enable:
+                                    # TODO: asdf this misses some meshes (or another part of this code does)
                                     #print("added face to '" + str(this_object.name) + "' face list key '" + smoothing_key + "': " + str(this_face))
-                                    added_face_msg_enable = False  # commented for debug only
+                                    added_face_msg_enable = False
                                     if not added_face_msg_enable:
                                         #print("(this is the last face message that will be shown for this input file)")
                                         #print("")

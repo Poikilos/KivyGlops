@@ -72,6 +72,10 @@ The operating principle of this project is to focus on completeness. This means 
 * if segfault occurs, maybe camera and look_at location are same
 
 ## Changes
+(2018-01-27)
+* properly distinguish between bumpable and bumper during motivated_index loop (see `if mgs["at_rest_event_enable"]:`), and only call _internal_bump_glop if both are present (as opposed to a bumper bumping the world)
+* removed some useless commented code
+* removed redundant rolling code that was missing important radius precheck and use
 (2018-01-21)
 * (kivyglops.py KivyGlops set_background_cylmap) changed texture_wrap for world cylmap from 'repeat' to 'mirrored_repeat' to better simulate cylindrical mapping
 (2018-01-19)
@@ -311,6 +315,7 @@ The operating principle of this project is to focus on completeness. This means 
 
 
 ## Known Issues
+* only set glop's glop_index and glop's state["glop_index"] in add_glop, nowhere else
 * add pathing for processing `actor_dict["target_pos"]` (even if not ai_enable, in case of strategy game where target_pos is set on a player-controlled glop)
 * implement seperable_offsets for explosions
 * eliminate foot_reach in favor of using hitbox
