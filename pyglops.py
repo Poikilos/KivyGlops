@@ -651,7 +651,8 @@ class PyGlopHitBox:
 settings["templates"]["properties"]["hitbox"] = PyGlopHitBox()
 
 class PyGlop:
-    #update copy constructor if adding/changing copyable members
+    # TODO: move initializers to __init__
+    # update copy constructor if adding/changing copyable members
     name = None #object name such as from OBJ's 'o' statement
     dat = None
     source_path = None  # required so that meshdata objects can be
@@ -3374,7 +3375,10 @@ class PyGlops:
                     print("  hitbox: "
                           + str(a_glop.properties["hitbox"]))
         else:
-            if index >= len(self.glops):
+            if index is None:
+                print("[ PyGlops ] ERROR in set_as_actor_at:"
+                      + "index " + str(index) + " is None")
+            elif index >= len(self.glops):
                 print("[ PyGlops ] ERROR in set_as_actor_at:"
                       + "index " + str(index)+" is out of range")
             elif index < 0:

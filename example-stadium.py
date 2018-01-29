@@ -42,8 +42,6 @@ class MainScene(KivyGlops):
         else:
             print("[ example-stadium ] WARNING: not using walkmesh")
 
-        # self.load_obj("player1.obj")
-
         item_dict = dict()
         item_dict["name"] = "rock"
         item_dict["bump"] = "hide; obtain"

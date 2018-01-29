@@ -1250,13 +1250,20 @@ class KivyGlops(PyGlops):
             self.focal_distance = 2.0
             self.projection_near = 0.1
             self._sounds = {}
-            indices = self.load_obj("meshes/human-5ft4-7.5-expertmm.obj")
+            player_mesh_path = "meshes/human-5ft4-7.5-expertmm.obj"
+            indices = self.load_obj(player_mesh_path)
             self.player_glop = None
             try_name = "player"
             generate_p1_enable = False
+            if len(indices) > 1:
+                print("[ KivyGlops ] WARNING in __init__: got "
+                      + str(len(indices))
+                      + " meshes from " + player_mesh_path
+                      + " so picked " + self.glops[indices[0]].name
+                      + " for player_glop")
             for player_try_i in indices:
                 if try_name in self.glops[player_try_i].name.lower():
-                    self.player_glop = self.glops(player_try_i)
+                    self.player_glop = self.glops[player_try_i]
                     break
             if self.player_glop is None:
                 print("[ KivyGlops ] ERROR in __init__: cannot find "
@@ -1298,6 +1305,12 @@ class KivyGlops(PyGlops):
                 self.player_glop.state["glop_index"] = \
                     self.player_glop.glop_index
                 self.glops.append(self.player_glop)
+                if get_verbose_enable():
+                    print("[ KivyGlopsWindow ] (verbose message in"
+                          + " in __init__) generated player glop at "
+                          + str(self.player_glop.glop_index)
+                          + " since no mesh file found"
+                          + " for player_glop")
             self._player_glop_index = self.player_glop.glop_index
             # call after_selected_item to keep label consistent:
             self.after_selected_item(
@@ -3704,6 +3717,16 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             print("_deferred_load_glops: " + str(type(dt))
                   + " dt = " + str(dt))
         self.scene.on_load_glops()  # also moved from ui
+        if get_verbose_enable():
+            for key in range(len(self.scene.glops)):
+                try_glop = self.scene.glops[key]
+                for key2 in range(len(self.scene.glops)):
+                    try2_glop = self.scene.glops[key2]
+                    if (key != key2) and (try_glop is try2_glop):
+                        print("[ KivyGlopsWindow ] WARNING in"
+                              + " _deferred_load_glops:"
+                              + " glop at " + str(key2) + " is a"
+                              + " duplicate of glop at " + str(key))
         self.scene._loaded_glops_enable = True
         self.debug_label.text = ""
 
