@@ -54,42 +54,42 @@ class MainScene(KivyGlops):
             if not test_medieval_enable:
                 print("test_infinite_crates requires test_medieval_enable")
         try_dict = {}
-        try_dict["glop"] = KivyGlop()
+        try_dict['glop'] = KivyGlop()
         print("[ testing ] copying dict with glop...")
-        with_glop_dict = try_dict["glop"].deepcopy_with_my_type(try_dict)
-        try_dict["material"] = KivyGlopMaterial()
+        with_glop_dict = try_dict['glop'].deepcopy_with_my_type(try_dict)
+        try_dict['material'] = new_material()
         print("[ testing ] copying dict with glop and material using glop...")
-        with_gm_via_glop_dict = try_dict["glop"].deepcopy_with_my_type(try_dict)
+        with_gm_via_glop_dict = try_dict['glop'].deepcopy_with_my_type(try_dict)
         mat_dict = {}
-        mat_dict["material"] = KivyGlopMaterial()
-        print("[ testing ] copying material using material.copy...")
-        with_gm_via_mat_dict = mat_dict["material"].copy()
-        try_dict["glop"].material = KivyGlopMaterial()
-        del try_dict["material"]
+        mat_dict['material'] = new_material()
+        print("[ testing ] copying material using copy_material...")
+        with_gm_via_mat_dict = copy_material(mat_dict['material'])
+        try_dict['glop'].material = new_material()
+        del try_dict['material']
         print("[ testing ] copying dict with glop that has " + \
-              "material, using material.copy...")
-        with_glop_with_gm_dict = try_dict["glop"].deepcopy_with_my_type(try_dict)
+              "material, using deepcopy_with_my_type...")
+        with_glop_with_gm_dict = try_dict['glop'].deepcopy_with_my_type(try_dict)
         print("[ testing ] making actor_glop...")
         actor = {}
-        # actor["hp"] = 1.
+        # actor['hp'] = 1.
         actor_glop = KivyGlop()
         actor_glop.name = "InvisibleTestDummyAtOrigin_Actor"
         self.ui.add_glop(actor_glop)
         print("[ testing ] setting actor which calls deepcopy_with_my_type...")
         self.set_as_actor_at(actor_glop.glop_index, actor)
-        print("[ testing ] actor now has the following defaults: "
-              + str(actor_glop.actor_dict))
+        print("[ testing ] actor now has the following defaults: " +
+              str(actor_glop.actor_dict))
 
         print("[ testing ] making item_glop...")
         item = {}
-        # item["name"] = "something"
+        # item['name'] = "something"
         item_glop = KivyGlop()
         item_glop.name = "InvisibleTestDummyAtOrigin_Item"
         self.ui.add_glop(item_glop)
         print("[ testing ] setting item which calls deepcopy_with_my_type...")
         self.set_as_item_at(item_glop.glop_index, item)
-        print("[ testing ] item now has the following defaults: "
-              + str(item_glop.item_dict))
+        print("[ testing ] item now has the following defaults: " +
+              str(item_glop.item_dict))
 
 
         # NOTE: default gl_widget shader is already loaded by KivyGlops
@@ -159,17 +159,17 @@ class MainScene(KivyGlops):
                 is_ok = self.use_walkmesh(name, hide=True)
 
             #item_dict = dict()
-            item_dict["name"] = "barrel"
-            item_dict["bump"] = "hide; obtain"
-            #item_dict["use"] = "throw_arc"
-            item_dict["uses"] = ["throw_arc"]
-            #item_dict["uses"] = []
-            #item_dict["uses"].append("throw_arc")
-            item_dict["cooldown"] = .7
+            item_dict['name'] = 'barrel'
+            item_dict['bump'] = "hide; obtain"
+            #item_dict['use'] = 'throw_arc'
+            item_dict['uses'] = ['throw_arc']
+            #item_dict['uses'] = []
+            #item_dict['uses'].append('throw_arc')
+            item_dict['cooldown'] = .7
 
-            results = self.get_index_lists_by_similar_names(["crate", "barrel"])
-            crate_indices = results["crate"]
-            barrel_indices = results["barrel"]
+            results = self.get_index_lists_by_similar_names(['crate', 'barrel'])
+            crate_indices = results['crate']
+            barrel_indices = results['barrel']
 
             barrel_names = []  # stored for debug output
             for index in barrel_indices:
@@ -179,20 +179,20 @@ class MainScene(KivyGlops):
 
             # self.play_music("music/edinburgh-loop.ogg")
 
-            item_dict["name"] = "crate"
-            item_dict["use_sound"] = "sounds/woosh-medium.wav"
-            item_dict["hit_damage"] = .3
+            item_dict['name'] = 'crate'
+            item_dict['use_sound'] = "sounds/woosh-medium.wav"
+            item_dict['hit_damage'] = .3
             print("[ testing ] about to create projectile weapon" + \
                   " without projectile keys to make sure" + \
                   " projectile_dict received by attacked_glop" + \
                   " has all user-specified variables (" + \
                   " the custom on_attack_glop event in here" + \
                   " will show errors if missing)")
-            #item_dict["projectile_keys"] = ["hit_damage"]
+            #item_dict['projectile_keys'] = ['hit_damage']
             if test_infinite_crates:
-                item_dict["droppable"] = False
-                item_dict["cooldown"] = .1
-                item_dict["uses"] = ["throw_linear"]
+                item_dict['droppable'] = False
+                item_dict['cooldown'] = .1
+                item_dict['uses'] = ["throw_linear"]
 
             for index in crate_indices:
                 self.set_as_item_at(index, item_dict)
@@ -217,30 +217,30 @@ class MainScene(KivyGlops):
             self.load_obj("meshes/spaceship,simple-denapes.obj")
 
             ship_info = dict()
-            ship_info["hp"] = 1.0
+            ship_info['hp'] = 1.0
 
             player1_index = self.get_player_glop_index(1)
             # self.set_as_actor_at(player1_index, ship_info)
                 # already done by PyGlops or KivyGlops __init__
 
             weapon = dict()
-            weapon["name"] = "missile"
-            weapon["droppable"] = "no"
-            weapon["fired_sprite_path"] = "sprites/blue_jet_bulb.png"
-            weapon["fired_sprite_size"] = .5,.5
+            weapon['name'] = "missile"
+            weapon['droppable'] = "no"
+            weapon['fired_sprite_path'] = "sprites/blue_jet_bulb.png"
+            weapon['fired_sprite_size'] = .5,.5
                 # width and height in meters
-            weapon["uses"] = ["throw_linear"]
-                # weapon["fire_type"] = "throw_arc"
-            weapon["hit_damage"] = .3
-            weapon["projectile_keys"] = ["hit_damage"]
+            weapon['uses'] = ["throw_linear"]
+                # weapon['fire_type'] = 'throw_arc'
+            weapon['hit_damage'] = .3
+            weapon['projectile_keys'] = ['hit_damage']
             self.add_actor_weapon(player1_index, weapon)
             # self.player_glop = self.glops[player1_index]
                 # already done by PyGlops __init__
             # test_deepcopy_weapon = \
                 # self.player_glop.deepcopy_with_my_type(weapon)
-            print("[ testing ] #" + str(player1_index) + " named "
-                  + str(self.glops[player1_index].name)
-                  + " detected as player")
+            print("[ testing ] #" + str(player1_index) + " named " +
+                  str(self.glops[player1_index].name) +
+                  " detected as player")
             enemy_indices = self.get_indices_by_source_path(
                 "spaceship,simple-denapes.obj"
             )
@@ -248,28 +248,28 @@ class MainScene(KivyGlops):
                 index = enemy_indices[i]
                 self.set_as_actor_at(index, ship_info)
                 self.add_actor_weapon(index, weapon)
-                print("[ testing ] #" + str(index) + " named "
-                      + str(self.glops[index].name) + " added as enemy")
-            print("[ testing ] " + str(len(enemy_indices))
-                  + " enemies found.")
+                print("[ testing ] #" + str(index) + " named " +
+                      str(self.glops[index].name) + " added as enemy")
+            print("[ testing ] " + str(len(enemy_indices)) +
+                  " enemies found.")
         # test_deepcopy_weapon = \
             # self.player_glop.deepcopy_with_my_type(weapon)
 
     def on_bump(self, glop_index, bumper_index):
-        print("[ testing ] '" + self.glops[glop_index].name
-              + "' was bumped by '" + self.glops[bumper_index].name
-              + "'")
+        print("[ testing ] '" + self.glops[glop_index].name +
+              "' was bumped by '" + self.glops[bumper_index].name +
+              "'")
 
     def on_bump_world(self, glop_index, description):
-        print("[ testing ] '" + self.glops[glop_index].name
-              + "' was bumped by world '" + description + "'")
+        print("[ testing ] '" + self.glops[glop_index].name +
+              "' was bumped by world '" + description + "'")
 
     def on_attacked_glop(self, attacked_index, attacker_index,
                          weapon_dict):
         missing_key_count = 0
         global item_dict
-        if "projectile_keys" in item_dict:
-            for val in item_dict["projectile_keys"]:
+        if 'projectile_keys' in item_dict:
+            for val in item_dict['projectile_keys']:
                 if val not in weapon_dict:
                     print("[ testing ] projectile_key '" + val + \
                           "' specified in projectile_keys" + \
@@ -287,32 +287,35 @@ class MainScene(KivyGlops):
 
         if attacked_index is not None:
             dg = self.glops[attacked_index]
-            if "hp" in dg.actor_dict:
-                dg.actor_dict["hp"] -= weapon_dict["hit_damage"]
-                if dg.actor_dict["hp"] <= 0:
+            if 'hp' in dg.actor_dict:
+                dg.actor_dict['hp'] -= weapon_dict['hit_damage']
+                if dg.actor_dict['hp'] <= 0:
                     self.explode_glop_at(attacked_index)
-                    print("[ testing ] (on_attacked_glop: after exploding) HP: "+str(dg.actor_dict["hp"]))
+                    print("[ testing ] (on_attacked_glop:" +
+                          " after exploding) HP: " +
+                          str(dg.actor_dict['hp']))
                 else:
-                    print("[ testing ] (on_attacked_glop) HP: "+str(dg.actor_dict["hp"]))
+                    print("[ testing ] (on_attacked_glop) HP: " +
+                          str(dg.actor_dict['hp']))
             else:
-                print("[ testing ] ERROR: no hp in '" + dg.name
-                      + "'s actor dict: " + str(dg.actor_dict))
+                print("[ testing ] ERROR: no hp in '" + dg.name +
+                      "'s actor dict: " + str(dg.actor_dict))
         else:
             # projectile hit environmental obstacle (no glop was hit)
             print("[ opengl7 ] projectile hit environmental obstacle")
 
 
     def on_obtain_glop(self, bumpable_index, bumper_index):
-        if self.glops[bumpable_index].item_dict["name"] == "barrel":
+        if self.glops[bumpable_index].item_dict['name'] == 'barrel':
             self.play_sound("sounds/barrel,wooden-pickup.wav")
-        elif self.glops[bumpable_index].item_dict["name"] == "crate":
+        elif self.glops[bumpable_index].item_dict['name'] == 'crate':
             self.play_sound("sounds/crate-pickup.wav")
 
     def _deprecated_on_obtain_glop_by_name(self, egn, rgn):
         pass
-        #if "barrel" in egn.lower():
+        #if 'barrel' in egn.lower():
         #    self.play_sound("sounds/barrel,wooden-pickup.wav")
-        #if "crate" in egn.lower():
+        #if 'crate' in egn.lower():
         #    self.play_sound("sounds/crate-pickup.wav")
 
     #def on_explode_glop(self, pos, radius, attacked_index, weapon):
@@ -334,9 +337,9 @@ class MainScene(KivyGlops):
             elif self.get_pressed("o"):
                 self.selected_glop.rotate_z_relative(-1)
 
-            if self.get_pressed("left"):
+            if self.get_pressed('left'):
                 self.selected_glop.move_x_relative(-.1)
-            elif self.get_pressed("right"):
+            elif self.get_pressed('right'):
                 self.selected_glop.move_x_relative(.1)
             elif self.get_pressed("up"):
                 self.selected_glop.move_y_relative(.1)
@@ -383,7 +386,7 @@ class KivyGlopsTestingApp(App):
         #boxlayout.add_widget(mainform)
         #boxlayout.cols = 1
         #boxlayout.orientation = "vertical"
-        #boxlayout.useButton = Factory.Button(text="Use", id="useButton", size_hint=(.1,.1))
+        #boxlayout.useButton = Factory.Button(text='use', id="useButton", size_hint=(.1,.1))
         #boxlayout.add_widget(boxlayout.useButton)
         #return boxlayout
 

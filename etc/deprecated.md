@@ -1,3 +1,196 @@
+# Deprecated
+
+* PyGlopMaterial was converted to a dict and replaced by *_material functions
+```python
+class PyGlopMaterial:
+    #update copy constructor if adding/changing copyable members
+    properties = None
+    name = None
+    mtl_path = None
+        # mtl file path (only if based on WMaterial of WObject)
+
+    # region vars based on OpenGL ES 1.1
+    ambient_color = None  # vec4
+    diffuse_color = None  # vec4
+    specular_color = None  # vec4
+    emissive_color = None  # vec4
+    specular_exponent = None  # float
+    # endregion vars based on OpenGL ES 1.1
+
+    def __init__(self):
+        self.properties = {}
+        self.ambient_color = (0.0, 0.0, 0.0, 1.0)
+        self.diffuse_color = (1.0, 1.0, 1.0, 1.0)
+        self.specular_color = (1.0, 1.0, 1.0, 1.0)
+        self.emissive_color = (0.0, 0.0, 0.0, 1.0)
+        self.specular_exponent = 1.0
+
+    def get_is_glop_material(self, o):
+        result = False
+        try:
+            result = o._get_is_glop_material()
+        except:
+            pass
+        return result
+
+    def get_class_name(self):
+        return "PyGlopMaterial"
+
+    def _get_is_glop_material(self):
+        # use this for duck-typing (try, and if exception, not glop)
+        return True
+
+    def new_material_method(self):
+        return PyGlopMaterial()
+
+    # copy should have override in subclass that calls copy_as_subclass
+    # then adds subclass-specific values to that result
+    def copy(self, depth=0):
+        return copy_as_subclass(self.new_material_method, depth=depth+1)
+
+    def copy_as_subclass(self, new_material_method, ancestors=[],
+            depth=0):
+        target = new_material_method()
+        material_enable = False
+        self_class_name = self.get_class_name()
+        target_class_name = "unknown"
+        try:
+            target_class_name = target.get_class_name()
+            material_enable = (target_class_name == self_class_name)
+        except:
+            pass
+        if not material_enable:
+            print("[ PyGlopMaterial ] WARNING: target "
+                  + target_class_name + " is not self type "
+                  + self_class_name)
+        if self.properties is not None:
+            if get_verbose_enable():
+                print("[ PyGlopMaterial ] " + "  " * depth
+                      + "calling get_dict_deepcopy")
+            target.properties = get_dict_deepcopy(
+                self.properties, depth=depth+1)
+        target.name = self.name
+        target.mtl_path = self.mtl_path
+        target.ambient_color = self.ambient_color
+        target.diffuse_color = self.diffuse_color
+        target.specular_color = self.specular_color
+        target.emissive_color = self.emissive_color
+        target.specular_exponent = self.specular_exponent
+        return target
+
+    def emit_yaml(self, lines, min_tab_string):
+        #lines.append(min_tab_string+this_name+":")
+        if self.name is not None:
+            lines.append(min_tab_string + "name: " + \
+                         get_yaml_from_literal_value(self.name))
+        if self.mtl_path is not None:
+            lines.append(min_tab_string + "mtl_path: " + \
+                         get_yaml_from_literal_value(self.mtl_path))
+        for k,v in sorted(self.properties.items()):
+            lines.append(min_tab_string + k + ": " + \
+                         get_yaml_from_literal_value(v))
+```
+  * which also deprecates the related methods of PyGlop:
+```python
+    def get_is_glop_hitbox(self, o):
+        result = False
+        try:
+            result = o._get_is_glop_hitbox()
+        except:
+            pass
+        return result
+
+    def get_is_glop_material(self, o):
+        result = False
+        try:
+            result = o._get_is_glop_material()
+        except:
+            pass
+        return result
+
+```
+  * and deprecates the following from kivyglops.py:
+```python
+
+class KivyGlopMaterial(PyGlopMaterial):
+
+    def __init__(self):
+        super(KivyGlopMaterial, self).__init__()
+
+    def new_material_method(self):
+        return KivyGlopMaterial()
+
+    def get_class_name(self):
+        return "KivyGlopMaterial"
+
+    def copy(self, depth=0):
+        target = None
+        try:
+            target = self.copy_as_subclass(depth=depth+1)
+        except:
+            print("[ KivyGlopMaterial ] ERROR--could not finish" +
+                  " self.copy_as_subclass:")
+            view_traceback()
+        return target
+```
+
+* this was converted to a dict and replaced by *_hitbox functions
+```python
+class PyGlopHitBox:
+    minimums = None
+    maximums = None
+
+    def __init__(self):
+        self.minimums = [-0.25, -0.25, -0.25]
+        self.maximums = [0.25, 0.25, 0.25]
+
+    def copy(self, depth=0):
+        target = PyGlopHitBox()
+        target.minimums = copy.deepcopy(self.minimums)
+        target.maximums = copy.deepcopy(self.maximums)
+        return target
+
+    def get_is_glop_hitbox(self, o):
+        result = False
+        try:
+            o._get_is_glop_hitbox()
+        except:
+            pass
+        return result
+
+    # for duck-typing
+    def _get_is_glop_hitbox(self):
+        return True
+
+    def get_class_name(self):
+        return "PyGlopHitBox"
+
+    def contains_vec3(self, pos):
+        return pos[0]>=self.minimums[0] and pos[0]<=self.maximums[0] \
+            and pos[1]>=self.minimums[1] and pos[1]<=self.maximums[1] \
+            and pos[2]>=self.minimums[2] and pos[2]<=self.maximums[2]
+
+    def __str__(self):
+        return (str(self.minimums[0]) + " to " + str(self.maximums[0])
+                + ",  " + str(self.minimums[1]) + " to "
+                + str(self.maximums[1])
+                + ",  " + str(self.minimums[2]) + " to "
+                + str(self.maximums[2])
+        )
+
+    def emit_yaml(lines, min_tab_string):
+        lines.append(min_tab_string + "minimums: "
+                     + standard_emit_yaml(lines,
+                                          min_tab_string+tab_string,
+                                          self.minimums)
+        )
+        lines.append(min_tab_string + "maximums: "
+                     + standard_emit_yaml(lines,
+                                          min_tab_string+tab_string,
+                                          self.maximums)
+        )
+```
+
 * this was tacked onto the end of the else case (else keys is None) in deepcopy_with_my_type:
 ```python
                 # try:

@@ -1,7 +1,7 @@
 # KivyGlops
 Control 3D objects and the camera in your 3D Kivy app!
 <https://github.com/expertmm/KivyGlops>
-The operating principle of this project is to focus on completeness. This means that things will work before they work well. For example: walkmeshes should work before they work with physics; physics should work before they use Bullet; shaders should shade objects with or without textures before they shade objects with physically-based lighting; movement should work before bones and other mesh animations work; meshes should import in a fault-tolerant way before more formats are supported. Because of following this principle, all of those things have worked for a long time even though they are under heavy development. Another benefit of this approach is that you can create your project based on kivyglopsexampleblank.py (save it as a different py file in same folder) then upgrade all of the other files with a new version of KivyGlops and your project will increase in quality, but your project will not have been limited in quantity (scope) by adopting KivyGlops early. I hope that this software inspires you to create more complete publicly-licensed code projects, whether using KivyGlops or not.
+The operating principle of this project is to focus on completeness. This means that things will work before they work well. For example: walkmeshes should work before they work with physics; physics should work before they use Bullet; shaders should shade objects with or without textures before they shade objects with physically-based lighting; movement should work before bones and other mesh animations work; meshes should import in a fault-tolerant way before more formats are supported. Because of following this principle, all of those things have worked for a long time even though they are under heavy development. Another benefit of this approach is that you can create your project based on kivyglopsexampleblank.py (save it as a different py file in same folder) then upgrade all of the other files with a new version of KivyGlops and your project will increase in quality, but your project will not have been limited in quantity (scope) by adopting KivyGlops early. I hope that this software inspires you to create more complete publicly-licensed code projects, whether using KivyGlops or just learning from its OpenGL and GLSL code.
 ![Screenshot](https://raw.githubusercontent.com/expertmm/KivyGlops/master/screenshot01.png)
 
 ## Key Features
@@ -17,33 +17,33 @@ The operating principle of this project is to focus on completeness. This means 
   (click "Python 3," "Tutorials," "Start Learning Now," "Unit 2 (OpenGL)")
   "Unit 2" will be used to refer Unit 2 of this site in this document.
 * spec for actor_dict:
-  * actor_dict is a dictionary that can contain custom variables such as actor_dict["hp"]
+  * actor_dict is a dictionary that can contain custom variables such as actor_dict['hp']
   * actor_dict sent to set_as_actor_at will be copied (by self.deepcopy_with_my_type [which allows deepcopy of glops within a dict], not by reference), so you can change it later for making similar actors without any problems
-  * actor_dict will be filled in with required variables when you call set_as_actor_at, but the method will overlay your variables over the defaults, except for builtins with runtime info such as the `actor_dict["state"]` dict which should be left alone.
+  * actor_dict will be filled in with required variables when you call set_as_actor_at, but the method will overlay your variables over the defaults, except for builtins with runtime info such as the `actor_dict['state']` dict which should be left alone.
   * if you want ai, you must set actor_dict["ai_enable"] = True
     * if you enable ai, the on_process_ai event will occur every frame before ai variables are checked (but the AI won't do anything unless you set the actor_dict variables during on_process_ai; see the AI section below)
   (see also "Unit 2" lesson 7)
-  * can have clip_enable in actor dict: it and any other keys that are in `self.settings["templates"]["actor_properties"]` will be moved to `properties`
+  * can have clip_enable in actor dict: it and any other keys that are in `self.settings['templates']['actor_properties']` will be moved to `properties`
 * spec for item_dict:
-  * "uses" is a list containing use strings as follows:
-    * uses like "throw_linear" or "throw_arc" or "shoot_linear" causes the item to be thrown
-      * if "throw_" is in the use entry, player's ranges will be used (for example, if you set item_dict["throw_custom"], also set unit_glop.actor_dict["ranges"]["throw_custom"] (if already set as actor, you don't need to do actor_dict["ranges"] = {} for it will already exist as a dict)
-      * if "shoot_" is in the use entry, item's ranges will be used (for example, if you set item_dict["shoot_custom"], also set item_dict["ranges"]={} then item_dict["ranges"]["shoot_custom"])
+  * 'uses' is a list containing use strings as follows:
+    * uses like "throw_linear" or 'throw_arc' or "shoot_linear" causes the item to be thrown
+      * if "throw_" is in the use entry, player's ranges will be used (for example, if you set item_dict["throw_custom"], also set unit_glop.actor_dict['ranges']["throw_custom"] (if already set as actor, you don't need to do actor_dict['ranges'] = {} for it will already exist as a dict)
+      * if "shoot_" is in the use entry, item's ranges will be used (for example, if you set item_dict["shoot_custom"], also set item_dict['ranges']={} then item_dict['ranges']["shoot_custom"])
       * NOTE: though the units where actor_dict["ai_enable"] is True will attack from that range, physics will determine whether the projectile reaches its target
-  * "drop_enable": (True or False, or string like "yes", "no", etc) whether weapon leaves your inventory as soon as you use it (yes for rocks...hopefully you get the idea); considered True if not present
+  * 'drop_enable': (True or False, or string like "yes", "no", etc) whether weapon leaves your inventory as soon as you use it (yes for rocks...hopefully you get the idea); considered True if not present
     * special variables used along with drop_enable False:
-      "fired_sprite_size": tuple containing 2 floats (example: ` = (0.5, 0.5)`) in meters determining size of sprite in 3D space
-      "fired_sprite_path": path to sprite (image will be placed on an automatically-generated square)
-  * "projectile_keys": a list of variables that will be copied to the projectile (if projectile hits, projectile_dict will not be None, and will contain your variables whose keys you listed, when on_attacked_glop occurs)
+      'fired_sprite_size': tuple containing 2 floats (example: ` = (0.5, 0.5)`) in meters determining size of sprite in 3D space
+      'fired_sprite_path': path to sprite (image will be placed on an automatically-generated square)
+  * 'projectile_keys': a list of variables that will be copied to the projectile (if projectile hits, projectile_dict will not be None, and will contain your variables whose keys you listed, when on_attacked_glop occurs)
   * generated members:
-    "fires_glops": list of glops that will be fired (generated automatically if you use add_actor_weapon and have fired_sprite_path)
-* attack_uses is a list of strings and can be accessed or changed from within your implementation of KivyGlops using self.settings["globals"]["attack_uses"] (first ones in list will be preferred by actors where `actor_dict["ai_enable"]` is true)
+    'fires_glops': list of glops that will be fired (generated automatically if you use add_actor_weapon and have fired_sprite_path)
+* attack_uses is a list of strings and can be accessed or changed from within your implementation of KivyGlops using self.settings['globals']['attack_uses'] (first ones in list will be preferred by actors where `actor_dict["ai_enable"]` is true)
 * fit_enable entry in item_event dict returned by push_item denotes whether giving an item to the player was possible (false if inventory was full on games with limited inventory)
 * if you get a stack overflow, maybe one of the dict objects you put on an object contains a reference to the same object then copy or deepcopy_with_my_type was called
 * each program you make should be a subclass of KivyGlops or other PyGlops subclass (if you subclass PyGlops for framework you are using other than Kivy, your *Glops class should have all methods that KivyGlops has since PyGlops expects self to have implemented methods such as load_obj)
 * pyrealtime module (which does not require Kivy) keeps track of keyboard state, allowing getting keystate asynchronously
 * To modify any files (other than examples or tests) see "Developer Notes" section of this file for more information.
-* this_glop.state is for data which should be in saved state such as game save but not in exported object--also you can use item_dict["state"] or actor_dict["state"]; use properties or item_dict or actor_dict directly for permanent data.
+* this_glop.state is for data which should be in saved state such as game save but not in exported object--also you can use item_dict['state'] or actor_dict['state']; use properties or item_dict or actor_dict directly for permanent data.
 * any glop where glop.actor_dict is not None will be treated as an actor, so use set_as_actor_at instead of creating it yourself, so that the necessary variables will be set for proper engine function.
 * implement attacked_glop_at for unit-targeting attacks
 * implement on_at_rest for whenever items stop being affected by physics (such as for area of effect items such as launched missiles)
@@ -54,17 +54,17 @@ The operating principle of this project is to focus on completeness. This means 
     * to simply add a value, manipulate the global debug dict such as `debug_dict["time"] = "12:00pm"`
     * if you want to format a tuple, you could do `debug_dict["boss.pos"] = fixed_width(boss.pos, 4, " ")`
     * if you want a new category, make a new dict in debug_dict such as `debug_dict["earth"] = {}` then set your values such as `debug_dict["earth"]["water"] = 71.`
-* to change defaults for properties, actor_dict, and item_dict, see `settings["templates"]`
-    * settings guarantees certain values needed by the engine (like a class, but more "functional" and easier to automatically load and save only the relevant values in human-readable format), so avoid deleting any dicts or values or setting anything to None in the defaults of `settings` or `settings["templates"]` unless you have subclassed PyGlops in a way that you know you don't need the values
+* to change defaults for properties, actor_dict, and item_dict, see `settings['templates']`
+    * settings guarantees certain values needed by the engine (like a class, but more "functional" and easier to automatically load and save only the relevant values in human-readable format), so avoid deleting any dicts or values or setting anything to None in the defaults of `settings` or `settings['templates']` unless you have subclassed PyGlops in a way that you know you don't need the values
 
 ### AI
 * If you implement the KivyGlops on_process_ai method, you shouldn't move anything otherwise glitches will almost certainly occur. This is not a limitation of the engine--it is a recommendation to be logical, so that you ensure your visuals presented to the player make sense.
   * Things that you can safely do in on_process_ai include:
     * cause glop that is an actor to use items (via the use_item_at method of a glop)
-    * set indices and strings that will be used to control the character, such as values at the following keys in glop's actor_dict: "moveto_index", "target_index" which refer to objects in the self.glops list
+    * set indices and strings that will be used to control the character, such as values at the following keys in glop's actor_dict: 'moveto_index', 'target_index' which refer to objects in the self.glops list
   * Things that are not so great but still work:
     * set a non-ai variable in an actor_dict (such as, modify health--which should probably be done in on_at_rest or attacked_glop_at)
-  * NOTE: after on_process_ai is called, the `actor_dict["target_index"]` will be set to None if the item doesn't have any item where any of the item's uses are in attack_uses, unless you set `actor_dict["unarmed_melee_enable"] = True`
+  * NOTE: after on_process_ai is called, the `actor_dict['target_index']` will be set to None if the item doesn't have any item where any of the item's uses are in attack_uses, unless you set `actor_dict['unarmed_melee_enable'] = True`
 
 ### Teaching using KivyGlops:
 * update-kivyglops from LAN.bat will only work for students if teacher places KivyGlops in R:\Classes\ComputerProgramming\Examples\KivyGlops
@@ -72,8 +72,14 @@ The operating principle of this project is to focus on completeness. This means 
 * if segfault occurs, maybe camera and look_at location are same
 
 ## Changes
+(2018-07-31)
+* removed PyGlopLight in favor of dict and *_light functions
+(2018-07-30)
+* removed PyGlopHitBox in favor of dict and *_hitbox functions
+* removed PyGlopMaterial in favor of dict and *_material functions
+* deprecate get_is_glop_hitbox _get_is_glop_hitbox contains_vec3 get_is_glop_material _get_is_glop_material new_material_method
 (2018-01-27)
-* properly distinguish between bumpable and bumper during motivated_index loop (see `if mgs["at_rest_event_enable"]:`), and only call _internal_bump_glop if both are present (as opposed to a bumper bumping the world)
+* properly distinguish between bumpable and bumper during motivated_index loop (see `if mgs['at_rest_event_enable']:`), and only call _internal_bump_glop if both are present (as opposed to a bumper bumping the world)
 * removed some useless commented code
 * removed redundant rolling code that was missing important radius precheck and use
 (2018-01-21)
@@ -90,7 +96,7 @@ The operating principle of this project is to focus on completeness. This means 
 * used continue when possible to decrease nesting indentation
 * renamed `emit_debug_to_dict` to `debug_to`
 * added get_angles_vec3 function for where glop.look_at is too specific
-* replaced rotation_multiplier_y with glop state's new key `state["dst_angles"]` dimension lists, formerly `choice_try_theta` formerly `choice_try_theta_multipliers`; eliminated look_theta_multipliers
+* replaced rotation_multiplier_y with glop state's new key `state['dst_angles']` dimension lists, formerly `choice_try_theta` formerly `choice_try_theta_multipliers`; eliminated look_theta_multipliers
 * renamed get_location to get_pos; added get_angles, set_pos and set_angles methods to make accessing info from instructions standard between implementations if PyGlop*
 * renamed state's at_rest_enable to on_ground_enable for clarity, since could still be rolling even if True
 * (moved append_wobject from incorrect location [PyGlops] to KivyGlop) fix issue where color not set by KivyGlop's override of append_wobject
@@ -104,22 +110,22 @@ The operating principle of this project is to focus on completeness. This means 
 * renamed constrain_pos_to_walkmesh to get_walk_info and made it not modify params, only return
 * stopped using get_vec3_from_point in favor of swizzling Translate (via _t_ins.xyz)
 * changed moving_x, moving_y, moving_z to choice_local_vel_mult list
-* only use walkmesh when `m_glop.properties["clip_enable"]` is True
+* only use walkmesh when `m_glop.properties['clip_enable']` is True
 * moved __str__ from PyGlops to PyGlop and gave PyGlops its own
 * added get_pos to PyGlop and KivyGlop
 * pyglops.py: in copy_as_subclass, use different copy of ancestor list for each call to deepcopy_with_my_type
 * renamed _translate_instruction to _t_ins, _rotate_instruction_* to _r_ins_*, _scale_instruction to _s_ins
-* changed _world_grav_acceleration to `settings["world"]["gravity"]`,
-  _default_fly_enable to `settings["templates"]["actor"]["fly_enable"]`,
-  _camera_person_number to `settings["globals"]["camera_perspective_number"]` (and fixed the set_camera_mode method which was setting a local instead of member)
+* changed _world_grav_acceleration to `settings['world']['gravity']`,
+  _default_fly_enable to `settings['templates']['actor']['fly_enable']`,
+  _camera_person_number to `settings['globals']['camera_perspective_number']` (and fixed the set_camera_mode method which was setting a local instead of member)
 * changed glop's x_velocity, y_velocity, and z_velocity to `velocity` list
 * kivyglops.py (KivyGlops update): replaced theta and moving_theta with choice_try_theta and choice_world_turn_theta which are also used more consistently
 * fixed view pitch (was adding 90 degrees--should be radians if any--see `view_top =`
 * renamed get_constrained_info_using_walkmeshes to get_walk_info
 * changed choice-based movement from a movement modifier to a velocity modifier
 * migrated hit radius, reach radius, eye height (each with underscores) to dicts
-* moved defaults for actor_dict and properties to `settings["templates"]["actor"]` and `settings["templates"]["properties"]`)
-* added `settings["fallback"]["actor"]["ranged_aquire_radius"]` (20.)
+* moved defaults for actor_dict and properties to `settings['templates']['actor']` and `settings['templates']['properties']`)
+* added `settings["fallback"]['actor']["ranged_aquire_radius"]` (20.)
 (2018-01-14)
 * Changed resources license to CC0 to comply with changes to GitHub TOS (see <http://joeyh.name/blog/entry/what_I_would_ask_my_lawyers_about_the_new_Github_TOS/>)--and removed or remade any resources not compatible with CC0.
     * kivyforest-floor.png was remade from scratch in Krita
@@ -135,12 +141,12 @@ The operating principle of this project is to focus on completeness. This means 
 * use this_dict.get (returns None if missing)  instead of checks for key in a dict, when behavior should be same whether missing or None
 * add inventory_index to item to know whether it is in a player's inventory, and don't delete owner or owner_key until projectile_dict is removed (when lands)
 * reset glop.state (formerly glop.dat) by setting it to [] not {}
-* replace `item_glop.item_dict["RUNTIME_last_used_time"]` with `item_dict["state"]["last_used_time"]`
-* replace `item_dict["glop_index"]` with glop_index INSIDE `item_dict["state"]` which is a dict containing situational data.
+* replace `item_glop.item_dict["RUNTIME_last_used_time"]` with `item_dict['state']['last_used_time']`
+* replace `item_dict['glop_index']` with glop_index INSIDE `item_dict['state']` which is a dict containing situational data.
 * rename glop.dat to glop.state, and only use for situational data (see Usage section regarding use of state)
-* rename `["tmp"]["glop"]` (for relationship in `glop.state["links"]` dict) to `["state"]["parent_glop"]` for clarity
-* kivyglops.py (KivyGlops update): only make object stick to glop using `glop.state["links"]` NOT owner NOR owner_key
-* now ONLY save "links" in child for consistency
+* rename `["tmp"]['glop']` (for relationship in `glop.state['links']` dict) to `['state']['parent_glop']` for clarity
+* kivyglops.py (KivyGlops update): only make object stick to glop using `glop.state['links']` NOT owner NOR owner_key
+* now ONLY save 'links' in child for consistency
 * rename all index-getting methods to find_*: index_of_mesh to find_glop; common.py: get_index_by_name to find_by_name
   * the follwing remain same since gets actual sub-object not index:
     common.py: get_by_name; pyglops.py: get_mesh_by_name
@@ -152,14 +158,14 @@ The operating principle of this project is to focus on completeness. This means 
 * use `velocity[0] * got_frame_delay` properly (as opposed to `velocity[0]` alone) even if no floor
 * ensure ai and hit detection are done before movement
 * set state variables for choice-based movement, for ai and player the same way (instead of making local variables)
-    * local attack_radius changed to `self.glops[bumper_index]["state"]["acquire_radius"]`
-    * local attack_s changed to `self.glops[bumper_index]["state"]["desired_use"]`
-    * local weapon_index changed to `self.glops[bumper_index]["state"]["choice_ii"]`
-    * local this_glop_free_enable eliminated (see *_glop.state["on_ground_enable"])
-    * local stop_this_bumpable_enable eliminated (see *_glop.state["at_rest_event_enable"])
+    * local attack_radius changed to `self.glops[bumper_index]['state']['acquire_radius']`
+    * local attack_s changed to `self.glops[bumper_index]['state']['desired_use']`
+    * local weapon_index changed to `self.glops[bumper_index]['state']['choice_ii']`
+    * local this_glop_free_enable eliminated (see *_glop.state['on_ground_enable'])
+    * local stop_this_bumpable_enable eliminated (see *_glop.state['at_rest_event_enable'])
     * constrain to floor etc after that
 * made flag where all uses containing "shoot_" use item's range instead of player's (affects "Unit 2" lessons 6, 7, and 8)
-* instead of "inventory_index" selected_item_event now has "selected_index" and "fit_at" which is >=0 if fit into inventory (both are indices referring to `actor_dict["inventory_items"]` list); and in push_glop, slot `event["fit_at"]` is automatically selected if no slot (-1) was selected (select_item_event_dict is normally used only by after_selected_item; returned by push_glop_item, push_item, sel_next_inv_slot)
+* instead of 'inventory_index' selected_item_event now has 'selected_index' and 'fit_at' which is >=0 if fit into inventory (both are indices referring to `actor_dict['inventory_items']` list); and in push_glop, slot `event['fit_at']` is automatically selected if no slot (-1) was selected (select_item_event_dict is normally used only by after_selected_item; returned by push_glop_item, push_item, sel_next_inv_slot)
 * renamed attacked_glop to on_attacked_glop (affects "Unit 2" lessons 7, 8, and 9)
 * renamed remaining event handlers you can reimplement to start with `on_`: renamed load_glops to on_load_glops (affects all "Unit 2" lessons), update_glops to on_update_glops (affects "Unit 2" lesson 2), `display_explosion` to `on_explode_glop` (affects "Unit 2" lesson 8), `process_ai` to `on_process_ai` (affects "Unit 2" lesson 9)
 * kivyglops.py: radically improved update method: fixed issues, unified decision-making variables for ai and player; unified physics for all glops
@@ -169,13 +175,13 @@ The operating principle of this project is to focus on completeness. This means 
 * added infinite recursion checking to copy_as_subclass & deepcopy_with_my_type (and fixed deepcopy_with_my_type)
 * kivyglops.py: moved code using walkmesh from update to new method: constrain_glop_to_walkmesh
 * changed boolean is_out_of_range to list in_range_indices which makes way more sense (bumpable gets one bump per bumper, and thrower can be added to list so bumper doesn't hit itself with the bumpable)
-* pyglops.py: limited eye height to 86.5% of hitbox.maximums[1] in calculate_hit_range (so throwing looks better; see "Phi in the human body")
+* pyglops.py: limited eye height to 86.5% of hitbox['maximums'][1] in calculate_hit_range (so throwing looks better; see "Phi in the human body")
 * pyglops.py: eliminated `fired_glop.name = str(fires_glop.name) + "." + str(projectile_dict["subscript"])` (was redundant since `fired_glop.name = "fired[" + str(self.fired_count) + "]"` was already used)
 * pyglops.py: (PyGlops) combined throw types into single throw_glop method
-* pyglops.py: changed usage of whether item drops on use from `["droppable"] = "no"` to `["drop_enable"] = False`
+* pyglops.py: changed usage of whether item drops on use from `['droppable'] = "no"` to `['drop_enable'] = False`
 * pyglops.py: (PyGlop) added `has_item_with_any_use(uses)` method
 * kivyglops.py: (KivyGlops update) fixed ai_enable case (weapon choosing, attacking only if target is glop, etc)
-* pyglops.py: now required to use `item_dict["projectile_keys"]` to specify any keys (such as hit_damage) from item_dict which should be copied to projectile_dict while traveling
+* pyglops.py: now required to use `item_dict['projectile_keys']` to specify any keys (such as hit_damage) from item_dict which should be copied to projectile_dict while traveling
 * pyglops.py: removes owner as should
 (2018-01-11)
 * pyglops.py: (move `is_out_of_range` from `_internal_bump_glop` to `_update` in kivyglops.py and set immediately after checked) fixed issue where is_out_of_range was only being set for items
@@ -190,21 +196,21 @@ The operating principle of this project is to focus on completeness. This means 
 * pyglops.py: (if as_projectile in item_dict used, set bump_enable to True--is set to false when obtained) make thrown items bumping work while traveling (airborne after thrown, etc)
 * pyglops.py: put projectile_dict case before item_dict case in _internal_bump_glop so projectiles that are items work (such as thrown glop items with weapon_dict stored at as_projectile key in item_dict)
 * common.py: now you can do `from common import *` then `set_verbose_enable(True)` for manipulating debug output manually (now False can stay as default during debugging)
-* pyglops.py: now you can set `item_dict["droppable"]` to false for any item to be emitted (produces items which can't be picked up, so that inventory is not duplicated forever)
+* pyglops.py: now you can set `item_dict['droppable']` to false for any item to be emitted (produces items which can't be picked up, so that inventory is not duplicated forever)
 * pyglops.py: (now multiplies velocities [meters per second] by got_frame_delay [seconds] as should) make speed of objects more realistic
 (2018-01-10)
-* move `properties["inventory_items"]` to `actor_dict["inventory_items"]` (same for `"inventory_index"`)
+* move `properties['inventory_items']` to `actor_dict['inventory_items']` (same for `'inventory_index'`)
 * move `is_linked_as`, `get_link_as`, `get_link_and_type`, `push_glop_item`, `pop_glop_item` from KivyGlop to PyGlop
-* made `projectile_dict` a deepcopy of `item_glop.item_dict["as_projectile"]` instead of a reference since `projectile_dict` contains flight-specific information
-* changed `item["use"] = "*"` to `item["uses"] = ["*"]`  where * is a use for the item such as `throw_arc` or `melee`
-* replaced `bump_sound_paths` with `properties["bump_sound_paths"]`
+* made `projectile_dict` a deepcopy of `item_glop.item_dict['as_projectile']` instead of a reference since `projectile_dict` contains flight-specific information
+* changed `item['use'] = "*"` to `item['uses'] = ["*"]`  where * is a use for the item such as `throw_arc` or `melee`
+* replaced `bump_sound_paths` with `properties['bump_sound_paths']`
 * created `add_damaged_sound_at` method for PyGlops scene (in properties so available to non-actors)
 * (no longer inherits from Widget) workaround disturbing `'dict' is not callable` error in Kivy 1.9.0
 * pyglops.py: (copy_as_subclass call in copy) fix potentially very bad bug -- `self.copy_as_subclass(self.new_glop_method, new_material_method)` had 3 params (not correct) 2nd one being another self.new_glop_method
 * remove redundant call to _init_glop in KivyGlop __init__ (still calls it if super fails)
 * improved monkey: added eyelids, UV mapped eyelids, improved texture for eyes and around eyes
 * now uses _deferred_load_glops to load glops; to be more clear and functional, made separate load, loading, loaded booleans for *_glops_enable
-* pyglops.py: _internal_bump_glop now plays random sound from bumper's `properties["damaged_sound_paths"]`
+* pyglops.py: _internal_bump_glop now plays random sound from bumper's `properties['damaged_sound_paths']`
 (2018-01-09)
 * fresnel.glsl utilize per-object booleans
 * renamed shade-kivyglops-minimal.glsl to kivyglops-testing.glsl
@@ -213,7 +219,7 @@ The operating principle of this project is to focus on completeness. This means 
 * renamed print_location to log_camera_info
 * consolidated get_verbose_enable() to be in one file only (common.py)
 * pyglops.py: removed uses of `Logger` to `print` to be framework-independent
-* eliminated scene.log_camera_info(); created kivyglop.debug_to(dict); moved ui's camera_walk_units_per_second and camera_turn_radians_per_second to *_glop.actor_dict["land_speed"] and "land_degrees_per_second" (player_glop in this case); changed their per_frame equivalents to local variables in kivyglops.update
+* eliminated scene.log_camera_info(); created kivyglop.debug_to(dict); moved ui's camera_walk_units_per_second and camera_turn_radians_per_second to *_glop.actor_dict['land_speed'] and 'land_degrees_per_second' (player_glop in this case); changed their per_frame equivalents to local variables in kivyglops.update
 * move `self.camera_walk_units_per_second = 12.0` to actor_dict
 * move `self.camera_turn_radians_per_second = math.radians(90.0)` to actor_dict
 * fixed issue where projectile sprites not visible (probably a refactoring bug)
@@ -268,7 +274,7 @@ The operating principle of this project is to focus on completeness. This means 
 * store vertex_group_type in WObject (for future implementation)
 * standardized emit_yaml methods (and use standard_emit_yaml when necessary) for consistent yaml and consistent coding: (list, tab, name [, data | self])
 * wobjfile.py: always use face groups, to accomodate face groups feature of OBJ spec [1]; added more fault-tolerance to by creating vertex list whenever first vertex of a list is declared, and creating face groups whenever first face of a list is declared
-* wobjfile.py: elimintated smoothing_group in favor of this_face_group_type and this_face_group_name (this_face_group_type "s" is a smoothing group)
+* wobjfile.py: elimintated smoothing_group in favor of this_face_group_type and this_face_group_name (this_face_group_type 's' is a smoothing group)
 (2017-12-17)
 * frames_per_second moved from KivyGlops to KivyGlops window since is implementation specific (and so KivyGlops instance doesn't need to exist during KivyGlopsWindow constructor)
 (2017-12-16)
@@ -315,30 +321,30 @@ The operating principle of this project is to focus on completeness. This means 
 
 
 ## Known Issues
-* only set glop's glop_index and glop's state["glop_index"] in add_glop, nowhere else
-* add pathing for processing `actor_dict["target_pos"]` (even if not ai_enable, in case of strategy game where target_pos is set on a player-controlled glop)
+* only set glop's glop_index and glop's state['glop_index'] in add_glop, nowhere else
+* add pathing for processing `actor_dict['target_pos']` (even if not ai_enable, in case of strategy game where target_pos is set on a player-controlled glop)
 * implement seperable_offsets for explosions
 * eliminate foot_reach in favor of using hitbox
 * did not test air-move or double-jump in on_update_glops
-* eliminate look_target_glop in favor of a relationship in "links"
+* eliminate look_target_glop in favor of a relationship in 'links'
 * upload updated version of lessons to website mentioned in Usage section (in the meantime see testing.py for updated code, or see Changes section for anything that says "renamed" or "required")
 * pyglops.py: remove kivy-specific _translate_instruction_* (in throw cases)
-* projectile_speed of `item_dict` or of `item_dict["as_projectile"]` should override throw_speed of actor ONLY if present
+* projectile_speed of `item_dict` or of `item_dict['as_projectile']` should override throw_speed of actor ONLY if present
 * allow rocks to roll (and keep projectile_dict until they stop) in opengl9
-* pyglops.py: (_internal_bump_glop; may not be an issue) plays `properties["bump_sound_paths"]` for both bumper (actor) and bumpable (item)
-* pyglops.py: eliminate item_dict["fire_type"] dict (may contain "throw_linear" key) and merge with item_dict["uses"] (test with opengl6 or opengl7 since they use a weapon dict that is NOT a glop (only has fired_glop)--they may need to be changed)
+* pyglops.py: (_internal_bump_glop; may not be an issue) plays `properties['bump_sound_paths']` for both bumper (actor) and bumpable (item)
+* pyglops.py: eliminate item_dict['fire_type'] dict (may contain "throw_linear" key) and merge with item_dict['uses'] (test with opengl6 or opengl7 since they use a weapon dict that is NOT a glop (only has fired_glop)--they may need to be changed)
 * pyglops.py: eliminate (or improve & rename) index_of_mesh, select_mesh_at
 * see `failed to deepcopy` -- not sure why happens
 * by default do not set bounds; modify instructions on expertmultimedia.com to set bounds for office hallway project
 * make a file-reading kernel for loading obj files to avoid blocking io
-* this is a pending change (may not be changed ever) #instructions should be changed from `item_dict["use"] = "throw_arc"` to:
-  `item_dict["uses"] = ["throw_arc"]`
+* this is a pending change (may not be changed ever) #instructions should be changed from `item_dict['use'] = 'throw_arc'` to:
+  `item_dict['uses'] = ['throw_arc']`
   see example-stadium for more info
 * pyglops.py (PyGlops __init__): implement _player_indices (already a list)
 * fix nonworking ishadereditor.py (finish 3D version)
 * pivot_to_g_enable is broken (must be left at default True): (defaults for pivot_to_g_enable are flipped since broken) pyglops.py: (append_wobject) make self.transform_pivot_to_geometry() optional, for optimization and predictability (added to set_as_item where pivot_to_g_enable; also added that option, to set_as_item, load_obj, get_glop_list_from_obj, append_wobject)
 * renamed etc/kivyglops-mini-deprecated.py to testingkivy3d.py and MinimalKivyGlopsWindow class in it to TestingKivy3D
-* see `context.add(this_glop._color_instruction)  # TODO: asdf add as uniform instead`
+* see `context.add(this_glop._color_instruction)  # TODO: asdf add with set_uniform instead`
 * Only load unique textures once (see "Loaded texture")
 * if object has upward momentum, shouldn't stick to ground (is set near ground if player is near ground during `def use_selected`)
 * pyglops.py: (`update`) throw_linear vs throw_arc setting is ignored (instead, gravity is always applied to missile if _cached_floor_y is present, which is present if there is a walkmesh, in which case ground_y is calculated then object's _cached_floor_y is set to ground_y)
@@ -353,7 +359,7 @@ The operating principle of this project is to focus on completeness. This means 
 * fired sprite should stay facing camera (as add_actor_weapon sets look_target_glop)
 * deal with situation-dependent members when saving glop:
     * `look_target_glop` which is a reference and for that reason copied by ref
-    * `weapon_dict["fires_glops"]` which may be runtime-generated mesh such as texture on square mesh (or "meshes/sprite-square.obj")
+    * `weapon_dict['fires_glops']` which may be runtime-generated mesh such as texture on square mesh (or "meshes/sprite-square.obj")
 * Add the following code to expertmultimedia.com boundary detection lesson since was removed from KivyGlops __init__ (or add after call to on_update_glops??):
   ```This is done axis by axis--the only reason is so that you can do OpenGL boundary detection lesson from expertmultimedia.com starting with this file
     if self.world_boundary_min[0] is not None:
@@ -440,7 +446,7 @@ Resources are provided under Creative Commons Attribution Share-Alike (CC-BY-SA)
     PyGlop's __init__ method
 position is vec4 as per https://en.wikipedia.org/wiki/Homogeneous_coordinates
 * Kivy has no default model view matrix, so main window provides:
-uniform mat4 modelview_mat;  //derived from self.canvas["modelview_mat"] = modelViewMatrix
+uniform mat4 modelview_mat;  //derived from self.canvas['modelview_mat'] = modelViewMatrix
 uniform mat4 projection_mat;  //derived from self.canvas["projection_mat"] = projectionMatrix
 
 ## Developer Notes
@@ -483,7 +489,7 @@ This spec allows one dict to be used to completely store the Wavefront mtl forma
     * The wmaterial's key in the wmaterials dict is the material name (given after "newmtl" in mtl file)
     * each key is a material command, referring to a deeper dict, except "#" which is comments list
         * each material command dict has the following keys:
-            * "values" (a list of values)
+            * 'values' (a list of values)
                 * if the command's (such as Kd) expected values are color values (whether rgb, or CIEXYZ if commands ends in " xyz"), only one color value means other 2 are same (grayscale)!
                 * if the command's expected value is a filename, values is still a list--first value is filename, additional values are params (usually a factor by which to multiply values in the file)
                     * map can override: `Ka` (ambient color), `Kd` (diffuse color), `Ks` (specular color), `Ns` (specular coefficient scalar), `d` (opacity scalar), and surface normal (by way of bump map not normal map) according to spec
@@ -495,11 +501,11 @@ This spec allows one dict to be used to completely store the Wavefront mtl forma
             * additional keys are args, where value is a list of the arg's values (if space-separated value in original mtl file starts with hyphen, it is an arg; an arg takes remaining values as items of its list, until next hyphen (or last entry, which is always appended to 'values')
                 * may be an empty list, such as when key is "halo" (as specified by `-halo` option in mtl file)
     * examples (wmaterial is equivalent to wmaterials[material_name]):
-        * if line in mtl file is `Kd 0.5 0.5 0.5` then dict wmaterial["Kd"] will have a list at "values" key which is ["0.5", "0.5", "0.5"]
-        * if line in mtl file is `bump -s 1 1 1 -o 0 0 0 -bm 1 sand.mpb` then the dict wmaterial["bump"] will have a list at "values" key which is a list containing only the string sand.mpb; and dict at "bump" key containing keys s, o, and bm which refer to lists containing the values following those args
-        * if line in mtl file is `Ka spectral file.rfl 1.0` then, as per spec, `Ka spectral` is considered as the statement (or command) and wmaterial["Ka spectral"] will be a dict containing only one key, "values" (since there are no other args in this case), which is `["file.rfl", "1.0"]` where 1.0 is the factor by which to multiply values in the file, as specified in the given mtl line.
-        * if line in mtl file is `Ka xyz 1.0 1.0 1.0` then, as per spec, `Ka xyz` is considered as the statement (or command) and wmaterial["Ka spectral"] will be a dict containing only one key, "values" (since there are no other args in this case), which is `["1.0", "1.0", "1.0"]`.
-        * if line in mtl file is `refl -type cube_top file.png` then the dict wmaterial["refl -type cube_top"] will have a list at "values" key which is ["file.png"]; the entire preceding part `refl -type cube_top` will be considered as the command to avoid overlap (to force consistent rule: one instance of command per material).
+        * if line in mtl file is `Kd 0.5 0.5 0.5` then dict wmaterial['Kd'] will have a list at 'values' key which is ["0.5", "0.5", "0.5"]
+        * if line in mtl file is `bump -s 1 1 1 -o 0 0 0 -bm 1 sand.mpb` then the dict wmaterial['bump'] will have a list at 'values' key which is a list containing only the string sand.mpb; and dict at 'bump' key containing keys s, o, and bm which refer to lists containing the values following those args
+        * if line in mtl file is `Ka spectral file.rfl 1.0` then, as per spec, `Ka spectral` is considered as the statement (or command) and wmaterial["Ka spectral"] will be a dict containing only one key, 'values' (since there are no other args in this case), which is `["file.rfl", "1.0"]` where 1.0 is the factor by which to multiply values in the file, as specified in the given mtl line.
+        * if line in mtl file is `Ka xyz 1.0 1.0 1.0` then, as per spec, `Ka xyz` is considered as the statement (or command) and wmaterial["Ka spectral"] will be a dict containing only one key, 'values' (since there are no other args in this case), which is `["1.0", "1.0", "1.0"]`.
+        * if line in mtl file is `refl -type cube_top file.png` then the dict wmaterial["refl -type cube_top"] will have a list at 'values' key which is ["file.png"]; the entire preceding part `refl -type cube_top` will be considered as the command to avoid overlap (to force consistent rule: one instance of command per material).
 
 ### Regression Tests
 * `debug[` where should be `debug_dict[`
@@ -512,23 +518,23 @@ This spec allows one dict to be used to completely store the Wavefront mtl forma
 * using `/ self.ui.frames_per_second` for determining distance per frame, where should use `* got_frame_delay` (which is not only in seconds but is the actual frame delay)
 * always use: in_range_indices on bumpable and not bumper, for consistency
 * always do: hit detection & a.i. BEFORE movement/physics (& programmer-overridable events such as on_update_glops), for intuitiveness (the situation that the user sees on the screen is the situation on which AI is based [is what the AI sees], and on which results [such as hitting a platform] are based)
-* checking for .rel or "rel" in child (should check for "links")
-* checking for "links" in parent (should check in child)
+* checking for .rel or "rel" in child (should check for 'links')
+* checking for 'links' in parent (should check in child)
 * use of not (x in y) where x and y are anything--(doesn't cause bug, but more readable as) where should be x not in y
 * use of not (x is y) where x and y are anything--(doesn't cause bug, but more readable as) where should be x is not y
 * checking for key in this_dict when answer None is treated same as missing--(doesn't cause bug, but) this_dict.get(key) is python's solution)
 * deleting stuff from _bumper_indices or _bumpable_indices while running the bump loop [see "  # can't delete until bump loop is done in update" (set to None instead--they will be cleaned up by update after the bump loop--see # endregion nested bump loop)
-* calling push_glop_item or push_item without removing it from _bumpable_indices (IF "fit_enable" in return dict)
-* `actor_dict["inventory_list"]` should be `actor_dict["inventory_items"]`
-* make sure all attack uses are in PyGlops.settings["globals"]["attack_uses"] (for ai or other purposes)
+* calling push_glop_item or push_item without removing it from _bumpable_indices (IF 'fit_enable' in return dict)
+* `actor_dict["inventory_list"]` should be `actor_dict['inventory_items']`
+* make sure all attack uses are in PyGlops.settings['globals']['attack_uses'] (for ai or other purposes)
 * using fired_glop.item_dict in throw_glop where should instead use item_dict param (also, should create fired_glop.projectile_dict, and warn if already exists; projectile_dict is set to None on impact)
 * calling a function and passing self as the first param (almost always wrong)
 * using str(type(x)) where should be type(x).__name__
 * result of builting type(x) function assumed to be string without using str(type(x)) where x is anything
 * len used inside "[]" without "-1" (or "- 1" or other spacing)
-* if you set `self.glops[index].properties["bump_enable"] = True` you should also do something like:
+* if you set `self.glops[index].properties['bump_enable'] = True` you should also do something like:
 ```python
-self.glops[index].properties["bump_enable"] = True
+self.glops[index].properties['bump_enable'] = True
 self.glops[index].calculate_hit_range()
 #usually you would manually control whether is actor or item:
 if self.glops[index].actor_dict is not None:
@@ -538,8 +544,8 @@ else:
     #item
     self._bumpable_indices.append(index)
 if self.glops[index].item_dict is not None:
-    if "as_projectile" in self.glops[index].item_dict
-        self.glops[index].projectile_dict = self.glops[index].item_dict["as_projectile"]
+    if 'as_projectile' in self.glops[index].item_dict
+        self.glops[index].projectile_dict = self.glops[index].item_dict['as_projectile']
 ```
 
 ### Shader Spec

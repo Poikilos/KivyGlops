@@ -1,7 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'human-5ft4-7.5-expertmm.blend'
 # www.blender.org
 mtllib human-5ft4-7.5-expertmm.mtl
-o Player1Height5ft4Is1.64592m7.5HeadsSoHeadIs0.000_Player1Mesh.001
+o player5ft4
 v -0.032706 1.538598 0.079761
 v -0.032706 1.542660 0.076957
 v -0.032706 1.545933 0.073262
