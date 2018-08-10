@@ -1,5 +1,0 @@
-* Setting alpha of material input node does nothing. I set it to 0.9 to make it findable in the glsl code.
-* Alpha is set to .3 in Material Button Tab in Blender Game renderer.
-* Alpha is only shown in Blender Game renderer after pushing 'p'
-* Alpha is grayed out in Material Button in Blender Game renderer until Transparency is checked in Blender Render renderer (under "Render Pipeline Options").
-* Material's Alpha output was connected to Output's Alpha input (required)

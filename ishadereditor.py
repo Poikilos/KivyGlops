@@ -1,6 +1,10 @@
 #from kivy.uix.boxlayout import BoxLayout
 #from kivy.app import App
 #from kivy.factory import Factory
+
+# based on a very old version of
+# https://kivy.org/docs/examples/gen__demo__shadereditor__main__py.html
+# which is MIT licensed
 '''
 Live Shader Editor
 ==================
@@ -33,7 +37,8 @@ from pygments.lexers import GLShaderLexer
 from kivyglops import *
 
 #aka MainForm
-class ShaderEditor(FloatLayout):
+#class ShaderEditor(FloatLayout):
+class ShaderEditor(KivyGlopsWindow):
     pass
     #source = StringProperty('data/logo/kivy-icon-512.png')
 
@@ -125,6 +130,14 @@ void main (void){
     scene = None
     frames_per_second = 30.0
 
+    def suspend_debug_label_update(self, enable):
+        #TODO: do something useful here
+        pass
+
+    def set_debug_label(self, text):
+        #TODO: do something useful here
+        pass
+
     def add_glop(self, this_glop, set_visible_enable=None):
         if set_visible_enable is not None:
             this_glop.state["visible_enable"] = set_visible_enable
@@ -136,7 +149,8 @@ void main (void){
         self.scene.selected_glop_index = len(self.scene.glops)
         self.scene.selected_glop = this_glop
         context = this_glop.get_context()
-        context.shader.source = self.gl_widget.canvas.shader.source
+        #context.shader.source = self.gl_widget.canvas.shader.source
+        context.shader.source = self.gl_widget.canvas.source
         this_mesh_name = ""
         if this_glop.name is not None:
             this_mesh_name = this_glop.name

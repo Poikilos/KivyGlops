@@ -1,9 +1,0 @@
-Node Params:
-Diffuse Intensity: .87
-Color: Texture's color output
-Specular Color: .997, .997, .997, 1.0
-
-Material Params (probably wont' show up in glsl export):
-Specular Intensity: .77
-Hardness: 53
-Diffuse Color: .84,.84,.84

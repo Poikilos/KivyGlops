@@ -413,7 +413,7 @@ The operating principle of this project is to focus on completeness. This means 
 * show selected item in hand
 * Use Z Buffer as parameter for effects such as desaturate by inverse normalized Z Buffer value so far away objects are less saturated1
 * Implement thorough gamma correction (convert textures to linear space, then convert output back to sRGB) such as http://www.panda3d.org/blog/the-new-opengl-features-in-panda3d-1-9/
-* Implement standard shader inputs and Nodes with Blender as a standard
+* Implement standard shader inputs and Nodes (see Blender as a reference)
     * allow Mix nodes
     * allow dot of Normal to be used as a Factor, such as for putting the result into an Mix node with black and white (or black and a color), where the result is sent to a Mix node set to Add (to create a colored fringe)
 * Implement different shaders for different objects (such as by changing shader.vs and shader.fs to different vertex shader and fragment shader code after PopMatrix?)
@@ -552,8 +552,12 @@ if self.glops[index].item_dict is not None:
 vertex color is always RGBA
 if vertex_color_enable then vertex color must be set for every vertex, and object diffuse_color is ignored
 texture is overlayed onto vertex color
+
 #### OpenGL ES notes
 * mix is the ES equivalent of lerp (linear interpolation), which is the same as alpha blending
+
+#### See Also
+* kivy3 forks are getting pretty advanced now (lit models with texture optional). If you want a framework and not a game engine, try `pip install https://github.com/KeyWeeUsr/kivy3/zipball/master`
 
 ## Works Cited
 [1] Diane Ramey, Linda Rose, and Lisa Tyerman, "Object Files (.obj)," paulbourke.net, October 1995. [Online]. Available: http://paulbourke.net/dataformats/obj/. [Accessed Dec. 28, 2017].
