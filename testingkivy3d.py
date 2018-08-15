@@ -125,7 +125,7 @@ class Testing3DWidget(Widget):
                 vertex_components[self.COLOR_OFFSET+i] = set_color[i]
             if (len(set_color)) < 4 and (self.vertex_depth > 3):
                 vertex_components[self.COLOR_OFFSET+3] = 1.0
-        normals = [0.0]*3;
+        normals = [0.0] * 3
         for i in range(0, 3):
             normals[i] = set_coords[i]
         normalize_3d_by_ref(normals)
