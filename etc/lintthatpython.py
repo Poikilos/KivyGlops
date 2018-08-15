@@ -228,7 +228,8 @@ def lint_that_python(filename):
     # NOT used (Python 2):
     # first line has function-like statements:
     builtin_py2_keywords = ['print']
-    builtin_py2_syms = ['iteritems', 'itervalues', 'viewitems']
+    builtin_py2_syms = ['iteritems', 'itervalues', 'viewitems',
+                        'xrange']
     # TODO: check for use of `%` string operator deprecated in Python 3
     # builtin_syms.extend(builtin_py2_keywords)
     # builtin_syms.extend(builtin_py2_syms)
