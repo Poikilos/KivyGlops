@@ -1,41 +1,96 @@
 # KivyGlops
+<https://github.com/poikilos/KivyGlops>
+
 Control 3D objects and the camera in your 3D Kivy app!
-<https://github.com/expertmm/KivyGlops>
-The operating principle of this project is to focus on completeness. This means that things will work before they work well. For example: walkmeshes should work before they work with physics; physics should work before they use Bullet; shaders should shade objects with or without textures before they shade objects with physically-based lighting; movement should work before bones and other mesh animations work; meshes should import in a fault-tolerant way before more formats are supported. Because of following this principle, all of those things have worked for a long time even though they are under heavy development. Another benefit of this approach is that you can create your project based on kivyglopsexampleblank.py (save it as a different py file in same folder) then upgrade all of the other files with a new version of KivyGlops and your project will increase in quality, but your project will not have been limited in quantity (scope) by adopting KivyGlops early. I hope that this software inspires you to create more complete publicly-licensed code projects, whether using KivyGlops or just learning from its OpenGL and GLSL code.
-![Screenshot](https://raw.githubusercontent.com/expertmm/KivyGlops/master/screenshot01.png)
+
+The operating principle of this project is to focus on completeness.
+This does not mean that the engine is completely opinionated, but
+rather that the API is comprehensive enough to make various types of
+games. The project will try not to limit the programmer, but also
+provide ways to create games that are not boring to code. This means
+that things will work before they work well.
+
+For example:
+- walkmeshes should work before they work with physics
+- physics should
+  work before they use Bullet
+- shaders should shade objects with or without textures
+  - before they shade objects with physically-based lighting
+- movement should work before bones and other mesh animations work
+- meshes should import in a fault-tolerant way before more formats
+  are supported.
+
+(See also [Issues](https://github.com/poikilos/KivyGlops/issues))
+
+Because of following this principle, all of those things
+have worked for a long time even though they are under heavy
+development. Another benefit of this approach is that you can create
+your project based on kivyglopsexampleblank.py (save it as a different
+py file in same folder) then upgrade all of the other files with a new
+version of KivyGlops and your project will increase in quality, but
+your project will not have been limited in quantity (scope) by adopting
+KivyGlops early. I hope that this software inspires you to create more
+complete publicly-licensed code projects, whether using KivyGlops or
+just learning from its OpenGL and GLSL code.
+
+![Screenshot](screenshot01.png)
 
 ## Key Features
-* 3D Objects can be moved and rotated separately (movement and rotation has been tested, and scaling is available)
-* Has a KivyGlop format (and PyGlop for non-Kivy uses) as a metaformat that is OpenGL-ready, and can import OBJ files and potentially others
-* Camera can be moved and rotated separately from objects
-* Loads each object (even if in same OBJ file) separately, in a format readily usable by Kivy (Loads OBJ files into an intermediate format: KivyGlop)
-* KivyGlops tutorials are available for download at [expertmultimedia.com/usingpython](http://expertmultimedia.com/usingpython/py3tutorials.html) (Unit 4 OpenGL)
-* Triangulates (tesselates) obj input manually
+- Move and rotate 3D Objects separately
+  ([Tutorials](https://expertmultimedia.com/usingpython/py3) demonstrate
+  movement and rotation, and scaling is available).
+- Move and rotate the camera separately from objects.
+- Load each object (even if in same OBJ file) separately and in a format
+  readily usable by Kivy (Load OBJ files into an intermediate format:
+  KivyGlop)
+  - The KivyGlop format (and PyGlop for non-Kivy uses) as a metaformat
+    that is OpenGL-ready, and can import OBJ files and potentially others.
+* KivyGlops tutorials are available for download at
+  [expertmultimedia.com/usingpython](https://expertmultimedia.com/usingpython/py3/)
+  (Unit 4 OpenGL)
+* The engine itself triangulates (tesselates) OBJ files to meet the
+  requirement of triangles (to avoid holes present when loading some
+  models in other 3D Kivy examples).
+
 
 ## Usage:
-* Lessons are available at [expertmultimedia.com/usingpython](http://www.expertmultimedia.com/usingpython)
-  (click "Python 3," "Tutorials," "Start Learning Now," "Unit 2 (OpenGL)")
-  "Unit 2" will be used to refer Unit 2 of this site in this document.
-* spec for actor_dict:
-  * actor_dict is a dictionary that can contain custom variables such as actor_dict['hp']
-  * actor_dict sent to set_as_actor_at will be copied (by self.deepcopy_with_my_type [which allows deepcopy of glops within a dict], not by reference), so you can change it later for making similar actors without any problems
-  * actor_dict will be filled in with required variables when you call set_as_actor_at, but the method will overlay your variables over the defaults, except for builtins with runtime info such as the `actor_dict['state']` dict which should be left alone.
-  * if you want ai, you must set actor_dict["ai_enable"] = True
-    * if you enable ai, the on_process_ai event will occur every frame before ai variables are checked (but the AI won't do anything unless you set the actor_dict variables during on_process_ai; see the AI section below)
-  (see also "Unit 2" lesson 7)
-  * can have clip_enable in actor dict: it and any other keys that are in `self.settings['templates']['actor_properties']` will be moved to `properties`
-* spec for item_dict:
-  * 'uses' is a list containing use strings as follows:
-    * uses like "throw_linear" or 'throw_arc' or "shoot_linear" causes the item to be thrown
-      * if "throw_" is in the use entry, player's ranges will be used (for example, if you set item_dict["throw_custom"], also set unit_glop.actor_dict['ranges']["throw_custom"] (if already set as actor, you don't need to do actor_dict['ranges'] = {} for it will already exist as a dict)
-      * if "shoot_" is in the use entry, item's ranges will be used (for example, if you set item_dict["shoot_custom"], also set item_dict['ranges']={} then item_dict['ranges']["shoot_custom"])
-      * NOTE: though the units where actor_dict["ai_enable"] is True will attack from that range, physics will determine whether the projectile reaches its target
-  * 'drop_enable': (True or False, or string like "yes", "no", etc) whether weapon leaves your inventory as soon as you use it (yes for rocks...hopefully you get the idea); considered True if not present
-    * special variables used along with drop_enable False:
+- Lessons are available at
+  [expertmultimedia.com/usingpython](http://www.expertmultimedia.com/usingpython)
+  (click "Python 3," "Tutorials," "Start Learning Now," "Unit 2
+  (OpenGL)") "Unit 2" will be used to refer Unit 2 of this site in this
+  document.
+- spec for actor_dict:
+  - actor_dict is a dictionary that can contain custom variables such as
+    actor_dict['hp']
+  - actor_dict sent to set_as_actor_at will be copied (by
+    self.deepcopy_with_my_type [which allows deepcopy of glops within a
+    dict], not by reference), so you can change it later for making
+    similar actors without any problems
+  - actor_dict will be filled in with required variables when you call
+    set_as_actor_at, but the method will overlay your variables over
+    the defaults, except for builtins with runtime info such as the
+    `actor_dict['state']` dict which should be left alone.
+  - if you want ai, you must set actor_dict["ai_enable"] = True
+    - if you enable ai, the on_process_ai event will occur every frame
+      before ai variables are checked (but the AI won't do anything
+      unless you set the actor_dict variables during on_process_ai; see
+      the AI section below)
+      - See also "Unit 2" lesson 7
+  - clip_enable can be in actor dict: it and any other keys that are in
+    `self.settings['templates']['actor_properties']` will be moved to
+    `properties`
+- spec for item_dict:
+  - 'uses' is a list containing use strings as follows:
+    - uses like "throw_linear" or 'throw_arc' or "shoot_linear" causes the item to be thrown
+      - if "throw_" is in the use entry, player's ranges will be used (for example, if you set item_dict["throw_custom"], also set unit_glop.actor_dict['ranges']["throw_custom"] (if already set as actor, you don't need to do actor_dict['ranges'] = {} for it will already exist as a dict)
+      - if "shoot_" is in the use entry, item's ranges will be used (for example, if you set item_dict["shoot_custom"], also set item_dict['ranges']={} then item_dict['ranges']["shoot_custom"])
+      - NOTE: though the units where actor_dict["ai_enable"] is True will attack from that range, physics will determine whether the projectile reaches its target
+  - 'drop_enable': (True or False, or string like "yes", "no", etc) whether weapon leaves your inventory as soon as you use it (yes for rocks...hopefully you get the idea); considered True if not present
+    - special variables used along with drop_enable False:
       'fired_sprite_size': tuple containing 2 floats (example: ` = (0.5, 0.5)`) in meters determining size of sprite in 3D space
       'fired_sprite_path': path to sprite (image will be placed on an automatically-generated square)
-  * 'projectile_keys': a list of variables that will be copied to the projectile (if projectile hits, projectile_dict will not be None, and will contain your variables whose keys you listed, when on_attacked_glop occurs)
-  * generated members:
+  - 'projectile_keys': a list of variables that will be copied to the projectile (if projectile hits, projectile_dict will not be None, and will contain your variables whose keys you listed, when on_attacked_glop occurs)
+  - generated members:
     'fires_glops': list of glops that will be fired (generated automatically if you use add_actor_weapon and have fired_sprite_path)
 * attack_uses is a list of strings and can be accessed or changed from within your implementation of KivyGlops using self.settings['globals']['attack_uses'] (first ones in list will be preferred by actors where `actor_dict["ai_enable"]` is true)
 * fit_enable entry in item_event dict returned by push_item denotes whether giving an item to the player was possible (false if inventory was full on games with limited inventory)
@@ -157,11 +212,14 @@ See [Changelog](changelog.md)
 * Implement lighting by improving shader (instead of only flat shading of textured objects being available)
 * Calculate rotation on other axes before calling look_at (only does y rotation currently, using a&d keys)
 * Does not load map types from mtl that do not start with "map_":
+  ```python
     _map_bump_filename = None  # map_bump or bump: use luminance
     _map_displacement = None  # disp
     _map_decal = None # decal: stencil; defaults to 'matte' channel of image
     _map_reflection = None  # refl; can be -type sphere
+```
 * cylindrical-mapped backgrounds should be pi-ratio so they don't repeat (such as 3142 x 1000) since the engine refuses to stretch them (by design)
+
 
 ## Planned Features
 * support surf and mg commands in OBJ
@@ -169,29 +227,40 @@ See [Changelog](changelog.md)
 * Use Z Buffer as parameter for effects such as desaturate by inverse normalized Z Buffer value so far away objects are less saturated1
 * Implement thorough gamma correction (convert textures to linear space, then convert output back to sRGB) such as http://www.panda3d.org/blog/the-new-opengl-features-in-panda3d-1-9/
 * Implement standard shader inputs and Nodes (see Blender as a reference)
-    * allow Mix nodes
-    * allow dot of Normal to be used as a Factor, such as for putting the result into an Mix node with black and white (or black and a color), where the result is sent to a Mix node set to Add (to create a colored fringe)
+  * allow Mix nodes
+  * allow dot of Normal to be used as a Factor, such as for putting the result into an Mix node with black and white (or black and a color), where the result is sent to a Mix node set to Add (to create a colored fringe)
 * Implement different shaders for different objects (such as by changing shader.vs and shader.fs to different vertex shader and fragment shader code after PopMatrix?)
-    (can be done by subclassing Widget and setting self.vs and self.fs such as in C:\Kivy-1.8.0-py3.3-win32\kivy\examples\shader\plasma.py)
+    (It can be done by subclassing Widget and setting self.vs and self.fs such as in C:\Kivy-1.8.0-py3.3-win32\kivy\examples\shader\plasma.py)
 * Implement spherical background map
 * Implement Image-Based Lighting (simply blur global background for basic effect)
 * Implement fresnel_away_color fresnel_toward_color (can have alpha, and can be used for fake SSS)
 * Implement full-screen shaders
 * Add a plasma effect to example (such as using plasma shader from C:\Kivy-1.8.0-py3.3-win32\kivy\examples\shader\plasma.py)
-    (note that the following uniforms would need to be added for that example:
+  - Note that the following uniforms would need to be added for that example:
+    ```python
         self.canvas['time'] = Clock.get_boottime()
         self.canvas['resolution'] = list(map(float, self.size))
-    )
+```
+
+
 ## License
-See [LICENSE](https://github.com/expertmm/KivyGlops/blob/master/LICENSE)
+See [license.txt](license.txt).
 
 ### Authors
 Software is copyright Jake Gustafson with the following exceptions:
-* KivyGlops object loading and opengl code was derived from [kivy-trackball](https://github.com/nskrypnik/kivy-trackball) (no license)
-* The material loader was derived from [kivy-rotation3d](https://github.com/nskrypnik/kivy-rotation3d) (no license)
-* kivy-rotation3d was presumably derived from main.py, objloader.py and simple.glsl in Kivy, approximately version 1.7.2 (originally MIT license)
+* KivyGlops object loading and opengl code was derived from
+  [kivy-trackball](https://github.com/nskrypnik/kivy-trackball) (no
+  license).
+* The material loader was derived from
+  [kivy-rotation3d](https://github.com/nskrypnik/kivy-rotation3d) (no
+  license).
+* kivy-rotation3d was presumably derived from main.py, objloader.py and
+  simple.glsl in Kivy, approximately version 1.7.2 (originally MIT
+  license).
 
-Resources are provided under Creative Commons Attribution Share-Alike (CC-BY-SA) license: http://creativecommons.org/licenses/by-sa/4.0/
+Resources are provided under Creative Commons Attribution Share-Alike
+([CC BY-SA 4.0](http://creativecommons.org/licenses/by-sa/4.0/))
+license.
 
 #### With the following caveats:
 * testnurbs-all-textured.obj was derived from testnurbs by nskrypnik
@@ -209,6 +278,7 @@ uniform mat4 projection_mat;  //derived from self.canvas["projection_mat"] = pro
 * eventually dat will contain everything, so that emit_yaml can eventually be used to save glop format ("tmp" dict member should not be saved)
 (these notes only apply to modifying the KivyGlops project files including PyGlops, or making a new subclass of PyGlop*)
 * ui is usually a KivyGlopsWindow but could be other frameworks. Must have:
+  ```
         width
         height
         frames_per_second
@@ -222,16 +292,17 @@ uniform mat4 projection_mat;  //derived from self.canvas["projection_mat"] = pro
                 _contexts.remove(this_glop.get_context())
                 canvas
         def update_debug_label(self)  # sets debug screen text to content of debug_dict
+```
 * Subclass of KivyGlops must have:
-    * a new_glop_method method which returns your subclass of PyGlop (NOT of PyGlops), unless you are handling the `super(MySubclassOfGlop, self).__init__(self.new_glop_method)` (where MySubclassOfGlop is your class) `self.new_glop_method param` in your subclass' `__init__` method another way.
+  * a new_glop_method method which returns your subclass of PyGlop (NOT of PyGlops), unless you are handling the `super(MySubclassOfGlop, self).__init__(self.new_glop_method)` (where MySubclassOfGlop is your class) `self.new_glop_method param` in your subclass' `__init__` method another way.
 * All subclasses of PyGlops should overload __init__, call super at beginning of it, and glops_init at end of it, like KivyGlops does.
 * PyGlops module (which does not require Kivy) loads obj files using intermediate WObjFile class (planned: save&load native PyGlops files), and provides base classes for all classes in KivyGlops module
 
 ### Kivy `instructions` library notes
 (see <https://github.com/kivy/kivy/blob/master/kivy/graphics/instructions.pxd>)
 * RenderContext is a subclass of Canvas but adds many features such as:
-    * `set_texture(index,texture)`
-    * `push_state(name)` `pop_state(name)` `set_states(dict states)` (not available to python)
+  * `set_texture(index,texture)`
+  * `push_state(name)` `pop_state(name)` `set_states(dict states)` (not available to python)
 * Canvas is a subclass of InstructionGroup
 * shader values can be set using `set_state` and a subcontext can be created using `push_state` in ContextInstruction
 * InstructionGroup has `insert(index, instruction)` and `remove(index)` and a list named `children`
@@ -304,16 +375,26 @@ if self.glops[index].item_dict is not None:
 ```
 
 ### Shader Spec
-vertex color is always RGBA
-if vertex_color_enable then vertex color must be set for every vertex, and object diffuse_color is ignored
-texture is overlayed onto vertex color
+- vertex color is always RGBA
+- if vertex_color_enable then vertex color must be set for every vertex,
+  and object diffuse_color is ignored
+- texture is overlayed onto vertex color
 
 #### OpenGL ES notes
-* mix is the ES equivalent of lerp (linear interpolation), which is the same as alpha blending
+* mix is the ES equivalent of lerp (linear interpolation), which is the
+  same as alpha blending
 
 #### See Also
-* kivy3 forks are getting pretty advanced now (lit models with texture optional). If you want a framework and not a game engine, try `pip install https://github.com/KeyWeeUsr/kivy3/zipball/master`
+* kivy3 forks are getting pretty advanced now (lit models with texture
+  optional). If you want a framework and not a game engine, try
+  `pip install https://github.com/KeyWeeUsr/kivy3/zipball/master`
 
 ## Works Cited
-[1] Diane Ramey, Linda Rose, and Lisa Tyerman, "Object Files (.obj)," paulbourke.net, October 1995. [Online]. Available: http://paulbourke.net/dataformats/obj/. [Accessed Dec. 28, 2017].
-[2] Diane Ramey, Linda Rose, and Lisa Tyerman, "MTL material format (Lightwave, OBJ)," paulbourke.net, October 1995. [Online]. Available: http://paulbourke.net/dataformats/obj/. [Accessed Dec. 28, 2017].
+
+[1] Diane Ramey, Linda Rose, and Lisa Tyerman, "Object Files (.obj),"
+paulbourke.net, October 1995. [Online]. Available:
+http://paulbourke.net/dataformats/obj/. [Accessed Dec. 28, 2017].
+
+[2] Diane Ramey, Linda Rose, and Lisa Tyerman, "MTL material format
+(Lightwave, OBJ)," paulbourke.net, October 1995. [Online]. Available:
+http://paulbourke.net/dataformats/obj/. [Accessed Dec. 28, 2017].

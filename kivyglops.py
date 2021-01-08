@@ -1221,7 +1221,7 @@ class KivyGlops(PyGlops):
             self.focal_distance = 2.0
             self.projection_near = 0.1
             self._sounds = {}
-            player_mesh_path = "meshes/human-5ft4-7.5-expertmm.obj"
+            player_mesh_path = "meshes/human-5ft4-7.5-poikilos.obj"
             indices = self.load_obj(player_mesh_path)
             self.player_glop = None
             try_name = 'Player'

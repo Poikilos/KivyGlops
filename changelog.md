@@ -344,8 +344,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 - Rename kivyglopsminimal.py to etc/kivyglops-mini-deprecated.py
 - Update kivyglopstesting.py to account for refactoring
-- Change to more permissive license (see
-  [LICENSE](https://github.com/expertmm/KivyGlops/blob/master/LICENSE))
+- Change to more permissive license (See
+  [license.txt](license.txt))
 
 
 ## [git] - 2017-12-19

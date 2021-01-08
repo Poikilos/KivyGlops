@@ -101,7 +101,7 @@ class MainScene(KivyGlops):
 
         # self.load_obj("barrels triangulated (Costinus at turbosquid).obj")
         # self.load_obj("barrel.obj")
-        # self.load_obj("WarehouseOfFruit_by_Expertmm.obj")
+        # self.load_obj("WarehouseOfFruit_by_Poikilos.obj")
         # self.load_obj("pyramid.obj")
         # self.load_obj("testnurbs-all-textured.obj")
         # self.load_obj("orion.obj")

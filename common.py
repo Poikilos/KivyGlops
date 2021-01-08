@@ -21,7 +21,9 @@ class ScopeInfo:
     line_number = -1
 
 def get_yaml_from_literal_value(val):
-    # TODO: add yaml escape sequences (see expertmm MoneyForesight for example)
+    # TODO: process yaml escape sequences (see
+    # https://github.com/poikilos/MoneyForesight
+    # for example)
     if type(val).__name__ == "string":
         val = "\"" + val.replace("\"", "\\\"") + "\""
     else:
@@ -29,15 +31,21 @@ def get_yaml_from_literal_value(val):
     return val
 
 def get_literal_value_from_yaml(val):
-    # TODO: process yaml escape sequences (see expertmm MoneyForesight for example)
+    # TODO: process yaml escape sequences (see
+    # https://github.com/poikilos/MoneyForesight
+    # for example)
     val=val.strip()
     if len(val)>2:
         if val[0:1]=="\"" and val[-1:]=="\"":
             val=val[1:-1]
     return val
 
-#from  github.com/expertmm/minetest/chunkymap/expertmm.py, but modified for python2
 def get_dict_deepcopy(old_dict, depth=0):
+    '''
+    From
+    https://github.com/poikilos/pycodetool/blob/master/pycodetool/parsing.py,
+    but modified for python2 compatibility
+    '''
     new_dict = None
     if type(old_dict) is dict:
         new_dict = {}
