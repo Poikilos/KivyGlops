@@ -111,7 +111,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `_default_fly_enable` to
   `settings['templates']['actor']['fly_enable']`,
   `_camera_person_number` to
-  `settings['globals']['camera_perspective_number']` (See also (1) under
+  `settings['globals']['camera_perspective_number']` (See also [1] under
   "Fixed").
 - Change glop's `x_velocity`, `y_velocity`, and `z_velocity` to
   `velocity` list.
@@ -127,9 +127,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 - (pyglops.py) In `copy_as_subclass`, use different copy of the ancestor
   list for each call to `deepcopy_with_my_type`.
-- kivyglops.py (KivyGlops update): replaced theta and moving_theta with choice_try_theta and choice_world_turn_theta which are also used more consistently
-- fixed view pitch (was adding 90 degrees--should be radians if any--see `view_top =`
-- (1) Fix the `set_camera_mode` method which was setting a local instead of
+- kivyglops.py (KivyGlops update): replaced `theta` and `moving_theta`
+  with `choice_try_theta` and `choice_world_turn_theta`.
+  - Use them more consistently.
+- Fix view pitch (was adding 90 degrees--should be radians if any--see
+  `view_top =`.
+- [1] Fix the `set_camera_mode` method which was setting a local instead of
   member.
 
 
