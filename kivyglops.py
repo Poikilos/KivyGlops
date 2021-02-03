@@ -3299,14 +3299,23 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         self.hud_form.add_widget(self.debug_label)
         self.hud_form.add_widget(self.hud_buttons_form)
         self.inventory_prev_button = Factory.Button(
-            text="<", id="inventory_prev_button", size_hint=(.2, 1.0),
-            on_press=self.inventory_prev_button_press)
+            text="<",
+            # id="inventory_prev_button",
+            size_hint=(.2, 1.0),
+            on_press=self.inventory_prev_button_press
+        )
         self.use_button = Factory.Button(
-            text="0: Empty", id="use_button", size_hint=(.2, 1.0),
-            on_press=self.inventory_use_button_press)
+            text="0: Empty",
+            # id="use_button",
+            size_hint=(.2, 1.0),
+            on_press=self.inventory_use_button_press
+        )
         self.inventory_next_button = Factory.Button(
-            text=">", id="inventory_next_button", size_hint=(.2, 1.0),
-            on_press=self.inventory_next_button_press)
+            text=">",
+            # id="inventory_next_button",
+            size_hint=(.2, 1.0),
+            on_press=self.inventory_next_button_press
+        )
         self.hud_buttons_form.add_widget(self.inventory_prev_button)
         self.hud_buttons_form.add_widget(self.use_button)
         self.hud_buttons_form.add_widget(self.inventory_next_button)
