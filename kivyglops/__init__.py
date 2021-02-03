@@ -13,8 +13,15 @@ import ast
 import hashlib
 import math
 
-from kivyglops.pyglops import *
-'''(
+from kivyglops.pyglops import (
+    TAU,
+    NEG_TAU,
+    settings,
+    tab_string,
+    kEpsilon,
+    VFORMAT_VECTOR_LEN_INDEX,
+    dump_enable,
+    best_timer,
     new_flag_f,
     fequals,
     normalize_3d_by_ref,
@@ -37,11 +44,7 @@ from kivyglops.pyglops import *
     theta_radians_from_rectangular,
     # new_tuple,
     PyGlops,
-    VFORMAT_VECTOR_LEN_INDEX,
-    dump_enable,
-    best_timer,
 )
-'''
 
 from kivy.resources import resource_find
 from kivy.uix.widget import Widget
@@ -163,6 +166,8 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
     no_mesh_warning_enable = None
 
     def __init__(self, default_templates=None):
+
+
         try:
             super(KivyGlop, self).__init__(
                 default_templates=default_templates
@@ -1551,7 +1556,12 @@ class KivyGlops(PyGlops):
                     try:
                         cache_name = \
                             hashlib.blake2b(digest_size=20).hexdigest()
-                    except:
+                    except AttributeError:
+                        if self.showNextHashWarning:
+                            print("[ KivyGlops ] WARNING:"
+                                  " blake2b is not present. KivyGlops"
+                                  " is reverting to sha1.")
+                        self.showNextHashWarning = False
                         cache_name = hashlib.sha1().hexdigest()
                     # NOTE: at this point, len(cache_name) should be 40
                     # (since is a hexdigest of a 20-value hash)
@@ -2837,7 +2847,7 @@ class KivyGlops(PyGlops):
                         # first do trig to get angle from pos delta:
                         offset_theta = get_angle_vec2(src_2D_pos,
                                                       dst_2D_pos)
-                        # https://www.mathopenref.com/arclength.html
+                        # <https://www.mathopenref.com/arclength.html>
                         al = (TAU * mgp['hit_radius'] *
                               (offset_theta / TAU))
                         # Simplifies if have radians & central angle

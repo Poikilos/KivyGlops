@@ -2727,6 +2727,7 @@ def new_light():
 class PyGlops:
 
     def __init__(self, new_glop_method):
+        self.showNextHashWarning = True
         self.glops = None
         self.materials = None
         self.lastUntitledMeshNumber = -1
