@@ -3086,12 +3086,10 @@ class KivyGlops(PyGlops):
         self.ui.screen_w_arc_theta = right_theta*2.0
         self.ui.screen_h_arc_theta = top_theta*2.0
 
-        self.ui.gl_widget.canvas['projection_mat'] = \
-            self.projectionMatrix
-        self.ui.gl_widget.canvas['modelview_mat'] = \
-            self.modelViewMatrix
-        self.ui.gl_widget.canvas['camera_world_pos'] = \
-            self.camera_glop._t_ins.xyz
+        glwCv = self.ui.gl_widget.canvas
+        glwCv['projection_mat'] = self.projectionMatrix
+        glwCv['modelview_mat'] = self.modelViewMatrix
+        glwCv['camera_world_pos'] = self.camera_glop._t_ins.xyz
 
         # if get_verbose_enable():
         #     Logger.debug("ok (update_glsl)")
@@ -3121,37 +3119,35 @@ class KivyGlops(PyGlops):
         #         # " degrees")
 
         if ((self._previous_world_light_dir is None)
-                or (self._previous_world_light_dir[0] != self.ui.gl_widget.canvas['_world_light_dir'][0])
-                or (self._previous_world_light_dir[1] != self.ui.gl_widget.canvas['_world_light_dir'][1])
-                or (self._previous_world_light_dir[2] != self.ui.gl_widget.canvas['_world_light_dir'][2])
+                or (self._previous_world_light_dir[0] != glwCv['_world_light_dir'][0])
+                or (self._previous_world_light_dir[1] != glwCv['_world_light_dir'][1])
+                or (self._previous_world_light_dir[2] != glwCv['_world_light_dir'][2])
                 or (self._previous_camera_rotate_y_angle is None)
                 or (self._previous_camera_rotate_y_angle != self.camera_glop._r_ins_y.angle)):
-            # self.ui.gl_widget.canvas['_world_light_dir'] = \
-            #     (0.0,.5,1.0);
-            # self.ui.gl_widget.canvas['_world_light_dir_eye_space'] = \
-            #     (0.0,.5,1.0);
+            # glwCv['_world_light_dir'] = (0.0,.5,1.0);
+            # glwCv['_world_light_dir_eye_space'] = (0.0,.5,1.0);
             world_light_theta = theta_radians_from_rectangular(
-                self.ui.gl_widget.canvas['_world_light_dir'][0],
-                self.ui.gl_widget.canvas['_world_light_dir'][2])
+                glwCv['_world_light_dir'][0],
+                glwCv['_world_light_dir'][2])
             light_theta = \
                 world_light_theta+self.camera_glop._r_ins_y.angle
             light_r = \
                 math.sqrt(
-                    (self.ui.gl_widget.canvas['_world_light_dir'][0] *
-                     self.ui.gl_widget.canvas['_world_light_dir'][0]) +
-                    (self.ui.gl_widget.canvas['_world_light_dir'][2] *
-                     self.ui.gl_widget.canvas['_world_light_dir'][2]))
-            self.ui.gl_widget.canvas['_world_light_dir_eye_space'] = (
+                    (glwCv['_world_light_dir'][0] *
+                     glwCv['_world_light_dir'][0]) +
+                    (glwCv['_world_light_dir'][2] *
+                     glwCv['_world_light_dir'][2]))
+            glwCv['_world_light_dir_eye_space'] = (
                 light_r * math.cos(light_theta),
-                self.ui.gl_widget.canvas['_world_light_dir_eye_space'][1],
+                glwCv['_world_light_dir_eye_space'][1],
                 light_r * math.sin(light_theta)
                 )
             self._previous_camera_rotate_y_angle = \
                 self.camera_glop._r_ins_y.angle
             self._previous_world_light_dir = (
-                self.ui.gl_widget.canvas['_world_light_dir'][0],
-                self.ui.gl_widget.canvas['_world_light_dir'][1],
-                self.ui.gl_widget.canvas['_world_light_dir'][2]
+                glwCv['_world_light_dir'][0],
+                glwCv['_world_light_dir'][1],
+                glwCv['_world_light_dir'][2]
                 )
         self._delay_is_available_enable = True
         self.update_view_visual_debug()
