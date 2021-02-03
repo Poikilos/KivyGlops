@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## [git] - 2021-02-03
+### Changed
+- Rename `get_wmaterial_dict_from_mtl` to `fetch_wmaterial`.
+
+
 ## [git] - 2018-07-31
 ### Removed
 - removed PyGlopLight in favor of dict and `*_light` functions

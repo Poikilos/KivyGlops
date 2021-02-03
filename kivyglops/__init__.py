@@ -4,16 +4,53 @@ It provides features that are specific to display method
 (Kivy's OpenGL-like API in this case).
 """
 __author__ = 'Jake Gustafson'
-import hashlib
-from pyglops import *
+import os
+import sys
+import time
+import random
 import uuid
 import ast
+import hashlib
+import math
+
+from kivyglops.pyglops import *
+'''(
+    new_flag_f,
+    fequals,
+    normalize_3d_by_ref,
+    degrees_list,
+    # get_vec3_from_point,
+    # get_rect_from_polar_rad,
+    # angle_trunc,
+    get_angle_vec2,
+    get_angle_between_points,
+    get_angle_between_two_vec3_xz,
+    get_angles_vec3,
+    get_distance_vec3_xz,
+    get_distance_vec3,
+    get_pushed_vec3_xz_rad,
+    get_y_from_xz,
+    new_hitbox,
+    hitbox_contains_vec3,
+    PyGlop,
+    new_material,
+    theta_radians_from_rectangular,
+    # new_tuple,
+    PyGlops,
+    VFORMAT_VECTOR_LEN_INDEX,
+    dump_enable,
+    best_timer,
+)
+'''
 
 from kivy.resources import resource_find
-from kivy.graphics import *
 from kivy.uix.widget import Widget
 from kivy.core.image import Image
-from pyrealtime import *
+from kivyglops.pyrealtime import (
+    PyRealTimeController,
+    MODE_EDIT,
+    MODE_GAME,
+)
 from kivy.clock import Clock
 
 # stuff required for KivyGlopsWindow
@@ -34,10 +71,20 @@ from kivy.vector import Vector
 
 from kivy.core.audio import SoundLoader
 
-from common import *
-
-import time
-import random
+from kivyglops.common import (
+    view_traceback,
+    get_traceback,
+    push_yaml_text,
+    fixed_width,
+    good_path_name,
+    find_any_not,
+    get_literal_value_from_yaml,
+    get_yaml_from_literal_value,
+    ScopeInfo,
+    get_verbose_enable,
+    # set_verbose_enable,
+    debug_dict,
+)
 
 nearest_not_found_warning_enable = True
 _multicontext_enable = False  # only should be set while not running
@@ -60,9 +107,9 @@ show_zero_walk_upf_warning_enable = True  # upf is units per frame
 
 
 def get_distance_kivyglops(a_glop, b_glop):
-    return math.sqrt((b_glop._t_ins.x - a_glop._t_ins.x)**2 +
-                     (b_glop._t_ins.y - a_glop._t_ins.y)**2 +
-                     (b_glop._t_ins.z - a_glop._t_ins.z)**2)
+    return math.sqrt((b_glop._t_ins.x - a_glop._t_ins.x)**2
+                     + (b_glop._t_ins.y - a_glop._t_ins.y)**2
+                     + (b_glop._t_ins.z - a_glop._t_ins.z)**2)
 
 # def get_distance_vec3(a_vec3, b_vec3):
 #    return math.sqrt((b_vec3[0] - a_vec3[0])**2 +
@@ -192,8 +239,8 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
     def __str__(self):
         result = str(type(self))
         if self._t_ins is not None:
-            result = (str(type(self)) + " named " + str(self.name) +
-                      " at " + str(self._t_ins.xyz))
+            result = ("{} named {} at {}"
+                      "".format(type(self), self.name, self._t_ins.xyz))
         return result
 
     def debug_to(self, dest):
@@ -234,9 +281,9 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
         elif axis_index == 2:
             self._r_ins_z.angle = angle
         else:
-            print("[ KivyGlop ] ERROR in set_angle: " +
-                  str(axis_index) + " is out of range (dimension" +
-                  " should be 0, 1, or 2)")
+            print("[ KivyGlop ] ERROR in set_angle: "
+                  "{} is out of range (dimension"
+                  " should be 0, 1, or 2)".format(axis_index))
 
     def append_wobject(self, this_wobject,
                        pivot_to_g_enable=True):
@@ -250,8 +297,8 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
                 self.material['diffuse_color'][2],
                 self.material['diffuse_color'][3])
         else:
-            print("[ KivyGlop ] WARNING in append_wobject:" +
-                  " self.material is None for " + str(self.name))
+            print("[ KivyGlop ] WARNING in append_wobject:"
+                  " self.material is None for {}".format(self.name))
 
     def save(self, path):
         lines = []
@@ -262,8 +309,8 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
                 outs.write(line + "\n")
             outs.close()
         except:
-            print("[ KivyGlop ] ERROR--could not finish save to '" +
-                  path + "':")
+            print("[ KivyGlop ] ERROR--could not finish save to '{}':"
+                  "".format(path))
             view_traceback()
 
     def load(self, source_path, original_path=None):
@@ -308,7 +355,9 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
                             if line_strip[0:1] == "-":
                                 if depth > 0:
                                     val = \
-                                        get_literal_value_from_yaml(line_strip[2:].strip())
+                                        get_literal_value_from_yaml(
+                                            line_strip[2:].strip()
+                                        )
                                     if scopes[depth-1].name == \
                                             "vertices":
                                         self.vertices.append(float(val))
@@ -319,25 +368,27 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
                                         if scopes[depth-1].name not in \
                                                 nyi_names:
                                             print(
-                                                specified_path + "(" +
-                                                str(line_number) +
-                                                ",0): (INPUT ERROR)" +
-                                                " item for unknown " +
-                                                "array " +
-                                                scopes[depth-1].name +
-                                                " not implemented" +
-                                                ttl +
-                                                scopes[depth-1].name +
-                                                ")"
+                                                specified_path + "("
+                                                + str(line_number)
+                                                + ",0): (INPUT ERROR)"
+                                                " item for unknown "
+                                                "array "
+                                                + scopes[depth-1].name
+                                                + " not implemented"
+                                                + ttl
+                                                + scopes[depth-1].name
+                                                + ")"
                                             )
-                                            nyi_names[scopes[depth-1].name] = False
+                                            prevScp = scopes[depth-1]
+                                            nyi_names[prevScp.name] = \
+                                                False
                                 else:
                                     print(
-                                        specified_path + "(" +
-                                        str(line_number) + ",0): " +
-                                        "(INPUT ERROR) array in " +
-                                        "deepest scope (should be" +
-                                        " indented under an object" +
+                                        specified_path + "("
+                                        + str(line_number) + ",0): "
+                                        "(INPUT ERROR) array in "
+                                        "deepest scope (should be"
+                                        " indented under an object"
                                         " name)"
                                     )
                             else:
@@ -350,19 +401,19 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
                                         self.set_texture_diffuse(val)
                                 else:
                                     print(
-                                        specified_path + "(" +
-                                        str(line_number) + ",0): " +
-                                        "(INPUT ERROR) input with " +
-                                        "neither colon nor starting" +
-                                        " with hyphen is not " +
+                                        specified_path + "("
+                                        + str(line_number) + ",0): "
+                                        "(INPUT ERROR) input with "
+                                        "neither colon nor starting"
+                                        " with hyphen is not "
                                         "implemented"
                                     )
                         prev_indent = indent
                     line_number += 1
                 ins.close()
             else:
-                print("[ KivyGlop ] ERROR in load: missing '" +
-                      specified_path + "")
+                print("[ KivyGlop ] ERROR in load: missing '"
+                      + specified_path + "")
             # TODO: if cached, change source_path for each object to
             # that in stats.yml in cache folder
         else:
@@ -370,15 +421,15 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
 
     def emit_yaml(self, lines, min_tab_string):
         super(KivyGlop, self).emit_yaml(lines, min_tab_string)
-        lines.append(min_tab_string +
-                     "translate_x: " +
-                     get_yaml_from_literal_value(self._t_ins.x))
-        lines.append(min_tab_string +
-                     "translate_y: " +
-                     get_yaml_from_literal_value(self._t_ins.y))
-        lines.append(min_tab_string +
-                     "translate_z: " +
-                     get_yaml_from_literal_value(self._t_ins.z))
+        lines.append(min_tab_string
+                     + "translate_x: "
+                     + get_yaml_from_literal_value(self._t_ins.x))
+        lines.append(min_tab_string
+                     + "translate_y: "
+                     + get_yaml_from_literal_value(self._t_ins.y))
+        lines.append(min_tab_string
+                     + "translate_z: "
+                     + get_yaml_from_literal_value(self._t_ins.z))
 
     def set_coord(self, index, value):
         if index == 0:
@@ -388,8 +439,8 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
         elif index == 2:
             self._t_ins.z = value
         else:
-            print("[ KivyGlop ] ERROR in set_coord: bad index " +
-                  str(index))
+            print("[ KivyGlop ] ERROR in set_coord: bad index "
+                  + str(index))
 
     def get_coord(self, index):
         if index == 0:
@@ -399,8 +450,8 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
         elif index == 2:
             return self._t_ins.z
         else:
-            print("[ KivyGlop ] ERROR in get_coord: bad index " +
-                  str(index))
+            print("[ KivyGlop ] ERROR in get_coord: bad index "
+                  "".format(index))
         return None
 
     def new_vertex(self, set_coords, set_color):
@@ -413,7 +464,8 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
 
         # Without the 4th index, matrix math cannot work and geometry
         # cannot be translated (!):
-        if self.vertex_format[self.POSITION_INDEX][VFORMAT_VECTOR_LEN_INDEX] > 3:
+        V_LEN_I = VFORMAT_VECTOR_LEN_INDEX
+        if self.vertex_format[self.POSITION_INDEX][V_LEN_I] > 3:
             vertex_components[self._POSITION_OFFSET+3] = 1.0
         if set_color is not None:
             for i in range(0, len(set_color)):
@@ -676,9 +728,11 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
 
     def rotate_camera_relative(self, angle, axis_index):
         # TODO: delete this method and see solutions from
-        # http://stackoverflow.com/questions/10048018/opengl-camera-rotation
+        # <http://stackoverflow.com/questions/10048018/
+        #  opengl-camera-rotation>
         # such as set_view method of
-        # https://github.com/sgolodetz/hesperus2/blob/master/Shipwreck/MapEditor/GUI/Camera.java
+        # <https://github.com/sgolodetz/hesperus2/blob/master/Shipwreck/
+        #  MapEditor/GUI/Camera.java>
         self.rotate_relative_around_point(self.camera_glop, angle,
                                           axis_index,
                                           self.camera_glop._t_ins.x,
@@ -687,9 +741,11 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
 
     def rotate_player_relative(self, angle, axis_index):
         # TODO: delete this method and see solutions from
-        # http://stackoverflow.com/questions/10048018/opengl-camera-rotation
+        # <http://stackoverflow.com/questions/10048018/
+        # opengl-camera-rotation>
         # such as set_view method of
-        # https://github.com/sgolodetz/hesperus2/blob/master/Shipwreck/MapEditor/GUI/Camera.java
+        # <https://github.com/sgolodetz/hesperus2/blob/master/Shipwreck/
+        # MapEditor/GUI/Camera.java>
         self.rotate_relative_around_point(self.player_glop, angle,
                                           axis_index,
                                           self.player_glop._t_ins.x,
@@ -1029,8 +1085,8 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
                     try_name = self.material.get('name')
                     if try_name is not None:
                         this_material_name = try_name
-                        Logger.debug("[ KivyGlop ] (material named '" +
-                                     this_material_name + "')")
+                        Logger.debug("[ KivyGlop ] (material named '"
+                                     + this_material_name + "')")
                     else:
                         Logger.debug(
                             "[ KivyGlop ] (material with no name)")
@@ -1048,7 +1104,9 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
             print("[ KivyGlop ] WARNING in generate_kivy_mesh:"
                   " self._mesh is not None, overriding")
         self._mesh = None
-        this_texture_image = self.set_texture_diffuse(self.get_texture_diffuse_path())
+        this_texture_image = self.set_texture_diffuse(
+            self.get_texture_diffuse_path()
+        )
         participle = "assembling kivy Mesh"
         this_texture = None
         if self.vertices is not None:
@@ -1095,6 +1153,8 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
             return None
 
     def prepare_canvas(self, use_meshes=None, axes_index=-1):
+        props = self.properties
+        hitbox = props['hitbox']
         if self._mesh is None:
             # verts, indices = self.generate_kivy_mesh()
             self._generate_kivy_mesh()
@@ -1132,23 +1192,23 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
             # such as 0.0, so code below hopefully corrects all issues
             if i == axes_index:
                 this_s_ins = None
-                if self.properties['hitbox'] is not None and \
-                        self.properties['hitbox']['maximums'] is not None:
+                if hitbox is not None and \
+                        hitbox['maximums'] is not None:
                     radii = [.1, .1, .1]
-                    if len(self.properties['hitbox']['maximums']) < 3:
+                    if len(hitbox['maximums']) < 3:
                         print("[ KivyGlops ] ERROR in "
                               "prepare_canvas: len(maximums) is "
                               "less than 3 dimensions, filled in .1")
-                    for m_i in range(len(self.properties['hitbox']['maximums'])):
+                    for m_i in range(len(hitbox['maximums'])):
                         try:
-                            radii[m_i] = self.properties['hitbox']['maximums'][m_i] - \
-                                         self.properties['hitbox']['minimums'][m_i]
+                            radii[m_i] = (hitbox['maximums'][m_i]
+                                          - hitbox['minimums'][m_i])
                         except:
                             print(
-                                "[ KivyGlops ] ERROR in " +
-                                "prepare_canvas: missing minimums, " +
-                                "setting radii[" + str(m_i) +
-                                "] to .1"
+                                "[ KivyGlops ] ERROR in "
+                                "prepare_canvas: missing minimums, "
+                                "setting radii[" + str(m_i)
+                                + "] to .1"
                             )
                             radii[m_i] = .1
                         if radii[m_i] <= kEpsilon:
@@ -1163,9 +1223,10 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
                             )
                             radii[m_i] = .1
                     this_s_ins = Scale(radii[0], radii[1], radii[2])
-                elif self.properties['hit_radius'] > .1:
-                    this_s_ins = Scale(self.properties['hit_radius'], self.properties['hit_radius'],
-                                       self.properties['hit_radius'])
+                elif props['hit_radius'] > .1:
+                    this_s_ins = Scale(props['hit_radius'],
+                                       props['hit_radius'],
+                                       props['hit_radius'])
                 else:
                     this_s_ins = Scale(.1, .1, .1)
                 context.add(this_s_ins)
@@ -1211,7 +1272,6 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
 
 class KivyGlops(PyGlops):
 
-
     def __init__(self, new_ui):
         # region moved from ui
         self.projection_near = None
@@ -1241,120 +1301,109 @@ class KivyGlops(PyGlops):
         self.env_flip_enable = False
         self.ui = new_ui
         if self.ui is None:
-            print("[ KivyGlops ] FATAL ERROR in __init__: KivyGlops"
-                  " cannot init without a ui")
-            exit(1)
+            raise RuntimeError("[ KivyGlops ] FATAL ERROR in __init__:"
+                               "KivyGlops cannot init without a ui")
 
         # TODO? or remove if is ok without it: Clock.schedule_once(
         #    self._update,
         #    self.update_interval)
         self.ui.scene = self
-        try:
-            super(KivyGlops, self).__init__(self.new_glop_method)
-        except:
-            print("[ KivyGlops ] FATAL ERROR--__init__ could not"
-                  " finish super:")
-            view_traceback()
-            sys.exit(1)
-        try:
-            sg = self.settings['globals']
-            self.controllers = list()
-            # region moved from ui
-            self.world_boundary_min = [None, None, None]
-            self.world_boundary_max = [None, None, None]
-            self.mode = MODE_EDIT
-            self.player1_controller = PyRealTimeController()
-            self.controllers.append(self.player1_controller)
-            self.focal_distance = 2.0
-            self.projection_near = 0.1
-            self._sounds = {}
-            player_mesh_path = "meshes/human-5ft4-7.5-poikilos.obj"
-            indices = self.load_obj(player_mesh_path)
-            self.player_glop = None
-            try_name = 'Player'
-            generate_p1_enable = False
-            if len(indices) > 1:
-                print("[ KivyGlops ] WARNING in __init__: got " +
-                      str(len(indices)) +
-                      " meshes from " + player_mesh_path +
-                      " so picked " + self.glops[indices[0]].name +
+        super(KivyGlops, self).__init__(self.new_glop_method)
+        sg = self.settings['globals']
+        self.controllers = list()
+        # region moved from ui
+        self.world_boundary_min = [None, None, None]
+        self.world_boundary_max = [None, None, None]
+        self.mode = MODE_EDIT
+        self.player1_controller = PyRealTimeController()
+        self.controllers.append(self.player1_controller)
+        self.focal_distance = 2.0
+        self.projection_near = 0.1
+        self._sounds = {}
+        player_mesh_path = "meshes/human-5ft4-7.5-poikilos.obj"
+        indices = self.load_obj(player_mesh_path)
+        self.player_glop = None
+        try_name = 'Player'
+        generate_p1_enable = False
+        if len(indices) > 1:
+            print("[ KivyGlops ] WARNING in __init__: got " +
+                  str(len(indices)) +
+                  " meshes from " + player_mesh_path +
+                  " so picked " + self.glops[indices[0]].name +
+                  " for player_glop")
+            # for player_try_i in indices:
+            #     if try_name in self.glops[player_try_i].name.lower():
+            #         self.player_glop = self.glops[player_try_i]
+            #         break
+        if len(indices) > 0:
+            self.player_glop = self.glops[indices[0]]
+        if self.player_glop is None:
+            print("[ KivyGlops ] ERROR in __init__: cannot find " +
+                  try_name + " for player_glop")
+            self.player_glop = KivyGlop()
+            generate_p1_enable = True
+        self.player_glop.properties['eye_height'] = 1.7
+        # ^ 1.7 since 5'10" person is ~1.77m, and eye down a bit
+        self.player_glop.properties['hit_radius'] = .2
+        # ^ default is 0.1524  # .5' equals .1524m
+        self.player_glop.properties['reach_radius'] = 2.5
+        # ^ default is 0.381 # 2.5' .381m
+
+        # x,y,z where y is up:
+        self.player_glop._t_ins.x = 0
+        self.player_glop._t_ins.y = 0
+        self.player_glop._t_ins.z = 25  # positive is toward view
+
+        self.player_glop._r_ins_x.angle = 0.0
+        self.player_glop._r_ins_y.angle = math.radians(-90.0)
+        # ^ math.radians(-90.) is looking at the center
+        #   [math.radians(-90.0), 0.0, 1.0, 0.0]
+        self.player_glop._r_ins_z.angle = 0.0
+        # region moved from ui
+
+        self.set_camera_mode(self.CAMERA_FIRST_PERSON())
+        # self.player_glop = self.camera_glop
+        # TODO: separate into two objects and make camera
+        # follow player
+        self.player_glop.properties['bump_enable'] = True
+        self.camera_glop.glop_index = len(self.glops)
+        self.camera_glop.state['glop_index'] = \
+            self.camera_glop.glop_index
+        self.glops.append(self.camera_glop)
+        self.player_glop.name = "Player 1"
+        # sg['fly_enables'][self.player_glop.name] = True
+        if generate_p1_enable:
+            self.player_glop.glop_index = len(self.glops)
+            self.player_glop.state['glop_index'] = \
+                self.player_glop.glop_index
+            self.glops.append(self.player_glop)
+            if get_verbose_enable():
+                print("[ KivyGlopsWindow ] (verbose message in" +
+                      " in __init__) generated player glop at " +
+                      str(self.player_glop.glop_index) +
+                      " since no mesh file found" +
                       " for player_glop")
-                # for player_try_i in indices:
-                #     if try_name in self.glops[player_try_i].name.lower():
-                #         self.player_glop = self.glops[player_try_i]
-                #         break
-            if len(indices) > 0:
-                self.player_glop = self.glops[indices[0]]
-            if self.player_glop is None:
-                print("[ KivyGlops ] ERROR in __init__: cannot find " +
-                      try_name + " for player_glop")
-                self.player_glop = KivyGlop()
-                generate_p1_enable = True
-            self.player_glop.properties['eye_height'] = 1.7
-            # ^ 1.7 since 5'10" person is ~1.77m, and eye down a bit
-            self.player_glop.properties['hit_radius'] = .2
-            # ^ default is 0.1524  # .5' equals .1524m
-            self.player_glop.properties['reach_radius'] = 2.5
-            # ^ default is 0.381 # 2.5' .381m
-
-            # x,y,z where y is up:
-            self.player_glop._t_ins.x = 0
-            self.player_glop._t_ins.y = 0
-            self.player_glop._t_ins.z = 25  # positive is toward view
-
-            self.player_glop._r_ins_x.angle = 0.0
-            self.player_glop._r_ins_y.angle = math.radians(-90.0)
-            # ^ math.radians(-90.) is looking at the center
-            #   [math.radians(-90.0), 0.0, 1.0, 0.0]
-            self.player_glop._r_ins_z.angle = 0.0
-            # region moved from ui
-
-            self.set_camera_mode(self.CAMERA_FIRST_PERSON())
-            # self.player_glop = self.camera_glop
-            # TODO: separate into two objects and make camera
-            # follow player
-            self.player_glop.properties['bump_enable'] = True
-            self.camera_glop.glop_index = len(self.glops)
-            self.camera_glop.state['glop_index'] = \
-                self.camera_glop.glop_index
-            self.glops.append(self.camera_glop)
-            self.player_glop.name = "Player 1"
-            # sg['fly_enables'][self.player_glop.name] = True
-            if generate_p1_enable:
-                self.player_glop.glop_index = len(self.glops)
-                self.player_glop.state['glop_index'] = \
-                    self.player_glop.glop_index
-                self.glops.append(self.player_glop)
-                if get_verbose_enable():
-                    print("[ KivyGlopsWindow ] (verbose message in" +
-                          " in __init__) generated player glop at " +
-                          str(self.player_glop.glop_index) +
-                          " since no mesh file found" +
-                          " for player_glop")
-            self._player_glop_index = self.player_glop.glop_index
-            # call after_selected_item to keep label consistent:
-            self.after_selected_item(
-                {'glop_index': self._player_glop_index}
-            )
-            self.set_as_actor_at(self._player_glop_index, None)
-            if self.glops[self._player_glop_index] is not \
-                    self.player_glop:
-                # then address multithreading paranoia
-                self._player_glop_index = None
-                for try_i in range(len(self.glops)):
-                    if self.glops[try_i] is self.player_glop:
-                        self._player_glop_index = try_i
-                        break
-                if self._player_glop_index is not None:
-                    print("WARNING: glop array changed during init,"
-                          " so redetected self._player_glop_index.")
-                else:
-                    print("WARNING: glop array changed during init,"
-                          " and self._player_glop_index could not"
-                          " be detected.")
-        except:
-            print("[ KivyGlops ] ERROR--__init__ could not finish:")
-            view_traceback()
+        self._player_glop_index = self.player_glop.glop_index
+        # call after_selected_item to keep label consistent:
+        self.after_selected_item(
+            {'glop_index': self._player_glop_index}
+        )
+        self.set_as_actor_at(self._player_glop_index, None)
+        if self.glops[self._player_glop_index] is not \
+                self.player_glop:
+            # then address multithreading paranoia
+            self._player_glop_index = None
+            for try_i in range(len(self.glops)):
+                if self.glops[try_i] is self.player_glop:
+                    self._player_glop_index = try_i
+                    break
+            if self._player_glop_index is not None:
+                print("WARNING: glop array changed during init,"
+                      " so redetected self._player_glop_index.")
+            else:
+                print("WARNING: glop array changed during init,"
+                      " and self._player_glop_index could not"
+                      " be detected.")
 
     def new_glop_method(self):
         # return PyGlops.new_glop_method(self)
@@ -1410,7 +1459,8 @@ class KivyGlops(PyGlops):
     def set_background_cylmap(self, path, unflip_enable=True):
         # self.load_obj("env_sphere.obj")
         # self.load_obj("maps/gi/etc/sky_sphere.obj")
-        # env_indices = self.get_indices_by_source_path("env_sphere.obj")
+        # env_indices = \
+        #     self.get_indices_by_source_path("env_sphere.obj")
         # for i in range(0,len(env_indices)):
         #     index = env_indices[i]
         #     print("Preparing sky object "+str(index))
@@ -1607,7 +1657,12 @@ class KivyGlops(PyGlops):
                                 new_glops[index].save(
                                     os.path.join(
                                         cache_path,
-                                        good_path_name(new_glops[index].name)+".glop"))
+                                        good_path_name(
+                                            new_glops[index].name
+                                        )
+                                        +".glop"
+                                    )
+                                )
                         if centered:
                             # TODO: apply pivot point instead (change
                             # vertices as if pivot point were 0,0,0) to
@@ -1759,20 +1814,37 @@ class KivyGlops(PyGlops):
                 wgi = w_glop.indices
                 wrpo = walkmesh_result['polygon_offset']
                 ground_tri.append(
-                    (w_glop.vertices[w_glop.indices[wrpo]*w_glop.vertex_depth+X_i],
-                     w_glop.vertices[w_glop.indices[wrpo]*w_glop.vertex_depth+Y_i],
-                     w_glop.vertices[w_glop.indices[wrpo]*w_glop.vertex_depth+Z_i]))
+                    (w_glop.vertices[w_glop.indices[wrpo]
+                     * w_glop.vertex_depth+X_i],
+                     w_glop.vertices[w_glop.indices[wrpo]
+                     * w_glop.vertex_depth+Y_i],
+                     w_glop.vertices[w_glop.indices[wrpo]
+                     * w_glop.vertex_depth+Z_i]))
                 ground_tri.append(
-                    (w_glop.vertices[w_glop.indices[wrpo+1]*w_glop.vertex_depth+X_i],
-                     w_glop.vertices[w_glop.indices[wrpo+1]*w_glop.vertex_depth+Y_i],
-                     w_glop.vertices[w_glop.indices[wrpo+1]*w_glop.vertex_depth+Z_i]))
+                    (w_glop.vertices[w_glop.indices[wrpo+1]
+                     * w_glop.vertex_depth+X_i],
+                     w_glop.vertices[w_glop.indices[wrpo+1]
+                     * w_glop.vertex_depth+Y_i],
+                     w_glop.vertices[w_glop.indices[wrpo+1]
+                     * w_glop.vertex_depth+Z_i]))
                 ground_tri.append(
-                    (w_glop.vertices[w_glop.indices[wrpo+2]*w_glop.vertex_depth+X_i],
-                     w_glop.vertices[w_glop.indices[wrpo+2]*w_glop.vertex_depth+Y_i],
-                     w_glop.vertices[w_glop.indices[wrpo+2]*w_glop.vertex_depth+Z_i]))
-                ground_y = get_y_from_xz(ground_tri[0], ground_tri[1], ground_tri[2], this_pos[0], this_pos[2])
-                corrected_pos = [this_pos[0], ground_y + these_radii[1], this_pos[2]]
-                if self._world_min_y is None or ground_y < self._world_min_y:
+                    (w_glop.vertices[w_glop.indices[wrpo+2]
+                     * w_glop.vertex_depth+X_i],
+                     w_glop.vertices[w_glop.indices[wrpo+2]
+                     * w_glop.vertex_depth+Y_i],
+                     w_glop.vertices[w_glop.indices[wrpo+2]
+                     * w_glop.vertex_depth+Z_i]))
+                ground_y = get_y_from_xz(ground_tri[0],
+                                         ground_tri[1],
+                                         ground_tri[2],
+                                         this_pos[0], this_pos[2])
+                corrected_pos = [
+                    this_pos[0],
+                    ground_y + these_radii[1],
+                    this_pos[2]
+                ]
+                if self._world_min_y is None or \
+                        ground_y < self._world_min_y:
                     self._world_min_y = ground_y
                 # if self.prev_inbounds_camera_translate is None or \
                 #    this_pos[1] != \
@@ -1823,7 +1895,9 @@ class KivyGlops(PyGlops):
             debug_dict['View'] = {}
         try:
             # debug_dict['View']['modelview_mat'] = fixed_width(
-            #     ast.literal_eval(str(self.ui.gl_widget.canvas['modelview_mat'])),
+            #     ast.literal_eval(str(
+            #         self.ui.gl_widget.canvas['modelview_mat']
+            #     )),
             #     8, " "
             # )
             debug_dict['View']['modelview_mat'] = \
@@ -1886,9 +1960,9 @@ class KivyGlops(PyGlops):
             agad = actor_glop.actor_dict
             a_name = actor_glop.name
             if agad is None:
-                print("[ KivyGlops ] error in update: " +
-                      "actor_dict is None for bumper named '" +
-                      str(actor_glop.name) + "'")
+                print("[ KivyGlops ] error in update: "
+                      "actor_dict is None for bumper named '"
+                      + str(actor_glop.name) + "'")
                 continue
             if agad.get("ai_enable") is not None:
                 self.on_process_ai(a_index)
@@ -1897,9 +1971,9 @@ class KivyGlops(PyGlops):
                 if agad['target_index'] is not None:
                     agad['target_pos'] = \
                         self.glops[agad['target_index']]._t_ins.xyz
-                elif agad['moveto_index'] is not \
-                        None:
-                    if not self.glops[agad['moveto_index']].state['visible_enable']:
+                elif agad['moveto_index'] is not None:
+                    targetG = self.glops[agad['moveto_index']]
+                    if not targetG.state['visible_enable']:
                         agad['moveto_index'] = None
                         if get_verbose_enable():
                             print("[ KivyGlops ] (verbose "
@@ -1907,8 +1981,7 @@ class KivyGlops(PyGlops):
                                   " lost target since glop at"
                                   " moveto_index is now invisible")
                     else:
-                        agad['target_pos'] = \
-                            self.glops[agad['moveto_index']]._t_ins.xyz
+                        agad['target_pos'] = targetG._t_ins.xyz
                 if agad['target_pos'] is not None:
 
                     ags['acquire_radius'] = agp['reach_radius']
@@ -1930,8 +2003,9 @@ class KivyGlops(PyGlops):
                         # item_dict)
                         # Start desired_* as None in case item is no
                         # longer in inventory.
-                        if agad['inventory_index'] >= 0:
-                            try_item = agad['inventory_items'][agad['inventory_index']]
+                        agadII = agad['inventory_index']
+                        if agadII >= 0:
+                            try_item = agad['inventory_items'][agadII]
                             if 'uses' in try_item:
                                 for this_use in try_item['uses']:
                                     if this_use in sg['attack_uses']:
@@ -1939,8 +2013,9 @@ class KivyGlops(PyGlops):
                                         # attack guarantees
                                         # attack_types exists
                                         # (via set_as_item)
-                                        ags['choice_ii'] = \
-                                            agad['inventory_index']  # guaranteed to exist by set_as_actor_at
+                                        ags['choice_ii'] = agadII
+                                        # ^ guaranteed to exist by
+                                        #   set_as_actor_at
                                 # TODO: loop again and look for melee
                             # else item has no use
                         if agad['choice_ii'] < 0:
@@ -1954,10 +2029,13 @@ class KivyGlops(PyGlops):
                                 du
                         if ags['choice_ii'] >= 0:
                             if "shoot_" in this_use:
-                                if (('ranges' in try_item)
-                                        and (try_item['ranges'].get(this_use) is not None)):
-                                    ags['acquire_radius'] = \
-                                        try_item['ranges'][this_use]
+                                range_for_it = None
+                                ranges_for_it = try_item.get('ranges')
+                                if ranges_for_it is not None:
+                                    range_for_it = \
+                                        ranges_for_it.get(this_use)
+                                if ranges_for_it is not None:
+                                    ags['acquire_radius'] = range_for_it
                                 else:
                                     # TODO: predict arc to determine
                                     # range instead
@@ -2085,28 +2163,25 @@ class KivyGlops(PyGlops):
                             # ox_note_enable
                             # if out_of_hitbox_n
                             # ote_enable:
-                            print(
-                                "[ KivyGlops ]" +
-                                " (debug only--this" +
-                                " is normal) within" +
-                                " total_hit_radius," +
-                                " but bumpable at " +
-                                str(e_glop.get_pos()) + " is" +
-                                " not in bumper's" +
-                                " hitbox: " +
-                                str(agp['hitbox']))
+                            print("[ KivyGlops ]"
+                                  " (debug only--this"
+                                  " is normal) within"
+                                  " total_hit_radius,"
+                                  " but bumpable at "
+                                  + str(e_glop.get_pos()) + " is"
+                                  " not in bumper's"
+                                  " hitbox: "
+                                  + str(agp['hitbox']))
                             # out_of_hitbox_n
                             # ote_enable = False
                     else:
                         if get_verbose_enable():
-                            print(
-                                "[ KivyGlops ]" +
-                                VMSG + "'" +
-                                str(actor_glop.name) +
-                                "' is not a bumper.")
+                            print("[ KivyGlops ]"
+                                  + VMSG + "'"
+                                  + str(actor_glop.name)
+                                  + "' is not a bumper.")
                     if bumper_index not in igs['in_range_indices']:
-                        igs['in_range_indices'].append(
-                            bumper_index)
+                        igs['in_range_indices'].append(bumper_index)
                 else:
                     if bumper_index in igs['in_range_indices']:
                         igs['in_range_indices'].remove(bumper_index)
@@ -2168,7 +2243,7 @@ class KivyGlops(PyGlops):
                 # TODO: why does next line show exception if not
                 # declared as global manually??
                 if show_zero_walk_upf_warning_enable:
-                    print("[ KivyGlops ] WARNING in update: zero " +
+                    print("[ KivyGlops ] WARNING in update: zero "
                           "land units per frame (" + tltf + ")")
                     show_zero_walk_upf_warning_enable = False
 
@@ -2506,7 +2581,6 @@ class KivyGlops(PyGlops):
                 #         self.lupf * \
                 #         choice_local_vel_mult[2]
 
-
                 # TODO:? if mgs['look_theta_multipliers'][1] != 0.0:
                 #     delta_y = lrpf * choice_try_theta_multipliers[1]
                 #     m_glop._r_ins_y.angle += delta_y
@@ -2536,11 +2610,10 @@ class KivyGlops(PyGlops):
                                     #       m_glop.get_angle(a_i))) +
                                     #     " to " +
                                     #     str(math.degrees(new_a)))
-                                    print(
-                                        "FAILED to set angle " +
-                                        str(m_glop.get_angle(a_i)) +
-                                        " to " +
-                                        str(new_a))
+                                    print("FAILED to set angle "
+                                          + str(m_glop.get_angle(a_i))
+                                          + " to "
+                                          + str(new_a))
                             # TODO: m_glop._r_ins_y.angle = \
                             #     angle_trunc(m_glop._r_ins_y.angle)
                             # m_glop._t_ins.x += \
@@ -2595,8 +2668,8 @@ class KivyGlops(PyGlops):
             if mgp['physics_enable']:
                 if mgs.get('show_physics_msg_enable') is None:
                     if get_verbose_enable():
-                        print("[ KivyGlops ] (verbose message " +
-                              "in update) processing first run of" +
+                        print("[ KivyGlops ] (verbose message "
+                              "in update) processing first run of"
                               " physics for " + m_glop.name)
                     mgs['show_physics_msg_enable'] = True
                 # walk_info = \
@@ -2676,18 +2749,18 @@ class KivyGlops(PyGlops):
                                                      bumper_index)
                             if get_verbose_enable():
                                 if e_glop is not None:
-                                    print("[ KivyGlops ]" + VMSG +
-                                          str(r_glop.name) +
-                                          " bumped " +
-                                          str(e_glop.name))
+                                    print("[ KivyGlops ]" + VMSG
+                                          + str(r_glop.name)
+                                          + " bumped "
+                                          + str(e_glop.name))
                                 elif r_glop is not None:
-                                    print("[ KivyGlops ]" + VMSG +
-                                          str(r_glop.name) +
-                                          " bumped world")
+                                    print("[ KivyGlops ]" + VMSG
+                                          + str(r_glop.name)
+                                          + " bumped world")
                         else:
                             if get_verbose_enable():
-                                print("[ KivyGlops ]" + VMSG +
-                                      "cannot bump own projectile")
+                                print("[ KivyGlops ]" + VMSG
+                                      + "cannot bump own projectile")
 
                     # NOTE: projectile_dict is already removed above
                     # by _internal_bump_glop if relevant
@@ -2717,7 +2790,8 @@ class KivyGlops(PyGlops):
                     wfd = sw['friction_divisor']
                     wfdp = wfd
                     if mgsv[1] < -kEpsilon:
-                        wfdp = wfd + -mgsv[1]  # pressure increases friction
+                        wfdp = wfd + -mgsv[1]
+                        # ^ pressure increases friction
                         # TODO: real physics for wfdp
                     if mgsv[1] <= kEpsilon:
                         # if no upward velocity, do friction
@@ -2740,9 +2814,9 @@ class KivyGlops(PyGlops):
                 )
                 if get_verbose_enable():
                     if mgad is not None and mgp['roll_enable']:
-                        print("[ KivyGlops ] WARNING in update:" +
-                              " roll_enable is True for actor" +
-                              " '" + m_glop.name + "'")
+                        print("[ KivyGlops ] WARNING in update:"
+                              " roll_enable is True for actor"
+                              " '{}'".format(m_glop.name))
 
                 if mgs['on_ground_enable'] and \
                    mgp.get('hit_radius') is not None and \
@@ -2823,9 +2897,9 @@ class KivyGlops(PyGlops):
                             mgs.get('prev_on_ground_enable')
                         if prev_on_ground_enable != \
                                 mgs['on_ground_enable']:
-                            print("[ KivyGlops ]" + VMSG +
-                                  "glop " + m_glop.name +
-                                  " tried to move, but was not " +
+                            print("[ KivyGlops ]" + VMSG
+                                  + "glop " + m_glop.name
+                                  + " tried to move, but was not "
                                   "at rest (physics in control)")
             mgs['prev_on_ground_enable'] = mgs['on_ground_enable']
             mgs['constrained_enable'] = False
@@ -2845,9 +2919,9 @@ class KivyGlops(PyGlops):
                     mgs['on_ground_enable'] = True
                     mgs['constrained_enable'] = True
                 else:
-                    print("[ KivyGlops ] ERROR in update: " +
-                          "unknown link r_type " +
-                          str(rel.get('r_type')))
+                    print("[ KivyGlops ] ERROR in update: "
+                          "unknown link r_type "
+                          + str(rel.get('r_type')))
 
             # if mgp['physics_enable']:
             if p1_enable:
@@ -2984,12 +3058,12 @@ class KivyGlops(PyGlops):
         elif sg['camera_perspective_number'] == self.CAMERA_FREE():
             pass
         else:
-            print("[ KivyGlops ] ERROR in update: " +
-                  "settings['camera_perspective_number'] " +
-                  str(sg['camera_perspective_number']) +
-                  " is not yet implemented. Try setting number to " +
-                  " in scene to one of the self.CAMERA_*()" +
-                  " methods' returns.")
+            print("[ KivyGlops ] ERROR in update: "
+                  "settings['camera_perspective_number'] {}"
+                  " is not yet implemented. Try setting number to "
+                  " in scene to one of the self.CAMERA_*()"
+                  " methods' returns."
+                  "".format(sg['camera_perspective_number']))
 
         asp = float(self.ui.width) / float(self.ui.height)
 
@@ -3119,11 +3193,15 @@ class KivyGlops(PyGlops):
         #         # " degrees")
 
         if ((self._previous_world_light_dir is None)
-                or (self._previous_world_light_dir[0] != glwCv['_world_light_dir'][0])
-                or (self._previous_world_light_dir[1] != glwCv['_world_light_dir'][1])
-                or (self._previous_world_light_dir[2] != glwCv['_world_light_dir'][2])
+                or (self._previous_world_light_dir[0]
+                    != glwCv['_world_light_dir'][0])
+                or (self._previous_world_light_dir[1]
+                    != glwCv['_world_light_dir'][1])
+                or (self._previous_world_light_dir[2]
+                    != glwCv['_world_light_dir'][2])
                 or (self._previous_camera_rotate_y_angle is None)
-                or (self._previous_camera_rotate_y_angle != self.camera_glop._r_ins_y.angle)):
+                or (self._previous_camera_rotate_y_angle
+                    != self.camera_glop._r_ins_y.angle)):
             # glwCv['_world_light_dir'] = (0.0,.5,1.0);
             # glwCv['_world_light_dir_eye_space'] = (0.0,.5,1.0);
             world_light_theta = theta_radians_from_rectangular(
@@ -3133,10 +3211,11 @@ class KivyGlops(PyGlops):
                 world_light_theta+self.camera_glop._r_ins_y.angle
             light_r = \
                 math.sqrt(
-                    (glwCv['_world_light_dir'][0] *
-                     glwCv['_world_light_dir'][0]) +
-                    (glwCv['_world_light_dir'][2] *
-                     glwCv['_world_light_dir'][2]))
+                    (glwCv['_world_light_dir'][0]
+                     * glwCv['_world_light_dir'][0])
+                    + (glwCv['_world_light_dir'][2]
+                       * glwCv['_world_light_dir'][2])
+                )
             glwCv['_world_light_dir_eye_space'] = (
                 light_r * math.cos(light_theta),
                 glwCv['_world_light_dir_eye_space'][1],
@@ -3344,8 +3423,8 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                 self.hud_form.canvas.before.add(self.hud_bg_rect)
                 self.hud_form.source = path
             else:
-                print("[ KivyGlopsWindow ] ERROR in set_hud_image:" +
-                      " could not find " + original_path)
+                print("[ KivyGlopsWindow ] ERROR in set_hud_image:"
+                      " could not find {}".format(original_path))
         else:
             print("[ KivyGlopsWindow ] ERROR in set_hud_image:" +
                   " path is None")
@@ -3365,8 +3444,8 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                             duration_seconds=None):
         if path is not None:
             if os.path.isfile(path):
-                print("[ KivyGlopsWindow ] found '" + path + "'" +
-                      "  (not yet implemented)")
+                print("[ KivyGlopsWindow ] found '{}'"
+                      "  (not yet implemented)".format(path))
                 # Range is 0 to 250px for size, so therefore translate
                 # to meters:
                 # divide by 125 to get meters, then multiply by radius,
@@ -3374,9 +3453,10 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                 # or "reduced" (<125) size while retaining pixel-based
                 # sizing.
             else:
-                print("[ KivyGlopsWindow ] missing '" + path + "'")
+                print("[ KivyGlopsWindow ] missing '{}'"
+                      "".format(path))
         else:
-            print("[ KivyGlopsWindow ] ERROR in " +
+            print("[ KivyGlopsWindow ] ERROR in "
                   "spawn_pex_particles: path is None")
 
     def inventory_prev_button_press(self, instance):
@@ -3394,14 +3474,14 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
 
     def get_look_angles_from_2d(self, pos):
         # global debug_dict  # from common.py
-        x_angle = (-math.pi +
-                   ((float(pos[0]) / float(self.width-1)) *
-                    TAU))
+        x_angle = (-math.pi
+                   + ((float(pos[0]) / float(self.width-1))
+                      * TAU))
         # if x_angle < 0.:
         #     x_angle = TAU + x_angle
-        y_angle = (-(math.pi/2.0) +
-                   (float(pos[1])/float(self.height-1)) *
-                   (math.pi))
+        y_angle = (-(math.pi/2.0)
+                   + (float(pos[1])/float(self.height-1))
+                   * (math.pi))
         if 'camera_glop' not in debug_dict:
             debug_dict['camera_glop'] = {}
         if 'View' not in debug_dict:
@@ -3428,9 +3508,9 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             if this_glop.name is None:
                 this_glop.name = str(uuid.uuid4())
                 if get_verbose_enable():
-                    print("[ KivyGlopsWindow ] WARNING in " +
-                          "add_glop: missing name so generated '" +
-                          this_glop.name + "'")
+                    print("[ KivyGlopsWindow ] WARNING in "
+                          "add_glop: missing name so generated '{}'"
+                          "".format(this_glop.name))
             if set_visible_enable is not None:
                 this_glop.state['visible_enable'] = set_visible_enable
             # context = self._contexts
@@ -3482,8 +3562,8 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                                       self.scene.camera_glop._t_ins.xyz)
 
         except:
-            print("[ KivyGlopsWindow ] ERROR: Could not finish " +
-                  participle + " in KivyGlops load_obj")
+            print("[ KivyGlopsWindow ] ERROR: Could not finish "
+                  + participle + " in KivyGlops load_obj")
             view_traceback()
 
     def setup_gl_context(self, *args):
@@ -3753,8 +3833,8 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
 
     def _deferred_load_glops(self, dt):
         if get_verbose_enable():
-            print("_deferred_load_glops: " + str(type(dt)) +
-                  " dt = " + str(dt))
+            print("_deferred_load_glops: {} dt = {}"
+                  "".format(type(dt), dt))
         self.scene.on_load_glops()  # also moved from ui
         if get_verbose_enable():
             for key in range(len(self.scene.glops)):
@@ -3762,10 +3842,11 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                 for key2 in range(len(self.scene.glops)):
                     try2_glop = self.scene.glops[key2]
                     if (key != key2) and (try_glop is try2_glop):
-                        print("[ KivyGlopsWindow ] WARNING in " +
-                              "_deferred_load_glops: " +
-                              "glop at " + str(key2) + " is a " +
-                              "duplicate of glop at " + str(key))
+                        print("[ KivyGlopsWindow ] WARNING in "
+                              "_deferred_load_glops: "
+                              "glop at {} is a "
+                              "duplicate of glop at {}"
+                              "".format(key2, key))
         self.scene._loaded_glops_enable = True
         self.debug_label.text = ""
 
@@ -3790,13 +3871,15 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             for this_glop in self.scene.glops:
                 if this_glop._axes_mesh is not None:
                     this_glop.prepare_canvas(
-                        [this_glop._axes_mesh], axes_index=0)
+                        [this_glop._axes_mesh],
+                        axes_index=0
+                    )
                     context = this_glop.get_context()
                     this_glop.set_uniform("texture0_enable", False)
                 else:
-                    print("[ KivyGlopsWindow ] ERROR in " +
-                          "toggle_visual_debug: no _axes_mesh" +
-                          " for glop '" + str(this_glop.name) + "'")
+                    print("[ KivyGlopsWindow ] ERROR in "
+                          "toggle_visual_debug: no _axes_mesh"
+                          " for glop '{}'".format(this_glop.name))
             print("[ KivyGlopsWindow ] set _visual_debug_enable: True")
         else:
             self.scene._visual_debug_enable = False
@@ -3813,9 +3896,9 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                         if this_glop.no_mesh_warning_enable:
                             this_glop.no_mesh_warning_enable = \
                                 False
-                            print("[ KivyGlopsWindow ] WARNING in " +
-                                  "toggle_visual_debug: _mesh is" +
-                                  " None for " + str(this_glop.name))
+                            print("[ KivyGlopsWindow ] WARNING in"
+                                  " toggle_visual_debug: _mesh is"
+                                  " None for {}".format(this_glop.name))
             print("[ KivyGlopsWindow ] set _visual_debug_enable: False")
 
     def set_debug_label(self, text):
@@ -3824,10 +3907,10 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
     def suspend_debug_label_update(self, enable):
         if enable:
             if self.debug_label_suspended_level < 0:
-                print("[ KivyGlopsWindow ] WARNING: " +
-                      "self.debug_label_suspended_level was " +
-                      str(self.debug_label_suspended_level) +
-                      "so forcing to 0")
+                print("[ KivyGlopsWindow ] WARNING: "
+                      "self.debug_label_suspended_level was {}"
+                      "so forcing to 0"
+                      "".format(self.debug_label_suspended_level))
                 self.debug_label_suspended_level = 0
             self.debug_label_suspended_level += 1
         else:
@@ -3960,8 +4043,9 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         return True
 
     def _on_keyboard_up(self, keyboard, keycode):
-        self.scene.player1_controller.set_pressed(
-            keycode[0], keycode[1], False)
+        self.scene.player1_controller.set_pressed(keycode[0],
+                                                  keycode[1],
+                                                  False)
         # print('[ KivyGlopsWindow ] Released key ' + str(keycode))
 
     def _keyboard_closed(self):

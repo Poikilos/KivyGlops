@@ -9,14 +9,24 @@ import sys
 import random
 # from docutils.utils.math.math2html import VerticalSpace
 # import traceback
-from common import *
+from kivyglops.common import (
+    get_verbose_enable,
+    get_yaml_from_literal_value,
+    get_dict_deepcopy,
+    view_traceback,
+    is_true,
+    debug_dict,
+)
 # from pyrealtime import *
 from datetime import datetime
 
 import timeit
 from timeit import default_timer as best_timer
 import time
-from wobjfile import *
+from kivyglops.wobjfile import (
+    standard_emit_yaml,
+    WObjFile,
+)
 
 TAU = math.pi * 2.
 NEG_TAU = -TAU
@@ -2209,346 +2219,349 @@ class PyGlop:
         vertex_components = zero_vertex[:]
 
         source_face_index = 0
-        try:
-            # if (len(self.indices)<1):
-            participle = "before detecting vertex component offsets"
-            # detecting vertex component offsets is required since
-            # indices in an obj file are sometimes relative to the
-            # first index in the FILE not the object
-            TCO = self._TEXCOORD0_OFFSET
-            PO = self._POSITION_OFFSET
-            NO = self._NORMAL_OFFSET
-            for key in this_wobject.face_dicts:
-                this_face_list = this_wobject.face_dicts[key]['faces']
-                # TODO: implement this_wobject.face_dicts[key]['s']
-                # which can be "on" or "off" or None
-                participle = "before processing faces"
-                dest_vertex_index = 0
-                face_count = 0
-                new_texcoord = new_tuple(
-                    vf[self.TEXCOORD0_INDEX][VFORMAT_VECTOR_LEN_INDEX])
-                if this_face_list is None:
-                    print("[ PyGlop ] WARNING in append_wobject: "
-                          + "faces list in this_wobject.face_groups["
-                          + key + "] is None in object '" + this_name
-                          + "'")
-                    continue
-                if get_verbose_enable():
-                    # debug only
-                    print(
-                        "[ PyGlop ] adding " +
-                        str(len(this_face_list)) + " face(s) from " +
-                        str(type(this_face_list)) + " " + key)
-                for this_wobject_this_face in this_face_list:
-                    participle = "getting face components"
+        # try:
+        # if (len(self.indices) < 1):
+        participle = "before detecting vertex component offsets"
+        # detecting vertex component offsets is required since
+        # indices in an obj file are sometimes relative to the
+        # first index in the FILE not the object
+        TCO = self._TEXCOORD0_OFFSET
+        PO = self._POSITION_OFFSET
+        NO = self._NORMAL_OFFSET
+        FACE_V = WObjFile.FACE_V
+        FACE_TC = WObjFile.FACE_TC
+        FACE_VN = WObjFile.FACE_VN
+        for key in this_wobject.face_dicts:
+            this_face_list = this_wobject.face_dicts[key]['faces']
+            # TODO: implement this_wobject.face_dicts[key]['s']
+            # which can be "on" or "off" or None
+            participle = "before processing faces"
+            dest_vertex_index = 0
+            face_count = 0
+            new_texcoord = new_tuple(
+                vf[self.TEXCOORD0_INDEX][VFORMAT_VECTOR_LEN_INDEX])
+            if this_face_list is None:
+                print("[ PyGlop ] WARNING in append_wobject: "
+                      + "faces list in this_wobject.face_groups["
+                      + key + "] is None in object '" + this_name
+                      + "'")
+                continue
+            if get_verbose_enable():
+                # debug only
+                print(
+                    "[ PyGlop ] adding " +
+                    str(len(this_face_list)) + " face(s) from " +
+                    str(type(this_face_list)) + " " + key)
+            for this_wobject_this_face in this_face_list:
+                participle = "getting face components"
 
-                    # DOES triangulate faces of more than 3 vertices
-                    # (connects each loose point to first vertex and
-                    # previous vertex)
-                    # (vertex_done_flags are no longer needed since
-                    # that method is used)
-                    # vertex_done_flags = list()
-                    # for vertexinfo_index in range(0,
-                    #         len(this_wobject_this_face)):
-                    #     vertex_done_flags.append(False)
-                    # vertices_done_count = 0
+                # DOES triangulate faces of more than 3 vertices
+                # (connects each loose point to first vertex and
+                # previous vertex)
+                # (vertex_done_flags are no longer needed since
+                # that method is used)
+                # vertex_done_flags = list()
+                # for vertexinfo_index in range(0,
+                #         len(this_wobject_this_face)):
+                #     vertex_done_flags.append(False)
+                # vertices_done_count = 0
 
-                    # with wobjfile.py, each face is an arbitrary-length
-                    # list of vertex_infos, where each vertex_info is a
-                    # list containing vertex_index, texcoord_index,
-                    # then normal_index, so ignore the following
-                    # commented deprecated lines of code:
-                    # verts =  this_wobject_this_face[0]
-                    # norms = this_wobject_this_face[1]
-                    # tcs = this_wobject_this_face[2]
-                    # for vertexinfo_index in range(3):
-                    vertexinfo_index = 0
-                    source_face_vertex_count = 0
-                    while vertexinfo_index < len(this_wobject_this_face):
-                        # print("vertex[" + str(vertexinfo_index) + "]")
-                        vertex_info = \
-                            this_wobject_this_face[vertexinfo_index]
+                # with wobjfile.py, each face is an arbitrary-length
+                # list of vertex_infos, where each vertex_info is a
+                # list containing vertex_index, texcoord_index,
+                # then normal_index, so ignore the following
+                # commented deprecated lines of code:
+                # verts =  this_wobject_this_face[0]
+                # norms = this_wobject_this_face[1]
+                # tcs = this_wobject_this_face[2]
+                # for vertexinfo_index in range(3):
+                vertexinfo_index = 0
+                source_face_vertex_count = 0
+                while vertexinfo_index < len(this_wobject_this_face):
+                    # print("vertex[" + str(vertexinfo_index) + "]")
+                    vertex_info = \
+                        this_wobject_this_face[vertexinfo_index]
 
-                        vertex_index = vertex_info[FACE_V]
-                        texcoord_index = vertex_info[FACE_TC]
-                        normal_index = vertex_info[FACE_VN]
+                    vertex_index = vertex_info[FACE_V]
+                    texcoord_index = vertex_info[FACE_TC]
+                    normal_index = vertex_info[FACE_VN]
 
-                        vertex = None
-                        texcoord = None
-                        normal = None
+                    vertex = None
+                    texcoord = None
+                    normal = None
 
-                        participle = "getting normal components"
+                    participle = "getting normal components"
 
-                        # get normal components
-                        normal = (0.0, 0.0, 1.0)
-                        # if normals_offset is None:
-                        #     normals_offset = 1
-                        normals_offset = 0
-                        # since wobjfile.py makes
-                        # indices relative to object
-                        try:
-                            # if (normal_index is not None) and \
-                            #         (normals_offset is not None):
+                    # get normal components
+                    normal = (0.0, 0.0, 1.0)
+                    # if normals_offset is None:
+                    #     normals_offset = 1
+                    normals_offset = 0
+                    # since wobjfile.py makes
+                    # indices relative to object
+                    try:
+                        # if (normal_index is not None) and \
+                        #         (normals_offset is not None):
+                        #     participle = (
+                        #         "getting normal components at " +
+                        #         str(normal_index-normals_offset)
+                        #          # str(norms[face_index] -
+                        #              # normals_offset)
+                        # else:
+                        participle = (
+                            "getting normal components at " +
+                            str(normal_index) + "-" +
+                            str(normals_offset)
+                        )
+                        # str(norms[face_index]-normals_offset)
+                        wn = this_wobject.normals
+                        if normal_index is not None:
+                            normal = wn[normal_index-normals_offset]
+                        # if norms[face_index] != -1:
+                        #     normal = this_wobject.normals[
+                        #         norms[face_index]-normals_offset]
+                    except:  # Exception as e:
+                        print("Could not finish " + participle +
+                              " for wobject named '" + this_name +
+                              "':")
+                        view_traceback()
+
+                    participle = (
+                        "getting texture coord components"
+                    )
+                    participle = (
+                        "getting texture coord components" +
+                        " at " + str(face_count)
+                    )
+                    participle = (
+                        "getting texture coord components" +
+                        " using index " + str(face_count)
+                    )
+                    # get texture coordinate components
+                    # texcoord = (0.0, 0.0)
+                    texcoord = new_texcoord[:]
+                    # if texcoords_offset is None:
+                    #     texcoords_offset = 1
+                    texcoords_offset = 0
+                    # since wobjfile.py makes indices relative
+                    # to object
+                    try:
+                        if this_wobject.texcoords is not None:
+                            # if (texcoord_index is not None) and \
+                            #         (texcoords_offset \
+                            #          is not None:
                             #     participle = (
-                            #         "getting normal components at " +
-                            #         str(normal_index-normals_offset)
-                            #          # str(norms[face_index] -
-                            #              # normals_offset)
+                            #         "getting texcoord" +
+                            #         "components at " +
+                            #         str(texcoord_index -
+                            #             texcoords_offset) +
+                            #         # str(norms[face_index] -
+                            #         # normals_offset)
+                            #     )
                             # else:
                             participle = (
-                                "getting normal components at " +
-                                str(normal_index) + "-" +
-                                str(normals_offset)
+                                "getting texcoord" +
+                                " components at " +
+                                str(texcoord_index) + "-" +
+                                str(texcoords_offset)
                             )
-                            # str(norms[face_index]-normals_offset)
-                            wn = this_wobject.normals
-                            if normal_index is not None:
-                                normal = wn[normal_index-normals_offset]
-                            # if norms[face_index] != -1:
-                            #     normal = this_wobject.normals[
-                            #         norms[face_index]-normals_offset]
-                        except:  # Exception as e:
-                            print("Could not finish " + participle +
-                                  " for wobject named '" + this_name +
-                                  "':")
-                            view_traceback()
+                            # str(norms[face_index] -
+                            #     normals_offset)
 
-                        participle = (
-                            "getting texture coord components"
-                        )
-                        participle = (
-                            "getting texture coord components" +
-                            " at " + str(face_count)
-                        )
-                        participle = (
-                            "getting texture coord components" +
-                            " using index " + str(face_count)
-                        )
-                        # get texture coordinate components
-                        # texcoord = (0.0, 0.0)
-                        texcoord = new_texcoord[:]
-                        # if texcoords_offset is None:
-                        #     texcoords_offset = 1
-                        texcoords_offset = 0
-                        # since wobjfile.py makes indices relative
-                        # to object
-                        try:
-                            if this_wobject.texcoords is not None:
-                                # if (texcoord_index is not None) and \
-                                #         (texcoords_offset \
-                                #          is not None:
-                                #     participle = (
-                                #         "getting texcoord" +
-                                #         "components at " +
-                                #         str(texcoord_index -
-                                #             texcoords_offset) +
-                                #         # str(norms[face_index] -
-                                #         # normals_offset)
-                                #     )
-                                # else:
-                                participle = (
-                                    "getting texcoord" +
-                                    " components at " +
-                                    str(texcoord_index) + "-" +
-                                    str(texcoords_offset)
-                                )
-                                # str(norms[face_index] -
-                                #     normals_offset)
-
-                                if texcoord_index is not None:
-                                    texcoord = this_wobject.texcoords[
-                                        texcoord_index-texcoords_offset
-                                    ]
-                                # if tcs[face_index] != -1:
-                                #     tc_len = len(
-                                #         this_wobject.texcoords)
-                                #     participle = (
-                                #         "using texture" +
-                                #         coordinates at index " +
-                                #         str(tcs[face_index] -
-                                #             texcoords_offset) +
-                                #         " (after applying" +
-                                #         " texcoords_offset:" +
-                                #         str(texcoords_offset) +
-                                #         "; Count:" +
-                                #         str(tc_len)+")"
-                                #     )
-                                #     texcoord = (
-                                #         this_wobject.texcoords[ \
-                                #             tcs[face_index] - \
-                                #             texcoords_offset]
-                                #     )
-                            else:
-                                if get_verbose_enable():
-                                    print("Warning: no texcoords " +
-                                          "found in wobject named '" +
-                                          this_name + "'")
-                        except:  # Exception as e:
-                            print("Could not finish " + participle +
-                                  " for wobject named '" + this_name +
-                                  "':")
-                            view_traceback()
-
-                        participle = "getting vertex components"
-                        # if vertices_offset is None:
-                        #     vertices_offset = 1
-                        vertices_offset = 0
-                        # ^ since wobjfile.py makes indices relative to
-                        #   object
-                        vs_len = len(this_wobject.vertices)
-                        # participle = (
-                        #    "accessing face vertex " +
-                        #     str(verts[face_index] -
-                        #         vertices_offset) +
-                        #     " (after applying vertices_offset:" +
-                        #     str(vertices_offset) +
-                        #     "; Count:" + str(vs_len) + ")"
-                        # )
-                        participle = (
-                            "accessing face vertex " +
-                            str(vertex_index) + "-" +
-                            str(vertices_offset) + " (after" +
-                            " applying vertices_offset:" +
-                            str(vertices_offset)
-                        )
-                        if (this_wobject.vertices is not None):
-                            participle += "; Count:" + str(vs_len) + ")"
+                            if texcoord_index is not None:
+                                texcoord = this_wobject.texcoords[
+                                    texcoord_index-texcoords_offset
+                                ]
+                            # if tcs[face_index] != -1:
+                            #     tc_len = len(
+                            #         this_wobject.texcoords)
+                            #     participle = (
+                            #         "using texture" +
+                            #         coordinates at index " +
+                            #         str(tcs[face_index] -
+                            #             texcoords_offset) +
+                            #         " (after applying" +
+                            #         " texcoords_offset:" +
+                            #         str(texcoords_offset) +
+                            #         "; Count:" +
+                            #         str(tc_len)+")"
+                            #     )
+                            #     texcoord = (
+                            #         this_wobject.texcoords[ \
+                            #             tcs[face_index] - \
+                            #             texcoords_offset]
+                            #     )
                         else:
-                            participle += \
-                                "; this_wobject.vertices: None)"
-                        try:
-                            this_vi = vertex_index-vertices_offset
-                            # v = this_wobject.vertices[\
-                            #     verts[face_index]-vertices_offset]
-                            v = this_wobject.vertices[this_vi]
-                        except:  # Exception as e:
-                            print("[ PyGlop ] (ERROR) could not " +
-                                  "finish " + participle + " for " +
-                                  "wobject named '" + this_name + "':")
-                            view_traceback()
+                            if get_verbose_enable():
+                                print("Warning: no texcoords " +
+                                      "found in wobject named '" +
+                                      this_name + "'")
+                    except:  # Exception as e:
+                        print("Could not finish " + participle +
+                              " for wobject named '" + this_name +
+                              "':")
+                        view_traceback()
 
-                        participle = "combining components"
+                    participle = "getting vertex components"
+                    # if vertices_offset is None:
+                    #     vertices_offset = 1
+                    vertices_offset = 0
+                    # ^ since wobjfile.py makes indices relative to
+                    #   object
+                    vs_len = len(this_wobject.vertices)
+                    # participle = (
+                    #    "accessing face vertex " +
+                    #     str(verts[face_index] -
+                    #         vertices_offset) +
+                    #     " (after applying vertices_offset:" +
+                    #     str(vertices_offset) +
+                    #     "; Count:" + str(vs_len) + ")"
+                    # )
+                    participle = (
+                        "accessing face vertex " +
+                        str(vertex_index) + "-" +
+                        str(vertices_offset) + " (after" +
+                        " applying vertices_offset:" +
+                        str(vertices_offset)
+                    )
+                    if (this_wobject.vertices is not None):
+                        participle += "; Count:" + str(vs_len) + ")"
+                    else:
+                        participle += \
+                            "; this_wobject.vertices: None)"
+                    try:
+                        this_vi = vertex_index-vertices_offset
+                        # v = this_wobject.vertices[\
+                        #     verts[face_index]-vertices_offset]
+                        v = this_wobject.vertices[this_vi]
+                    except:  # Exception as e:
+                        print("[ PyGlop ] (ERROR) could not " +
+                              "finish " + participle + " for " +
+                              "wobject named '" + this_name + "':")
+                        view_traceback()
 
-                        # TODO: why does kivy-rotation3d version have
-                        # texcoord[1] instead of 1 - texcoord[1] in:
-                        # vertex_components = [
-                        #     v[0], v[1], v[2],
-                        #     normal[0], normal[1], normal[2],
-                        #     texcoord[0], 1 - texcoord[1]]
-                        # ]
-                        vertex_components = list()
-                        for i in range(0, vd):
-                            vertex_components.append(0.0)
-                        for element_index in range(0, 3):
-                            vertex_components[PO+element_index] = \
-                                v[element_index]
-                        if (vf[p_i][VFORMAT_VECTOR_LEN_INDEX] > 3):
-                            vertex_components[PO+3] = 1.0
-                            # ^ non-position padding value must be 1.0
-                            # for matrix math to work correctly
-                        for element_index in range(0, 3):
-                            vertex_components[NO+element_index] = \
-                                normal[element_index]
-                        for element_index in range(0, 2):
-                            if element_index == 1:
-                                vertex_components[TCO+element_index] = \
-                                    1-texcoord[element_index]
-                            else:
-                                vertex_components[TCO+element_index] = \
-                                    texcoord[element_index]
+                    participle = "combining components"
 
-                        if len(v) > 3:
-                            # use extended vertex info (color) from
-                            # nonstandard obj file
-                            abs_index = 0
-                            for element_index in range(4, len(v)):
-                                vertex_components[self.COLOR_OFFSET
-                                                  + abs_index] = \
-                                                      v[element_index]
-                                abs_index += 1
+                    # TODO: why does kivy-rotation3d version have
+                    # texcoord[1] instead of 1 - texcoord[1] in:
+                    # vertex_components = [
+                    #     v[0], v[1], v[2],
+                    #     normal[0], normal[1], normal[2],
+                    #     texcoord[0], 1 - texcoord[1]]
+                    # ]
+                    vertex_components = list()
+                    for i in range(0, vd):
+                        vertex_components.append(0.0)
+                    for element_index in range(0, 3):
+                        vertex_components[PO+element_index] = \
+                            v[element_index]
+                    if (vf[p_i][VFORMAT_VECTOR_LEN_INDEX] > 3):
+                        vertex_components[PO+3] = 1.0
+                        # ^ non-position padding value must be 1.0
+                        # for matrix math to work correctly
+                    for element_index in range(0, 3):
+                        vertex_components[NO+element_index] = \
+                            normal[element_index]
+                    for element_index in range(0, 2):
+                        if element_index == 1:
+                            vertex_components[TCO+element_index] = \
+                                1-texcoord[element_index]
                         else:
-                            # default to transparent vertex color
-                            # TODO: overlay vertex color using material
-                            # color as base
-                            for element_index in range(0, 4):
-                                vertex_components[self.COLOR_OFFSET
-                                                  + element_index] = \
-                                                      0.0
-                        self.vertices.extend(vertex_components)
-                        source_face_vertex_count += 1
-                        vertexinfo_index += 1
-                    # endwhile vertexinfo_index in face
+                            vertex_components[TCO+element_index] = \
+                                texcoord[element_index]
 
-                    participle = "combining triangle indices"
-                    vertexinfo_index = 0
-                    sFaceVI = 0
-                    # ^ required for tracking faces with less than 3 vertices
-                    face_first_vertex_dest_index = dest_vertex_index
-                    # ^ store first face (used for tesselation)
-                    tesselated_f_count = 0
-                    # example obj quad (without Texcoord) vertex_index/
-                    # texcoord_index/normal_index:
-                    # f 61//33 62//33 64//33 63//33
-                    # face_vertex_list = list()  # in case verts are out
-                    # of order, prevent tesselation from connecting
-                    # wrong verts
-                    while vertexinfo_index < len(this_wobject_this_face):
-                        # face_vertex_list.append(dest_vertex_index)
-                        if vertexinfo_index == 2:
-                            # OK to assume dest vertices are in order,
-                            # since just created them (should work even
-                            # if source vertices are not in order)
-                            tri = [
-                                glop_vertex_offset+dest_vertex_index,
-                                glop_vertex_offset+dest_vertex_index+1,
-                                glop_vertex_offset+dest_vertex_index+2
-                            ]
-                            self.indices.extend(tri)
-                            dest_vertex_index += 3
-                            sFaceVI += 3
-                            tesselated_f_count += 1
-                        elif vertexinfo_index > 2:
-                            # TESSELATE MANUALLY for faces with more
-                            # than 3 vertices (connect loose vertex with
-                            # first vertex and previous vertex)
-                            tri = [
-                                glop_vertex_offset
-                                + face_first_vertex_dest_index,
-                                glop_vertex_offset+dest_vertex_index-1,
-                                glop_vertex_offset+dest_vertex_index
-                            ]
-                            self.indices.extend(tri)
-                            dest_vertex_index += 1
-                            sFaceVI += 1
-                            tesselated_f_count += 1
-                        vertexinfo_index += 1
+                    if len(v) > 3:
+                        # use extended vertex info (color) from
+                        # nonstandard obj file
+                        abs_index = 0
+                        for element_index in range(4, len(v)):
+                            vertex_components[self.COLOR_OFFSET
+                                              + abs_index] = \
+                                                  v[element_index]
+                            abs_index += 1
+                    else:
+                        # default to transparent vertex color
+                        # TODO: overlay vertex color using material
+                        # color as base
+                        for element_index in range(0, 4):
+                            vertex_components[self.COLOR_OFFSET
+                                              + element_index] = \
+                                                  0.0
+                    self.vertices.extend(vertex_components)
+                    source_face_vertex_count += 1
+                    vertexinfo_index += 1
+                # endwhile vertexinfo_index in face
 
-                    if (tesselated_f_count < 1):
-                        print("WARNING: Face tesselated to 0 faces")
-                    # elif (tesselated_f_count>1):
-                    #     if get_verbose_enable():
-                    #         print("Face tesselated to "
-                    #               + str(tesselated_f_count)
-                    #               + " face(s)")
+                participle = "combining triangle indices"
+                vertexinfo_index = 0
+                sFaceVI = 0
+                # ^ required for tracking faces with less than 3 vertices
+                face_first_vertex_dest_index = dest_vertex_index
+                # ^ store first face (used for tesselation)
+                tesselated_f_count = 0
+                # example obj quad (without Texcoord) vertex_index/
+                # texcoord_index/normal_index:
+                # f 61//33 62//33 64//33 63//33
+                # face_vertex_list = list()  # in case verts are out
+                # of order, prevent tesselation from connecting
+                # wrong verts
+                while vertexinfo_index < len(this_wobject_this_face):
+                    # face_vertex_list.append(dest_vertex_index)
+                    if vertexinfo_index == 2:
+                        # OK to assume dest vertices are in order,
+                        # since just created them (should work even
+                        # if source vertices are not in order)
+                        tri = [
+                            glop_vertex_offset+dest_vertex_index,
+                            glop_vertex_offset+dest_vertex_index+1,
+                            glop_vertex_offset+dest_vertex_index+2
+                        ]
+                        self.indices.extend(tri)
+                        dest_vertex_index += 3
+                        sFaceVI += 3
+                        tesselated_f_count += 1
+                    elif vertexinfo_index > 2:
+                        # TESSELATE MANUALLY for faces with more
+                        # than 3 vertices (connect loose vertex with
+                        # first vertex and previous vertex)
+                        tri = [
+                            glop_vertex_offset
+                            + face_first_vertex_dest_index,
+                            glop_vertex_offset+dest_vertex_index-1,
+                            glop_vertex_offset+dest_vertex_index
+                        ]
+                        self.indices.extend(tri)
+                        dest_vertex_index += 1
+                        sFaceVI += 1
+                        tesselated_f_count += 1
+                    vertexinfo_index += 1
 
-                    if sFaceVI < source_face_vertex_count:
-                        print("WARNING: Face has fewer than 3 vertices"
-                              " (problematic obj file "
-                              + str(this_wobject.source_path) + ")")
-                        dest_vertex_index += (source_face_vertex_count
-                                              - sFaceVI)
-                    source_face_index += 1
-            participle = "generating pivot point"
-            # if self.properties['hitbox'] is not None:
-            #     print("[ PyGlop ] WARNING: self."
-            #           'properties['hitbox'] is not None'
-            #           " already during append_wobject")
-            if pivot_to_g_enable:
-                self.transform_pivot_to_geometry()
-            # else:
-            #     print("ERROR: can't use pyglop since already has"
-            #           " vertices (len(self.indices)>=1)")
+                if (tesselated_f_count < 1):
+                    print("WARNING: Face tesselated to 0 faces")
+                # elif (tesselated_f_count>1):
+                #     if get_verbose_enable():
+                #         print("Face tesselated to "
+                #               + str(tesselated_f_count)
+                #               + " face(s)")
 
+                if sFaceVI < source_face_vertex_count:
+                    print("WARNING: Face has fewer than 3 vertices"
+                          " (problematic obj file "
+                          + str(this_wobject.source_path) + ")")
+                    dest_vertex_index += (source_face_vertex_count
+                                          - sFaceVI)
+                source_face_index += 1
+        participle = "generating pivot point"
+        # if self.properties['hitbox'] is not None:
+        #     print("[ PyGlop ] WARNING: self."
+        #           'properties['hitbox'] is not None'
+        #           " already during append_wobject")
+        if pivot_to_g_enable:
+            self.transform_pivot_to_geometry()
+        # else:
+        #     print("ERROR: can't use pyglop since already has"
+        #           " vertices (len(self.indices)>=1)")
+        '''
         except:  # Exception as e:
             # print("[ PyGlop ] ERROR in append_wobject"
             #       + "--Could not finish " + participle
@@ -2575,15 +2588,15 @@ class PyGlop:
             # self.glops[self._current_object] = mesh
             # mesh.calculate_normals()
             # self.faces = []
-
-    #         if (len(this_wobject.normals)<1):
-    #             this_wobject.calculate_normals()
-    #                 # this does not work.
-    #                 # The call to calculate_normals is even commented
-    #                 # out at <https://github.com/kivy/kivy/blob/master
-    #                 # /examples/3Drendering/objloader.py>
-    #                 # accessed 20 Mar 2014. 16 Apr 2015.
-    # end def append_wobject
+        '''
+        # if (len(this_wobject.normals)<1):
+        #     this_wobject.calculate_normals()
+        #         # this does not work.
+        #         # The call to calculate_normals is even commented
+        #         # out at <https://github.com/kivy/kivy/blob/master
+        #         # /examples/3Drendering/objloader.py>
+        #         # accessed 20 Mar 2014. 16 Apr 2015.
+        # end def append_wobject
 # end class PyGlop
 
 
@@ -2712,27 +2725,30 @@ def new_light():
 
 
 class PyGlops:
-    glops = None
-    materials = None
-    lastUntitledMeshNumber = -1
-    lastCreatedMaterial = None
-    lastCreatedMesh = None
-    _walkmeshes = None
-    _visual_debug_enable = None
-    ui = None
-    camera_glop = None
-    player_glop = None
-    _player_glop_index = None
-    prev_inbounds_camera_translate = None
-    _bumper_indices = None
-    _bumpable_indices = None
-    _world_min_y = None
-    _world_grav_acceleration = None
-    last_update_s = None
-
-    fired_count = None
 
     def __init__(self, new_glop_method):
+        self.glops = None
+        self.materials = None
+        self.lastUntitledMeshNumber = -1
+        self.lastCreatedMaterial = None
+        self.lastCreatedMesh = None
+        self._walkmeshes = None
+        self._visual_debug_enable = None
+        if not hasattr(self, 'ui'):
+            # ui may exist now if subclass calls super() late
+            self.ui = None
+        self.camera_glop = None
+        self.player_glop = None
+        self._player_glop_index = None
+        self.prev_inbounds_camera_translate = None
+        self._bumper_indices = None
+        self._bumpable_indices = None
+        self._world_min_y = None
+        self._world_grav_acceleration = None
+        self.last_update_s = None
+
+        self.fired_count = None
+
         global settings
         self.settings = settings
         self.settings['globals']['camera_perspective_number'] = \
@@ -3470,61 +3486,59 @@ class PyGlops:
         linePlus1 = 1
         # firstMeshIndex = len(self.glops)
         results = None
-        try:
-            # self.lastCreatedMesh = None
-            participle = "checking path"
-            if not os.path.exists(source_path):
-                print("ERROR: file '"+str(source_path)+"' not found")
-                return None
-            results = []
-            # ^ create now, so that if None,
-            # that means source_path didn't exist
-            participle = "setting up WObjFile"
-            this_objfile = WObjFile()
-            participle = "loading WObjFile"
-            this_objfile.load(source_path)
-            if this_objfile.wobjects is None:
-                print("ERROR: wobjects None from '" + source_path + "'")
-                return None
-            if len(this_objfile.wobjects) < 1:
-                print("ERROR: 0 wobjects could be read from '" +
-                      source_path + "'")
-                return None
-            # for i in range(0,len(this_objfile.wobjects)):
-            for key in this_objfile.wobjects:
-                participle = "getting wobject"
-                this_wobject = this_objfile.wobjects[key]
-                if this_wobject is not None:
-                    participle = "converting wobject..."
-                    this_pyglop = new_glop_method()
-                    this_pyglop.append_wobject(
-                        this_wobject,
-                        pivot_to_g_enable=pivot_to_g_enable)
-                    if this_pyglop is not None:
-                        participle = "appending pyglop to scene"
-                        # if results is None:
-                        #     results = list()
-                        results.append(this_pyglop)
-                        if get_verbose_enable():
-                            if this_pyglop.name is not None:
-                                print("appended glop named '" +
-                                      this_pyglop.name + "'")
-                            else:
-                                print("appended glop {name:None}")
-                    else:
-                        print("ERROR: this_pyglop is None after" +
-                              " converting from wobject")
+        # self.lastCreatedMesh = None
+        participle = "checking path"
+        if not os.path.exists(source_path):
+            print("ERROR: file '"+str(source_path)+"' not found")
+            return None
+        results = []
+        # ^ create now, so that if None,
+        # that means source_path didn't exist
+        participle = "setting up WObjFile"
+        this_objfile = WObjFile()
+        participle = "loading WObjFile"
+        this_objfile.load(source_path)
+        if this_objfile.wobjects is None:
+            print("ERROR: wobjects None from '" + source_path + "'")
+            return None
+        if len(this_objfile.wobjects) < 1:
+            print("ERROR: 0 wobjects could be read from '" +
+                  source_path + "'")
+            return None
+        # for i in range(0,len(this_objfile.wobjects)):
+        for key in this_objfile.wobjects:
+            participle = "getting wobject"
+            this_wobject = this_objfile.wobjects[key]
+            if this_wobject is not None:
+                participle = "converting wobject..."
+                this_pyglop = new_glop_method()
+                this_pyglop.append_wobject(
+                    this_wobject,
+                    pivot_to_g_enable=pivot_to_g_enable)
+                if this_pyglop is not None:
+                    participle = "appending pyglop to scene"
+                    # if results is None:
+                    #     results = list()
+                    results.append(this_pyglop)
+                    if get_verbose_enable():
+                        if this_pyglop.name is not None:
+                            print("appended glop named '" +
+                                  this_pyglop.name + "'")
+                        else:
+                            print("appended glop {name:None}")
                 else:
-                    print("ERROR: this_wobject is None (object " +
-                          str(i) + " from '" + source_path + "'")
+                    print("ERROR: this_pyglop is None after" +
+                          " converting from wobject")
+            else:
+                print("ERROR: this_wobject is None (object " +
+                      str(i) + " from '" + source_path + "'")
+        '''
         except:  # Exception as e:
-            # print("Could not finish a wobject in load_obj while " +
-            #       participle + " on line " + str(linePlus1) +
-            #       ": "+str(e))
             print("Could not finish a wobject in load_obj" +
                   " while " + participle + " on line " +
                   str(linePlus1) + ":")
             view_traceback()
+        '''
         return results
 
     def axis_index_to_string(self, index):

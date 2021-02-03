@@ -77,7 +77,7 @@ class MainScene(KivyGlops):
 
         self.set_background_cylmap("maps/sky-texture-seamless.jpg")
 
-        human_info = dict()
+        human_info = {}
         human_info['hp'] = 1.0
 
         player1_index = self.get_player_glop_index(1)
@@ -87,12 +87,13 @@ class MainScene(KivyGlops):
         self.add_damaged_sound_at(player1_index, "sounds/body-hit3.wav")
         self.add_damaged_sound_at(player1_index, "sounds/body-hit4.wav")
 
-        chimp_info = dict()
+        chimp_info = {}
         chimp_info['hp'] = 1.0
 
         chimp_info['land_speed'] = \
             self.glops[player1_index].actor_dict['land_speed'] / 2.
-        # If the ranges below are not set, PyGlops will set defaults for them:
+        # If the ranges below are not set, PyGlops will set defaults for
+        # them:
         chimp_info['ranges'] = {}
         chimp_info['ranges']['melee'] = 0.5
         chimp_info['ranges']['throw_arc'] = 10.

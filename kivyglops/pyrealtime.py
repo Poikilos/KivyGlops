@@ -14,7 +14,6 @@ import traceback
 #     pass
 #
 
-from common import *
 MODE_EDIT = "edit"
 MODE_GAME = "game"
 

@@ -25,8 +25,19 @@ from kivy.input.providers.mouse import MouseMotionEvent
 from kivy.factory import Factory
 from kivy.uix.boxlayout import BoxLayout
 
-from kivyglops import *
-from common import *
+from kivyglops import (
+    KivyGlop,
+    KivyGlops,
+    KivyGlopsWindow,
+)
+from kivyglops.common import (
+    set_verbose_enable,
+)
+
+from kivyglops.pyglops import (
+    new_material,
+    copy_material,
+)
 set_verbose_enable(True)
 
 
