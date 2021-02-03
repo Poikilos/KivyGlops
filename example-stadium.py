@@ -43,7 +43,7 @@ class MainScene(KivyGlops):
         else:
             print("[ example-stadium ] WARNING: not using walkmesh")
 
-        item_dict = dict()
+        item_dict = {}
         item_dict['name'] = "rock"
         item_dict['bump'] = "hide; obtain"
         item_dict['uses'] = ['throw_arc', 'melee']
@@ -52,7 +52,7 @@ class MainScene(KivyGlops):
         item_dict['hit_damage'] = .3
         item_dict['projectile_keys'] = ['hit_damage']
 
-        # weapon = dict()
+        # weapon = {}
         # weapon['hit_damage'] = .3
 
         # item_dict['as_projectile'] = weapon
@@ -99,14 +99,16 @@ class MainScene(KivyGlops):
         chimp_info['ranges']['throw_arc'] = 10.
 
         enemy_indices = self.get_indices_of_similar_names("chimp")
-        print("Found "+str(len(enemy_indices))+" chimp(s)")
+        print("Found {} chimp(s) by similar name"
+              "".format(len(enemy_indices)))
         for i in range(0, len(enemy_indices)):
             index = enemy_indices[i]
             self.set_as_actor_at(index, chimp_info)
             self.add_damaged_sound_at(index, "sounds/chimp-ooh1.wav")
             self.add_damaged_sound_at(index, "sounds/chimp-upset1.wav")
 
-    def on_attacked_glop(self, attacked_index, attacker_index, weapon_dict):
+    def on_attacked_glop(self, attacked_index, attacker_index,
+                         weapon_dict):
         self.glops[attacked_index].actor_dict['hp'] -= \
             weapon_dict['hit_damage']
         if self.glops[attacked_index].actor_dict['hp'] <= 0:
@@ -135,7 +137,8 @@ class KivyGlopsExampleApp(App):
         # boxlayout.add_widget(mainform)
         # boxlayout.cols = 1
         # boxlayout.orientation = "vertical"
-        # boxlayout.useButton = Factory.Button(text='use', id="useButton", \
+        # boxlayout.useButton = Factory.Button(text='use',
+        #                                      id="useButton",
         #                                      size_hint=(.1,.1))
         # boxlayout.add_widget(boxlayout.useButton)
         # return boxlayout
