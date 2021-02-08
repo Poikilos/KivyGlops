@@ -52,7 +52,7 @@ class ShaderEditor(KivyGlopsWindow):  # FloatLayout
     vs = StringProperty('''
 #ifdef GL_ES
     precision highp float;
-# endif
+#endif
 
 attribute vec4  a_position;
 attribute vec4  a_color;
@@ -93,7 +93,7 @@ void main (void) {
 //https://www.youtube.com/watch?v=WMHpBpjWUlY
 #ifdef GL_ES
     precision highp float;
-# endif
+#endif
 
 varying vec4 frag_color;
 varying vec2 uv_vec;
