@@ -32,7 +32,8 @@ else:
 class MainScene(KivyGlops):
 
     def on_load_glops(self):
-        self.load_obj("meshes/stadium,primitive.obj")
+        # self.load_obj("meshes/stadium,primitive.obj")
+        self.load_obj("meshes/stadium,primitive-simpler.obj")
 
         walkmesh_enable = False
         if walkmesh_enable:
@@ -114,8 +115,9 @@ class MainScene(KivyGlops):
         if self.glops[attacked_index].actor_dict['hp'] <= 0:
             self.explode_glop_at(attacked_index, weapon_dict)
         # if get_verbose_enable():
-        print(str(self.glops[attacked_index].name) + "'s hp: "
-              + str(self.glops[attacked_index].actor_dict['hp']))
+        print("{}'s hp: {}"
+              "".format(self.glops[attacked_index].name,
+                        self.glops[attacked_index].actor_dict['hp']))
 
     def on_obtain_glop(self, bumpable_index, bumper_index):
         # if self.glops[bumpable_index].item_dict['name'] == "rock":

@@ -1960,8 +1960,13 @@ class KivyGlops(PyGlops):
         global missing_bumper_warning_enable
         global missing_bumpable_warning_enable
         global missing_radius_warning_enable
+        doneGIs = set()
         for a_i_i in range(0, len(self._actor_indices)):
             a_index = self._actor_indices[a_i_i]
+            if a_i_i in doneGIs:
+                raise RuntimeError("{} is in _actor_indices more than"
+                                   " once.".format(a_i_i))
+            doneGIs.add(a_i_i)
             if a_index is None:
                 continue
             actor_glop = self.glops[a_index]
@@ -2145,8 +2150,8 @@ class KivyGlops(PyGlops):
                               + " for glop named " + rgn
                               + " but actor's should never be None")
                 if distance <= total_hit_radius:
-                    # print("total_hit_radius:" +
-                    #     str(total_hit_radius))
+                    # print("total_hit_radius:"
+                    #       + str(total_hit_radius))
                     if bumper_index in igs['in_range_indices']:
                         # print("not out of range yet")
                         continue
@@ -2228,12 +2233,16 @@ class KivyGlops(PyGlops):
             self._delay_is_available_enable = True
             return
         pgi = self.get_player_glop_index(1)
+        p1motivated = False
         for motivated_index in range(len(self.glops)):
             if motivated_index is None:
                 continue
             p1_enable = False
             if motivated_index == pgi:
                 p1_enable = True
+                if p1motivated:
+                    raise RuntimeError("p1 was already moved")
+                p1motivated = True
             m_glop = self.glops[motivated_index]
             mgs = m_glop.state
             mgp = m_glop.properties
@@ -2250,8 +2259,6 @@ class KivyGlops(PyGlops):
             if lupf <= 0.:
                 lupf = 0.
                 global show_zero_walk_upf_warning_enable
-                # TODO: why does next line show exception if not
-                # declared as global manually??
                 if show_zero_walk_upf_warning_enable:
                     print("[ KivyGlops ] WARNING in update: zero "
                           "land units per frame (" + tltf + ")")
@@ -2440,6 +2447,7 @@ class KivyGlops(PyGlops):
                     " velocity"
                 )
             ar_enable = False
+            choice_world_vel_mult = None
             if mgs['on_ground_enable'] or \
                     self.get_fly_by_name(m_glop.name):
                 ar_enable = True
@@ -2457,29 +2465,29 @@ class KivyGlops(PyGlops):
                     # makes movement relative to rotation
                     # (which also limits speed when moving diagonally):
                     moving_r_multiplier = \
-                        math.sqrt((choice_local_vel_mult[0] *
-                                   choice_local_vel_mult[0]) +
-                                  (choice_local_vel_mult[2] *
-                                   choice_local_vel_mult[2]))
+                        math.sqrt((choice_local_vel_mult[0]
+                                   * choice_local_vel_mult[0])
+                                  + (choice_local_vel_mult[2]
+                                     * choice_local_vel_mult[2]))
                     if moving_r_multiplier > 1.0:
                         moving_r_multiplier = 1.0
                         #     Limited so that you can't move faster
                         #     when moving diagonally
                         # print("[ KivyGlops ] WARNING in update:"
                         #       " clipped >100% movement")
-                    choice_world_vel_mult[0] = (moving_r_multiplier *
-                                                math.cos(mgas[1]))
+                    choice_world_vel_mult[0] = (moving_r_multiplier
+                                                * math.cos(mgas[1]))
                     # TODO: (?) make relative to rotation for fly mode:
                     choice_world_vel_mult[1] = choice_local_vel_mult[1]
-                    choice_world_vel_mult[2] = (moving_r_multiplier *
-                                                math.sin(mgas[1]))
+                    choice_world_vel_mult[2] = (moving_r_multiplier
+                                                * math.sin(mgas[1]))
                     # choice_local* VARS SHOULD NOT BE USED AFTER THIS
                     # SINCE THEY ARE NOT NEEDED FOR ANYTHING ELSE.
 
                     choice_world_r_vel = lapf * moving_r_multiplier
                     radial_xz_velocity = (
-                        math.sqrt((mgsv[0] * mgsv[0]) +
-                                  (mgsv[2] * mgsv[2]))
+                        math.sqrt((mgsv[0] * mgsv[0])
+                                  + (mgsv[2] * mgsv[2]))
                     )
                     if choice_world_r_vel + radial_xz_velocity < -lapf:
                         choice_world_r_vel = 0.
@@ -2911,6 +2919,22 @@ class KivyGlops(PyGlops):
                                   + "glop " + m_glop.name
                                   + " tried to move, but was not "
                                   "at rest (physics in control)")
+
+            '''
+            # Confirmed: choice_world_vel and choice_world_vel_mult
+            # only change for the player.
+            dN = "glop[{}]".format(motivated_index)
+            if pgi == motivated_index:
+                dN += " (player)"
+            debug_dict[dN] = {}
+            ddG = debug_dict[dN]
+            ddG["choice_world_vel"] = \
+                choice_world_vel
+            ddG["choice_world_vel_mult"] = \
+                choice_world_vel_mult
+            # ^ None unless controlled above (such as player 1)
+            '''
+
             mgs['prev_on_ground_enable'] = mgs['on_ground_enable']
             mgs['constrained_enable'] = False
             # deprecated this_glop_free_enable
