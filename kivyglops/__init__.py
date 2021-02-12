@@ -1959,6 +1959,16 @@ class KivyGlops(PyGlops):
         global missing_bumpable_warning_enable
         global missing_radius_warning_enable
         doneGIs = set()
+        failsafe = False
+        if failsafe:
+            sg = {
+                'camera_perspective_number': self.CAMERA_FIRST_PERSON(),
+            }
+            sw = {
+                'gravity': 9.8,
+                'ground': 0.0,
+                'friction_divisor': 1.2,  # a.k.a. wfd
+            }
         for a_i_i in range(0, len(self._actor_indices)):
             a_index = self._actor_indices[a_i_i]
             if a_i_i in doneGIs:
@@ -1989,23 +1999,17 @@ class KivyGlops(PyGlops):
                     if not targetG.state['visible_enable']:
                         agad['moveto_index'] = None
                         if get_verbose_enable():
-                            print("[ KivyGlops ] (verbose "
-                                  "message) actor"
-                                  " lost target since glop at"
+                            print("[ KivyGlops ] (verbose message)"
+                                  " actor lost target since glop at"
                                   " moveto_index is now invisible")
                     else:
                         agad['target_pos'] = targetG._t_ins.xyz
                 if agad['target_pos'] is not None:
-
                     ags['acquire_radius'] = agp['reach_radius']
-
                     src_pos = actor_glop._t_ins.xyz
                     dst_pos = agad['target_pos']
-                    # acquire_radius is changed below if using
-                    # ranged weapon
-                    distance = get_distance_vec3_xz(src_pos,
-                                                    dst_pos)
-
+                    # acquire_radius is changed below if ranged weapon
+                    distance = get_distance_vec3_xz(src_pos, dst_pos)
                     ags['desired_use'] = None
                     ags['choice_ii'] = -1  # inventory index
                     if agad.get('target_index') is not None:
@@ -2035,11 +2039,10 @@ class KivyGlops(PyGlops):
                             # If weapon is not selected, choose
                             # random weapon even if selected a slot.
                             dii, du = actor_glop.find_item_with_any_use(
-                                sg['attack_uses'])
-                            ags['choice_ii'] = \
-                                dii
-                            ags['desired_use'] = \
-                                du
+                                sg['attack_uses']
+                            )
+                            ags['choice_ii'] = dii
+                            ags['desired_use'] = du
                         if ags['choice_ii'] >= 0:
                             if "shoot_" in this_use:
                                 range_for_it = None
@@ -2052,18 +2055,15 @@ class KivyGlops(PyGlops):
                                 else:
                                     # TODO: predict arc to determine
                                     # range instead
-                                    ags['acquire_radius'] = \
-                                        20.
+                                    ags['acquire_radius'] = 20.
                                     if get_verbose_enable():
                                         print(
-                                            "[ KivyGlops ]"
-                                            + VMSG + "used "
-                                            "default acquire "
+                                            "[ KivyGlops ]" + VMSG
+                                            + "used default acquire "
                                             "radius "
                                             + str(ags['acquire_radius'])
                                             + " since item['ranges']['"
-                                            + this_use
-                                            + "'] was not set"
+                                            + this_use + "'] was't set"
                                         )
                             else:
                                 if this_use in agad['ranges']:
@@ -2095,11 +2095,9 @@ class KivyGlops(PyGlops):
         # endregion pre-bump ops
 
         # NOTE: (ANOTHER non-nested LOOP is at end of update,
-        # for physics and unit movement)
-        # region nested bump loop
+        # for physics and unit movement) region nested bump loop
         for bumpable_i_i in range(0, len(self._bumpable_indices)):
-            bumpable_index = \
-                self._bumpable_indices[bumpable_i_i]
+            bumpable_index = self._bumpable_indices[bumpable_i_i]
             if bumpable_index is None:
                 continue
             e_glop = self.glops[bumpable_index]
@@ -2115,41 +2113,33 @@ class KivyGlops(PyGlops):
                 actor_glop = self.glops[bumper_index]
                 agp = actor_glop.properties
                 rgn = actor_glop.name
-                distance = get_distance_kivyglops(e_glop,
-                                                  actor_glop)
+                distance = get_distance_kivyglops(e_glop, actor_glop)
                 if igp['hit_radius'] is None:
                     if missing_radius_warning_enable:
-                        print("[ KivyGlops ] WARNING in"
-                              " update: Missing radius "
-                              "while bumped bumpable "
-                              "named "
+                        print("[ KivyGlops ] WARNING in update: Missing"
+                              " radius while bumped bumpable named "
                               + str(egn))
-                        missing_radius_warning_enable = \
-                            False
+                        missing_radius_warning_enable = False
                     continue
                 total_hit_radius = 0.0
-                if e_glop.projectile_dict is not \
-                        None:
+                if e_glop.projectile_dict is not None:
                     total_hit_radius = (
-                        igp['hit_radius'] +
-                        agp['hit_radius']
+                        igp['hit_radius'] + agp['hit_radius']
                     )
                 else:
                     try:
                         total_hit_radius = (
-                            igp['hit_radius'] +
-                            agp['reach_radius']
+                            igp['hit_radius'] + agp['reach_radius']
                         )
                     except KeyError:
                         total_hit_radius = igp['hit_radius']
-                        print("ERROR in bumpable_i_i loop: "
-                              "reach_radius is "
+                        print("ERROR in bumpable_i_i loop:"
+                              " reach_radius is "
                               + str(agp.get('reach_radius'))
                               + " for glop named " + rgn
                               + " but actor's should never be None")
                 if distance <= total_hit_radius:
-                    # print("total_hit_radius:"
-                    #       + str(total_hit_radius))
+                    # print("total_hit_radius:" + str(total_hit_radius))
                     if bumper_index in igs['in_range_indices']:
                         # print("not out of range yet")
                         continue
@@ -2158,12 +2148,9 @@ class KivyGlops(PyGlops):
                         # can't bump self
                         continue
                     if get_verbose_enable():
-                        print("[ KivyGlops ]" +
-                              VMSG + "'" +
-                              str(actor_glop.name) +
-                              "' in range of '" +
-                              str(e_glop.name) +
-                              "'")
+                        print("[ KivyGlops ]" + VMSG + "'"
+                              + str(actor_glop.name) + "' in range of '"
+                              + str(e_glop.name) + "'")
                     if agp['bump_enable']:
                         if ((e_glop.projectile_dict is None)
                            or (agp['hitbox'] is None)
@@ -2172,10 +2159,8 @@ class KivyGlops(PyGlops):
                             igs['bumped_by_index'] = bumper_index
                             igs['at_rest_event_enable'] = True
                         else:
-                            # global out_of_hitb
-                            # ox_note_enable
-                            # if out_of_hitbox_n
-                            # ote_enable:
+                            # global out_of_hitbox_note_enable
+                            # if out_of_hitbox_note_enable:
                             print("[ KivyGlops ]"
                                   " (debug only--this"
                                   " is normal) within"
@@ -2689,6 +2674,8 @@ class KivyGlops(PyGlops):
             #     # eliminate _cached_floor_y
             # (this part is under no outer conditions)
             if mgp['physics_enable']:
+                # TODO: Fix issue where can't move if physics_enable is
+                #       false
                 if mgs.get('show_physics_msg_enable') is None:
                     if get_verbose_enable():
                         print("[ KivyGlops ] (verbose message "
@@ -2807,7 +2794,7 @@ class KivyGlops(PyGlops):
                     #               str(m_glop._cached_floor_y) +
                     #               "}")
                     mgsv[1] = 0.0
-                # end at_rest_event_enable
+                # end if mgs['at_rest_event_enable']
                 # (still inside `if...physics_enable`--and only that)
                 if mgs['on_ground_enable']:
                     wfd = sw['friction_divisor']
@@ -2845,9 +2832,9 @@ class KivyGlops(PyGlops):
                    (mgp.get('hit_radius') is not None) and \
                    (mgp['hit_radius'] > 0) and \
                    mgp['roll_enable']:
-                    # then roll, only if not actor (mgad is None)
-                    # TODO: rolling friction (here or elsewhere)
-                    # TODO: project into object space for accuracy
+                    # ^ roll only if not actor (mgad is None)
+                    # TODO: Use rolling friction (here or elsewhere)
+                    # TODO: Project it into object space for accuracy
                     angles = m_glop.get_angles()
                     rolling_vec_indicies = (0, 2)
                     rvtis = (2, 1)  # rolling vector theta indices
@@ -3002,8 +2989,6 @@ class KivyGlops(PyGlops):
 
                     else:
                         walkmesh_enable = False
-                if get_verbose_enable():
-                    print("walkmesh_enable: {}".format(walkmesh_enable))
                 if const_ground_enable:
                     walk_info = {}
                     walk_info['pos'] = [
@@ -3017,7 +3002,7 @@ class KivyGlops(PyGlops):
                         m_glop._t_ins.x,
                         m_glop._t_ins.y,
                         m_glop._t_ins.z
-                        ]
+                    ]
                     if corrected_pos[1] < sw['ground']:
                         corrected_pos[1] = sw['ground']
                     hit_ground_enable = None
@@ -3047,6 +3032,16 @@ class KivyGlops(PyGlops):
                         # physics
                         pass
                     # endregion pasted from get_walk_info
+                elif not walkmesh_enable:
+                    raise NotImplementedError(
+                        "Only walkmesh and const_ground_enable"
+                        " walk_info are implemented."
+                    )
+                    walk_info = {}
+                    walk_info['on_ground_enable'] = True
+                    walk_info['change_enable'] = False
+                if get_verbose_enable():
+                    print("walkmesh_enable: {}".format(walkmesh_enable))
 
                 on_ground_enable = walk_info.get('on_ground_enable')
                 if on_ground_enable is not None:
@@ -3063,6 +3058,9 @@ class KivyGlops(PyGlops):
                             #     ] = True
                             # TODO: (?) make an on_not_at_rest event
                 if walk_info['change_enable']:
+                    if get_verbose_enable():
+                        print("{} walk_info:{}"
+                              "".format(m_glop.name, walk_info))
                     # frame of hit is shown to player and ai
                     # BEFORE event is handled
                     m_glop._t_ins.x = walk_info['pos'][0]

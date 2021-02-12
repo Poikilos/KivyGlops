@@ -1,3 +1,4 @@
+// To set globals, use "glwCv" (same as gl_widget.canvas) in __init__.py
 /* simple.glsl
 
 simple diffuse lighting based on laberts cosine law; see e.g.:
