@@ -1484,6 +1484,8 @@ class PyGlop:
         fit_enable -- stays false if inventory full
         fit_at -- stays -1 if inventory full
         '''
+        if True:  # get_verbose():
+            print('* push_item: {} from '.format(item_dict, sender_name))
         sied = dict()  # select item event dict
         sied['glop_index'] = self.glop_index
         sied['fit_enable'] = False

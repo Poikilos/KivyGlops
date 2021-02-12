@@ -166,8 +166,6 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
     no_mesh_warning_enable = None
 
     def __init__(self, default_templates=None):
-
-
         try:
             super(KivyGlop, self).__init__(
                 default_templates=default_templates
@@ -2528,6 +2526,13 @@ class KivyGlops(PyGlops):
                             choice_world_vel_mult[a_i]
                             * lapf  # land accel per frame
                         )
+                        # choice_world_vel[a_i] = 0.0  # debug only
+                    totalDelta = get_distance_vec3(choice_world_vel,
+                                                   (0, 0, 0))
+                    if totalDelta > .1:
+                        print("WARNING: choice_world_vel is too large: "
+                              "{}".format(choice_world_vel))
+                        # ^ moving too fast
                     # choice_world_vel[0] = (choice_world_r_vel
                     #                        * math.cos(mgas[1])
                     # )
@@ -2837,8 +2842,8 @@ class KivyGlops(PyGlops):
                               " '{}'".format(m_glop.name))
 
                 if mgs['on_ground_enable'] and \
-                   mgp.get('hit_radius') is not None and \
-                   mgp['hit_radius'] > 0 and\
+                   (mgp.get('hit_radius') is not None) and \
+                   (mgp['hit_radius'] > 0) and \
                    mgp['roll_enable']:
                     # then roll, only if not actor (mgad is None)
                     # TODO: rolling friction (here or elsewhere)
@@ -2935,6 +2940,7 @@ class KivyGlops(PyGlops):
             # ^ None unless controlled above (such as player 1)
             '''
 
+
             mgs['prev_on_ground_enable'] = mgs['on_ground_enable']
             mgs['constrained_enable'] = False
             # deprecated this_glop_free_enable
@@ -2967,6 +2973,7 @@ class KivyGlops(PyGlops):
                 const_ground_enable = True
                 walk_info = None
                 walkmesh_enable = True
+                # ^ becomes False below if there are no walkmeshes
                 if walkmesh_enable:
                     if len(self._walkmeshes) > 0:
                         const_ground_enable = False
@@ -2977,7 +2984,8 @@ class KivyGlops(PyGlops):
                             walk_info = self.get_walk_info(
                                 m_glop._t_ins.xyz,
                                 (mgp['hitbox']['maximums'][0],
-                                 -m_glop['minimums'][1]))
+                                 -m_glop['minimums'][1])
+                            )
                         else:
                             walk_info = self.get_walk_info(
                                 m_glop._t_ins.xyz,
@@ -2994,6 +3002,8 @@ class KivyGlops(PyGlops):
 
                     else:
                         walkmesh_enable = False
+                if get_verbose_enable():
+                    print("walkmesh_enable: {}".format(walkmesh_enable))
                 if const_ground_enable:
                     walk_info = {}
                     walk_info['pos'] = [
@@ -3059,8 +3069,8 @@ class KivyGlops(PyGlops):
                     # if on_ground_enable is True:
                     m_glop._t_ins.y = walk_info['pos'][1]
                     m_glop._t_ins.z = walk_info['pos'][2]
+        # end for motivated_index in glops
 
-        # end for index in glops
         # movitated_glop out of scope
         # for index in self._bumper_indices:
         #     m_glop = self.glops[index]
@@ -3126,7 +3136,7 @@ class KivyGlops(PyGlops):
                 self.look_point[0],
                 self.look_point[1],
                 self.look_point[2]
-                )
+            )
 
         self.look_point = [0.0, 0.0, 0.0]
 

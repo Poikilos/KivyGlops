@@ -20,7 +20,9 @@ from kivy.input.providers.mouse import MouseMotionEvent
 from kivy.factory import Factory
 from kivy.uix.boxlayout import BoxLayout
 from kivyglops import *
-# from common import *
+from kivyglops.common import (
+    set_verbose_enable,
+)
 
 profile_path = None
 if 'USERPROFILE' in os.environ:  # if os_name=="windows":
@@ -32,6 +34,7 @@ else:
 class MainScene(KivyGlops):
 
     def on_load_glops(self):
+        set_verbose_enable(True)
         # self.load_obj("meshes/stadium,primitive.obj")
         self.load_obj("meshes/stadium,primitive-simpler.obj")
 
