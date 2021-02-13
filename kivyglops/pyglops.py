@@ -967,7 +967,7 @@ class PyGlop:
         ancestors.append(self)
         if get_verbose_enable():
             print("[ PyGlop ] " + "  " * depth + "copy_as_subclass" +
-                  " {name:" + str(self.name) + "}")
+                  " {'name':" + str(self.name) + "}")
         try:
             target = new_glop_method()
             target.name = self.name

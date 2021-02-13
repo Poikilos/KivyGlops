@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## [git] - 2021-02-13
+### Added
+- breakpoint hotkey `b` (works when verbose is enabled)
+- log visualizer
+
+
 ## [git] - 2021-02-03
 ### Changed
 - Rename `get_wmaterial_dict_from_mtl` to `fetch_wmaterial`.

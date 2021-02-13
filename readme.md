@@ -299,10 +299,20 @@ uniform mat4 projection_mat;  //derived from self.canvas["projection_mat"] = pro
 * PyGlops module (which does not require Kivy) loads obj files using intermediate WObjFile class (planned: save&load native PyGlops files), and provides base classes for all classes in KivyGlops module
 
 ### Debugging
+
+#### Log visualizer
+visualog is a separate program for viewing logs. Pass a log path as the
+first parameter. Obtain a log such as via: `python example-stadium.py > log.txt`
+Where example-stadium.py is your program which enables verbose logging.
+![log visualizer screenshot](etc/log-visualizer.png)
+The log visualizer shows objects by name from a 2D top view.
+
+#### pdb
 ```
 python3 -m pdb example-stadium.py
 ```
-#### pdb commands
+
+##### pdb commands
 ```
 b: set a breakpoint
 c: continue debugging until you hit a breakpoint
