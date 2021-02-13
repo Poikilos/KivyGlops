@@ -278,7 +278,7 @@ uniform mat4 projection_mat;  //derived from self.canvas["projection_mat"] = pro
 * eventually dat will contain everything, so that emit_yaml can eventually be used to save glop format ("tmp" dict member should not be saved)
 (these notes only apply to modifying the KivyGlops project files including PyGlops, or making a new subclass of PyGlop*)
 * ui is usually a KivyGlopsWindow but could be other frameworks. Must have:
-  ```
+```
         width
         height
         frames_per_second
