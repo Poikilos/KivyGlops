@@ -365,27 +365,27 @@ An easier way to use pdb when using KivyGlops is to:
 ### wmaterial dict spec
 This dict replaces deprecated WMaterial class in wobjfile.py.
 This spec allows one dict to be used to completely store the Wavefront mtl format as per the full mtl spec such as at <http://paulbourke.net/dataformats/mtl/>.
-    * The wmaterials dict is the material library property of the WObjFile instance. Each wmaterial inside the wmaterials dict is a Wavefront material.
-    * The wmaterial's key in the wmaterials dict is the material name (given after "newmtl" in mtl file)
-    * each key is a material command, referring to a deeper dict, except "#" which is comments list
-        * each material command dict has the following keys:
-            * 'values' (a list of values)
-                * if the command's (such as Kd) expected values are color values (whether rgb, or CIEXYZ if commands ends in " xyz"), only one color value means other 2 are same (grayscale)!
-                * if the command's expected value is a filename, values is still a list--first value is filename, additional values are params (usually a factor by which to multiply values in the file)
-                    * map can override: `Ka` (ambient color), `Kd` (diffuse color), `Ks` (specular color), `Ns` (specular coefficient scalar), `d` (opacity scalar), and surface normal (by way of bump map not normal map) according to spec
-                        * displacement map is `disp` (in modern terms, a vertex displacement map)
-                        * bump map is `bump`--though it affects normals, it is a standard bump map which in modern terms is a detail map (previously known as a [fragment]] displacement map; "represents the topology or height of the surface relative to the average surface.  Dark areas are depressions and light areas are high points." -Ramey)
-                        * `refl` is a reflection map, or in modern terms, an environment map (is NOT a reflectance map): type can be sphere, or there can be several cube_* maps where * is the side (front, back, top, bottom, left, right)
-            * "tmp" (a dict of temporary values such as "file_path", which was formerly stored in wmaterial.file_path, and "directory"; both of which are only for using relative paths in the mtl file)
-            * "#" (comments list)
-            * additional keys are args, where value is a list of the arg's values (if space-separated value in original mtl file starts with hyphen, it is an arg; an arg takes remaining values as items of its list, until next hyphen (or last entry, which is always appended to 'values')
-                * may be an empty list, such as when key is "halo" (as specified by `-halo` option in mtl file)
-    * examples (wmaterial is equivalent to wmaterials[material_name]):
-        * if line in mtl file is `Kd 0.5 0.5 0.5` then dict wmaterial['Kd'] will have a list at 'values' key which is ["0.5", "0.5", "0.5"]
-        * if line in mtl file is `bump -s 1 1 1 -o 0 0 0 -bm 1 sand.mpb` then the dict wmaterial['bump'] will have a list at 'values' key which is a list containing only the string sand.mpb; and dict at 'bump' key containing keys s, o, and bm which refer to lists containing the values following those args
-        * if line in mtl file is `Ka spectral file.rfl 1.0` then, as per spec, `Ka spectral` is considered as the statement (or command) and wmaterial["Ka spectral"] will be a dict containing only one key, 'values' (since there are no other args in this case), which is `["file.rfl", "1.0"]` where 1.0 is the factor by which to multiply values in the file, as specified in the given mtl line.
-        * if line in mtl file is `Ka xyz 1.0 1.0 1.0` then, as per spec, `Ka xyz` is considered as the statement (or command) and wmaterial["Ka spectral"] will be a dict containing only one key, 'values' (since there are no other args in this case), which is `["1.0", "1.0", "1.0"]`.
-        * if line in mtl file is `refl -type cube_top file.png` then the dict wmaterial["refl -type cube_top"] will have a list at 'values' key which is ["file.png"]; the entire preceding part `refl -type cube_top` will be considered as the command to avoid overlap (to force consistent rule: one instance of command per material).
+* The wmaterials dict is the material library property of the WObjFile instance. Each wmaterial inside the wmaterials dict is a Wavefront material.
+* The wmaterial's key in the wmaterials dict is the material name (given after "newmtl" in mtl file)
+* each key is a material command, referring to a deeper dict, except "#" which is comments list
+  * each material command dict has the following keys:
+    * 'values' (a list of values)
+      * if the command's (such as Kd) expected values are color values (whether rgb, or CIEXYZ if commands ends in " xyz"), only one color value means other 2 are same (grayscale)!
+      * if the command's expected value is a filename, values is still a list--first value is filename, additional values are params (usually a factor by which to multiply values in the file)
+        * map can override: `Ka` (ambient color), `Kd` (diffuse color), `Ks` (specular color), `Ns` (specular coefficient scalar), `d` (opacity scalar), and surface normal (by way of bump map not normal map) according to spec
+          * displacement map is `disp` (in modern terms, a vertex displacement map)
+          * bump map is `bump`--though it affects normals, it is a standard bump map which in modern terms is a detail map (previously known as a [fragment]] displacement map; "represents the topology or height of the surface relative to the average surface.  Dark areas are depressions and light areas are high points." -Ramey)
+          * `refl` is a reflection map, or in modern terms, an environment map (is NOT a reflectance map): type can be sphere, or there can be several cube_* maps where * is the side (front, back, top, bottom, left, right)
+    * "tmp" (a dict of temporary values such as "file_path", which was formerly stored in wmaterial.file_path, and "directory"; both of which are only for using relative paths in the mtl file)
+    * "#" (comments list)
+    * additional keys are args, where value is a list of the arg's values (if space-separated value in original mtl file starts with hyphen, it is an arg; an arg takes remaining values as items of its list, until next hyphen (or last entry, which is always appended to 'values')
+      * may be an empty list, such as when key is "halo" (as specified by `-halo` option in mtl file)
+* examples (wmaterial is equivalent to wmaterials[material_name]):
+  * if line in mtl file is `Kd 0.5 0.5 0.5` then dict wmaterial['Kd'] will have a list at 'values' key which is ["0.5", "0.5", "0.5"]
+  * if line in mtl file is `bump -s 1 1 1 -o 0 0 0 -bm 1 sand.mpb` then the dict wmaterial['bump'] will have a list at 'values' key which is a list containing only the string sand.mpb; and dict at 'bump' key containing keys s, o, and bm which refer to lists containing the values following those args
+  * if line in mtl file is `Ka spectral file.rfl 1.0` then, as per spec, `Ka spectral` is considered as the statement (or command) and wmaterial["Ka spectral"] will be a dict containing only one key, 'values' (since there are no other args in this case), which is `["file.rfl", "1.0"]` where 1.0 is the factor by which to multiply values in the file, as specified in the given mtl line.
+  * if line in mtl file is `Ka xyz 1.0 1.0 1.0` then, as per spec, `Ka xyz` is considered as the statement (or command) and wmaterial["Ka spectral"] will be a dict containing only one key, 'values' (since there are no other args in this case), which is `["1.0", "1.0", "1.0"]`.
+  * if line in mtl file is `refl -type cube_top file.png` then the dict wmaterial["refl -type cube_top"] will have a list at 'values' key which is ["file.png"]; the entire preceding part `refl -type cube_top` will be considered as the command to avoid overlap (to force consistent rule: one instance of command per material).
 
 ### Regression Tests
 * `debug[` where should be `debug_dict[`
