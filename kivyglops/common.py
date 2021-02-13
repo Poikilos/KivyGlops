@@ -4,9 +4,27 @@ import traceback
 import copy
 import string
 import inspect
+import json
+
+from inspect import getframeinfo, stack
 
 verbose_enable = False
-debug_dict = dict()  # constantly-changing variables, for visual debug
+debug_dict = dict()  # constantly-changing variables for visual debug
+
+
+def change_point_from_vec3(point, vec3):
+    '''
+    Change point by reference by the amounts in vec3 where non-zero.
+    Sequential arguments:
+    point -- an object with the members x, y, and z
+    vec3 -- a tuple or list with at least 3 elements
+    '''
+    if vec3[0] != 0:
+        point.x += vec3[0]
+    if vec3[1] != 0:
+        point.y += vec3[1]
+    if vec3[2] != 0:
+        point.z += vec3[2]
 
 
 def get_verbose_enable():
@@ -15,7 +33,7 @@ def get_verbose_enable():
 
 def set_verbose_enable(enable):
     global verbose_enable
-    print("[ common.py ] NOTE: set verbose: " + str(enable))
+    print("[ common.py ] NOTE: set verbose: {}".format(enable))
     verbose_enable = enable
 
 
@@ -256,3 +274,38 @@ def is_true(val):
               " (returning false):")
         view_traceback()
     return result
+
+
+stepping = False
+
+
+def get_stepping():
+    return stepping
+
+
+def pstep(msg, pre=None):
+    '''
+    Print a step (msg, and pre if not None) if stepping is enabled.
+
+    Sequential arguments:
+    msg -- a message to print when stepping is True (or any object that
+         can be formatted as a string)
+    pre -- a prefix for the message or object
+    '''
+    caller = getframeinfo(stack()[1][0])
+    if stepping:
+        print("{}:{}:".format(caller.filename, caller.lineno))
+        if msg is not None:
+            if hasattr(msg, 'items'):
+                print("{} = ".format(pre),
+                      str(msg).replace("{", "\n{").replace("}","\n}\n")
+                            .replace("'pos'", "\n  'pos'"))
+            else:
+                print("{}: {}".format(pre, msg))
+        else:
+            print("{}".format(msg))
+
+
+def chatter():
+    global stepping
+    stepping = True

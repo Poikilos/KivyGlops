@@ -298,6 +298,49 @@ uniform mat4 projection_mat;  //derived from self.canvas["projection_mat"] = pro
 * All subclasses of PyGlops should overload __init__, call super at beginning of it, and glops_init at end of it, like KivyGlops does.
 * PyGlops module (which does not require Kivy) loads obj files using intermediate WObjFile class (planned: save&load native PyGlops files), and provides base classes for all classes in KivyGlops module
 
+### Debugging
+```
+python3 -m pdb example-stadium.py
+```
+#### pdb commands
+```
+b: set a breakpoint
+c: continue debugging until you hit a breakpoint
+s: step through the code
+n: to go to next line of code
+l: list source code for the current file (default: 11 lines including the line being executed)
+u: navigate up a stack frame
+d: navigate down a stack frame
+p: to print the value of an expression in the current context
+```
+
+You can get to the main event loop quickly using `c` then enter, then
+hit Ctrl+C to stop and then `s` enter to begin stepping again.
+
+Then you can set a breakpoint as follows (parameters are optional, but
+without them, the current line is used). However, they will not be in
+scope unless you get to the main event loop by chance. You can keep
+pressing Ctrl+C and then `c` then enter until Ctrl+C lands you within
+`kivyglops/__init__.py`.
+- `b common.chatter`: This is an empty function just for use
+  within pdb as shown.
+- `p choice_world_vel` then enter `s` (or `c` for continue to breakpoint) then enter
+
+Then you can do `c` then enter again, then when you get the breakpoint,
+begin stepping again with `c` then enter.
+
+An easier way to use pdb when using KivyGlops is to:
+- Call `set_verbose_enable(True)` in your program's loading phase.
+- Run your program from a terminal.
+- Press `b` which will call `breakpoint()` (only when verbose), which
+  will drop the terminal into pdb.
+
+##### Didn't work
+- `b kivyglops.KivyGlops.update` (not in path)
+- `b /home/owner/git/KivyGlops/kivyglops/__init__.py(1939)`
+- `b /home/owner/git/KivyGlops/kivyglops/__init__.py(1939)update()`
+- `b /home/owner/git/KivyGlops/kivyglops/__init__.py(1939)_on_keyboard_down()`
+
 ### Kivy `instructions` library notes
 (see <https://github.com/kivy/kivy/blob/master/kivy/graphics/instructions.pxd>)
 * RenderContext is a subclass of Canvas but adds many features such as:
