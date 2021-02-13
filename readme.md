@@ -329,6 +329,7 @@ pressing Ctrl+C and then `c` then enter until Ctrl+C lands you within
 Then you can do `c` then enter again, then when you get the breakpoint,
 begin stepping again with `c` then enter.
 
+### Breakpoint Hotkey
 An easier way to use pdb when using KivyGlops is to:
 - Call `set_verbose_enable(True)` in your program's loading phase.
 - Run your program from a terminal.
