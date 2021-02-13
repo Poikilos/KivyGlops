@@ -439,9 +439,11 @@ if self.glops[index].item_dict is not None:
   same as alpha blending
 
 #### See Also
-* kivy3 forks are getting pretty advanced now (lit models with texture
-  optional). If you want a framework and not a game engine, try
-  `pip install https://github.com/KeyWeeUsr/kivy3/zipball/master`
+* kivy3 forks became advanced in the mid 2010s (lit models with texture
+  optional). Later, Kivy adopted kivy3 and development skyrocketed!
+  If you want a framework and not a game engine, you can try kivy3:
+  `pip install -u https://github.com/kivy/kivy3/zipball/master` (leave
+  off the `-u` if you are in a `virtualenv`)
 
 ## Works Cited
 
