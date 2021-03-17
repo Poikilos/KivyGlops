@@ -12,7 +12,7 @@ from kivy.app import App
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.label import Label
 from kivy.uix.button import Button
-from kivy.properties import StringProperty
+from kivy.properties import StringProperty, NumericProperty
 from kivy.clock import Clock
 
 def dump_to_json(s):
@@ -232,6 +232,9 @@ class Visualog(FloatLayout):
     logPath = StringProperty(None)
     frameSP = StringProperty("loading...")
     chunkSP = StringProperty("...")
+    pathSP = StringProperty(".")
+    sourcePath = StringProperty(".")
+    sourceLine = NumericProperty(-1)
 
     def __init__(self, **kwargs):
         self.chunkI = 0
@@ -241,9 +244,9 @@ class Visualog(FloatLayout):
         self.values = {}
         self.labels = {}
         self.frame = 1
+        self.paused = False
         super(Visualog, self).__init__(**kwargs)
         Clock.schedule_once(self._deferred_load, 0.5)
-        self.paused = False
 
     def get_center(self):
         return self.size[0] / 2.0, self.size[1] / 2.0
@@ -260,13 +263,23 @@ class Visualog(FloatLayout):
         self.paused = not self.paused
 
     def show_frame(self):
-        self.frameSP = "frame " + str(self.frame)
-        # self.frameLabel.text = "frame " + str(self.frame)
+        text = "frame " + str(self.frame)
+        # Visualog.frameSP = text
+        # Visualog.frameLabel.text = text
+        self.frameSP = text
 
     def show_chunk(self):
-        self.chunkLabel.text = ("chunk {} of {}"
-                                "".format(self.chunkI+1,
-                                          len(self.meta.chunks)))
+        text = "chunk {} of {}".format(self.chunkI+1,
+                                       len(self.meta.chunks))
+        self.chunkLabel.text = text
+        # self.chunkSP = text
+        # ^ does nothing
+
+    def show_path(self):
+        text = "{}:{}".format(self.sourcePath, self.sourceLine)
+        print(text)
+        self.pathLabel.text = text
+        # self.pathSP = text
 
     def _deferred_load(self, dt):
         print("Loading: {}".format(self.logPath))
@@ -279,18 +292,24 @@ class Visualog(FloatLayout):
             size_hint=(0.1, 0.05)
         )
         self.add_widget(self.pauseBtn)
-        self.frameLabel = Label(
+        Visualog.frameLabel = Label(
             text=self.frameSP,
             size_hint=(0.1, 0.05),
             pos=(self.pauseBtn.right, 0)
         )
-        self.add_widget(self.frameLabel)
+        self.add_widget(Visualog.frameLabel)
         self.chunkLabel = Label(
             text=self.chunkSP,
             size_hint=(0.1, 0.05),
-            pos=(self.frameLabel.right, 0)
+            pos=(Visualog.frameLabel.right, 0)
         )
         self.add_widget(self.chunkLabel)
+        self.pathLabel = Label(
+            text=self.pathSP,
+            size_hint=(0.5, 0.05),
+            pos=(0, Visualog.frameLabel.top)
+        )
+        self.add_widget(self.pathLabel)
         Clock.schedule_interval(self.update_visuals, 1 / 10.)
 
     def on_dict(self, d):
@@ -333,6 +352,9 @@ class Visualog(FloatLayout):
             # print(s)
 
     def on_path(self, path, line, msg):
+        self.sourceLine = line
+        self.sourcePath = path
+        self.show_path()
         if path.endswith(os.path.join("kivyglops", "__init__.py")):
             if self.frameStartLine is None:
                 self.frameStartLine = line

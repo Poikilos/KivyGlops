@@ -234,25 +234,25 @@ def push_yaml_text(yaml, name, val, indent):
     return yaml
 
 
-true_like_strings = ['true', 'yes', 'on', '1']
+truthies = ['true', 'yes', 'on', '1']
 
 
-def set_true_like_strings(vals):
-    global true_like_strings
+def set_truthies(vals):
+    global truthies
     set_enable = True
     for tls in vals:
         if tls.lower() != tls:
             set_enable = False
             print("[ common.py ] ERROR: refusing to set"
-                  " true_like_strings since an element contains"
+                  " truthies since an element contains"
                   " uppercase characters")
             break
     if set_enable:
-        true_like_strings = vals
+        truthies = vals
 
 
 # Only returns True if `is True`, `== 1`, or
-# lower().strip() in true_like_strings
+# lower().strip() in truthies
 def is_true(val):
     result = False
     try:
@@ -263,7 +263,7 @@ def is_true(val):
             pass
         if val_lower is not None:  # it is a string by inference here
             val_lower = val_lower.strip()
-            if val_lower in true_like_strings:
+            if val_lower in truthies:
                 result = True
         elif val is True:
             result = True

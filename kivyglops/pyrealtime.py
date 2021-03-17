@@ -2,7 +2,7 @@
 
 """
 This module contains classes for storing and retrieving real-time input
-data such as key states
+data such as key states.
 """
 
 import traceback
@@ -48,8 +48,11 @@ class PyRealTimeController:
     def dump(self):
         print(self._keystates)
 
-    # returns: True if pressing button or key number
     def get_pressed(self, index):
+        '''
+        Get True if the button or key number `index`
+        is being pressed, otherwise get False.
+        '''
         return_pressing = False
         try:
             if index in self._keystates:

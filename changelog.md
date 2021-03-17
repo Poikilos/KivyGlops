@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## [git] - 2021-03-16
+## Fixed
+- Fix missing `{}` in bad index error format.
+- Fix `apply_vertex_offset` (See doc/development/2021-03-16_audit_changes_since_9d3b64f.md)
+- Perform a code audit of significant portions (See doc/development/2021-03-16_audit_changes_since_9d3b64f.md)
+
+
 ## [git] - 2021-02-13
 ### Added
 - breakpoint hotkey `b` (works when verbose is enabled)
