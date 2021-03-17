@@ -80,7 +80,7 @@ class MainScene(KivyGlops):
         chimp_info = dict()
         chimp_info["hp"] = 1.0
 
-        chimp_info["land_units_per_second"] = self.glops[player1_index].actor_dict["land_units_per_second"] / 2.
+        chimp_info['land_speed'] = self.glops[player1_index].actor_dict['land_speed'] / 2.
         # If the ranges below are not set, PyGlops will set defaults for them:
         chimp_info["ranges"] = {}
         chimp_info["ranges"]["melee"] = 0.5
