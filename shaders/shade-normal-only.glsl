@@ -1,3 +1,4 @@
+// To set globals, use "glwCv" (same as gl_widget.canvas) in __init__.py
 //from C:\Kivy-1.8.0-py3.3-win32\kivy\examples\3Drendering.simple.glsl
 /* simple.glsl
 

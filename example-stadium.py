@@ -30,13 +30,19 @@ else:
     profile_path = os.environ['HOME']
 
 
+script_path = os.path.abspath(__file__)
+my_dir = os.path.dirname(script_path)
+
 class MainScene(KivyGlops):
 
     def on_load_glops(self):
         try_paths = [
             # "meshes/stadium,primitive.obj",
             "meshes/stadium,primitive-simpler.obj",
-            "../KivyGlops/meshes/stadium,primitive-simpler.obj",
+            os.path.join(my_dir,
+                         "meshes/stadium,primitive-simpler.obj"),
+            "stadium,primitive-simpler.obj",
+            # "../KivyGlops/meshes/stadium,primitive-simpler.obj",
         ]
         for try_path in try_paths:
             result = self.load_obj(try_path)
