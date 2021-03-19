@@ -19,7 +19,7 @@ class ScopeInfo:
     line_number = -1
 
 def get_yaml_from_literal_value(val):
-    #TODO: add yaml escape sequences (see expertmm MoneyForesight for example)
+    # TODO: add yaml escape sequences (see expertmm MoneyForesight for example)
     if type(val).__name__ == "string":
         val = "\"" + val.replace("\"", "\\\"") + "\""
     else:
@@ -27,14 +27,14 @@ def get_yaml_from_literal_value(val):
     return val
 
 def get_literal_value_from_yaml(val):
-    #TODO: process yaml escape sequences (see expertmm MoneyForesight for example)
+    # TODO: process yaml escape sequences (see expertmm MoneyForesight for example)
     val=val.strip()
     if len(val)>2:
         if val[0:1]=="\"" and val[-1:]=="\"":
             val=val[1:-1]
     return val
 
-#from  github.com/expertmm/minetest/chunkymap/expertmm.py, but modified for python2
+# from  github.com/expertmm/minetest/chunkymap/expertmm.py, but modified for python2
 def get_dict_deepcopy(old_dict, depth=0):
     new_dict = None
     if type(old_dict) is dict:
@@ -91,8 +91,8 @@ def get_by_name(object_list, needle):  # formerly find_by_name
                 result = object_list[i]
                 break
         except:
-            #e = sys.exc_info()[0]
-            #print("Could not finish get_by_name:" + str(e))
+            # e = sys.exc_info()[0]
+            # print("Could not finish get_by_name:" + str(e))
             print("Could not finish get_by_name:")
             view_traceback()
     return result
@@ -105,8 +105,8 @@ def get_index_by_name(object_list, needle):
                 result = i
                 break
         except:
-            #e = sys.exc_info()[0]
-            #print("Could not finish get_by_name:" + str(e))
+            # e = sys.exc_info()[0]
+            # print("Could not finish get_by_name:" + str(e))
             print("Could not finish get_index_by_name:")
             view_traceback()
     return result
@@ -115,12 +115,12 @@ def push_yaml_text(yaml, name, val, indent):
     if type(val) is dict:
         for key in val.keys():
             yaml = push_yaml_text(yaml, key, val[key], indent+"  ")
-    else: #if val is None:
-        #if yaml is not None:
-        #    if len(yaml)>0:
-        #        yaml += "\n"
-        #else:
-        #    yaml = ""
+    else: # if val is None:
+        # if yaml is not None:
+        #     if len(yaml)>0:
+        #         yaml += "\n"
+        # else:
+        #     yaml = ""
         if yaml is None:
             yaml = ""
         if val is None:
