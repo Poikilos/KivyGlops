@@ -230,7 +230,7 @@ void main (void){
     def interruptClick(self, instance):
         instance.disabled = True
         instance.opacity = 0.0
-        continueButton = Factory.Button(text="Continue", id="continueButton")
+        continueButton = Factory.Button(text="Continue")
         popup = Factory.Popup(
             title="The button is gone.",
             size_hint=(.25, .25),
