@@ -26,7 +26,7 @@ from kivyglops import *
 #class MainForm(KivyGlopsWindow):
 class MainScene(KivyGlops):
 
-    def load_glops(self):
+    def on_load_glops(self):
         pass
 
 scene = MainScene(KivyGlopsWindow())

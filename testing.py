@@ -40,7 +40,7 @@ else:
 
 class MainScene(KivyGlops):
 
-    def load_glops(self):
+    def on_load_glops(self):
         test_space_enable = False
         test_medieval_enable = True
         test_shader_enable = False
@@ -201,7 +201,7 @@ class MainScene(KivyGlops):
     #    print("display_explosion...Not Yet Implemented")
     #    pass
 
-    def update_glops(self):
+    def on_update_glops(self):
         if self.selected_glop is not None:
             if self.get_pressed("j"):
                 self.selected_glop.rotate_y_relative(1)

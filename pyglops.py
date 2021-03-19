@@ -2084,8 +2084,8 @@ class PyGlops:
             self.glops[bumpable_index].bump_enable = True
             #else:
             #    pass
-                #print("bumper:" + str(self.glops[bumper_index]._translate_instruction.xyz) +
-                #      "; bumped:" + str(self.glops[bumpable_index]._translate_instruction.xyz))
+                #print("bumper:" + str(self.glops[bumper_index]._t_ins.xyz) +
+                #      "; bumped:" + str(self.glops[bumpable_index]._t_ins.xyz))
             #if "bump" in self.glops[bumpable_index].item_dict:
             #NOTE ignore self.glops[bumpable_index].in_range_indices list
             # since firing at point blank range is ok.
@@ -2666,9 +2666,9 @@ class PyGlops:
                     #    del item_dict["owner_index"]
                     #or useless_string = my_dict.pop('key', None)  # where None causes to return None instead of throwing KeyError if not found
 
-                    fired_glop._translate_instruction.x = user_glop._translate_instruction.x
-                    fired_glop._translate_instruction.y = user_glop._translate_instruction.y + user_glop.eye_height
-                    fired_glop._translate_instruction.z = user_glop._translate_instruction.z
+                    fired_glop._t_ins.x = user_glop._t_ins.x
+                    fired_glop._t_ins.y = user_glop._t_ins.y + user_glop.eye_height
+                    fired_glop._t_ins.z = user_glop._t_ins.z
 
                     fired_glop.physics_enable = True
                     this_speed = 15.  # meters/sec
@@ -2689,7 +2689,7 @@ class PyGlops:
                     y_angle = None
                     z_angle = None
                     try:
-                        x_angle = user_glop._rotate_instruction_x.angle
+                        x_angle = user_glop._r_ins_x.angle
                         if this_use == "throw_arc":
                             x_angle += math.radians(30)
                         if x_angle > math.radians(90):
@@ -2697,8 +2697,8 @@ class PyGlops:
                         fired_glop.y_velocity = this_speed * math.sin(x_angle)
                         this_h_speed = this_speed * math.cos(x_angle)
                         # horizontal speed is affected by pitch
-                        fired_glop.x_velocity = this_h_speed * math.cos(user_glop._rotate_instruction_y.angle)
-                        fired_glop.z_velocity = this_h_speed * math.sin(user_glop._rotate_instruction_y.angle)
+                        fired_glop.x_velocity = this_h_speed * math.cos(user_glop._r_ins_y.angle)
+                        fired_glop.z_velocity = this_h_speed * math.sin(user_glop._r_ins_y.angle)
                     except:
                         fired_glop.x_velocity = 0
                         fired_glop.z_velocity = 0
@@ -2748,16 +2748,16 @@ class PyGlops:
 
                     #TODO: why was this nonsense here:
                     #if favorite_pivot is None:
-                    #    favorite_pivot = fired_glop._translate_instruction.xyz
-                    #fired_glop._translate_instruction.x += fired_glop._translate_instruction.x - favorite_pivot[0]
-                    #fired_glop._translate_instruction.y += fired_glop._translate_instruction.y - favorite_pivot[1]
-                    #fired_glop._translate_instruction.z += fired_glop._translate_instruction.z - favorite_pivot[2]
+                    #    favorite_pivot = fired_glop._t_ins.xyz
+                    #fired_glop._t_ins.x += fired_glop._t_ins.x - favorite_pivot[0]
+                    #fired_glop._t_ins.y += fired_glop._t_ins.y - favorite_pivot[1]
+                    #fired_glop._t_ins.z += fired_glop._t_ins.z - favorite_pivot[2]
 
-                    #x_off, z_off = get_rect_from_polar_rad(this_speed, user_glop._rotate_instruction_y.angle)
-                    #this_h_speed = this_speed * math.cos(user_glop._rotate_instruction_x.angle)
+                    #x_off, z_off = get_rect_from_polar_rad(this_speed, user_glop._r_ins_y.angle)
+                    #this_h_speed = this_speed * math.cos(user_glop._r_ins_x.angle)
                     #fired_glop.x_velocity = x_off
                     #fired_glop.z_velocity = z_off
-                    #x_off, y_off = get_rect_from_polar_rad(this_speed, user_glop._rotate_instruction_x.angle)
+                    #x_off, y_off = get_rect_from_polar_rad(this_speed, user_glop._r_ins_x.angle)
                     #fired_glop.y_velocity = y_off
                     ##print("projectile velocity x,y,z:" + str((fired_glop.x_velocity, fired_glop.y_velocity, fired_glop.z_velocity)))
 
@@ -2765,16 +2765,16 @@ class PyGlops:
                     #print("FIRED self._bumpable_indices: " + str(self._bumpable_indices))
 
                     #start off a ways away:
-                    #fired_glop._translate_instruction.x += fired_glop.x_velocity*2
-                    #fired_glop._translate_instruction.y += fired_glop.y_velocity*2
-                    #fired_glop._translate_instruction.z += fired_glop.z_velocity*2
-                    #fired_glop._translate_instruction.y += user_glop.eye_height/2
+                    #fired_glop._t_ins.x += fired_glop.x_velocity*2
+                    #fired_glop._t_ins.y += fired_glop.y_velocity*2
+                    #fired_glop._t_ins.z += fired_glop.z_velocity*2
+                    #fired_glop._t_ins.y += user_glop.eye_height/2
 
                     #print("[ debug only ] bumpers:")
                     #for b_i in self._bumper_indices:  # debug only
                     #    print("[ debug only ]   - ")
                     #    print("[ debug only ]     name: " + str(self.glops[b_i].name))
-                    #    print("[ debug only ]     _translate_instruction: " + str(self.glops[b_i]._translate_instruction.xyz))
+                    #    print("[ debug only ]     _t_ins: " + str(self.glops[b_i]._t_ins.xyz))
         else:
             print("[ PyGlops ] ERROR in throw_glop: user_glop None")
 
@@ -2818,12 +2818,12 @@ class PyGlops:
         else:
             print("[ PyGlops ] ERROR in " + f_name + ": user_glop is None")
 
-    def load_glops(self):
-        print("[ PyGlops ] WARNING: program-specific subclass of a framework-specific subclass of PyGlops should implement load_glops (and usually update_glops which will be called before each frame is drawn)")
+    def on_load_glops(self):
+        print("[ PyGlops ] WARNING: program-specific subclass of a framework-specific subclass of PyGlops should implement on_load_glops (and usually on_update_glops which will be called before each frame is drawn)")
 
-    def update_glops(self):
-        # subclass of KivyGlopsWindow can implement load_glops
-        #print("NOTICE: subclass of PyGlops can implement update_glops")
+    def on_update_glops(self):
+        # subclass of KivyGlopsWindow can implement on_load_glops
+        #print("NOTICE: subclass of PyGlops can implement on_update_glops")
         pass
 
     #def get_player_glop_index(self, player_number):

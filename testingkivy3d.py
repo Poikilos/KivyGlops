@@ -68,7 +68,7 @@ def normalize_3d_by_ref(this_vec3):
 
 class Testing3DWidget(Widget):
     def __init__(self):
-        
+
         #name must be bytestring (must be specified if using python3, since default string is unicode in python3)
         self.vertex_format = [(b'a_position', 4, 'float'),  # Munshi prefers vec4 (Kivy prefers vec3)
                               (b'a_texcoord0', 4, 'float'),  # Munshi prefers vec4 (Kivy prefers vec2); vTexCoord0; available if enable_tex[0] is true
@@ -77,7 +77,7 @@ class Testing3DWidget(Widget):
                               (b'a_normal', 3, 'float')  # vNormal; Munshi prefers vec3 (Kivy also prefers vec3)
                               ]
         self.on_vertex_format_change()
-        
+
         #self.canvas = RenderContext()
         #self.canvas = RenderContext(compute_normal_mat=True)
         self.canvas = InstructionGroup()
@@ -86,20 +86,20 @@ class Testing3DWidget(Widget):
         #Rotate(angle=self.freeAngle, origin=(self._calculated_size[0]/2.0,self._calculated_size[1]/2.0))
         self._pivot_point = 0.0, 0.0, 0.0  #self.get_center_average_of_vertices()
         self._pivot_scaled_point = 0.0, 0.0, 0.0
-        self._rotate_instruction_x = Rotate(0, 1, 0, 0)  #angle, x, y z
-        self._rotate_instruction_x.origin = self._pivot_scaled_point
-        self._rotate_instruction_y = Rotate(0, 0, 1, 0)  #angle, x, y z
-        self._rotate_instruction_y.origin = self._pivot_scaled_point
-        self._rotate_instruction_z = Rotate(0, 0, 0, 1)  #angle, x, y z
-        self._rotate_instruction_z.origin = self._pivot_scaled_point
-        self._scale_instruction = Scale(1.0,1.0,1.0)
-        #self._scale_instruction.origin = self._pivot_point
-        self._translate_instruction = Translate(0, 0, 0)
+        self._r_ins_x = Rotate(0, 1, 0, 0)  #angle, x, y z
+        self._r_ins_x.origin = self._pivot_scaled_point
+        self._r_ins_y = Rotate(0, 0, 1, 0)  #angle, x, y z
+        self._r_ins_y.origin = self._pivot_scaled_point
+        self._r_ins_z = Rotate(0, 0, 0, 1)  #angle, x, y z
+        self._r_ins_z.origin = self._pivot_scaled_point
+        self._s_ins = Scale(1.0,1.0,1.0)
+        #self._s_ins.origin = self._pivot_point
+        self._t_ins = Translate(0, 0, 0)
         self._color_instruction = Color(1.0, 0.0, 1.0, 1.0)  # TODO: eliminate this in favor of canvas["mat_diffuse_color"]
-        
+
         #_axes_vertices, _axes_indices = self.generate_plane()
         _axes_vertices, _axes_indices = self._get_generated_axes_buffers()
-        
+
         print("[ Testing3DWidget ] __init__ got " + str(len(_axes_vertices)/self.vertex_depth) + " verts, " + str(len(_axes_indices)/3) + " faces")
         self._axes_mesh = Mesh(
                                vertices=_axes_vertices,
@@ -115,7 +115,7 @@ class Testing3DWidget(Widget):
         vertex_components = [0.0]*self.vertex_depth
         for i in range(0, 3):
             vertex_components[self._POSITION_OFFSET+i] = set_coords[i]
-            
+
         # Without the 4th index, matrix math cannot work and geometry
         # cannot be translated (!):
         if self.vertex_format[self.POSITION_INDEX][VFORMAT_VECTOR_LEN_INDEX] > 3:
@@ -131,7 +131,7 @@ class Testing3DWidget(Widget):
         normalize_3d_by_ref(normals)
         for i in range(0, 3):
             vertex_components[self._NORMAL_OFFSET+i] = normals[i]
-        #print("  #* made new vertex " + str(vertex_components) + " (color at " + str(self.COLOR_OFFSET) + ")") 
+        #print("  #* made new vertex " + str(vertex_components) + " (color at " + str(self.COLOR_OFFSET) + ")")
         return vertex_components
 
     def append_vertex(self, target_vertices, set_coords, set_color):
@@ -143,7 +143,7 @@ class Testing3DWidget(Widget):
     def generate_plane(self):
         _axes_vertices = []
         _axes_indices = []
-        
+
         IS_SELF_VFORMAT_OK = True
         if self._POSITION_OFFSET<0:
             IS_SELF_VFORMAT_OK = False
@@ -165,10 +165,10 @@ class Testing3DWidget(Widget):
         self.append_vertex(_axes_vertices, (1.0, 0.0, 0.0), white)
         self.append_vertex(_axes_vertices, (1.0, 1.0, 0.0), white)
         _axes_indices.extend([0,1,3, 0,2,3])
-        
+
         return _axes_vertices, _axes_indices
-        
-        
+
+
     def _get_generated_axes_buffers(self):
         # NOTE: This is a full solid (3 boxes) where all axes can always
         # be seen except when another is in the way (some vertices are
@@ -176,7 +176,7 @@ class Testing3DWidget(Widget):
         # See etc/axes-widget-diagram.png
         _axes_vertices = []
         _axes_indices = []
-        
+
         IS_SELF_VFORMAT_OK = True
         if self._POSITION_OFFSET<0:
             IS_SELF_VFORMAT_OK = False
@@ -207,12 +207,12 @@ class Testing3DWidget(Widget):
         self.append_vertex(_axes_vertices, (nv, fv, 0.0), green)  # 5
         self.append_vertex(_axes_vertices, (0.0, fv, nv), green)  # 6
         self.append_vertex(_axes_vertices, (nv, fv, nv), green)  # 7
-        
+
         _axes_indices.extend([0,1,3, 0,3,2, 0,2,6, 0,6,4,  # bottom & right
                               0,4,5, 0,5,1, 4,5,7, 4,7,6,  # back & top
                               1,5,7, 1,7,3, 2,3,7, 2,7,6  # left & front
                               ])
-        
+
         self.append_vertex(_axes_vertices, (nv, 0.0, 0.0), red)  # 8
         self.append_vertex(_axes_vertices, (nv, 0.0, nv), red)  # 9
         self.append_vertex(_axes_vertices, (nv, nv, 0.0), red)  # 10
@@ -221,12 +221,12 @@ class Testing3DWidget(Widget):
         self.append_vertex(_axes_vertices, (fv, nv, 0.0), red)  # 13
         self.append_vertex(_axes_vertices, (fv, 0.0, nv), red)  # 14
         self.append_vertex(_axes_vertices, (fv, nv, nv), red)  # 15
-        
+
         _axes_indices.extend([8,9,11, 8,11,10, 8,10,13, 8,13,12,  # back & outside
                               8,12,14, 8,14,9,  9,14,15, 9,15,11,  # bottom & inside
                               10,11,15, 11,15,13, 12,13,15, 12,15,14  # top & front
                               ])
-        
+
         self.append_vertex(_axes_vertices, (0.0, 0.0, nv), blue)  # 16
         self.append_vertex(_axes_vertices, (nv, 0.0, nv), blue)  # 17
         self.append_vertex(_axes_vertices, (0.0, nv, nv), blue)  # 18
@@ -235,21 +235,21 @@ class Testing3DWidget(Widget):
         self.append_vertex(_axes_vertices, (nv, 0.0, fv), blue)  # 21
         self.append_vertex(_axes_vertices, (0.0, nv, fv), blue)  # 22
         self.append_vertex(_axes_vertices, (nv, nv, fv), blue)  # 23
-        
+
         _axes_indices.extend([16,18,19, 16,19,17, 16,22,18, 16,20,22,  # back & outside
                               16,17,21, 16,21,20, 17,19,20, 17,20,21,  # bottom & inside
                               19,18,22, 19,22,23, 20,21,23, 20,23,22  # top & front
                               ])
-        
+
         #new_texcoord = new_tuple(self.vertex_format[self.TEXCOORD0_INDEX][VFORMAT_VECTOR_LEN_INDEX])
-        
+
         return _axes_vertices, _axes_indices
 
     def on_vertex_format_change(self):
         self.vertex_depth = 0
         for i in range(0,len(self.vertex_format)):
             self.vertex_depth += self.vertex_format[i][VFORMAT_VECTOR_LEN_INDEX]
-        
+
         self._POSITION_OFFSET = -1
         self._NORMAL_OFFSET = -1
         self._TEXCOORD0_OFFSET = -1
@@ -304,7 +304,7 @@ class TestingKivy3D(BoxLayout):
     def __init__(self, **kwargs):
         self.player_velocity = [0.0, 0.0, 0.0]
         self.ops = []
-        
+
         self.frames_per_second = 60.0
         self.gl_widget = Widget()
         self.hud_form = BoxLayout(orientation="vertical", size_hint=(1.0, 1.0))
@@ -338,7 +338,7 @@ class TestingKivy3D(BoxLayout):
         #self.gl_widget.canvas.shader.source = resource_find('shade-texture-only.glsl')
         #self.gl_widget.canvas.shader.source = resource_find('shade-kivyops-minimal.glsl')  # NOT working
 
-        
+
         #self.canvas.shader.source = resource_find('simple.glsl')
         #self.canvas.shader.source = resource_find('simple1b.glsl')
         #self.canvas.shader.source = resource_find('shade-kivyops-standard.glsl')
@@ -366,7 +366,7 @@ class TestingKivy3D(BoxLayout):
         self.add_widget(self.gl_widget)
         #self.hud_form.rows = 1
         self.add_widget(self.hud_form)
-        
+
         self.debug_label = Factory.Label(text="...")
         self.hud_form.add_widget(self.debug_label)
         self.hud_form.add_widget(self.hud_buttons_form)
@@ -378,11 +378,11 @@ class TestingKivy3D(BoxLayout):
         #self.hud_buttons_form.add_widget(self.inventory_next_button)
 
         #Window.bind(on_motion=self.on_motion)  #TODO ?: formerly didn't work, but maybe failed since used Window. instead of self--see <https://kivy.org/docs/api-kivy.input.motionevent.html>
-        
+
         Clock.schedule_interval(self.update_glsl, 1.0 / self.frames_per_second)
-        
+
         #self._touches = []
-        
+
         #self.scene = KivyGlops()
         #self.scene = ObjFile(resource_find("monkey.obj"))
         #self.scene.load_obj(resource_find("barrels triangulated (Costinus at turbosquid).obj"))
@@ -398,14 +398,14 @@ class TestingKivy3D(BoxLayout):
         #    PopMatrix()
         #    self.cb = Callback(self.reset_gl_context)
         self.add_op(self.this_op)
-        
-        self.camera_translate_instruction = Translate()
-        self.camera_translate_instruction.x = -1.0
+
+        self.camera_t_ins = Translate()
+        self.camera_t_ins.x = -1.0
         self.look_point = [0, 0, 0]
         self.rot = Rotate(1, 0, 1, 0)
-        
+
         Clock.schedule_interval(self.update_glsl, 1 / 60.)
-        
+
     def add_op(self, this_op, set_visible_enable=None):
         this_glop = this_op
         context = this_glop.get_context()
@@ -415,11 +415,11 @@ class TestingKivy3D(BoxLayout):
         this_glop._popmatrix = PopMatrix()
 
         context.add(this_glop._pushmatrix)
-        context.add(this_glop._translate_instruction)
-        context.add(this_glop._rotate_instruction_x)
-        context.add(this_glop._rotate_instruction_y)
-        context.add(this_glop._rotate_instruction_z)
-        context.add(this_glop._scale_instruction)
+        context.add(this_glop._t_ins)
+        context.add(this_glop._r_ins_x)
+        context.add(this_glop._r_ins_y)
+        context.add(this_glop._r_ins_z)
+        context.add(this_glop._s_ins)
         context.add(this_glop._updatenormalmatrix)
         #context.add(this_glop._color_instruction)  #TODO: asdf add as uniform instead
         #not needed for Testing3DWidget since _axes_mesh is already a Mesh of axes
@@ -440,7 +440,7 @@ class TestingKivy3D(BoxLayout):
         #if self.scene.glops is None:
         #    self.scene.glops = list()
         #endregion pasted from KivyGlops add_glop
-        
+
         #self._contexts.add(this_glop.get_context())  # really just self.this_op.canvas (in testingkivy3d.py)
         try:
             #self._contexts.add(this_glop.canvas)
@@ -449,9 +449,9 @@ class TestingKivy3D(BoxLayout):
         except:
             print("[ TestingKivy3D ] add_op could not finish adding instructiongroup")
             view_traceback()
-            
+
         #self._contexts.remove(this_glop.get_context()) #  to hide
-        
+
     def inventory_use_button_press(self, instance):
         print("Pressed button " + instance.text)
 
@@ -467,22 +467,22 @@ class TestingKivy3D(BoxLayout):
     def reset_gl_context(self, *args):
         glDisable(GL_DEPTH_TEST)
 
-    
+
     def update_glsl(self, *largs):
         global no_width_error_enable
         if self.player_velocity[0] != 0:
-            self.camera_translate_instruction.x += self.player_velocity[0]
+            self.camera_t_ins.x += self.player_velocity[0]
         if self.player_velocity[1] != 0:
-            self.camera_translate_instruction.y += self.player_velocity[1]
+            self.camera_t_ins.y += self.player_velocity[1]
         if self.player_velocity[2] != 0:
-            self.camera_translate_instruction.z += self.player_velocity[2]
+            self.camera_t_ins.z += self.player_velocity[2]
         if self.height > 0:
             asp = self.width / float(self.height)
         else:
             if no_width_error_enable:
                 print("[ TestingKivy3D ] ERROR in update_glsl: Failed to get width.")
                 no_width_error_enable = False
-                
+
         clip_top = 0.06  #NOTE: 0.03 is ~1.72 degrees, if that matters
         # formerly field_of_view_factor
         # was changed to .03 when projection_near was changed from 1 to .1
@@ -493,22 +493,22 @@ class TestingKivy3D(BoxLayout):
         projectionMatrix = Matrix().view_clip(-clip_right, clip_right, -1*clip_top, clip_top, self.projection_near, 100, 1)  # last params: far, perspective
         #projectionMatrix = Matrix().view_clip(-asp, asp, -1, 1, 1, 100, 1)  # last params: far, perspective
         modelViewMatrix = Matrix()
-        modelViewMatrix.translate(self.camera_translate_instruction.x, self.camera_translate_instruction.y, self.camera_translate_instruction.z)
-        if (self.camera_translate_instruction.x != self.look_point[0] or
-            self.camera_translate_instruction.y != self.look_point[1] or
-            self.camera_translate_instruction.z != self.look_point[2]):
+        modelViewMatrix.translate(self.camera_t_ins.x, self.camera_t_ins.y, self.camera_t_ins.z)
+        if (self.camera_t_ins.x != self.look_point[0] or
+            self.camera_t_ins.y != self.look_point[1] or
+            self.camera_t_ins.z != self.look_point[2]):
             try:
-                modelViewMatrix = modelViewMatrix.look_at(self.camera_translate_instruction.x, self.camera_translate_instruction.y, self.camera_translate_instruction.z, self.look_point[0], self.look_point[1], self.look_point[2], 0, 1, 0)  # 0,1,0 is y-up orientation
+                modelViewMatrix = modelViewMatrix.look_at(self.camera_t_ins.x, self.camera_t_ins.y, self.camera_t_ins.z, self.look_point[0], self.look_point[1], self.look_point[2], 0, 1, 0)  # 0,1,0 is y-up orientation
             except:
                 print("[ TestingKivy3D ] Could not finish modelViewMatrix.look_at:")
         else:
             print("[ TestingKivy3D ] Can't run modelViewMatrix.look_at since camera is at look_point")
-                
+
         self.gl_widget.canvas['projection_mat'] = projectionMatrix
         self.gl_widget.canvas['modelview_mat'] = modelViewMatrix
-        self.gl_widget.canvas["camera_world_pos"] = [self.camera_translate_instruction.x, self.camera_translate_instruction.y, self.camera_translate_instruction.z]
+        self.gl_widget.canvas["camera_world_pos"] = [self.camera_t_ins.x, self.camera_t_ins.y, self.camera_t_ins.z]
         self.gl_widget.canvas['ambient_light'] = (0.1, 0.1, 0.1)
-        
+
         #self.canvas['projection_mat'] = projectionMatrix
         #self.canvas['diffuse_light'] = (1.0, 1.0, 0.8)
         #self.canvas['ambient_light'] = (0.1, 0.1, 0.1)
@@ -564,7 +564,7 @@ class TestingKivy3D(BoxLayout):
             self.player_velocity[1] = -1.0
         elif keycode[1] == 's':
             self.player_velocity[1] = 1.0
-            
+
         self.update_glsl()
         return True
 

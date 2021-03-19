@@ -103,7 +103,7 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
     _r_ins_x = None
     _r_ins_y = None
     _r_ins_z = None
-    _scale_instruction = None
+    _s_ins = None
     _color_instruction = None
     _context_instruction = None
 
@@ -153,8 +153,8 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
         self._r_ins_y.origin = self._pivot_scaled_point
         self._r_ins_z = Rotate(0, 0, 0, 1)  #angle, x, y z
         self._r_ins_z.origin = self._pivot_scaled_point
-        self._scale_instruction = Scale(1.0,1.0,1.0)
-        #self._scale_instruction.origin = self._pivot_point
+        self._s_ins = Scale(1.0,1.0,1.0)
+        #self._s_ins.origin = self._pivot_point
         self._t_ins = Translate(0, 0, 0)
         self._color_instruction = Color(1.0, 0.0, 1.0, 1.0)  # TODO: eliminate this in favor of self.set_uniform("mat_diffuse_color", (1.0, 0.0, 1.0, 1.0))
 
@@ -526,9 +526,9 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
         result._r_ins_x.angle = self._r_ins_x.angle
         result._r_ins_y.angle = self._r_ins_y.angle
         result._r_ins_z.angle = self._r_ins_z.angle
-        #result._scale_instruction.x = self._scale_instruction.x
-        #result._scale_instruction.y = self._scale_instruction.y
-        #result._scale_instruction.z = self._scale_instruction.z
+        #result._s_ins.x = self._s_ins.x
+        #result._s_ins.y = self._s_ins.y
+        #result._s_ins.z = self._s_ins.z
         #result._color_instruction.r = self._color_instruction.r
         #result._color_instruction.g = self._color_instruction.g
         #result._color_instruction.b = self._color_instruction.b
@@ -541,7 +541,7 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
         context.add(result._r_ins_x)
         context.add(result._r_ins_y)
         context.add(result._r_ins_z)
-        context.add(result._scale_instruction)
+        context.add(result._s_ins)
         context.add(result._updatenormalmatrix)
         #context.add(this_glop._color_instruction)  #TODO: asdf add as uniform
         if self._mesh is not None:
@@ -630,20 +630,20 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
     def _on_change_pivot(self, previous_point=(0.0,0.0,0.0)):
         super(KivyGlop, self)._on_change_pivot(previous_point=previous_point)
         print("[ KivyGlop ] (verbose message) _on_change_pivot from " + str(previous_point))
-        self._on_change_scale_instruction()  # does calculate_hit_range
+        self._on_change_s_ins()  # does calculate_hit_range
 
     def get_scale(self):
-        return (self._scale_instruction.x + self._scale_instruction.y + self._scale_instruction.z) / 3.0
+        return (self._s_ins.x + self._s_ins.y + self._s_ins.z) / 3.0
 
     def set_scale(self, overall_scale):
-        self._scale_instruction.x = overall_scale
-        self._scale_instruction.y = overall_scale
-        self._scale_instruction.z = overall_scale
-        self._on_change_scale_instruction()  # does calculate_hit_range
+        self._s_ins.x = overall_scale
+        self._s_ins.y = overall_scale
+        self._s_ins.z = overall_scale
+        self._on_change_s_ins()  # does calculate_hit_range
 
-    def _on_change_scale_instruction(self):
+    def _on_change_s_ins(self):
         if self._pivot_point is not None:
-            self._pivot_scaled_point = self._pivot_point[0] * self._scale_instruction.x + self._t_ins.x, self._pivot_point[1] * self._scale_instruction.y + self._t_ins.y, self._pivot_point[2] * self._scale_instruction.z + self._t_ins.z
+            self._pivot_scaled_point = self._pivot_point[0] * self._s_ins.x + self._t_ins.x, self._pivot_point[1] * self._s_ins.y + self._t_ins.y, self._pivot_point[2] * self._s_ins.z + self._t_ins.z
 #         else:
 #             self._pivot_point = 0,0,0
 #             self._pivot_scaled_point = 0,0,0
@@ -652,15 +652,15 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
         self._r_ins_x.origin = self._pivot_scaled_point
         self._r_ins_y.origin = self._pivot_scaled_point
         self._r_ins_z.origin = self._pivot_scaled_point
-        #self._t_ins.x = self.freePos[0]-self._rectangle_instruction.size[0]*self._scale_instruction.x/2
-        #self._t_ins.y = self.freePos[1]-self._rectangle_instruction.size[1]*self._scale_instruction.y/2
-        #self._rotate_instruction.origin = self._rectangle_instruction.size[0]*self._scale_instruction.x/2.0, self._rectangle_instruction.size[1]*self._scale_instruction.x/2.0
+        #self._t_ins.x = self.freePos[0]-self._rectangle_instruction.size[0]*self._s_ins.x/2
+        #self._t_ins.y = self.freePos[1]-self._rectangle_instruction.size[1]*self._s_ins.y/2
+        #self._rotate_instruction.origin = self._rectangle_instruction.size[0]*self._s_ins.x/2.0, self._rectangle_instruction.size[1]*self._s_ins.x/2.0
         #self._rotate_instruction.angle = self.freeAngle
         this_name = ""
         if self.name is not None:
             this_name = self.name
         #print()
-        #print("_on_change_scale_instruction for object named '"+this_name+"'")
+        #print("_on_change_s_ins for object named '"+this_name+"'")
         #print ("_pivot_point:"+str(self._pivot_point))
         #print ("_pivot_scaled_point:"+str(self._pivot_scaled_point))
         #if self.hitbox is not None:
@@ -779,7 +779,7 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
         self.set_uniform("texture0_enable", False)
         for use_mesh in use_meshes:
             #self._axes_mesh.
-            #self._scale_instruction = Scale(0.6)
+            #self._s_ins = Scale(0.6)
             self._pushmatrix = PushMatrix()
             self._updatenormalmatrix = UpdateNormalMatrix()
             self._popmatrix = PopMatrix()
@@ -789,7 +789,7 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
             context.add(self._r_ins_x)
             context.add(self._r_ins_y)
             context.add(self._r_ins_z)
-            context.add(self._scale_instruction)
+            context.add(self._s_ins)
             context.add(self._updatenormalmatrix)
             context.add(self._context_instruction)
             #context.add(self._color_instruction)  #TODO: asdf add as uniform instead
@@ -823,7 +823,7 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
             #context.add(self._r_ins_x)
             #context.add(self._r_ins_y)
             #context.add(self._r_ins_z)
-            #context.add(self._scale_instruction)
+            #context.add(self._s_ins)
             #context.add(self._updatenormalmatrix)
             #context.add(self._axes_mesh)
             #context.add(PopMatrix())
@@ -939,8 +939,8 @@ class KivyGlops(PyGlops):
         #return PyGlops.new_glop(self)
         return KivyGlop()
 
-    def load_glops(self):
-        print("WARNING: app's subclass of KivyGlops should implement load_glops (and usually update_glops, which will be called before each frame is drawn)")
+    def on_load_glops(self):
+        print("WARNING: app's subclass of KivyGlops should implement on_load_glops (and usually on_update_glops, which will be called before each frame is drawn)")
 
     def create_material(self):
         return KivyGlopsMaterial()
@@ -1268,7 +1268,7 @@ class KivyGlops(PyGlops):
                 #print(str(self.glops[i].name)+" looks at "+str(self.glops[i].look_target_glop.name))
                 #print("  at "+str((self.camera_glop._t_ins.x, self.camera_glop._t_ins.y, self.camera_glop._t_ins.z)))
 
-        self.update_glops()
+        self.on_update_glops()
 
         rotation_multiplier_y = 0.0  # 1.0 is maximum speed
         moving_x = 0.0  # 1.0 is maximum speed
@@ -2083,7 +2083,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         if get_verbose_enable():
             print("_deferred_load_glops: " + str(type(dt)) + \
                   " dt = " + str(dt))
-        self.scene.load_glops()  # also moved from ui
+        self.scene.on_load_glops()  # also moved from ui
         self.scene._loaded_glops_enable = True
         self.debug_label.text = ""
 

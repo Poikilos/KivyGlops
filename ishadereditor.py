@@ -140,17 +140,17 @@ void main (void){
         this_mesh_name = ""
         if this_glop.name is not None:
             this_mesh_name = this_glop.name
-        #this_glop._scale_instruction = Scale(0.6)
+        #this_glop._s_ins = Scale(0.6)
         this_glop._pushmatrix = PushMatrix()
         this_glop._updatenormalmatrix = UpdateNormalMatrix()
         this_glop._popmatrix = PopMatrix()
 
         context.add(this_glop._pushmatrix)
-        context.add(this_glop._translate_instruction)
-        context.add(this_glop._rotate_instruction_x)
-        context.add(this_glop._rotate_instruction_y)
-        context.add(this_glop._rotate_instruction_z)
-        context.add(this_glop._scale_instruction)
+        context.add(this_glop._t_ins)
+        context.add(this_glop._r_ins_x)
+        context.add(this_glop._r_ins_y)
+        context.add(this_glop._r_ins_z)
+        context.add(this_glop._s_ins)
         context.add(this_glop._updatenormalmatrix)
 
         #context.add(this_glop._color_instruction)  #TODO: asdf add as uniform instead
@@ -177,11 +177,11 @@ void main (void){
             self.scene.glops = list()
 
         #context.add(PushMatrix())
-        #context.add(this_glop._translate_instruction)
-        #context.add(this_glop._rotate_instruction_x)
-        #context.add(this_glop._rotate_instruction_y)
-        #context.add(this_glop._rotate_instruction_z)
-        #context.add(this_glop._scale_instruction)
+        #context.add(this_glop._t_ins)
+        #context.add(this_glop._r_ins_x)
+        #context.add(this_glop._r_ins_y)
+        #context.add(this_glop._r_ins_z)
+        #context.add(this_glop._s_ins)
         #context.add(this_glop._updatenormalmatrix)
         #context.add(this_glop._axes_mesh)
         #context.add(PopMatrix())

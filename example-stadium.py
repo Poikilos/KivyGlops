@@ -17,7 +17,9 @@ from kivy.input.providers.mouse import MouseMotionEvent
 from kivy.factory import Factory
 from kivy.uix.boxlayout import BoxLayout
 from kivyglops import *
-#from common import *
+from common import (
+    set_verbose_enable,
+)
 import math
 import os
 
@@ -30,8 +32,18 @@ else:
 
 class MainScene(KivyGlops):
 
-    def load_glops(self):
-        self.load_obj("meshes/stadium,primitive.obj")
+    def on_load_glops(self):
+        try_paths = [
+            # "meshes/stadium,primitive.obj",
+            "meshes/stadium,primitive-simpler.obj",
+            "../KivyGlops/meshes/stadium,primitive-simpler.obj",
+        ]
+        for try_path in try_paths:
+            result = self.load_obj(try_path)
+            print("[example-stadium] * trying {}...got {}"
+                  "".format(try_path, result))
+            if result is not None:
+                break
 
         walkmesh_names = self.get_similar_names("walkmesh")
         for name in walkmesh_names:
@@ -90,7 +102,7 @@ class MainScene(KivyGlops):
             self.add_damaged_sound_at(index, "sounds/chimp-ooh1.wav")
             self.add_damaged_sound_at(index, "sounds/chimp-upset1.wav")
 
-    def attacked_glop(self, attacked_index, attacker_index, weapon_dict):
+    def on_attacked_glop(self, attacked_index, attacker_index, weapon_dict):
         self.glops[attacked_index].actor_dict["hp"] -= weapon_dict["hit_damage"]
         if self.glops[attacked_index].actor_dict["hp"] <= 0:
             self.explode_glop_at(attacked_index, weapon_dict)
@@ -103,10 +115,10 @@ class MainScene(KivyGlops):
         #    self.play_sound("sounds/rock-pickup.wav")
         pass
 
-    def update_glops(self):
+    def on_update_glops(self):
         pass
 
-
+set_verbose_enable(True)
 scene = MainScene(KivyGlopsWindow())
 
 
