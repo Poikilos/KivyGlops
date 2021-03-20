@@ -104,8 +104,8 @@ look_at_pos_none_warning_enable = True
 missing_bumpable_warning_enable = True
 missing_bumper_warning_enable = True
 missing_radius_warning_enable = True
-no_bounds_warning_enable = True
 # out_of_hitbox_note_enable = True
+no_bounds_warning_enable = True
 show_zero_degrees_pf_warning_enable = True  # pf is per frame
 show_zero_walk_upf_warning_enable = True  # upf is units per frame
 # endregion changed automatically after showing error only once
@@ -221,7 +221,8 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
         # Rotate(
         #     angle=self.freeAngle,
         #     origin=(self._calculated_size[0]/2.0,
-        #             self._calculated_size[1]/2.0))
+        #             self._calculated_size[1]/2.0)
+        # )
         self._pivot_point = 0.0, 0.0, 0.0
         # self.get_center_average_of_vertices()
         self._pivot_scaled_point = 0.0, 0.0, 0.0
@@ -516,10 +517,22 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
             if self.COLOR_OFFSET < 0:
                 IS_SELF_VFORMAT_OK = False
                 print(fail_prefix + " 'color'" + fail_suffix)
-        except:
-            IS_SELF_VFORMAT_OK = False
-            print("[ KivyGlop ] ERROR in " + f_name + ":" +
-                  " couldn't find offsets")
+        except TypeError as ex:
+            if "NoneType" in str(ex):
+                IS_SELF_VFORMAT_OK = False
+                print("[ KivyGlop ] ERROR in " + f_name + ":"
+                      " self._POSITION_OFFSET is {}; "
+                      " self._NORMAL_OFFSET is {}; "
+                      " self._TEXCOORD0_OFFSET is {}; "
+                      " self.COLOR_OFFSET is {}; "
+                      "".format(
+                          self._POSITION_OFFSET,
+                          self._NORMAL_OFFSET,
+                          self._TEXCOORD0_OFFSET,
+                          self.COLOR_OFFSET,
+                      ))
+            else:
+                raise(ex)
 
         offset = 0
         white = (1.0, 1.0, 1.0, 1.0)
@@ -544,11 +557,13 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
                                texture=None,
                               )
 
-    # NOTE: result is a full solid (3 boxes) where all axes can always
-    # be seen except when another is in the way (some vertices are
-    # doubled so that vertex color can be used).
-    # See etc/axes-widget-diagram.png
     def generate_axes(self):
+        '''
+        result is a full solid (3 boxes) where all axes can always
+        be seen except when another is in the way (some vertices are
+        doubled so that vertex color can be used).
+        See etc/axes-widget-diagram.png
+        '''
         f_name = "generate_axes"
 
         _axes_vertices = []
@@ -576,10 +591,19 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
             if self.COLOR_OFFSET < 0:
                 IS_SELF_VFORMAT_OK = False
                 print(fail_prefix + "'color'" + fail_suffix)
-        except:
-            IS_SELF_VFORMAT_OK = False
-            print("[ KivyGlop ] ERROR in " + f_name + ":" +
-                  " couldn't find offsets")
+        except TypeError as ex:
+            if "NoneType" in str(ex):
+                # TODO: ^ see what happened then choose what to handle
+                IS_SELF_VFORMAT_OK = False
+                print("[ KivyGlop ] ERROR in " + f_name + ":" +
+                      " couldn't find offsets")
+                return None
+                # Stop here, otherwise there will be a
+                # `ZeroDivisionError: division by zero` in
+                # append_vertex.
+            else:
+                raise ex
+
         offset = 0
         red = (1.0, 0.0, 0.0)
         green = (0.0, 1.0, 0.0)
@@ -678,12 +702,12 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
         #         self.TEXCOORD0_INDEX][VFORMAT_VECTOR_LEN_INDEX])
         if IS_SELF_VFORMAT_OK:
             self._axes_mesh = Mesh(
-                                   vertices=_axes_vertices,
-                                   indices=_axes_indices,
-                                   fmt=self.vertex_format,
-                                   mode='triangles',
-                                   texture=None,
-                                  )
+                vertices=_axes_vertices,
+                indices=_axes_indices,
+                fmt=self.vertex_format,
+                mode='triangles',
+                texture=None,
+            )
         else:
             # error already shown
             # print("[ KivyGlop ] ERROR in generate_axes:"
@@ -704,7 +728,7 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
         target = None
         try:
             if get_verbose_enable():
-                print("[ KivyGlop ] " + "  " * depth + "copy is" +
+                print("[ KivyGlop ] " + "  " * depth + "copy is"
                       " calling copy_as_subclass")
             target = self.copy_as_subclass(self.new_glop_method,
                                            depth=depth+1)
@@ -1144,8 +1168,12 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
                   + str(self.name))
 
     def set_uniform(self, name, val):
-        # NOTE: this is the LOCAL object canvas, which may be
-        # either a RenderContext (not full Canvas) or InstructionGroup
+        '''
+        This is the LOCAL object canvas, which may be
+        either a RenderContext (not full Canvas) if
+        _multicontext_enable (global) is True,
+        otherwise it is an InstructionGroup.
+        '''
         if _multicontext_enable:
             self.canvas[name] = val
         else:
@@ -1492,7 +1520,8 @@ class KivyGlops(PyGlops):
                 self.env_flip_enable = unflip_enable
             else:
                 print("ERROR in set_background_cylmap: "
-                      + original_path + " not found in search path")
+                      "\"{}\" not found in search path"
+                      "".format(original_path))
         else:
             print("ERROR in set_background_cylmap: path is None")
 
@@ -3590,8 +3619,8 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             # context = self._contexts
             # context = self.gl_widget.canvas
             # if self.scene.selected_glop_index is None:
-                # self.scene.selected_glop_index = this_glop_index
-                # self.scene.selected_glop = this_glop
+            #     self.scene.selected_glop_index = this_glop_index
+            #     self.scene.selected_glop = this_glop
             if self.scene.glops is None:
                 self.scene.glops = []
             if ((self.scene.selected_glop_index is None)
@@ -4005,11 +4034,11 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             self.debug_label.text = yaml
 
     # def canvasTouchDown(self, touch, *largs):
-        # touchX, touchY = largs[0].pos
-        # # self.player_glop.targetX = touchX
-        # # self.player_glop.targetY = touchY
-        # print("\n")
-        # print(str(largs).replace("\" ", "\"\n"))
+    #     touchX, touchY = largs[0].pos
+    #     # self.player_glop.targetX = touchX
+    #     # self.player_glop.targetY = touchY
+    #     print("\n")
+    #     print(str(largs).replace("\" ", "\"\n"))
 
     def on_touch_down(self, touch):
         super(KivyGlopsWindow, self).on_touch_down(touch)
