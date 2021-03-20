@@ -40,7 +40,7 @@ else:
 
 class MainScene(KivyGlops):
 
-    def load_glops(self):
+    def on_load_glops(self):
         test_space_enable = False
         test_medieval_enable = True
         test_shader_enable = False
@@ -99,7 +99,7 @@ class MainScene(KivyGlops):
             if seaport_path is None:
                 seaport_path = os.path.join(testing_path, seaport_name)
             if os.path.isfile(seaport_path):
-                self.load_obj(seaport_path, pivot_to_geometry_enable=True)
+                self.load_obj(seaport_path, pivot_to_g_enable=True)
             else:
                 #try_path
                 print("[ testing ] ERROR: can't find '" + seaport_name + "'")
@@ -183,13 +183,13 @@ class MainScene(KivyGlops):
             print("[ testing ] " + str(len(enemy_indices)) + " enemies found.")
         #test_deepcopy_weapon = self.player_glop.deepcopy_with_my_type(weapon)
 
-    def attacked_glop(self, attacked_index, attacker_index, weapon_dict):
+    def on_attacked_glop(self, attacked_index, attacker_index, weapon_dict):
         self.glops[attacked_index].actor_dict["hp"] -= weapon_dict["hit_damage"]
         if self.glops[attacked_index].actor_dict["hp"] <= 0:
             self.explode_glop_at(attacked_index, weapon_dict)
-            print("[ testing ] (attacked_glop: after exploding) HP: "+str(self.glops[attacked_index].actor_dict["hp"]))
+            print("[ testing ] (on_attacked_glop: after exploding) HP: "+str(self.glops[attacked_index].actor_dict["hp"]))
         else:
-            print("[ testing ] (attacked_glop) HP: "+str(self.glops[attacked_index].actor_dict["hp"]))
+            print("[ testing ] (on_attacked_glop) HP: "+str(self.glops[attacked_index].actor_dict["hp"]))
 
     def obtain_glop(self, bumpable_name, bumper_name):
         if "barrel" in bumpable_name.lower():
@@ -197,11 +197,11 @@ class MainScene(KivyGlops):
         if "crate" in bumpable_name.lower():
             self.play_sound("sounds/crate-pickup.wav")
 
-    #def display_explosion(self, pos, radius, attacked_index, weapon):
-    #    print("display_explosion...Not Yet Implemented")
+    #def on_explode_glop(self, pos, radius, attacked_index, weapon):
+    #    print("on_explode_glop...Not Yet Implemented")
     #    pass
 
-    def update_glops(self):
+    def on_update_glops(self):
         if self.selected_glop is not None:
             if self.get_pressed("j"):
                 self.selected_glop.rotate_y_relative(1)
