@@ -99,7 +99,7 @@ class MainScene(KivyGlops):
             if seaport_path is None:
                 seaport_path = os.path.join(testing_path, seaport_name)
             if os.path.isfile(seaport_path):
-                self.load_obj(seaport_path, pivot_to_geometry_enable=True)
+                self.load_obj(seaport_path, pivot_to_g_enable=True)
             else:
                 #try_path
                 print("[ testing ] ERROR: can't find '" + seaport_name + "'")

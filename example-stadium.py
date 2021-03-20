@@ -17,7 +17,9 @@ from kivy.input.providers.mouse import MouseMotionEvent
 from kivy.factory import Factory
 from kivy.uix.boxlayout import BoxLayout
 from kivyglops import *
-#from common import *
+from common import (
+    set_verbose_enable,
+)
 import math
 import os
 
@@ -31,7 +33,17 @@ else:
 class MainScene(KivyGlops):
 
     def on_load_glops(self):
-        self.load_obj("meshes/stadium,primitive.obj")
+        try_paths = [
+            # "meshes/stadium,primitive.obj",
+            "meshes/stadium,primitive-simpler.obj",
+            "../KivyGlops/meshes/stadium,primitive-simpler.obj",
+        ]
+        for try_path in try_paths:
+            result = self.load_obj(try_path)
+            print("[example-stadium] * trying {}...{}"
+                  "".format(try_path, result))
+            if result is not None:
+                break
 
         walkmesh_names = self.get_similar_names("walkmesh")
         for name in walkmesh_names:
@@ -106,7 +118,7 @@ class MainScene(KivyGlops):
     #def on_update_glops(self):
     #    pass
 
-
+set_verbose_enable(True)
 scene = MainScene(KivyGlopsWindow())
 
 
