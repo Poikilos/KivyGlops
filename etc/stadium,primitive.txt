@@ -1,6 +1,6 @@
 2016-05-26
 CC0 (Creative Commons Zero) license
-by expertmm
+by Poikilos
 
 Steps:
 11in run , 7in rise(0.2794, 0.1778 m)

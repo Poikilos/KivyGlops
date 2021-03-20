@@ -23,7 +23,7 @@ def find_not_any(haystack, needle_chars):
             result = i
             break
     return result
-    
+
 def split_non_quoted(line, splitters, inline_comment_marker="#"):
     results = None
     if line is not None:
@@ -64,6 +64,14 @@ def split_non_quoted(line, splitters, inline_comment_marker="#"):
         print("#WARNING: line is None in split_non_quoted")
     return results
 
+number_parts = "-0123456789."
+def is_number(s):
+    s = str(s)
+    for c in s:
+        if c not in number_parts:
+            return False
+    return True
+
 def find_non_quoted(line, needle, inline_comment_marker="#", debug_list=None):
     result = -1
     if line is not None:
@@ -91,12 +99,151 @@ def find_non_quoted(line, needle, inline_comment_marker="#", debug_list=None):
             print("#WARNING: skipped trying to find needle None")
     return result
 
-def lint_that_python(filename):
+def file_to_list(filename):
+    ret = None
+    if os.path.isfile(filename):
+        ret = []
+        ins = open(filename, 'r')
+        line = True
+        while line:
+            line = ins.readline()
+            if line:
+                line_strip = line.strip()
+                if len(line_strip) > 0:
+                    ret.append(line_strip)
+        ins.close()
+    return ret
+
+def list_to_file(filename, l, remove_repeats=False):
+    outs = open(filename, 'w')
+    big_d = {}
+    for line in l:
+        line_enable = True
+        if remove_repeats:
+            if big_d.get(line) is True:
+                line_enable = False
+            big_d[line] = True
+        if line_enable:
+            outs.write(line + "\n")
+
+    outs.close()
+
+def lint_that_python_project(folder_path):
     results = []
+    for sub_name in os.listdir(folder_path):
+        sub_path = os.path.join(folder_path, sub_name)
+        if sub_name[:1]!=".":
+            if os.path.isdir(sub_path):
+                results.extend(lint_that_python_project(sub_path))
+            elif sub_path[-3:] == '.py':
+                results.extend(lint_that_python(sub_path))
+    return results
+
+def lint_that_python(filename):
+    if os.path.isdir(filename):
+        print("# (lintthatpython verbose message) detected directory," +
+              "sending to lint_that_python_project...")
+        lint_that_python_project(filename)
+        return
+    results = []
+    user_classes = []
+    user_methods = []
+    user_symbols = []
+    print("# (lintthatpython verbose message) started '" + filename +
+          "'")
+    more_user_symbols = file_to_list('user_symbols.txt')
+    if more_user_symbols is not None:
+        user_symbols.extend(more_user_symbols)
+    # TODO: lint string continuations in brackets like could happen
+    # below if a comma is missed at the end of a line!
+    kivy_syms = ['require', 'Clock', 'schedule',
+                 'properties',
+                 'NumericProperty', 'StringProperty', 'ListProperty',
+                 'ObjectProperty', 'BooleanProperty',
+                 'BoundedNumericProperty', 'OptionProperty',
+                 'ReferenceListProperty', 'AliasProperty',
+                 'DictProperty',
+                 'Vector', 'vector', 'App', 'app', 'Color',
+                 'ContextInstruction', 'kivy', 'uix',
+                 'Mesh',
+                 'vertices', 'indices', 'fmt', 'mode',
+                 'Label', 'Factory', 'factory', 'core',
+                 'window', 'Window',
+                 'on_motion', 'on_touch_down',
+                 'Keyboard',
+                 'bind', 'unbind', 'on_key_up', 'on_key_down',
+                 'Logger', 'logger',
+                 'Widget', 'widget',
+                 'canvas', 'color', 'opacity', 'size', 'size_hint',
+                 'Button',
+                 'on_press',
+                 'providers', 'mouse', 'MouseMotionEvent',
+                 'InstructionGroup',
+                 'floatlayout', 'FloatLayout', 'boxlayout', 'BoxLayout',
+                 'Translate', 'Rotate', 'Scale', 'BindTexture',
+                 'PushMatrix', 'PopMatrix', 'MatrixInstruction',
+                 'Matrix', 'view_clip', 'translate', 'look_at',
+                 'RenderContext', 'shader', 'source',
+                 'resource_find', 'content', 'auto_dismiss', 'title',
+
+                 'Popup',
+                 'image', 'Image', 'opengl', 'transformation',
+                 'graphics',
+                 'glEnable', 'glDisable']
+    builtin_syms = ['basename', '__name__', '__file__',
+                     '__author__',  '__init__','callable',
+                    'dirname', 'abspath', 'normpath', 'os',
+                    'str',
+                    'rstrip', 'lstrip', 'strip',
+                    'dict', 'list',
+                    'sorted', 'deepcopy', 'copy', 'append',
+                    'get', 'items',
+                    'randrange', 'choice', 'listdir',
+                    'math', 'pi', 'sqrt', 'degrees', 'radians',
+                    'time', 'None', 'True', 'False',
+                    'range', 'exit', 'find', 'copy2', 'makedirs',
+                    'environ',
+                    "\\",  'float', 'int', 'input',
+                    'open', 'write', 'readline', 'close',
+                    'isfile',
+                    'traceback', 'exc_info', 'print_tb',
+                    'str', 'clock', 'super',
+                    'button', 'join', 'sys', 'getcwd', 'item',
+                    'getattr', 'lower', 'self',
+                    'largs', 'kwargs']
+    pygments_syms = ['lexers', 'GLShaderLexer']
+    # first line has function-like statements:
+    builtin_keywords = ['del', 'import', 'def', 'class',
+                        'pass', 'from', 'as', 'global',
+                        'try', 'except', 'raise',
+                        'if', 'elif', 'else', 'for', 'while',
+                        'and', 'or', 'not', 'is', 'in',
+                        'return',  'continue', 'break']
+    tkinter_syms = ['Label', 'Button', 'Frame', 'TOP', 'LEFT',
+                    'BOTTOM', 'RIGHT']
+
+    builtin_syms.extend(builtin_keywords)
+    builtin_syms.extend(tkinter_syms)
+    builtin_syms.extend(pygments_syms)
+    # NOT used (Python 2):
+    # first line has function-like statements:
+    builtin_py2_keywords = ['print']
+    builtin_py2_syms = ['iteritems', 'itervalues', 'viewitems',
+                        'xrange']
+    # TODO: check for use of `%` string operator deprecated in Python 3
+    # builtin_syms.extend(builtin_py2_keywords)
+    # builtin_syms.extend(builtin_py2_syms)
+    kivy_enable = True
+    if kivy_enable:
+        builtin_syms.extend(kivy_syms)
+        print("# (lintthatpython verbose message) Adding Kivy symbols (allowing kivy symbols to be" +
+              " considered spelled correctly).")
+
     if os.path.isfile(filename):
         print("processing '" + filename + "'")
         class_names_var_lists = {}
         class_names_method_lists = {}
+        unique = {}  # if a word is only used once, it may be mispelled
         for pass_i in range(0,2):
             ins = open(filename, 'r')
             line_original = True
@@ -107,9 +254,9 @@ def lint_that_python(filename):
             in_class_name = None
             in_function_name = None
             in_function_indent = None
-            in_multiline_enable = False
             in_multiline_name = None
             comment = None
+            in_multiline_quotes = None
             while line_original:
                 line_original = ins.readline()
                 if line_original:
@@ -117,11 +264,11 @@ def lint_that_python(filename):
                     if indent_end >= 0:
                         line = line_original.rstrip()
                         line_strip = line.strip()
-                        
-                        if in_multiline_enable:
-                            multiline_end = line.find("'''")
+
+                        if in_multiline_quotes is not None:
+                            multiline_end = line.find(in_multiline_quotes)
                             if multiline_end > -1:
-                                in_multiline_enable = False
+                                in_multiline_quotes = None
                         else:
                             comment_i = find_non_quoted(line, "#")
                             comment = None
@@ -162,11 +309,62 @@ def lint_that_python(filename):
                                         scope_by_indent = 0
                                     #print("#splitting '" + line_strip + "'")  # debug only
                                     multiline_start_i = find_non_quoted(line, "'''")
+                                    multiline_alt_start_i = find_non_quoted(line, '"""')
                                     if multiline_start_i > -1:
-                                        in_multiline_enable = True
+                                        in_multiline_quotes = "'''"
+                                        #TODO: get variable name before it
+                                    elif multiline_alt_start_i > -1:
+                                        in_multiline_quotes = '"""'
                                         #TODO: get variable name before it
                                     else:
                                         chunks = split_non_quoted(line_strip, [" ", "\t"])
+                                        if pass_i == 1:
+                                            symbols = split_non_quoted(line_strip, [" ", "\t", ".", ":", "{", "}", "[", "]", ",", "+", "-", "*", "/", "%", "(", ")", ">", "<", "="])
+                                            for symbol_orig in symbols:
+                                                symbol = symbol_orig.strip()
+                                                user_symbol = True
+                                                if len(symbol) < 1:
+                                                    user_symbol = False
+                                                elif is_number(symbol):
+                                                    user_symbol = False
+                                                elif symbol in user_classes:
+                                                    # count as spelled
+                                                    # correctly if defined
+                                                    user_symbol = False
+                                                elif symbol in user_methods:
+                                                    # count as spelled
+                                                    # correctly if defined
+                                                    user_symbol = False
+                                                elif symbol in user_symbols:
+                                                    # count as spelled
+                                                    # correctly if specified
+                                                    user_symbol = False
+                                                elif ((len(symbol) > 1) and
+                                                        (symbol[0]=='"') and
+                                                        (symbol[-1]=='"')):
+                                                    user_symbol = False
+                                                elif ((len(symbol) > 1) and
+                                                        (symbol[0]=="'") and
+                                                        (symbol[-1]=="'")):
+                                                    user_symbol = False
+                                                elif ((len(symbol) > 2) and
+                                                        (symbol[:2]=="b'") and
+                                                        (symbol[-1]=="'")):
+                                                    # Python 3 bytestring
+                                                    user_symbol = False
+                                                elif ((len(symbol) > 1) and
+                                                        (symbol[:2]=='b"') and
+                                                        (symbol[-1]=='"')):
+                                                    # Python 3 bytestring
+                                                    user_symbol = False
+                                                elif symbol in builtin_syms:
+                                                    user_symbol = False
+                                                if user_symbol:
+                                                    if symbol in unique:
+                                                        unique[symbol] += 1
+                                                    else:
+                                                        unique[symbol] = 1
+
                                         if chunks is not None:
                                             if len(chunks) > 0:
                                                 if chunks[0] == "class":
@@ -181,8 +379,12 @@ def lint_that_python(filename):
                                                             class_name_end_i = colon_i
                                                         if class_name_end_i is not None:
                                                             in_class_name = chunks[1][0:class_name_end_i].strip()
-                                                            #if (pass_i==1):
-                                                            #   results.append("#in class '"+in_class_name+"'")
+                                                            if pass_i == 0:
+                                                                if in_class_name not in user_classes:
+                                                                    user_classes.append(in_class_name)
+                                                                    print("# (lintthatpython verbose message) added to user_classes: " + in_class_name)
+                                                            # if (pass_i==1):
+                                                            #     results.append("#in class '" + in_class_name + "'")
                                                         else:
                                                             if (pass_i==1):
                                                                 results.append(filename+"("+str(line_number)+",0): class name not followed by '(' or ':'")
@@ -194,6 +396,9 @@ def lint_that_python(filename):
                                                         paren_i = find_non_quoted(chunks[1], "(")
                                                         if paren_i > -1:
                                                             in_function_name = chunks[1][0:paren_i].strip()
+                                                            if pass_i==0:
+                                                                if in_function_name not in user_methods:
+                                                                    user_methods.append(in_function_name)
                                                             in_function_indent = indent
                                                             if (pass_i==0):
                                                                 if not (in_class_name in class_names_method_lists):
@@ -212,7 +417,7 @@ def lint_that_python(filename):
                                                         if (pass_i==0):
                                                             if (" " not in variable_name) and ("\t" not in variable_name):
                                                                 if not (in_class_name in class_names_var_lists):
-                                                                    class_names_var_lists[in_class_name] = [] 
+                                                                    class_names_var_lists[in_class_name] = []
                                                                 class_names_var_lists[in_class_name].append(variable_name)
                                                             else:
                                                                 if (pass_i==1):
@@ -263,8 +468,17 @@ def lint_that_python(filename):
                                 pass  # comment
                         #end else multiline comment
                     #else blank line with just indents
-                line_number += 1 
+                line_number += 1
             ins.close()
+            msg = ""
+            for k,v in unique.items():
+                if v == 1:
+                    msg += " '" + k + "'"
+            if len(msg) > 0:
+                print("# (lintthatpython warning) " + filename +
+                      ":" +
+                      " only occur once:" +
+                      " '" + msg + "'")
         #end for pass_i
     else:
         results.append(filename+"(0,0): FILE NOT FOUND")
@@ -283,8 +497,17 @@ if (sys.argv is not None) and (len(sys.argv)>0):
                 usage()
                 exit(1)
         else:
-            if (os.path.isfile(sys.argv[i])):
+            if os.path.isfile(sys.argv[i]):
                 results = lint_that_python(sys.argv[i])
+                error_count = 0
+                for result in results:
+                    if (result is not None) and (len(result)>0):
+                        if (result[0:1]!="#"):
+                            error_count += 1
+                        print(result)
+                print(str(error_count)+" error(s) in '" + sys.argv[i] + "'")
+            elif os.path.isdir(sys.argv[i]):
+                results = lint_that_python_project(sys.argv[i])
                 error_count = 0
                 for result in results:
                     if (result is not None) and (len(result)>0):

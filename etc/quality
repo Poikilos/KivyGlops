@@ -6,13 +6,41 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$DIR"
 cd ..
-if [ -f etc/quality.tmp ]; then
-  rm etc/quality.tmp
+#checkable_path=etc/err.txt
+#displayable_path=etc/quality.tmp
+checkable_path=etc/quality.tmp
+displayable_path=etc/err.txt
+if [ -f $displayable_path ]; then
+  rm $displayable_path
 fi
-#touch etc/quality.tmp
-if [ -f err.txt ]; then
-  rm err.txt
+touch $displayable_path
+if [ -f $checkable_path ]; then
+  rm $checkable_path
 fi
-touch err.txt
-python etc/lintthatpython.py *.py >> err.txt
-outputinspector etc/quality.tmp &
+touch $checkable_path
+touch $displayable_path
+echo "running etc/lintthatpython.py self-check..."
+python etc/lintthatpython.py etc/lintthatpython.py 1>>$checkable_path 2>>$displayable_path
+echo "  done etc/lintthatpython.py self-check."
+echo "running etc/lintthatpython.py on `pwd`..."
+python etc/lintthatpython.py "`pwd`" 1>>$checkable_path 2>>$displayable_path
+if [ `which outputinspector ` ]; then
+  if [ -f $checkable_path ]; then
+    outputinspector $checkable_path &
+  else
+    echo "WARNING: no $checkable_path (linter did not produce output)."
+  fi
+else
+  if [ -f $checkable_path ]; then
+    echo "NOTE: if you install outputinspector, this script will"
+    echo " use it instead of console to display the following output,"
+    echo " allowing you double-click an issue to go to the line number"
+    echo " in kate..."
+    cat $checkable_path
+  else
+    echo "WARNING: no $checkable_path (linter did not produce output)."
+  fi
+  if [ -f $displayable_path ]; then
+    cat $displayable_path
+  fi
+fi
