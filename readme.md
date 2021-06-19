@@ -36,6 +36,9 @@ Control 3D objects and the camera in your 3D Kivy app!
 
 
 ## Known Issues
+* Add `plainReplacements['.target'] = ".properties['target']"` to KivyGlops-modernize.py
+* Should copy as mesh instance generate a copy of the hitbox rather than using a reference?
+* kivyglops.py (or kivyglops/__init__.py): Should `phi_eye_height` be .865 rather than 86.5??
 * pyglops.py: remove kivy-specific _translate_instruction_* (in throw cases)
 * projectile_speed of `item_dict` or of `item_dict["as_projectile"]` should override throw_speed of actor ONLY if present
 * allow rocks to roll (and keep projectile_dict until they stop) in opengl9

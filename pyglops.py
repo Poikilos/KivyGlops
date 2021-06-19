@@ -333,29 +333,39 @@ def is_in_triangle_vec2(check_vec2, a_vec2, b_vec2, c_vec2):
 #  PyGlop defines a single OpenGL-ready object. PyGlops should be used for importing, since one mesh file (such as obj) can contain several meshes. PyGlops handles the 3D scene.
 
 
-class PyGlopHitBox:
-    minimums = None
-    maximums = None
+def new_hitbox():
+    ret = {}
+    ret['minimums'] = [-0.25, -0.25, -0.25]
+    ret['maximums'] = [0.25, 0.25, 0.25]
+    return ret
 
-    def __init__(self):
-        self.minimums = [-0.25, -0.25, -0.25]
-        self.maximums = [0.25, 0.25, 0.25]
 
-    def copy(self, depth=0):
-        target = PyGlopHitBox()
-        target.minimums = copy.deepcopy(self.minimums)
-        target.maximums = copy.deepcopy(self.maximums)
-        return target
+def copy_hitbox(o):
+    ret = {}
+    ret['minimums'] = copy.deepcopy(o['minimums'])
+    ret['maximums'] = copy.deepcopy(o['maximums'])
+    return ret
 
-    def contains_vec3(self, pos):
-        return pos[0]>=self.minimums[0] and pos[0]<=self.maximums[0] \
-            and pos[1]>=self.minimums[1] and pos[1]<=self.maximums[1] \
-            and pos[2]>=self.minimums[2] and pos[2]<=self.maximums[2]
 
-    def to_string(self):
-        return str(self.minimums[0]) + " to " + str(self.maximums[0]) + \
-            ",  " + str(self.minimums[1]) + " to " + str(self.maximums[1]) + \
-            ",  " + str(self.minimums[2]) + " to " + str(self.maximums[2])
+def hitbox_contains_vec2(o, px):
+    '''
+    See if top view location is inside 3d location
+    (map y of px to z of o, in other words, compare px[1] to o[*][2])
+    '''
+    return (px[0] >= o['minimums'][0] and px[0] <= o['maximums'][0]
+            and px[1] >= o['minimums'][2] and px[1] <= o['maximums'][2])
+
+
+def hitbox_contains_vec3(o, pos):
+    return (pos[0] >= o['minimums'][0]
+            and pos[0] <= o['maximums'][0]
+            and pos[1] >= o['minimums'][1]
+            and pos[1] <= o['maximums'][1]
+            and pos[2] >= o['minimums'][2]
+            and pos[2] <= o['maximums'][2])
+
+
+# settings['templates']['properties']['hitbox'] = new_hitbox()
 
 
 class PyGlop:
@@ -385,7 +395,6 @@ class PyGlop:
     _cached_floor_y = None
     infinite_inventory_enable = None
     look_target_glop = None
-    hitbox = None
     visible_enable = None
     vertex_format = None
     vertices = None
@@ -422,11 +431,12 @@ class PyGlop:
 
     def _init_glop(self):  #  formerly __init__ but that would interfere with super if subclass has multiple inheritance
         try:
+            self.properties = {}
             self.dat = {}
             self.dat["links"] = []  #  list of relationship dicts
             self.separable_offsets = []  #  if more than one submesh is in vertices, chunks are saved in here, such as to assist with explosions
             self.visible_enable = True
-            self.hitbox = PyGlopHitBox()
+            self.properties['hitbox'] = None
             self.physics_enable = False
             self.infinite_inventory_enable = True
             self.in_range_indices = []
@@ -530,8 +540,8 @@ class PyGlop:
             # target._cached_floor_y = self._cached_floor_y
             target.infinite_inventory_enable = self.infinite_inventory_enable
             target.look_target_glop = self.look_target_glop #  by reference since is a reference to begin with
-            if self.hitbox is not None:
-                target.hitbox = self.hitbox.copy()
+            if self.properties.get('hitbox') is not None:
+                target.properties['hitbox'] = copy_hitbox(self.hitbox)
             target.visible_enable = self.visible_enable
             target.vertex_format = copy.deepcopy(self.vertex_format)
             if copy_verts_by_ref_enable:
@@ -682,7 +692,7 @@ class PyGlop:
     def calculate_hit_range(self):
         print("Calculate hit range should be implemented by subclass.")
         print("  (setting hitbox to None to avoid using default hitbox)")
-        self.hitbox = None
+        self.properties['hitbox'] = None
 
     def process_ai(self, glop_index):
         # this should be implemented in the subclass
@@ -692,19 +702,19 @@ class PyGlop:
         if self.vertices is not None:
             vertex_count = int(len(self.vertices)/self.vertex_depth)
             v_offset = 0
-            if self.hitbox is not None:
+            if self.properties.get('hitbox') is not None:
                 for i in range(0,3):
                     # intentionally set to rediculously far in opposite direction:
-                    self.hitbox.minimums[i] = sys.maxsize
-                    self.hitbox.maximums[i] = -sys.maxsize
+                    self.properties['hitbox']['minimums'][i] = sys.maxsize
+                    self.properties['hitbox']['maximums'][i] = -sys.maxsize
             for v_number in range(0, vertex_count):
                 for i in range(0,3):
                     self.vertices[v_offset+self._POSITION_OFFSET+i] -= this_point[i]
-                    if self.hitbox is not None:
-                        if self.vertices[v_offset+self._POSITION_OFFSET+i] < self.hitbox.minimums[i]:
-                            self.hitbox.minimums[i] = self.vertices[v_offset+self._POSITION_OFFSET+i]
-                        if self.vertices[v_offset+self._POSITION_OFFSET+i] > self.hitbox.maximums[i]:
-                            self.hitbox.maximums[i] = self.vertices[v_offset+self._POSITION_OFFSET+i]
+                    if self.properties.get('hitbox') is not None:
+                        if self.vertices[v_offset+self._POSITION_OFFSET+i] < self.properties['hitbox']['minimums'][i]:
+                            self.properties['hitbox']['minimums'][i] = self.vertices[v_offset+self._POSITION_OFFSET+i]
+                        if self.vertices[v_offset+self._POSITION_OFFSET+i] > self.properties['hitbox']['maximums'][i]:
+                            self.properties['hitbox']['maximums'][i] = self.vertices[v_offset+self._POSITION_OFFSET+i]
                 this_vertex_relative_distance = get_distance_vec3(self.vertices[v_offset+self._POSITION_OFFSET:], this_point)
                 if this_vertex_relative_distance > self.hit_radius:
                     self.hit_radius = this_vertex_relative_distance
@@ -2235,10 +2245,10 @@ class PyGlops:
                     self._bumper_indices.append(index)
                     self.glops[index].bump_enable = True
                     print("[ PyGlops ] Set "+str(index)+" as bumper")
-                    if self.glops[index].hitbox is None:
+                    if self.glops[index].properties['hitbox'] is None:
                         print("  hitbox: None")
                     else:
-                        print("  hitbox: "+self.glops[index].hitbox.to_string())
+                        print("  hitbox: "+str(self.glops[index].properties['hitbox']))
                 else:
                     print("[ PyGlops ] ERROR in set_as_actor_at: index "+str(index)+" is out of range")
             else:
@@ -2653,7 +2663,7 @@ class PyGlops:
                     fired_glop.bump_enable = True
                     fired_glop.in_range_indices = [user_glop.glop_index]
 
-                    if fired_glop.hitbox is None:
+                    if fired_glop.properties['hitbox'] is None:
                         fired_glop.calculate_hit_range()
                     if get_verbose_enable():
                         print("[ PyGlops ] throw_glop set projectile_dict and bump_enable for '" + str(fired_glop.name) + "' and added to _bumpable_indices")

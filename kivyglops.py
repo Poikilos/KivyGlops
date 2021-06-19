@@ -516,7 +516,7 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
             self._r_ins_y.angle = yaw
             # print("look at pitch,yaw: " + str(int(math.degrees(pitch))) + "," + str(int(math.degrees(yaw))))
         else:
-            global look_at_none_warning_enable
+            global look_at_pos_none_warning_enable
             if look_at_pos_none_warning_enable:
                 print("[ KivyGlop ] ERROR: look_at_pos got None for pos")
                 look_at_pos_none_warning_enable = False
@@ -530,7 +530,7 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
             result.vertices = self.vertices
             result.indices = self.indices
         result.hit_radius = self.hit_radius
-        result.hitbox = self.hitbox
+        result.properties['hitbox'] = self.properties['hitbox']
         context = result.get_context()
         result._t_ins.x = self._t_ins.x
         result._t_ins.y = self._t_ins.y
@@ -579,38 +579,38 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
         if self.vertices is not None:
             vertex_count = int(len(self.vertices)/self.vertex_depth)
             if vertex_count>0:
+                self.properties['hitbox'] = {}
                 v_offset = 0
                 self.hit_radius = 0.0
-                for i in range(0,3):
-                    # intentionally set to rediculously far in opposite direction:
-                    self.hitbox.minimums[i] = sys.maxsize
-                    self.hitbox.maximums[i] = -sys.maxsize
+                # intentionally set to ridiculously far in opposite direction:
+                self.properties['hitbox']['minimums'] = [sys.float_info.max] * 3
+                self.properties['hitbox']['maximums'] = [sys.float_info.min] * 3
                 for v_number in range(0, vertex_count):
                     for i in range(0,3):
-                        if self.vertices[v_offset+self._POSITION_OFFSET+i] < self.hitbox.minimums[i]:
-                            self.hitbox.minimums[i] = self.vertices[v_offset+self._POSITION_OFFSET+i]
-                        if self.vertices[v_offset+self._POSITION_OFFSET+i] > self.hitbox.maximums[i]:
-                            self.hitbox.maximums[i] = self.vertices[v_offset+self._POSITION_OFFSET+i]
+                        if self.vertices[v_offset+self._POSITION_OFFSET+i] < self.properties['hitbox']['minimums'][i]:
+                            self.properties['hitbox']['minimums'][i] = self.vertices[v_offset+self._POSITION_OFFSET+i]
+                        if self.vertices[v_offset+self._POSITION_OFFSET+i] > self.properties['hitbox']['maximums'][i]:
+                            self.properties['hitbox']['maximums'][i] = self.vertices[v_offset+self._POSITION_OFFSET+i]
                     this_vertex_relative_distance = get_distance_vec3(self.vertices[v_offset+self._POSITION_OFFSET:v_offset+self._POSITION_OFFSET+3], self._pivot_point)
                     if this_vertex_relative_distance > self.hit_radius:
                         self.hit_radius = this_vertex_relative_distance
                     v_offset += self.vertex_depth
-                phi_eye_height = 86.5 * self.hitbox.maximums[1]
+                phi_eye_height = 86.5 * self.properties['hitbox']['maximums'][1]
                 if self.eye_height > phi_eye_height:
                     print("[ KivyGlop ] WARNING in calculate_hit_range:" + \
                           " eye_height " + str(self.eye_height) + \
                           " is beyond phi_eye_height" + \
                           str(phi_eye_height) + \
                           " so is being set to that value")
-                    self.eye_height = self.hitbox.maximums[1]
+                    self.eye_height = self.properties['hitbox']['maximums'][1]
                 print("    done calculate_hit_range")
             else:
-                self.hitbox = None  # avoid 0-size hitbot which would prevent bumps
+                self.properties['hitbox'] = None  # avoid 0-size hitbot which would prevent bumps
                 if self.hit_radius is None:
                     self.hit_radius = .4444  # flag value
                 print("    skipped (0 vertices).")
         else:
-            self.hitbox = None  # avoid 0-size hitbot which would prevent bumps
+            self.properties['hitbox'] = None  # avoid 0-size hitbox which would prevent bumps
             if self.hit_radius is None:
                 self.hit_radius = .4444  # flag value
             print("[ KivyGlop ] hitbox skipped since vertices None.")
@@ -1502,8 +1502,8 @@ class KivyGlops(PyGlops):
                                                 print("[ KivyGlops ] (verbose message) '" + str(self.glops[bumper_index].name) + "' in range of '" + str(self.glops[bumpable_index].name) + "'")
                                             if self.glops[bumper_index].bump_enable:
                                                 if (self.glops[bumpable_index].projectile_dict is None) or \
-                                                   (self.glops[bumper_index].hitbox is None) or \
-                                                   self.glops[bumper_index].hitbox.contains_vec3(get_vec3_from_point(self.glops[bumpable_index]._t_ins)):
+                                                   (self.glops[bumper_index].properties['hitbox'] is None) or \
+                                                   hitbox_contains_vec3(self.glops[bumper_index].properties['hitbox'], self.glops[bumpable_index]._t_ins.xyz):
                                                     # NOTE: already checked
                                                     # bumpable_index bump_enable above
                                                     # print("distance:" + str(total_hit_radius) + " <= total_hit_radius:" + str(total_hit_radius))
@@ -1519,7 +1519,7 @@ class KivyGlops(PyGlops):
                                                 else:
                                                     global out_of_hitbox_note_enable
                                                     if out_of_hitbox_note_enable:
-                                                        print("[ KivyGlops ] (debug only--this is normal) within total_hit_radius, but bumpable is not in bumper's hitbox: "+self.glops[bumper_index].hitbox.to_string())
+                                                        print("[ KivyGlops ] (debug only--this is normal) within total_hit_radius, but bumpable is not in bumper's hitbox: "+str(self.glops[bumper_index].properties['hitbox']))
                                                         out_of_hitbox_note_enable = False
                                             else:
                                                 if get_verbose_enable():

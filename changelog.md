@@ -3,6 +3,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+`*`: not done in master (or not known to be done)
+
+
+## [git] - 2021-06-19
+### Changed
+- Change hitbox to dict (instances: hitbox, target; methods: constructor [to new_hitbox], .copy [to copy_hitbox], contains_vec3 [to hitbox_contains_vec3], to_string; properties: minimums, maximums; related methods: get_is_glop_hitbox)
+
+### Fixed
+- `*` `global look_at_none_warning_enable` becomes `global look_at_pos_none_warning_enable`.
+- `*` (spelling) `rediculously` to `ridiculously` in comment
+- `*` (spelling) `hitbot` to `hitbox` in comment
+- `*` use pythonic array multiplication to initialize the hitbox lists (`[sys.maxsize] * 3`, `[-sys.maxsize] * 3`)
+  - `*` change from `sys.maxsize` and `-sys.maxsize` to `sys.float_info.max` and `sys.float_info.min`
 
 ## [git] - 2018-01-12
 - (was sending self.new_glop_method instead of self.new_material_method) fix KivyGlopMaterial not using copy_as_subclass correctly
