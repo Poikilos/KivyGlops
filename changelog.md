@@ -7,6 +7,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
 ## [git] - 2021-06-19
+### Added
+- globals and common functions from staging (KivyGlops-audit-3a66898)
+
+### Changed
+- Reorganize globals.
+- Rename `get_index_by_name` to `find_by_name`.
+- Make PEP8 changes.
+- Rename `set_true_like_strings` to `set_truthies`.
+- Rename `true_like_strings` to `truthies`.
+- Rename `getAngleBetweenPoints` to `get_angle_between_points`
+
+### Fixed
+- (common.py) Use `val` instead of `val_lower` for `is True`.
+
+## [git] - 2021-06-19
 ### Changed
 - Change `KivyGlopsMaterial` and `PyGlopsMaterial` to dict (instances: `material`; methods: constructor, `copy`, `new_material`; change related methods: `set_textures_from_wmaterial`, `copy_as_subclass`--deprecate `new_material_method` argument)
   - deprecate methods: `create_material`, `new_material_method`
@@ -17,6 +32,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Change emit_yaml
 - `*`  Add the missing return in `copy_material`
 - `*`  Improve the error handling in `get_texture_diffuse_path`.
+
 
 ## [git] - 2021-06-19
 ### Changed

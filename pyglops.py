@@ -1,27 +1,26 @@
 """
 This provides simple dependency-free access to OBJ files and certain 3D math operations.
 # Illumination models (as per OBJ format standard) [NOT YET IMPLEMENTED]:
-#  0. Color on and Ambient off
-#  1. Color on and Ambient on [binary:0001]
-#  2. Highlight on [binary:0010]
-#  3. Reflection on and Ray trace on [binary:0011]
-#  4. Transparency: Glass on, Reflection: Ray trace on [binary:0100]
-#  5. Reflection: Fresnel on and Ray trace on [binary:0101]
-#  6. Transparency: Refraction on, Reflection: Fresnel off and Ray trace on [binary:0110]
-#  7. Transparency: Refraction on, Reflection: Fresnel on and Ray trace on [binary:0111]
-#  8. Reflection on and Ray trace off [binary:1000]
-#  9. Transparency: Glass on, Reflection: Ray trace off [binary:1001]
-#  10. Casts shadows onto invisible surfaces [binary:1010]
+# 0. Color on and Ambient off
+# 1. Color on and Ambient on [binary:0001]
+# 2. Highlight on [binary:0010]
+# 3. Reflection on and Ray trace on [binary:0011]
+# 4. Transparency: Glass on, Reflection: Ray trace on [binary:0100]
+# 5. Reflection: Fresnel on and Ray trace on [binary:0101]
+# 6. Transparency: Refraction on, Reflection: Fresnel off and Ray trace on [binary:0110]
+# 7. Transparency: Refraction on, Reflection: Fresnel on and Ray trace on [binary:0111]
+# 8. Reflection on and Ray trace off [binary:1000]
+# 9. Transparency: Glass on, Reflection: Ray trace off [binary:1001]
+# 10. Casts shadows onto invisible surfaces [binary:1010]
 """
 
 import os
 import math
 import random
-# from docutils.utils.math.math2html import VerticalSpace
-# import traceback
-
+#from docutils.utils.math.math2html import VerticalSpace
+#import traceback
 from common import *
-# from pyrealtime import *
+#from pyrealtime import *
 
 import timeit
 from timeit import default_timer as best_timer
@@ -29,14 +28,17 @@ import time
 
 tab_string = "  "
 
-# verbose_enable = True  # see get_verbose_enable() in common.py instead
+#verbose_enable = True  # see get_verbose_enable() in common.py instead
 
 
 
 # references:
 # kivy-trackball objloader (version with no MTL loader) by nskrypnik
-# objloader from kivy-rotation3d (version with placeholder mtl loader) by nskrypnik
+# objloader from kivy-rotation3d (version with placeholder mtl loader)
+# by nskrypnik
 
+# TODO: remove resource_find but still make able to find mtl file
+# under Kivy somehow
 
 from wobjfile import *
 dump_enable = False
@@ -55,191 +57,383 @@ VFORMAT_VECTOR_LEN_INDEX = 1
 VFORMAT_TYPE_INDEX = 2
 
 EMPTY_ITEM = dict()
-EMPTY_ITEM["name"] = "Empty"
+EMPTY_ITEM['name'] = "Empty"
 
-kEpsilon = 1.0E-14 #  adjust to suit.  If you use floats, you'll probably want something like 1E-7f
+
+def new_flag_f():
+    return .4444
+
+
+def is_flag_f(v):
+    return v == .4444
+
+
+kEpsilon = 1.0E-14
+# ^ adjust to suit.  If you use floats, you'll
+#   probably want something like 1.0E-7 (added
+#   by Poikilos [tested: using 1.0E-6 since python 3
+#   fails to set 3.1415927 to 3.1415926
+#   see delta_theta in KivyGlops]
+# kEpsilon = 1.0E-7
+# ^ adjust to suit.  If you use floats, you'll
+#   probably want something like 1.0E-7 (added
+#   by Poikilos)
+# TODO: avoid local redefinitions of kEpsilon?
+
+
+def fequals(f1, f2):
+    '''
+    returns true if difference is between -kEpsilon and kEpsilon
+    '''
+    if f1 > f2:
+        return (f1 - f2) <= kEpsilon
+    return (f2 - f1) <= kEpsilon
+    # kEpsilon = 1.0E-6 is recommended, since
+    # if kEpsilon is 1.0E-7,
+    # < FAILS sometimes:
+    #     says 2.5911259 not 2.5911258 after '='
+    #     and
+    # <= FAILS sometimes for negatives:
+    #     says -3.0629544 not -3.0629545 after '='
+
+
+def match_fn_ci(fileNameOrNameOrNone, name):
+    '''
+    Match a filename or a filename without an extension to name
+    (case-insensitive).
+    '''
+    source_name_lower = fileNameOrNameOrNone.lower()
+    name_lower = name.lower()
+    if fileNameOrNameOrNone is None:
+        return False
+    return ((source_name_lower == name_lower)
+            or (os.path.splitext(source_name_lower)[0] == name_lower))
+
+    return
+
+
+def match_fn(fileNameOrNameOrNone, name):
+    '''
+    Match a filename or a filename without an extension to name
+    (case-insensitive).
+    '''
+    if fileNameOrNameOrNone is None:
+        return False
+    return ((fileNameOrNameOrNone == name)
+            or (os.path.splitext(fileNameOrNameOrNone)[0] == name))
+    return
+
 
 def normalize_3d_by_ref(this_vec3):
-    # see <https://stackoverflow.com/questions/23303598/3d-vector-normalization-issue# 23303817>
-    length = math.sqrt(this_vec3[0] * this_vec3[0] + this_vec3[1] * this_vec3[1] + this_vec3[2] * this_vec3[2])
+    # see <https://stackoverflow.com/questions/23303598
+    # /3d-vector-normalization-issue#23303817>
+    length = math.sqrt(this_vec3[0] * this_vec3[0]
+                       + this_vec3[1] * this_vec3[1]
+                       + this_vec3[2] * this_vec3[2])
     if length > 0:
         this_vec3[0] /= length
         this_vec3[1] /= length
         this_vec3[2] /= length
     else:
         this_vec3[0] = 0.0
-        this_vec3[1] = -1.0  #  give some kind of normal for 0,0,0
+        this_vec3[1] = -1.0  # give some kind of normal for 0,0,0
         this_vec3[2] = 0.0
+
+
+def degrees_list(vals):
+    result = []
+    for val in vals:
+        result.append(math.degrees(val))
+    return result
+
 
 def get_fvec4_from_svec3(vals, last_value):
     results = None
     try:
-        if len(vals)==1:
-            results = float(vals[0]), float(vals[0]), float(vals[0]), last_value
-        elif len(vals)==2:
+        if len(vals) == 1:
+            results = (float(vals[0]),
+                       float(vals[0]),
+                       float(vals[0]),
+                       last_value)
+        elif len(vals) == 2:
             print("ERROR in get_fvec4: bad length 2 for " + str(vals))
-            results = float(vals[0]), float(vals[0]), float(vals[0]), last_value
-        elif len(vals)==3:
-            results = float(vals[0]), float(vals[1]), float(vals[2]), last_value
+            results = (float(vals[0]),
+                       float(vals[0]),
+                       float(vals[0]),
+                       last_value)
+        elif len(vals) == 3:
+            results = (float(vals[0]),
+                       float(vals[1]),
+                       float(vals[2]),
+                       last_value)
         else:
-            results = float(vals[0]), float(vals[1]), float(vals[2]), last_value
+            results = (float(vals[0]),
+                       float(vals[1]),
+                       float(vals[2]),
+                       last_value)
     except ValueError:
         print("ERROR in get_fvec4: bad floats in " + str(vals))
         results = 0.0, 0.0, 0.0, 0.0
     return results
+
 
 def get_fvec4_from_svec_any_len(vals):
     results = None
     try:
-        if len(vals)==1:
-            results = float(vals[0]), float(vals[0]), float(vals[0]), 1.0
-        elif len(vals)==2:
+        if len(vals) == 1:
+            results = (float(vals[0]),
+                       float(vals[0]),
+                       float(vals[0]),
+                       1.0)
+        elif len(vals) == 2:
             print("ERROR in get_fvec4: bad length 2 for " + str(vals))
-            results = float(vals[0]), float(vals[0]), float(vals[0]), float(vals[1])
-        elif len(vals)==3:
-            results = float(vals[0]), float(vals[1]), float(vals[2]), 1.0
+            results = (float(vals[0]),
+                       float(vals[0]),
+                       float(vals[0]),
+                       float(vals[1]))
+        elif len(vals) == 3:
+            results = (float(vals[0]),
+                       float(vals[1]),
+                       float(vals[2]),
+                       1.0)
         else:
-            results = float(vals[0]), float(vals[1]), float(vals[2]), float(vals[3])
+            results = (float(vals[0]),
+                       float(vals[1]),
+                       float(vals[2]),
+                       float(vals[3]))
     except ValueError:
         print("ERROR in get_fvec4: bad floats in " + str(vals))
         results = 0.0, 0.0, 0.0, 0.0
     return results
 
+
 def get_vec3_from_point(point):
     return (point.x, point.y, point.z)
+
 
 def get_rect_from_polar_deg(r, theta):
     x = r * math.cos(math.radians(theta))
     y = r * math.sin(math.radians(theta))
-    return x,y
+    return x, y
+
 
 def get_rect_from_polar_rad(r, theta):
     x = r * math.cos(theta)
     y = r * math.sin(theta)
-    return x,y
+    return x, y
+
 
 def angle_trunc(a):
+    '''
+    angle_trunc and get_angle_between_points edited Jul 19 '15 at 20:12
+    answered Sep 28 '11 at 16:10  Peter O. <http://stackoverflow.com
+    /questions/7586063/how-to-calculate-the-angle-between-a-line-and
+    -the-horizontal-axis>. 29 Apr 2016
+    '''
     while a < 0.0:
         a += math.pi * 2
     return a
 
-#  angle_trunc and getAngleBetweenPoints edited Jul 19 '15 at 20:12  answered Sep 28 '11 at 16:10  Peter O. <http://stackoverflow.com/questions/7586063/how-to-calculate-the-angle-between-a-line-and-the-horizontal-axis>. 29 Apr 2016
-def getAngleBetweenPoints(x_orig, y_orig, x_landmark, y_landmark):
+
+def get_angle_vec2(src_pos, dest_pos):
+    deltaY = dest_pos[1] - src_pos[1]
+    deltaX = dest_pos[0] - src_pos[0]
+    return angle_trunc(math.atan2(deltaY, deltaX))
+
+
+def get_angle_between_points(x_orig, y_orig, x_landmark, y_landmark):
+    '''
+    angle_trunc and get_angle_between_points edited Jul 19 '15 at 20:12
+    answered Sep 28 '11 at 16:10  Peter O. <http://stackoverflow.com
+    /questions/7586063/how-to-calculate-the-angle-between-a-line-and
+    -the-horizontal-axis>. 29 Apr 2016
+    '''
     deltaY = y_landmark - y_orig
     deltaX = x_landmark - x_orig
     return angle_trunc(math.atan2(deltaY, deltaX))
 
-# get angle between two points (from a to b), swizzled to 2d on xz plane; based on getAngleBetweenPoints
+
 def get_angle_between_two_vec3_xz(a, b):
+    '''
+    get angle between two points (from a to b), swizzled to 2d on xz
+    plane; based on get_angle_between_points
+    '''
     deltaY = b[2] - a[2]
     deltaX = b[0] - a[0]
     return angle_trunc(math.atan2(deltaY, deltaX))
 
-# returns nearest point on line bc from point a, swizzled to 2d on xz plane
-def get_nearest_vec3_on_vec3line_using_xz(a, b, c): # formerly PointSegmentDistanceSquared
+def get_nearest_vec3_on_vec3line_using_xz(a, b, c):
+    # formerly PointSegmentDistanceSquared
+    '''
+    (Deprecated in favor of get_near_line_info_xz;
+    keep in old branches since returns differ)
+    nearest point on line bc from point a, swizzled to 2d on xz plane
+    '''
+
     t = None
     # as per http://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
-    kMinSegmentLenSquared = 0.00000001 #  adjust to suit.  If you use float, you'll probably want something like 0.000001f
+    kMinSegmentLenSquared = 0.00000001 # adjust to suit.  If you use float, you'll probably want something like 0.000001f
 
-    # epsilon is the common name for the floating point error constant (needed since some base 10 numbers cannot be stored as IEEE 754 with absolute precision)
-    # same as 1.0 * 10**-14 according to http://python-reference.readthedocs.io/en/latest/docs/float/scientific.html
+    # Epsilon is the common name for the floating point error constant
+    # (needed since some base 10 numbers cannot be stored as IEEE 754
+    # with absolute precision)
+    # --1E-14 or 1e-14 is same as 1.0 * 10**-14 according to
+    # <http://python-reference.readthedocs.io/en/latest/docs/float
+    # /scientific.html>
     dx = c[0] - b[0]
     dy = c[2] - b[2]
-    db = [a[0] - b[0], 0.0, a[2] - b[2]]  #  0.0 since swizzling to xz (ignore source y)
+    db = [a[0] - b[0], 0.0, a[2] - b[2]]
+    # ^ 0.0 since swizzling to xz (ignore source y)
     segLenSquared = (dx * dx) + (dy * dy)
-    if segLenSquared >= -kMinSegmentLenSquared and segLenSquared <= kMinSegmentLenSquared:
-        #  segment is a point.
+    if segLenSquared >= -kMinSegmentLenSquared and \
+            segLenSquared <= kMinSegmentLenSquared:
+        # segment is a point.
         qx = b[0]
         qy = b[2]
         t = 0.0
         distance = ((db[0] * db[0]) + (db[2] * db[2]))
         return qx, a[1], qy, distance
     else:
-        #  Project a line from p to the segment [p1,p2].  By considering the line
-        #  extending the segment, parameterized as p1 + (t * (p2 - p1)),
-        #  we find projection of point p onto the line.
-        #  It falls where t = [(p - p1) . (p2 - p1)] / |p2 - p1|^2
+        # Project a line from p to the segment [p1,p2].  By considering the line
+        # extending the segment, parameterized as p1 + (t * (p2 - p1)),
+        # we find projection of point p onto the line.
+        # It falls where t = [(p - p1) . (p2 - p1)] / |p2 - p1|^2
         t = ((db[0] * dx) + (db[2] * dy)) / segLenSquared
         if t < kEpsilon:
-            #  intersects at or to the "left" of first segment vertex (b[0], b[2]).  If t is approximately 0.0, then
-            #  intersection is at p1.  If t is less than that, then there is no intersection (i.e. p is not within
-            #  the 'bounds' of the segment)
+            # intersects at or to the "left" of first segment vertex (b[0], b[2]).  If t is approximately 0.0, then
+            # intersection is at p1.  If t is less than that, then there is no intersection (i.e. p is not within
+            # the 'bounds' of the segment)
             if t > -kEpsilon:
-                #  intersects at 1st segment vertex
+                # intersects at 1st segment vertex
                 t = 0.0
-            #  set our 'intersection' point to p1.
+            # set our 'intersection' point to p1.
             qx = b[0]
             qy = b[2]
-        elif t > (1.0 - kEpsilon): #  Note: If you wanted the ACTUAL intersection point of where the projected lines would intersect if
-        #  we were doing PointLineDistanceSquared, then qx would be (b[0] + (t * dx)) and qy would be (b[2] + (t * dy)).
+        elif t > (1.0 - kEpsilon):
+            # Note: If you wanted the ACTUAL intersection point of
+            # where the projected lines would intersect if
+            # we were doing PointLineDistanceSquared, then qx would be
+            # (b[0] + (t * dx)) and qy would be (b[2] + (t * dy)).
 
-            #  intersects at or to the "right" of second segment vertex (c[0], c[2]).  If t is approximately 1.0, then
-            #  intersection is at p2.  If t is greater than that, then there is no intersection (i.e. p is not within
-            #  the 'bounds' of the segment)
+            # intersects at or to the 'right' of second segment vertex
+            # (c[0], c[2]).  If t is approximately 1.0, then
+            # intersection is at p2.  If t is greater than that, then
+            # there is no intersection (i.e. p is not within
+            # the 'bounds' of the segment)
             if t < (1.0 + kEpsilon):
-                #  intersects at 2nd segment vertex
+                # intersects at 2nd segment vertex
                 t = 1.0
-            #  set our 'intersection' point to p2.
+            # set our 'intersection' point to p2.
             qx = c[0]
             qy = c[2]
         else:
-            #  Note: If you wanted the ACTUAL intersection point of where the projected lines would intersect if
-            #  we were doing PointLineDistanceSquared, then qx would be (b[0] + (t * dx)) and qy would be (b[2] + (t * dy)).
-            #  The projection of the point to the point on the segment that is perpendicular succeeded and the point
-            #  is 'within' the bounds of the segment.  Set the intersection point as that projected point.
+            # Note: If you wanted the ACTUAL intersection point of where
+            # the projected lines would intersect if
+            # we were doing PointLineDistanceSquared, then qx would be
+            # (b[0] + (t * dx)) and qy would be (b[2] + (t * dy)).
+            # The projection of the point to the point on the segment
+            # that is perpendicular succeeded and the point
+            # is 'within' the bounds of the segment.  Set the
+            # intersection point as that projected point.
             qx = b[0] + (t * dx)
             qy = b[2] + (t * dy)
-        #  return the squared distance from p to the intersection point.  Note that we return the squared distance
-        #  as an oaimization because many times you just need to compare relative distances and the squared values
-        #  works fine for that.  If you want the ACTUAL distance, just take the square root of this value.
+        # return the squared distance from p to the intersection point.
+        # Note that we return the squared distance
+        # as an oaimization because many times you just need to compare
+        # relative distances and the squared values
+        # works fine for that.  If you want the ACTUAL distance, just
+        # take the square root of this value.
         dpqx = a[0] - qx
         dpqy = a[2] - qy
         distance = ((dpqx * dpqx) + (dpqy * dpqy))
         return qx, a[1], qy, distance
 
-# returns distance from point a to line bc, swizzled to 2d on xz plane
 def get_distance_vec2_to_vec2line_xz(a, b, c):
-    return math.sin(math.atan2(b[2] - a[2], b[0] - a[0]) - math.atan2(c[2] - a[2], c[0] - a[0])) * math.sqrt((b[0] - a[0]) * (b[0] - a[0]) + (b[2] - a[2]) * (b[2] - a[2]))
+    '''
+    Get distance from point a to line bc, swizzled to 2d on xz plane.
+    '''
+    return (
+        math.sin(math.atan2(b[2] - a[2], b[0] - a[0]) -
+                 math.atan2(c[2] - a[2], c[0] - a[0])) *
+        math.sqrt((b[0] - a[0]) * (b[0] - a[0]) +
+                  (b[2] - a[2]) * (b[2] - a[2]))
+    )
 
-# returns distance from point a to line bc
+
 def get_distance_vec2_to_vec2line(a, b, c):
-    # from ADOConnection on stackoverflow answered Nov 18 '13 at 22:37
-    # this commented part is the expanded version of the same answer (both versions are given in answer)
-    # // normalize points
-    # Point cn = new Point(c[0] - a[0], c[1] - a[1]);
-    # Point bn = new Point(b[0] - a[0], b[1] - a[1]);
+    '''
+    Get distance from point a to line bc
+    '''
+    # - from ADOConnection on stackoverflow answered Nov 18 '13 at 22:37
+    # This commented part is the expanded version of the same answer
+    # (both versions are given in answer)
+    # normalize points
+    # Point cn = new Point(c[0] - a[0], c[1] - a[1])
+    # Point bn = new Point(b[0] - a[0], b[1] - a[1])
 
-    # double angle = Math.Atan2(bn[1], bn[0]) - Math.Atan2(cn[1], cn[0]);
-    # double abLength = Math.Sqrt(bn[0]*bn[0] + bn[1]*bn[1]);
+    # double angle = Math.Atan2(bn[1], bn[0]) - Math.Atan2(cn[1], cn[0])
+    # double abLength = Math.Sqrt(bn[0]*bn[0] + bn[1]*bn[1])
 
     # return math.sin(angle)*abLength;
-    return math.sin(math.atan2(b[1] - a[1], b[0] - a[0]) - math.atan2(c[1] - a[1], c[0] - a[0])) * math.sqrt((b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1]))
+    return (
+        math.sin(math.atan2(b[1] - a[1], b[0] - a[0])
+                 - math.atan2(c[1] - a[1], c[0] - a[0]))
+        * math.sqrt((b[0] - a[0]) * (b[0] - a[0])
+                    + (b[1] - a[1]) * (b[1] - a[1]))
+    )
 
-# swizzle to 2d point on xz plane, then get distance
+
 def get_distance_vec3_xz(first_pt, second_pt):
-    return math.sqrt( (second_pt[0]-first_pt[0])**2 + (second_pt[2]-first_pt[2])**2 )
+    '''
+    swizzle to 2d point on xz plane, then get distance
+    '''
+    return math.sqrt((second_pt[0]-first_pt[0])**2 +
+                     (second_pt[2]-first_pt[2])**2)
+
 
 def get_distance_vec3(first_pt, second_pt):
-    return math.sqrt((second_pt[0] - first_pt[0])**2 + (second_pt[1] - first_pt[1])**2 + (second_pt[2] - first_pt[2])**2)
+    return math.sqrt((second_pt[0] - first_pt[0])**2
+                     + (second_pt[1] - first_pt[1])**2
+                     + (second_pt[2] - first_pt[2])**2)
+
 
 def get_distance_vec2(first_pt, second_pt):
-    return math.sqrt( (second_pt[0]-first_pt[0])**2 + (second_pt[1]-first_pt[1])**2 )
+    return math.sqrt((second_pt[0]-first_pt[0])**2 +
+                     (second_pt[1]-first_pt[1])**2)
 
-# halfplane check (which half) formerly sign
+
 def get_halfplane_sign(p1, p2, p3):
-    # return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
-    return (p1[0] - p3[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p3[1])
+    '''
+    halfplane check (which half) formerly sign
+    from <http://stackoverflow.com/questions/2049582
+    /how-to-determine-a-point-in-a-2d-triangle>
+    edited Oct 18 '14 at 18:52 by msrd0
+    answered Jan 12 '10 at 14:27 by Kornel Kisielewicz
+    (based on <http://www.gamedev.net/community/forums
+    /topic.asp?topic_id=295943>)
+    '''
+    # return (p1.x - p3.x) * (p2.y - p3.y) -
+    #     (p2.x - p3.x) * (p1.y - p3.y)
+    return ((p1[0] - p3[0]) * (p2[1] - p3[1])
+            - (p2[0] - p3[0]) * (p1[1] - p3[1]))
 
-# PointInTriangle and get_halfplane_sign are from http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle
-# edited Oct 18 '14 at 18:52 by msrd0
-# answered Jan 12 '10 at 14:27 by Kornel Kisielewicz
-# (based on http://www.gamedev.net/community/forums/topic.asp?topic_id=295943)
-def PointInTriangle(pt, v1, v2, v3):
-    b1 = get_halfplane_sign(pt, v1, v2) < 0.0
-    b2 = get_halfplane_sign(pt, v2, v3) < 0.0
-    b3 = get_halfplane_sign(pt, v3, v1) < 0.0
-    # WARNING: returns false sometimes on edge, depending whether triangle is clockwise or counter-clockwise
+
+def PointInTriangle(pos, v1, v2, v3):
+    '''
+    from <http://stackoverflow.com/questions/2049582
+    /how-to-determine-a-point-in-a-2d-triangle>
+    edited Oct 18 '14 at 18:52 by msrd0
+    answered Jan 12 '10 at 14:27 by Kornel Kisielewicz
+    (based on <http://www.gamedev.net/community/forums
+    /topic.asp?topic_id=295943>)
+    '''
+    b1 = get_halfplane_sign(pos, v1, v2) < 0.0
+    b2 = get_halfplane_sign(pos, v2, v3) < 0.0
+    b3 = get_halfplane_sign(pos, v3, v1) < 0.0
+    # WARNING: returns false sometimes on edge, depending whether
+    # triangle is clockwise or counter-clockwise
     return (b1 == b2) and (b2 == b3)
+
 
 def get_pushed_vec3_xz_rad(pos, r, theta):
     # push_x, push_y = (0,0)
@@ -247,28 +441,47 @@ def get_pushed_vec3_xz_rad(pos, r, theta):
     push_x, push_y = get_rect_from_polar_rad(r, theta)
     return pos[0]+push_x, pos[1], pos[2]+push_y
 
-# 3 vector version of Developer's solution to <http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle> answered Jan 6 '14 at 11:32 by Developer
+
+# 3 vector version of Developer's solution to <http://stackoverflow.com
+# /questions/2049582/how-to-determine-a-point-in-a-2d-triangle>
+# answered Jan 6 '14 at 11:32 by Developer
 # uses x and y values
-def is_in_triangle_HALFPLANES(check_pt,v0, v1, v2):
-    '''checks if point check_pt(2) is inside triangle tri(3x2). @Developer'''
+def is_in_triangle_HALFPLANES(check_pt, v0, v1, v2):
+    '''
+    Check if point check_pt(2) is inside triangle tri(3x2)
+    by @Developer
+    '''
     a = 1/(-v1[1]*v2[0]+v0[1]*(-v1[0]+v2[0])+v0[0]*(v1[1]-v2[1])+v1[0]*v2[1])
     s = a*(v2[0]*v0[1]-v0[0]*v2[1]+(v2[1]-v0[1])*check_pt[0]+(v0[0]-v2[0])*check_pt[1])
-    if s<0: return False
-    else: t = a*(v0[0]*v1[1]-v1[0]*v0[1]+(v0[1]-v1[1])*check_pt[0]+(v1[0]-v0[0])*check_pt[1])
-    return ((t>0) and (1-s-t>0))
+    if s < 0:
+        return False
+    else:
+        t = a*(v0[0]*v1[1]-v1[0]*v0[1]+(v0[1]-v1[1])*check_pt[0]+(v1[0]-v0[0])*check_pt[1])
+    return ((t > 0) and (1-s-t > 0))
 
-def is_in_triangle_HALFPLANES_xz(check_pt,v0, v1, v2):
-    '''checks if point check_pt(2) is inside triangle tri(3x2). @Developer'''
+def is_in_triangle_HALFPLANES_xz(check_pt, v0, v1, v2):
+    '''
+    Check if point check_pt(2) is inside triangle tri(3x2)
+    by @Developer
+    '''
     a = 1/(-v1[2]*v2[0]+v0[2]*(-v1[0]+v2[0])+v0[0]*(v1[2]-v2[2])+v1[0]*v2[2])
     s = a*(v2[0]*v0[2]-v0[0]*v2[2]+(v2[2]-v0[2])*check_pt[0]+(v0[0]-v2[0])*check_pt[2])
-    if s<0: return False
-    else: t = a*(v0[0]*v1[2]-v1[0]*v0[2]+(v0[2]-v1[2])*check_pt[0]+(v1[0]-v0[0])*check_pt[2])
-    return ((t>0) and (1-s-t>0))
+    if s < 0:
+        return False
+    else:
+        t = a*(v0[0]*v1[2]-v1[0]*v0[2]+(v0[2]-v1[2])*check_pt[0]+(v1[0]-v0[0])*check_pt[2])
+    return ((t > 0) and (1-s-t > 0))
 
-# float calcY(vec3 p1, vec3 p2, vec3 p3, float x, float z) {
-#  as per http://stackoverflow.com/questions/5507762/how-to-find-z-by-arbitrary-x-y-coordinates-within-triangle-if-you-have-triangle
-#   edited Jan 21 '15 at 15:07 josh2112 answered Apr 1 '11 at 0:02 Martin Beckett
+
 def get_y_from_xz(p1, p2, p3, x, z):
+    '''
+    float calcY(vec3 p1, vec3 p2, vec3 p3, float x, float z) {
+    as per <http://stackoverflow.com/questions/5507762
+    /how-to-find-z-by-arbitrary-x-y-coordinates-within
+    -triangle-if-you-have-triangle>
+    edited Jan 21 '15 at 15:07 josh2112
+    answered Apr 1 '11 at 0:02 Martin Beckett
+    '''
     det = (p2[2] - p3[2]) * (p1[0] - p3[0]) + (p3[0] - p2[0]) * (p1[2] - p3[2])
 
     l1 = ((p2[2] - p3[2]) * (x - p3[0]) + (p3[0] - p2[0]) * (z - p3[2])) / det
@@ -277,59 +490,84 @@ def get_y_from_xz(p1, p2, p3, x, z):
 
     return l1 * p1[1] + l2 * p2[1] + l3 * p3[1]
 
-# Did not yet read article: http://totologic.blogspot.fr/2014/01/accurate-point-in-triangle-test.html
+# TODO: Did not yet read article: http://totologic.blogspot.fr/2014/01/accurate-point-in-triangle-test.html
 
-# Developer's solution to <http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle> answered Jan 6 '14 at 11:32 by Developer
-def PointInsideTriangle2_vec2(check_pt,tri):
-    '''checks if point check_pt(2) is inside triangle tri(3x2). @Developer'''
-    a = 1/(-tri[1,1]*tri[2,0]+tri[0,1]*(-tri[1,0]+tri[2,0])+tri[0,0]*(tri[1,1]-tri[2,1])+tri[1,0]*tri[2,1])
-    s = a*(tri[2,0]*tri[0,1]-tri[0,0]*tri[2,1]+(tri[2,1]-tri[0,1])*check_pt[0]+(tri[0,0]-tri[2,0])*check_pt[1])
-    if s<0: return False
-    else: t = a*(tri[0,0]*tri[1,1]-tri[1,0]*tri[0,1]+(tri[0,1]-tri[1,1])*check_pt[0]+(tri[1,0]-tri[0,0])*check_pt[1])
-    return ((t>0) and (1-s-t>0))
+def PointInsideTriangle2_vec2(check_pt, tri):
+    '''
+    check if point check_pt(2) is inside triangle tri(3x2)
+    by @Developer:
+    solution to <http://stackoverflow.com/questions/2049582
+    /how-to-determine-a-point-in-a-2d-triangle>
+    answered Jan 6 '14 at 11:32 by Developer
+    '''
+    a = 1/(-tri[1, 1]*tri[2, 0]+tri[0, 1]*(-tri[1, 0]+tri[2, 0])+tri[0, 0]*(tri[1, 1]-tri[2, 1])+tri[1, 0]*tri[2, 1])
+    s = a*(tri[2, 0]*tri[0, 1]-tri[0, 0]*tri[2, 1]+(tri[2, 1]-tri[0, 1])*check_pt[0]+(tri[0, 0]-tri[2, 0])*check_pt[1])
+    if s < 0:
+        return False
+    else:
+        t = a*(tri[0, 0]*tri[1, 1]-tri[1, 0]*tri[0, 1]+(tri[0, 1]-tri[1, 1])*check_pt[0]+(tri[1, 0]-tri[0, 0])*check_pt[1])
+    return ((t > 0) and (1-s-t > 0))
+
 
 def is_in_triangle_coords(px, py, p0x, p0y, p1x, p1y, p2x, p2y):
-#     IsInTriangle_Barymetric
-    kEpsilon = 1.0E-14 #  adjust to suit.  If you use floats, you'll probably want something like 1E-7f (added by expertmm)
+    '''
+    IsInTriangle_Barymetric within the range of Epsilon
+    '''
+    kEpsilon = 1.0E-14
+    # ^ Adjust to suit.  If you use floats you'll
+    #   probably want something like 1E-7f (added by Poikilos)
     Area = 1/2*(-p1y*p2x + p0y*(-p1x + p2x) + p0x*(p1y - p2y) + p1x*p2y)
     s = 1/(2*Area)*(p0y*p2x - p0x*p2y + (p2y - p0y)*px + (p0x - p2x)*py)
     t = 1/(2*Area)*(p0x*p1y - p0y*p1x + (p0y - p1y)*px + (p1x - p0x)*py)
-#     # TODO: fix situation where it fails when clockwise (see discussion at http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle )
-    return  s>kEpsilon and t>kEpsilon and 1-s-t>kEpsilon
+    # TODO: fix situation where it fails when clockwise (see discussion
+    # at http://stackoverflow.com/questions/2049582
+    # /how-to-determine-a-point-in-a-2d-triangle )
+    return (s > kEpsilon) and (t > kEpsilon) and (1-s-t > kEpsilon)
 
-# swizzled to xz (uses index 0 and 2 of vec3)
+
 def is_in_triangle_xz(check_vec3, a_vec3, b_vec3, c_vec3):
-#     IsInTriangle_Barymetric
-    kEpsilon = 1.0E-14 #  adjust to suit.  If you use floats, you'll probably want something like 1E-7f (added by expertmm)
+    '''
+    IsInTriangle_Barymetric swizzled to xz (uses index 0 and 2 of vec3)
+    '''
+    kEpsilon = 1.0E-14 # adjust to suit.  If you use floats, you'll
+    # probably want something like 1E-7f (added by Poikilos)
     Area = 1/2*(-b_vec3[2]*c_vec3[0] + a_vec3[2]*(-b_vec3[0] + c_vec3[0]) + a_vec3[0]*(b_vec3[2] - c_vec3[2]) + b_vec3[0]*c_vec3[2])
     s = 1/(2*Area)*(a_vec3[2]*c_vec3[0] - a_vec3[0]*c_vec3[2] + (c_vec3[2] - a_vec3[2])*check_vec3[0] + (a_vec3[0] - c_vec3[0])*check_vec3[2])
     t = 1/(2*Area)*(a_vec3[0]*b_vec3[2] - a_vec3[2]*b_vec3[0] + (a_vec3[2] - b_vec3[2])*check_vec3[0] + (b_vec3[0] - a_vec3[0])*check_vec3[2])
-#     # TODO: fix situation where it fails when clockwise (see discussion at http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle )
-    return  s>kEpsilon and t>kEpsilon and 1-s-t>kEpsilon
+    # TODO: fix situation where it fails when clockwise (see discussion
+    # at http://stackoverflow.com/questions/2049582
+    # /how-to-determine-a-point-in-a-2d-triangle )
+    return (s > kEpsilon) and (t > kEpsilon) and (1-s-t > kEpsilon)
 
-# swizzled to xz (uses index 0 and 2 of vec3)
+
 def is_in_triangle_vec2(check_vec2, a_vec2, b_vec2, c_vec2):
-#     IsInTriangle_Barymetric
-    kEpsilon = 1.0E-14 #  adjust to suit.  If you use floats, you'll probably want something like 1E-7f (added by expertmm)
+    '''
+    IsInTriangle_Barymetric swizzled to xz (uses index 0 and 2 of vec3)
+    '''
+    kEpsilon = 1.0E-14 # adjust to suit.  If you use floats, you'll
+    # probably want something like 1E-7f (added by Poikilos)
     Area = 1/2*(-b_vec2[1]*c_vec2[0] + a_vec2[1]*(-b_vec2[0] + c_vec2[0]) + a_vec2[0]*(b_vec2[1] - c_vec2[1]) + b_vec2[0]*c_vec2[1])
-    if Area>kEpsilon or Area<-kEpsilon:
+    if (Area > kEpsilon) or (Area < -kEpsilon):
         s = 1/(2*Area)*(a_vec2[1]*c_vec2[0] - a_vec2[0]*c_vec2[1] + (c_vec2[1] - a_vec2[1])*check_vec2[0] + (a_vec2[0] - c_vec2[0])*check_vec2[1])
         t = 1/(2*Area)*(a_vec2[0]*b_vec2[1] - a_vec2[1]*b_vec2[0] + (a_vec2[1] - b_vec2[1])*check_vec2[0] + (b_vec2[0] - a_vec2[0])*check_vec2[1])
-    #     # TODO: fix situation where it fails when clockwise (see discussion at http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle )
-        return  s>kEpsilon and t>kEpsilon and 1-s-t>kEpsilon
+        # TODO: fix situation where it fails when clockwise (see
+        # discussion at http://stackoverflow.com/questions/2049582
+        # /how-to-determine-a-point-in-a-2d-triangle )
+        return (s > kEpsilon) and (t > kEpsilon) and (1-s-t > kEpsilon)
     else:
         return False
 
-# class ItemData:  # changed to dict
-#     name = None
-#     passive_bumper_command = None
-#     health_ratio = None
 
-#     def __init__(self, bump="obtain"):
-#         health_ratio = 1.0
-#         passive_bumper_command = bump
+'''
+class ItemData:  #changed to dict
+    name = None
+    passive_bumper_command = None
+    health_ratio = None
 
-#  PyGlop defines a single OpenGL-ready object. PyGlops should be used for importing, since one mesh file (such as obj) can contain several meshes. PyGlops handles the 3D scene.
+    def __init__(self, bump="obtain"):
+        health_ratio = 1.0
+        passive_bumper_command = bump
+'''
 
 
 def new_hitbox():

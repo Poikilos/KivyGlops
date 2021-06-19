@@ -3,9 +3,16 @@ This module is the Kivy implementation of PyGlops.
 It provides features that are specific to display method
 (Kivy's OpenGL-like API in this case).
 """
-import hashlib
-from pyglops import *
+__author__ = 'Jake Gustafson'
+import os
+import sys
+import time
+import random
 import uuid
+import ast
+import hashlib
+import math
+from pyglops import *
 
 from kivy.resources import resource_find
 from kivy.graphics import *
@@ -34,16 +41,25 @@ from kivy.core.audio import SoundLoader
 
 from common import *
 
-import time
-import random
-
-missing_bumper_warning_enable = True
+nearest_not_found_warning_enable = True
+_multicontext_enable = False  # only should be set while not running
+print("[ kivyglops.py ] default _multicontext_enable: "
+      + str(_multicontext_enable))
+# region changed automatically after showing error only once
+tltf = " (this is the last time this message will be shown for "
+tlt = "this is the last time this message will be shown"
+bounds_warning_enable = True
+look_at_none_warning_enable = True
+look_at_pos_none_warning_enable = True
 missing_bumpable_warning_enable = True
+missing_bumper_warning_enable = True
 missing_radius_warning_enable = True
 out_of_hitbox_note_enable = True
 no_bounds_warning_enable = True
-bounds_warning_enable = True
-_multicontext_enable = False  # only should be set while not running
+show_zero_degrees_pf_warning_enable = True  # pf is per frame
+show_zero_walk_upf_warning_enable = True  # upf is units per frame
+# endregion changed automatically after showing error only once
+
 
 def get_distance_kivyglops(a_glop, b_glop):
     return math.sqrt((b_glop._t_ins.x - a_glop._t_ins.x)**2 +
@@ -51,7 +67,9 @@ def get_distance_kivyglops(a_glop, b_glop):
                      (b_glop._t_ins.z - a_glop._t_ins.z)**2)
 
 # def get_distance_vec3(a_vec3, b_vec3):
-#     return math.sqrt((b_vec3[0] - a_vec3[0])**2 + (b_vec3[1] - a_vec3[1])**2 + (b_vec3[2] - a_vec3[2])**2)
+#    return math.sqrt((b_vec3[0] - a_vec3[0])**2 +
+#                     (b_vec3[1] - a_vec3[1])**2 +
+#                     (b_vec3[2] - a_vec3[2])**2)
 
 # NOTE: use str(_t_ins.xyz) instead
 # def translate_to_string(_t_ins):
@@ -61,19 +79,20 @@ def get_distance_kivyglops(a_glop, b_glop):
 #     return result
 
 
-look_at_none_warning_enable = True
-look_at_pos_none_warning_enable = True
-
 # If inherits from Widget, has the following error only on
 # Kivy 1.9.0 (on Windows 10; does not occur on 1.10.0 on linux):
 # [ KivyGlop ] ERROR--__init__ could not finish super!
 # <class 'TypeError'> 'dict' object is not callable:
-#    File "T:\pcerruti2020\Programming\Open GL\kivyglops.py", line 111, in __init__
-#      super(KivyGlop, self).__init__()  # only does class inherited FIRST (see class line above) therefore _init_glop is called below
-#    File "C:\kivy\kivy34\kivy\uix\widget.py", line 261, in __init__
-#      super(Widget, self).__init__(**kwargs)
-#    File "kivy\_event.pyx", line 252, in kivy._event.EventDispatcher.__init__ (kivy\_event.c:4571)
-#    File "kivy\_event.pyx", line 777, in kivy._event.EventDispatcher.properties (kivy\_event.c:8189)
+#   File "T:\pcerruti2020\Programming\Open GL\kivyglops.py", \
+# line 111, in __init__
+#     super(KivyGlop, self).__init__()  # only does class inherited \
+# FIRST (see class line above) therefore _init_glop is called below
+#   File "C:\kivy\kivy34\kivy\uix\widget.py", line 261, in __init__
+#     super(Widget, self).__init__(**kwargs)
+#   File "kivy\_event.pyx", line 252, in kivy._event.EventDispatcher.\
+# __init__ (kivy\_event.c:4571)
+#   File "kivy\_event.pyx", line 777, in kivy._event.EventDispatcher.\
+# properties (kivy\_event.c:8189)
 class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
 
     # freeAngle = None
@@ -110,7 +129,9 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
                 print("[ KivyGlop ] ERROR--uh oh, " + \
                       "self._init_glop didn't work either:")
                 view_traceback()
-        self._own_shader_enable = False  # if False during add_glop, gets shader of parent if _multicontext_enable, else does nothing either way
+        self._own_shader_enable = False
+        # ^ if False during add_glop, gets shader of parent if
+        #   _multicontext_enable, else does nothing either way
         self.show_next_no_mesh_warning_enable = True
         # self.freeAngle = 0.0
         # self.degreesPerSecond = 0.0
@@ -119,7 +140,12 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
         # TODO: use a RenderContext instead?
         # self.canvas = RenderContext()
         if _multicontext_enable:
-            self.canvas = RenderContext(use_parent_projection=True, use_parent_modelview=True, use_parent_frag_modelview=True)  # compute_normal_mat=False,
+            self.canvas = RenderContext(
+                use_parent_projection=True,
+                use_parent_modelview=True,
+                use_parent_frag_modelview=True,
+                # compute_normal_mat=False,
+            )
         else:
             self.canvas = InstructionGroup()
         self.canvas.clear()
@@ -144,7 +170,7 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
         self._r_ins_y.origin = self._pivot_scaled_point
         self._r_ins_z = Rotate(0, 0, 0, 1)  # angle, x, y z
         self._r_ins_z.origin = self._pivot_scaled_point
-        self._s_ins = Scale(1.0,1.0,1.0)
+        self._s_ins = Scale(1.0, 1.0, 1.0)
         # self._s_ins.origin = self._pivot_point
         self._t_ins = Translate(0, 0, 0)
         self._color_instruction = Color(1.0, 0.0, 1.0, 1.0)
@@ -469,9 +495,9 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
         if target_glop is not None:
             self.look_at_pos(target_glop._t_ins.xyz)
             # pitch = 0.0
-            # pitch = getAngleBetweenPoints(self._t_ins.y, self._t_ins.z, target_glop._t_ins.y, target_glop._t_ins.z)
+            # pitch = get_angle_between_points(self._t_ins.y, self._t_ins.z, target_glop._t_ins.y, target_glop._t_ins.z)
             # self._r_ins_x.angle = pitch
-            # yaw = getAngleBetweenPoints(self._t_ins.x, self._t_ins.z, target_glop._t_ins.x, target_glop._t_ins.z)
+            # yaw = get_angle_between_points(self._t_ins.x, self._t_ins.z, target_glop._t_ins.x, target_glop._t_ins.z)
             # self._r_ins_y.angle = yaw
             # print("look at pitch,yaw: " + str(int(math.degrees(pitch))) + "," + str(int(math.degrees(yaw))))
         else:
@@ -485,10 +511,10 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
             pitch = self._r_ins_x.angle
             yaw = self._r_ins_y.angle
             if len(pos) > 2:
-                pitch = getAngleBetweenPoints(self._t_ins.y, self._t_ins.z, pos[1], pos[2])
-                yaw = getAngleBetweenPoints(self._t_ins.x, self._t_ins.z, pos[0], pos[2])
+                pitch = get_angle_between_points(self._t_ins.y, self._t_ins.z, pos[1], pos[2])
+                yaw = get_angle_between_points(self._t_ins.x, self._t_ins.z, pos[0], pos[2])
             else:
-                yaw = getAngleBetweenPoints(self._t_ins.x, self._t_ins.z, pos[0], pos[1])
+                yaw = get_angle_between_points(self._t_ins.x, self._t_ins.z, pos[0], pos[1])
                 if get_verbose_enable():
                     print("[ KivyGlop ] WARNING: look_at_pos got 2D coords")
             self._r_ins_x.angle = pitch
