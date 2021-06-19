@@ -34,8 +34,15 @@ Control 3D objects and the camera in your 3D Kivy app!
 (which can be done using deploy.bat, if the folder already exists and the teacher has write permissions to the folder; the students should have read permissions to the folder)
 * if segfault occurs, maybe camera and look_at location are same
 
+## PyCharm Notes
+
+### Configuration
+* Add to the spelling dictionary: emissive
+
 
 ## Known Issues
+* Use `resource_find` in `KivyGlop` to validate `source_path` and `material['properties']['diffuse_path']` before using the `PyGlop` `get_texture_diffuse_path` method which can't because it doesn't depend on Kivy.
+* Remove all manual YAML generation.
 * Add `plainReplacements['.target'] = ".properties['target']"` to KivyGlops-modernize.py
 * Should copy as mesh instance generate a copy of the hitbox rather than using a reference?
 * kivyglops.py (or kivyglops/__init__.py): Should `phi_eye_height` be .865 rather than 86.5??

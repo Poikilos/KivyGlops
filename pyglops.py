@@ -19,6 +19,7 @@ import math
 import random
 # from docutils.utils.math.math2html import VerticalSpace
 # import traceback
+
 from common import *
 # from pyrealtime import *
 
@@ -36,8 +37,6 @@ tab_string = "  "
 # kivy-trackball objloader (version with no MTL loader) by nskrypnik
 # objloader from kivy-rotation3d (version with placeholder mtl loader) by nskrypnik
 
-# TODO:
-# -remove resource_find but still make able to find mtl file under Kivy somehow
 
 from wobjfile import *
 dump_enable = False
@@ -468,12 +467,13 @@ class PyGlop:
             self.reach_radius = 2.5
 
             #  Default basic material of this glop
-            self.material = PyGlopsMaterial()
-            self.material.diffuse_color = (1.0, 1.0, 1.0, 1.0)  #  overlay vertex color onto this using vertex alpha
-            self.material.ambient_color = (0.0, 0.0, 0.0, 1.0)
-            self.material.specular_color = (1.0, 1.0, 1.0, 1.0)
-            self.material.specular_coefficent = 16.0
-            # self.material.opacity = 1.0
+            self.material = new_material()
+            self.material['diffuse_color'] = (1.0, 1.0, 1.0, 1.0)
+            # ^ overlay vertex color onto this using vertex alpha
+            self.material['ambient_color'] = (0.0, 0.0, 0.0, 1.0)
+            self.material['specular_color'] = (1.0, 1.0, 1.0, 1.0)
+            self.material['specular_coefficient'] = 16.0
+            # self.material['opacity'] = 1.0
 
             # TODO: find out where this code goes (was here for unknown reason)
             # if result is None:
@@ -483,12 +483,13 @@ class PyGlop:
             print("[ PyGlop ] ERROR--_init_glop could not finish:")
             view_traceback()
 
-    # copy should have override in subclass that calls copy_as_subclass then adds subclass-specific values to that result
     def copy(self, depth=0):
-        new_material_method = None
-        if self.material is not None:
-            new_material_method = self.material.new_material
-        return self.copy_as_subclass(self.new_glop, new_material_method, depth=depth+1)
+        '''
+        copy should have override in subclass that calls copy_as_subclass
+        then adds subclass-specific values to that result
+        '''
+        return self.copy_as_subclass(self.new_glop_method,
+                                     depth=depth+1)
 
     def get_owner_name(self):
         result = None
@@ -504,9 +505,11 @@ class PyGlop:
                 result = self.item_dict["owner_index"]
         return result
 
-    def copy_as_subclass(self, new_glop_method, new_material_method, copy_verts_by_ref_enable=False, ancestor_list=[], depth=0):
+    def copy_as_subclass(self, new_glop_method,
+                          copy_verts_by_ref_enable=False, ancestors=[],
+                         depth=0):
         target = None
-        ancestor_list.append(self)
+        ancestors.append(self)
         if get_verbose_enable():
             print("[ PyGlop ] "+"  "*depth+"copy_as_subclass {name:"+str(self.name)+"}")
         try:
@@ -517,19 +520,16 @@ class PyGlop:
                 target.properties = copy.deepcopy(self.properties) # dictionary of properties--has indices such as usemtl
             target.vertex_depth = self.vertex_depth
             if self.material is not None:
-                if new_material_method is not None:
-                    target.material = self.material.copy_as_subclass(new_material_method, depth=depth+1)
-                else:
-                    print("[ PyGlop ] "+"  "*depth+"WARNING in PyGlop copy: skipped material during copy since no new_material_method was specified")
+                target.material = copy_material(self.material, depth=depth+1)
             target._min_coords = self._min_coords  # bounding cube minimums in local coordinates
             target._max_coords = self._max_coords  # bounding cube maximums in local coordinates
             target._pivot_point = self._pivot_point  # TODO: asdf eliminate this--instead always use 0,0,0 and move vertices to change pivot; currently calculated from average of vertices if was imported from obj
             target.foot_reach = self.foot_reach  #  distance from center (such as root bone) to floor
             target.eye_height = self.eye_height  #  distance from floor
             target.hit_radius = self.hit_radius
-            target.item_dict = self.deepcopy_with_my_type(self.item_dict, ancestor_list=ancestor_list, depth=depth+1)  #  DOES return None if sent None
-            target.projectile_dict = self.deepcopy_with_my_type(self.projectile_dict, ancestor_list=ancestor_list, depth=depth+1)  #  NOTE: only exists while in air, and based on item_dict["as_projectile"]
-            target.actor_dict = self.deepcopy_with_my_type(self.actor_dict, ancestor_list=ancestor_list, depth=depth+1)
+            target.item_dict = self.deepcopy_with_my_type(self.item_dict, ancestors=ancestors, depth=depth+1)  #  DOES return None if sent None
+            target.projectile_dict = self.deepcopy_with_my_type(self.projectile_dict, ancestors=ancestors, depth=depth+1)  #  NOTE: only exists while in air, and based on item_dict["as_projectile"]
+            target.actor_dict = self.deepcopy_with_my_type(self.actor_dict, ancestors=ancestors, depth=depth+1)
             target.bump_enable = self.bump_enable
             target.reach_radius = self.reach_radius
             # target.in_range_indices = [] # self.in_range_indices
@@ -555,20 +555,30 @@ class PyGlop:
             view_traceback()
         return target
 
-    # prevent pickling failure by using this to copy dicts AND lists that contain members that are my type
-    def deepcopy_with_my_type(self, old_dict, copy_my_type_by_reference_enable=False, depth=0, skip_my_type_enable=False, ancestor_list=[]):
+    def deepcopy_with_my_type(self, old_dict, copy_my_type_by_reference_enable=False,
+                              ancestors=[], depth=0,
+                              skip_my_type_enable=False):
+        '''
+        prevent pickling failure by using this to copy dicts AND
+        lists that contain members that are my type
+        '''
         new_dict = None
         # if type(old_dict) is dict:
         new_dict = None
         keys = None
-        ancestor_list.append(old_dict)
+        ancestors.append(old_dict)
+        orig_ancestors_len = len(ancestors)
+        od = old_dict
         if old_dict is not None:
             if isinstance(old_dict, list):
                 if len(old_dict) > 0:
                     # new_dict = [None]*len(old_dict)
                     # new_dict[0] = "uhoh"
                     # if len(new_dict)>1 and new_dict[1]=="uhoh":
-                    #     print("[ PyGlop ] ERROR in deepcopy_with_my_type: failed to produce unique list items!")
+                    #     print(
+                    #         "[ PyGlop ] ERROR in "
+                    #         "deepcopy_with_my_type: failed to "
+                    #         "produce unique list items!")
                     #     sys.exit(1)
                     # new_dict[0] = None
                     new_dict = []
@@ -584,7 +594,12 @@ class PyGlop:
                 for this_key in keys:
                     if isinstance(old_dict[this_key], type(self)):
                         if not skip_my_type_enable:
-                            # NOTE: the type for both sides of the check above are always the subclass if running this from a subclass as demonstrated by: print("the type of old dict " + str(type(old_dict[this_key])) + " == " + str(type(self)))
+                            # NOTE: the type for both sides of the check
+                            # above are always the subclass if running
+                            # this from a subclass as demonstrated by:
+                            # print("the type of old dict "
+                            #       + str(type(ov))
+                            #       + " == " + str(type(self)))
                             if copy_my_type_by_reference_enable:
                                 if isinstance(new_dict, dict):
                                     new_dict[this_key] = old_dict[this_key]
@@ -593,11 +608,12 @@ class PyGlop:
                             else:
                                 copy_of_var = None
                                 # NOTE: self.material would always be a PyGlopsMaterial, not subclass, in the case below
-                                new_material_method = None
-                                if old_dict[this_key].material is not None:
-                                    new_material_method = old_dict[this_key].material.new_material
-                                if not (old_dict[this_key] in ancestor_list):
-                                    copy_of_var = old_dict[this_key].copy_as_subclass(old_dict[this_key].new_glop, new_material_method, copy_verts_by_ref_enable=copy_my_type_by_reference_enable, depth=depth+1, ancestor_list=ancestor_list)
+                                if not (old_dict[this_key] in ancestors):
+                                    copy_of_var = old_dict[this_key].copy_as_subclass(
+                                        old_dict[this_key].new_glop,
+                                        copy_verts_by_ref_enable=copy_my_type_by_reference_enable,
+                                        depth=depth+1,
+                                        ancestors=ancestors)
                                 else:
                                     print("[ PyGlop ] "+"  "*depth+"WARNING: avoiding infinite recursion by refusing to copy_as_subclass since item at '" + str(this_key) + "' is a self-reference")
                                 if isinstance(new_dict, dict):
@@ -607,91 +623,122 @@ class PyGlop:
                         # else do nothing, leave None (or not in dict)
                     # TODO?: elif isinstance(old_dict[this_key], type(self.material))
                     elif isinstance(old_dict[this_key], list):
-                        this_copy = self.deepcopy_with_my_type(old_dict[this_key], copy_my_type_by_reference_enable=copy_my_type_by_reference_enable, depth=depth+1, ancestor_list=ancestor_list)
+                        this_copy = self.deepcopy_with_my_type(old_dict[this_key], copy_my_type_by_reference_enable=copy_my_type_by_reference_enable, depth=depth+1, ancestors=ancestors)
                         if isinstance(new_dict, dict):
                             new_dict[this_key] = this_copy
                         else:
                             new_dict.append(this_copy)
                     elif isinstance(old_dict[this_key], dict):
-                        this_copy = self.deepcopy_with_my_type(old_dict[this_key], copy_my_type_by_reference_enable=copy_my_type_by_reference_enable, depth=depth+1, ancestor_list=ancestor_list)
+                        this_copy = self.deepcopy_with_my_type(old_dict[this_key], copy_my_type_by_reference_enable=copy_my_type_by_reference_enable, depth=depth+1, ancestors=ancestors)
                         if isinstance(new_dict, dict):
                             new_dict[this_key] = this_copy
                         else:
                             new_dict.append(this_copy)
                     else:
-                        # NOTE: both value types and unknown classes end up here
+                        # NOTE: both value types and unknown classes
+                        # end up here
                         try:
-                            # if get_verbose_enable():
-                            #     print("[ PyGlop ] "+"  "*depth+"Calling copy method for " + str(type(old_dict[this_key])) + " object at key " + str(this_key))
+                            '''
+                            if get_verbose_enable():
+                                print("[ PyGlop ] " + "  " * depth +
+                                      "Calling copy method for " +
+                                      str(type(ov)) +
+                                      " object at key " +
+                                      str(this_key))
+                            '''
                             this_copy = old_dict[this_key].copy()
                             if isinstance(new_dict, dict):
                                 new_dict[this_key] = this_copy
                             else:
                                 new_dict.append(this_copy)
                         except:
-                            # if get_verbose_enable():
-                            #     print("[ PyGlop ] "+"  "*depth+"used '=' instead for " + str(type(old_dict[this_key])) + " object at key " + str(this_key))
+                            '''
+                            if get_verbose_enable():
+                                print("[ PyGlop ] " + "  " * depth +
+                                      "used '=' instead for " +
+                                      str(type(ov)) +
+                                      " object at key " +
+                                      str(this_key))
+                            '''
                             this_copy = old_dict[this_key]
                             if isinstance(new_dict, dict):
                                 new_dict[this_key] = this_copy
                             else:
                                 new_dict.append(this_copy)
-                        #  try:
-                            #  if get_verbose_enable():
-                                #  print("[ PyGlop ] Calling copy.deepcopy on " + str(type(old_dict[this_key])) + " at key " + str(this_key))
-                            #  new_dict[this_key] = copy.deepcopy(old_dict[this_key])
-                        #  except:
-                            #  try:
-                                #  new_dict[this_key] = old_dict[this_key]
-                                #  print("[ PyGlop ] WARNING: deepcopy_with_my_type " + \
-                                      #  "failed to deepcopy " + \
-                                      #  type(old_dict[this_key]).__name__ + " '" + \
-                                      #  str(old_dict[this_key]) + "' at '" + \
-                                      #  str(this_key) + "' so using '=' instead")
-                            #  except:
-                                #  print("[ PyGlop ] ERROR: deepcopy_with_my_type " + \
-                                      #  "failed to deepcopy " + \
-                                      #  str(type(old_dict[this_key])) + " '" + \
-                                      #  str(old_dict[this_key]) + "' at '" + \
-                                      #  str(this_key) + "' in " + \
-                                      #  str(type(new_dict)) + " but '=' also failed")
-                                #  view_traceback()
+                        '''
+                        try:
+                            if get_verbose_enable():
+                                print("[ PyGlop ] Calling " +
+                                      "copy.deepcopy on " +
+                                      str(type(ov)) +
+                                      " at key " + str(this_key))
+                            new_dict[this_key] = copy.deepcopy(ov)
+                        except:
+                            try:
+                                new_dict[this_key] = ov
+                                print("[ PyGlop ] WARNING:" +
+                                      " deepcopy_with_my_type " +
+                                      "failed to deepcopy " +
+                                      type(ov).__name__ + " '" +
+                                      str(ov) +
+                                      "' at '" +
+                                      str(this_key) + "' so using" +
+                                      " '=' instead")
+                            except:
+                                print("[ PyGlop ] ERROR:" +
+                                      " deepcopy_with_my_type " +
+                                      "failed to deepcopy " +
+                                      str(type(ov)) +
+                                      " '" + str(ov) + "' at '" +
+                                      str(this_key) + "' in " +
+                                      str(type(new_dict)) + " but" +
+                                      " '=' also failed")
+                                view_traceback()
+                        '''
             else:
                 if isinstance(old_dict, type(self)):
-                    new_material_method = None
-                    if self.material is not None:
-                        new_material_method = self.material.new_material
-                    print("[ PyGlop ] "+"  "*depth+"WARNING: deepcopy_with_my_type is calling copy on old_dict since is " + str(type(old_dict)) + " (similar to using .copy instead of deepcopy_with_my_type)")
-                    new_dict = old_dict.copy_as_subclass(self.new_glop, new_material_method, ancestor_list=ancestor_list, depth=depth+1)
+                    print(
+                        "[ PyGlop ] " + "  " * depth + "WARNING:"
+                        " deepcopy_with_my_type is calling copy on"
+                        " old_dict since is " + str(type(od))
+                        + " (similar to using .copy instead of"
+                        " deepcopy_with_my_type)"
+                    )
+                    new_dict = old_dict.copy_as_subclass(self.new_glop,
+                        depth=depth+1,
+                        ancestors=ancestors)
                 else:
                     try:
-                        # print("[ PyGlop ] "+"  "*depth+"Calling copy on " + str(type(old_dict)))
+                        # print("[ PyGlop ] " + "  " * depth +
+                        #       "Calling" + " copy on " + str(type(od)))
                         new_dict = old_dict.copy()
                     except:
                         # if get_verbose_enable():
-                        #     print("[ PyGlop ] "+"  "*depth+"using '=' for " + str(type(old_dict)))
+                        #     print("[ PyGlop ] "+"  " * depth +
+                        #           "using" + " '=' for " +
+                        #           str(type(od)))
                         new_dict = old_dict
-                #  try:
-                    #  if get_verbose_enable():
-                        #  print("[ PyGlop ] Calling copy.deepcopy on " + str(type(old_dict)))
-                    #  new_dict = copy.deepcopy(old_dict)
-                #  except:
-                    #  try:
-                        #  if isinstance(old_dict, type(self)) and depth >= 2:
-                            #  new_dict = None
-                            #  print("[ PyGlop ] deepcopy_with_my_type manually avoided infinite recursion by refusing to copy a " + str(type(self)) + " at recursion depth " + str(depth))
-                        #  else:
-                            #  new_dict = old_dict.copy()
-                        #  print("[ PyGlop ] (verbose message in deepcopy_with_my_type) using '.copy()' for " + str(type(old_dict)))
-                    #  except:
-                        #  new_dict = old_dict
-                        #  if get_verbose_enable():
-                            #  print("[ PyGlop ] (verbose message in deepcopy_with_my_type) using '=' for " + str(type(old_dict)))
+                # try:
+                    # if get_verbose_enable():
+                        # print("[ PyGlop ] Calling copy.deepcopy on " + str(type(od)))
+                    # new_dict = copy.deepcopy(od)
+                # except:
+                    # try:
+                        # if isinstance(od, type(self)) and depth >= 2:
+                            # new_dict = None
+                            # print("[ PyGlop ] deepcopy_with_my_type manually avoided infinite recursion by refusing to copy a " + str(type(self)) + " at recursion depth " + str(depth))
+                        # else:
+                            # new_dict = od.copy()
+                        # print("[ PyGlop ] (verbose message in deepcopy_with_my_type) using '.copy()' for " + str(type(od)))
+                    # except:
+                        # new_dict = od
+                        # if get_verbose_enable():
+                            # print("[ PyGlop ] (verbose message in deepcopy_with_my_type) using '=' for " + str(type(od)))
         return new_dict
 
     def calculate_hit_range(self):
-        print("Calculate hit range should be implemented by subclass.")
-        print("  (setting hitbox to None to avoid using default hitbox)")
+        print("calculate_hit_range should be implemented by subclass.")
+        print("  (setting hitbox to None to avoid using default)")
         self.properties['hitbox'] = None
 
     def process_ai(self, glop_index):
@@ -969,25 +1016,47 @@ class PyGlop:
         self._pivot_point = self.get_center_average_of_vertices()
         self._on_change_pivot(previous_point=previous_point)
 
-    def get_texture_diffuse_path(self):  # formerly getTextureFileName(self):
+    def get_texture_diffuse_path(self):
+        # formerly getTextureFileName(self):
         result = None
-        try:
-            if self.material is not None:
-                if self.material.properties is not None:
-                    if "diffuse_path" in self.material.properties:
-                        result = self.material.properties["diffuse_path"]
-                        if not os.path.exists(result):
-                            try_path = os.path.join(os.path.dirname(os.path.abspath(self.source_path)), result)  #
-                            if os.path.exists(try_path):
-                                result = try_path
-                            else:
-                                print("Could not find texture (tried '"+str(try_path)+"'")
-        except:
-            print("Could not finish get_texture_diffuse_path:")
-            view_traceback()
+        if self.material is None:
+            return None
+        mp = self.material.get('properties')
+        if mp is None:
+            return None
+        result = mp.get('diffuse_path')
+        if result is None:
+            return None
+        if not os.path.exists(result):
+            if self.source_path is not None:
+                mesh_path = os.path.abspath(self.source_path)
+                # ^ Use self.source_path in case the texture is in the
+                #   same directory as the mesh!
+                if not os.path.isfile(mesh_path):
+                    print("The texture \"{}\" is missing and the mesh"
+                          "\"{}\" doesn't exist for processing a"
+                          " relative texture path for the glop named"
+                          " \"{}\"."
+                          "".format(result, mesh_path, self.name))
+                    return None
+                try_path = os.path.join(os.path.dirname(mesh_path),
+                                        result)
+                if os.path.exists(try_path):
+                    result = try_path
+                else:
+                    print("A texture is missing (tried"
+                          " \"{}\") for the glop named \"{}\"."
+                          "".format(try_path, self.name))
+                    return None
+            else:
+                print("The texture \"{}\" is missing and there is no"
+                      " source mesh file for the glop named \"{}\"."
+                      "".format(result, self.name))
+                return None
         if result is None:
             if get_verbose_enable():
-                print("NOTE: no diffuse texture specified in Glop named '"+str(self.name)+"'")
+                print("NOTE: no diffuse texture specified in the glop"
+                      " named '" + str(self.name) + "'")
         return result
 
     def get_min_x(self):
@@ -1107,72 +1176,101 @@ class PyGlop:
         try:
             opacity = None
             if 'd' in wmaterial:
-                opacity = float(wmaterial['d']["values"][0])
-            elif "Tr" in wmaterial:
-                opacity = 1.0 - float(wmaterial["Tr"]["values"][0])
+                opacity = float(wmaterial['d']['values'][0])
+            elif 'Tr' in wmaterial:
+                opacity = 1.0 - float(wmaterial['Tr']['values'][0])
             if opacity is not None:
-                self.material.diffuse_color = get_fvec4_from_svec3(wmaterial["Kd"]["values"], opacity) if ("Kd" in wmaterial) else self.material.diffuse_color
+                if 'Kd' in wmaterial:
+                    Kd = wmaterial['Kd']['values']
+                    self.material['diffuse_color'] = \
+                        get_fvec4_from_svec3(Kd, opacity)
             else:
-                self.material.diffuse_color = get_fvec4_from_svec_any_len(wmaterial["Kd"]["values"]) if ("Kd" in wmaterial) else self.material.diffuse_color
-            # self.material.diffuse_color = [float(v) for v in self.material.diffuse_color]
-            self.material.ambient_color = get_fvec4_from_svec_any_len(wmaterial["Ka"]["values"]) if ("Ka" in wmaterial) else self.material.ambient_color
-            self.material.specular_color = get_fvec4_from_svec_any_len(wmaterial["Ks"]["values"]) if ("Ks" in wmaterial) else self.material.specular_color
-            if "Ns" in wmaterial:
-                self.material.specular_coefficent = float(wmaterial["Ns"]["values"][0])
-            # TODO: store as diffuse color alpha instead: self.opacity = wmaterial.get('d')
-            # TODO: store as diffuse color alpha instead: if self.opacity is None:
-            # TODO: store as diffuse color alpha instead:     self.opacity = 1.0 - float(wmaterial.get('Tr', 0.0))
-            if "map_Ka" in wmaterial:
-                self.material.properties["ambient_path"] = wmaterial["map_Ka"]["values"][0]
-            if "map_Kd" in wmaterial:
-                self.material.properties["diffuse_path"] = wmaterial["map_Kd"]["values"][0]
-                # print("  NOTE: diffuse_path: "+self.material.properties["diffuse_path"])
+                if 'Kd' in wmaterial:
+                    Kd = wmaterial['Kd']['values']
+                    self.material['diffuse_color'] = \
+                        get_fvec4_from_svec_any_len(Kd)
+            # self.material['diffuse_color'] = \
+            #     [float(v) for v in self.material['diffuse_color']]
+            if 'Ka' in wmaterial:
+                Ka = wmaterial['Ka']['values']
+                self.material['ambient_color'] = \
+                    get_fvec4_from_svec_any_len(Ka)
+            if 'Ks' in wmaterial:
+                Ks = wmaterial['Ks']['values']
+                self.material['specular_color'] = \
+                    get_fvec4_from_svec_any_len(Ks)
+            if 'Ns' in wmaterial:
+                Ns = wmaterial['Ns']['values']
+                self.material['specular_coefficent'] = float(Ns[0])
+            # TODO: store as diffuse color alpha instead:
+            # self.opacity = wmaterial.get('d')
+            # TODO: store as diffuse color alpha instead:
+            # if self.opacity is None:
+            # TODO: store as diffuse color alpha instead:
+            # self.opacity = 1.0 - float(wmaterial.get('Tr', 0.0))
+            smp = self.material.get('properties')
+            if 'map_Ka' in wmaterial:
+                smp['ambient_path'] = wmaterial['map_Ka']['values'][0]
+            if 'map_Kd' in wmaterial:
+                smp['diffuse_path'] = wmaterial['map_Kd']['values'][0]
+                # print("  NOTE: diffuse_path: " + smp['diffuse_path'])
             # else:
-                # print("  WARNING: "+str(self.name)+" has no map_Kd among material keys "+','.join(wmaterial.keys()))
-            if "map_Ks" in wmaterial:
-                self.material.properties["specular_path"] = wmaterial["map_Ks"]["values"][0]
-            if "map_Ns" in wmaterial:
-                self.material.properties["specular_coefficient_path"] = wmaterial["map_Ns"]["values"][0]
-            if "map_d" in wmaterial:
-                self.material.properties["opacity_path"] = wmaterial["map_d"]["values"][0]
-            if "map_Tr" in wmaterial:
-                self.material.properties["transparency_path"] = wmaterial["map_Tr"]["values"][0]
-                print("[ PyGlop ] Non-standard map_Tr command found--inverted opacity map is not yet implemented.")
-            if "bump" in wmaterial:
-                self.material.properties["bump_path"] = wmaterial["bump"]["values"][0]
-            if "disp" in wmaterial:
-                self.material.properties["displacement_path"] = wmaterial["disp"]["values"][0]
-        except:  #  Exception:
+            #     print("  WARNING: " + str(self.name) + " has no" +
+            #           " map_Kd among material keys " +
+            #           ','.join(wmaterial.keys()))
+            if 'map_Ks' in wmaterial:
+                smp['specular_path'] = wmaterial['map_Ks']['values'][0]
+            if 'map_Ns' in wmaterial:
+                smp['specular_coefficient_path'] = \
+                    wmaterial['map_Ns']['values'][0]
+            if 'map_d' in wmaterial:
+                smp['opacity_path'] = wmaterial['map_d']['values'][0]
+            if 'map_Tr' in wmaterial:
+                smp['transparency_path'] = \
+                    wmaterial['map_Tr']['values'][0]
+                print("[ PyGlop ] Non-standard map_Tr command found"
+                      "--inverted opacity map is not yet implemented.")
+            if 'bump' in wmaterial:
+                smp['bump_path'] = wmaterial['bump']['values'][0]
+            if 'disp' in wmaterial:
+                smp['displacement_path'] = \
+                    wmaterial['disp']['values'][0]
+        except:  # Exception:
             print("[ PyGlop ] ERROR: Could not finish " + f_name + ":")
             view_traceback()
 
-    # def calculate_normals(self):
-        # # this does not work. The call to calculate_normals is even commented out at <https://github.com/kivy/kivy/blob/master/examples/3Drendering/objloader.py> 20 Mar 2014. 16 Apr 2015.
-        # for i in range(int(len(self.indices) / (self.vertex_depth))):
-            # fi = i * self.vertex_depth
-            # v1i = self.indices[fi]
-            # v2i = self.indices[fi + 1]
-            # v3i = self.indices[fi + 2]
+    '''
+    def calculate_normals(self):
+        ## this does not work. The call to calculate_normals is even
+        # commented out at <https://github.com/kivy/kivy/blob/master
+        # /examples/3Drendering/objloader.py> 20 Mar 2014. 16 Apr 2015.
+        vd = self.vertex_depth
+        for i in range(int(len(self.indices) / (vd))):
+            fi = i * vd
+            v1i = self.indices[fi]
+            v2i = self.indices[fi + 1]
+            v3i = self.indices[fi + 2]
 
-            # vs = self.vertices
-            # p1 = [vs[v1i + c] for c in range(3)]
-            # p2 = [vs[v2i + c] for c in range(3)]
-            # p3 = [vs[v3i + c] for c in range(3)]
+            vs = self.vertices
+            p1 = [vs[v1i + c] for c in range(3)]
+            p2 = [vs[v2i + c] for c in range(3)]
+            p3 = [vs[v3i + c] for c in range(3)]
 
-            # u,v  = [0,0,0], [0,0,0]
-            # for j in range(3):
-                # v[j] = p2[j] - p1[j]
-                # u[j] = p3[j] - p1[j]
+            u,v  = [0,0,0], [0,0,0]
+            for j in range(3):
+                v[j] = p2[j] - p1[j]
+                u[j] = p3[j] - p1[j]
 
-            # n = [0,0,0]
-            # n[0] = u[1] * v[2] - u[2] * v[1]
-            # n[1] = u[2] * v[0] - u[0] * v[2]
-            # n[2] = u[0] * v[1] - u[1] * v[0]
+            n = [0,0,0]
+            n[0] = u[1] * v[2] - u[2] * v[1]
+            n[1] = u[2] * v[0] - u[0] * v[2]
+            n[2] = u[0] * v[1] - u[1] * v[0]
 
-            # for k in range(3):
-                # self.vertices[v1i + 3 + k] = n[k]
-                # self.vertices[v2i + 3 + k] = n[k]
-                # self.vertices[v3i + 3 + k] = n[k]
+            for k in range(3):
+                self.vertices[v1i + 3 + k] = n[k]
+                self.vertices[v2i + 3 + k] = n[k]
+                self.vertices[v3i + 3 + k] = n[k]
+    '''
 
     def emit_yaml(self, lines, min_tab_string):
         # lines.append(min_tab_string+this_name+":")
@@ -1621,61 +1719,34 @@ class PyGlop:
     # end def append_wobject
 # end class PyGlop
 
-class PyGlopsMaterial:
-    # update copy constructor if adding/changing copyable members
-    properties = None
-    name = None
-    mtlFileName = None  #  mtl file path (only if based on WMaterial of WObject)
-
+def new_material():
+    ret = {}
+    ret['properties'] = {}
+    ret['name'] = None
+    ret['mtl_path'] = None
     # region vars based on OpenGL ES 1.1
-    ambient_color = None  #  vec4
-    diffuse_color = None  #  vec4
-    specular_color = None  #  vec4
-    emissive_color = None  #  vec4
-    specular_exponent = None  #  float
+    ret['ambient_color'] = (0.0, 0.0, 0.0, 1.0)
+    ret['diffuse_color'] = (1.0, 1.0, 1.0, 1.0)
+    ret['specular_color'] = (1.0, 1.0, 1.0, 1.0)
+    ret['emissive_color'] = (0.0, 0.0, 0.0, 1.0)
+    ret['specular_exponent'] = 1.0
     # endregion vars based on OpenGL ES 1.1
+    return ret
 
-    def __init__(self):
-        self.properties = {}
-        self.ambient_color = (0.0, 0.0, 0.0, 1.0)
-        self.diffuse_color = (1.0, 1.0, 1.0, 1.0)
-        self.specular_color = (1.0, 1.0, 1.0, 1.0)
-        self.emissive_color = (0.0, 0.0, 0.0, 1.0)
-        self.specular_exponent = 1.0
 
-    def new_material(self):
-        return PyGlopsMaterial()
-
-    # copy should have override in subclass that calls copy_as_subclass then adds subclass-specific values to that result
-    def copy(self, depth=0):
-        return copy_as_subclass(self.new_material, depth=depth+1)
-
-    def copy_as_subclass(self, new_material_method, depth=0):
-        target = new_material_method()
-        if not isinstance(target, type(self)):
-            print("[ PyGlopsMaterial ] WARNING: target " + type(target).__name__ + " is not self type " + type(self).__name__)
-        if self.properties is not None:
-            if get_verbose_enable():
-                print("[ PyGlopsMaterial ] "+"  "*depth+"calling get_dict_deepcopy")
-            target.properties = get_dict_deepcopy(self.properties, depth=depth+1)
-        target.name = self.name
-        target.mtlFileName = self.mtlFileName
-
-        target.ambient_color = self.ambient_color
-        target.diffuse_color = self.diffuse_color
-        target.specular_color = self.specular_color
-        target.emissive_color = self.emissive_color
-        target.specular_exponent = self.specular_exponent
-        return target
-
-    def emit_yaml(self, lines, min_tab_string):
-        # lines.append(min_tab_string+this_name+":")
-        if self.name is not None:
-            lines.append(min_tab_string + "name: " + get_yaml_from_literal_value(self.name))
-        if self.mtlFileName is not None:
-            lines.append(min_tab_string + "mtlFileName: " + get_yaml_from_literal_value(self.mtlFileName))
-        for k,v in sorted(self.properties.items()):
-            lines.append(min_tab_string + k + ": " + get_yaml_from_literal_value(v))
+def copy_material(o, depth=0):
+    ret = new_material()
+    if o['properties'] is not None:
+        ret['properties'] = get_dict_deepcopy(o['properties'],
+                                              depth=depth+1)
+    ret['name'] = o['name']
+    ret['mtl_path'] = o['mtl_path']
+    ret['ambient_color'] = o['ambient_color']
+    ret['diffuse_color'] = o['diffuse_color']
+    ret['specular_color'] = o['specular_color']
+    ret['emissive_color'] = o['emissive_color']
+    ret['specular_exponent'] = o['specular_exponent']
+    return ret
 
 # variable name ends in xyz so must be ready to be swizzled
 def angles_to_angle_and_matrix(angles_list_xyz):
@@ -2185,13 +2256,13 @@ class PyGlops:
     def emit_yaml(self, lines, min_tab_string):
         # lines.append(min_tab_string+this_name+":")
         lines.append(min_tab_string+"glops:")
-        for i in range(0,len(self.glops)):
+        for i in range(0, len(self.glops)):
             lines.append(min_tab_string+tab_string+"-")
-            self.glops[i].emit_yaml(lines, min_tab_string+tab_string+tab_string)
+            self.glops[i].emit_yaml(
+                lines,
+                min_tab_string+tab_string+tab_string
+            )
         lines.append(min_tab_string+"materials:")
-        for i in range(0,len(self.materials)):
-            lines.append(min_tab_string+tab_string+"-")
-            self.materials[i].emit_yaml(lines, min_tab_string+tab_string+tab_string)
 
     def display_explosion(self, pos, radius, attacked_index, projectile_dict):
         print("[ PyGlops ] subclass of subclass may implement display_explosion" + \
@@ -2267,9 +2338,6 @@ class PyGlops:
             self._fly_enables[self.player_glop.name] = True
         else:
             self._fly_enables[self.player_glop.name] = False
-
-    def create_material(self):
-        return PyGlopsMaterial()
 
     def getMeshByName(self, name):
         result = None

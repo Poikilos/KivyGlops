@@ -61,24 +61,6 @@ def get_distance_kivyglops(a_glop, b_glop):
 #     return result
 
 
-class KivyGlopsMaterial(PyGlopsMaterial):
-
-    def __init__(self):
-        super(KivyGlopsMaterial, self).__init__()
-
-    def new_material(self):
-        return KivyGlopsMaterial()
-
-    def copy(self, depth=0):
-        target = None
-        try:
-            target = self.copy_as_subclass(self.new_material, depth=depth+1)
-        except:
-            print("[ KivyGlopsMaterial ] ERROR--could not finish" + \
-                  " self.copy_as_subclass:")
-            view_traceback()
-        return target
-
 look_at_none_warning_enable = True
 look_at_pos_none_warning_enable = True
 
@@ -431,12 +413,9 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
     def copy(self, depth=0):
         target = None
         try:
-            new_material_method = None
-            if self.material is not None:
-                new_material_method = self.material.new_material
             if get_verbose_enable():
-                print("[ KivyGlop ] "+"  "*depth+"copy is calling copy_as_subclass")
-            target = self.copy_as_subclass(self.new_glop, new_material_method, depth=depth+1)
+                print("[ KivyGlop ] "+"  "*depth+"copy is about to call copy_as_subclass")
+            target = self.copy_as_subclass(self.new_glop, depth=depth+1)
             target.canvas = InstructionGroup()
             target._pivot_point = self._pivot_point
             target._pivot_scaled_point = self._pivot_scaled_point
@@ -716,8 +695,8 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
                 Logger.debug("[ KivyGlop ] Warning: no texture specified for glop named '" + str(self.name) + "'")
                 this_material_name = ""
                 if self.material is not None:
-                    if self.material.name is not None:
-                        this_material_name = self.material.name
+                    if self.material['name'] is not None:
+                        this_material_name = self.material['name']
                         Logger.debug("[ KivyGlop ] (material named '" + this_material_name + "')")
                     else:
                         Logger.debug("[ KivyGlop ] (material with no name)")
@@ -953,9 +932,6 @@ class KivyGlops(PyGlops):
 
     def on_load_glops(self):
         print("WARNING: app's subclass of KivyGlops should implement on_load_glops (and usually on_update_glops, which will be called before each frame is drawn)")
-
-    def create_material(self):
-        return KivyGlopsMaterial()
 
     def hide_glop(self, this_glop):
         self.ui._contexts.remove(this_glop.get_context())
@@ -1705,7 +1681,7 @@ class KivyGlops(PyGlops):
     def append_wobject(self, this_wobject, pivot_to_geometry_enable=True):
         super(KivyGlop, self).append_wobject(this_wobject, pivot_to_geometry_enable=pivot_to_geometry_enable)
         if self.material is not None:
-            self._color_instruction = Color(self.material.diffuse_color[0], self.material.diffuse_color[1], self.material.diffuse_color[2], self.material.diffuse_color[3])
+            self._color_instruction = Color(self.material['diffuse_color'][0], self.material['diffuse_color'][1], self.material['diffuse_color'][2], self.material['diffuse_color'][3])
         else:
             print("[ KivyGlops ] WARNING in append_wobject: self.material is None for " + str(self.name))
 

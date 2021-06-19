@@ -8,14 +8,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [git] - 2021-06-19
 ### Changed
-- Change hitbox to dict (instances: hitbox, target; methods: constructor [to new_hitbox], .copy [to copy_hitbox], contains_vec3 [to hitbox_contains_vec3], to_string; properties: minimums, maximums; related methods: get_is_glop_hitbox)
+- Change `KivyGlopsMaterial` and `PyGlopsMaterial` to dict (instances: `material`; methods: constructor, `copy`, `new_material`; change related methods: `set_textures_from_wmaterial`, `copy_as_subclass`--deprecate `new_material_method` argument)
+  - deprecate methods: `create_material`, `new_material_method`
+
+### Fixed
+- `*` `specular_coefficent` to `specular_coefficient`
+- `*` (pyglops) Remove deprecated calls to `emit_yaml` method of material (now a dict).
+  - Change emit_yaml
+- `*`  Add the missing return in `copy_material`
+- `*`  Improve the error handling in `get_texture_diffuse_path`.
+
+## [git] - 2021-06-19
+### Changed
+- Change `PyGlopHitBox` to dict (instances: `hitbox`, `target`; methods: `constructor` [to `new_hitbox`], `.copy` [to `copy_hitbox`], `contains_vec3` [to `hitbox_contains_vec3`], `to_string`; properties: `minimums`, `maximums`; deprecate methods: `*is_glop_hitbox`)
 
 ### Fixed
 - `*` `global look_at_none_warning_enable` becomes `global look_at_pos_none_warning_enable`.
-- `*` (spelling) `rediculously` to `ridiculously` in comment
-- `*` (spelling) `hitbot` to `hitbox` in comment
+- `*` (in comment) `rediculously` to `ridiculously`
+- `*` (in comment) `hitbot` to `hitbox`
 - `*` use pythonic array multiplication to initialize the hitbox lists (`[sys.maxsize] * 3`, `[-sys.maxsize] * 3`)
   - `*` change from `sys.maxsize` and `-sys.maxsize` to `sys.float_info.max` and `sys.float_info.min`
+
 
 ## [git] - 2018-01-12
 - (was sending self.new_glop_method instead of self.new_material_method) fix KivyGlopMaterial not using copy_as_subclass correctly

@@ -530,7 +530,7 @@ def get_kivyglop_from_pyglop(this_pyglop):
     #this_kivyglop.diffuse_color = this_pyglop.diffuse_color
     #this_kivyglop.specular_color = this_pyglop.specular_color
     ##emissive_color = None  # vec4
-    #this_kivyglop.specular_coefficent = this_pyglop.specular_coefficent
+    #this_kivyglop.specular_coefficient = this_pyglop.specular_coefficient
     #endregion vars moved to material
     #this_kivyglop.opacity = this_pyglop.opacity # use diffuse color 4th channel instead
 
