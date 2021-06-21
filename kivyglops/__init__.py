@@ -2889,10 +2889,10 @@ class KivyGlops(PyGlops):
                     # TODO: Use rolling friction (here or elsewhere)
                     # TODO: Project it into object space for accuracy
                     angles = m_glop.get_angles()
-                    rolling_vec_indicies = (0, 2)
+                    rolling_vec_indices = (0, 2)
                     rvtis = (2, 1)  # rolling vector theta indices
                     rvps = ((0, 2), (1, 2))  # rolling vector planes
-                    for rvi in rolling_vec_indicies:
+                    for rvi in rolling_vec_indices:
                         src_2D_pos = (src_pos[rvps[rvi][0]],
                                       src_pos[rvps[rvi][1]])
                         dst_2D_pos = (dst_pos[rvps[rvi][0]],

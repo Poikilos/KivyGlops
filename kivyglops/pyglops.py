@@ -4682,7 +4682,7 @@ class PyGlops:
         (therefore overlapping sets are sacrificed).
 
         Returns: list that is always the length of partial_names + 1,
-        as each item is a list of indicies where name contains the
+        as each item is a list of indices where name contains the
         corresponding partial name, except last index which is all others.
         '''
         results = None
