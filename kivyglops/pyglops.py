@@ -409,7 +409,7 @@ def get_near_line_info_xz(a, b, c):
     bc from point a, swizzled to 2d on xz plane (y of return always a[1])
     (formerly PointSegmentDistanceSquared)
     '''
-    
+
     t = None
     # as per <http://stackoverflow.com/questions/849211
     # /shortest-distance-between-a-point-and-a-line-segment>
@@ -3450,13 +3450,13 @@ class PyGlops:
 
     def set_as_actor_at(self, index, template_dict):
         # result = False
-	if index is None:
+        if index is None:
             print("[ PyGlops ] ERROR in set_as_actor_at: index is None")
             return False
         if index < 0:
             print("[ PyGlops ] ERROR in set_as_actor_at: index is "+str(index))
             return False
-        index >= len(self.glops):
+        if index >= len(self.glops):
             print("[ PyGlops ] ERROR in set_as_actor_at: index "+str(index)+" is out of range")
             return False
         if template_dict is None:
@@ -4680,7 +4680,7 @@ class PyGlops:
         to get_indices_of_similar_names: the more matches earlier in
         the given partial_names array, the faster this method returns
         (therefore overlapping sets are sacrificed).
-    
+
         Returns: list that is always the length of partial_names + 1,
         as each item is a list of indicies where name contains the
         corresponding partial name, except last index which is all others.
