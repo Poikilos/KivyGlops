@@ -4,11 +4,11 @@ This module contains classes for storing and retrieving realtime input data such
 
 import traceback
 
-#  class KivyRealTimeKeyState(PyRealTimeKeyState):
-#      pass
+# class KivyRealTimeKeyState(PyRealTimeKeyState):
+#     pass
 #
-#  class KivyRealTimeController(PyRealTimeController):
-#      pass
+# class KivyRealTimeController(PyRealTimeController):
+#     pass
 #
 
 from common import *

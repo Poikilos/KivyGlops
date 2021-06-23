@@ -5,6 +5,89 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 `*`: not done in master (or not known to be done)
 
+## [git] - 2021-06-23
+### Added
+(from staging: KivyGlops-audit-3a66898)
+- Add methods to standardize position get/set for PyGlops and subclasses.
+- Add `unflip_enable` variable and corresponding `set_background_cylmap` param and set `self.env_flip_enable` from that.
+- Initialize `self.env_orig_rect`.
+- various docstrings (and move comments to doctstrings in several cases)
+- warn if glop is not item in `get_owner_name` and `get_owner_index`
+- `env_orig_rect` & `env_flip_enable`
+- `*` comment: `#  stays false if inventory was full` after `sied['fit_enable'] = False` in pyglops.py.
+
+### Changed
+(from staging: KivyGlops-audit-3a66898)
+- `*` (done in staging) Improve the `is_in_triangle_coords` docstring.
+- Change double to single quotes in several places to match the new style choice of staging and master branches.
+- Move `*Glop` variables to `__init__`.
+- Move `PyGlops` variables to `__init__`.
+- Change method order to match staging branch:
+  - Move the `append_wobject` to before `save`
+  - (PyGlops) Move `set_fly` and `set_gravity` to after `__init__`
+- Change `exit` to `raise RuntimeError` in one case.
+- `*` Rename `get_owner_index` to `get_owner_key`.
+- Rename (from staging):
+  - `show_next_no_mesh_warning_enable` to `no_mesh_warning_enable`
+  - `pivot_to_geometry_enable` to `pivot_to_g_enable`
+  - `owner_index` to `owner_key`
+  - `copy_my_type_by_reference_enable` to `ref_my_type_enable`
+  - `copy_verts_by_ref_enable` to `ref_my_verts_enable`
+  - Rename several local variables to make lines shorter.
+  - `*` `get_owner_index` to `get_owner_key`
+  - `new_glop` to `new_glop_method`
+  - `killed_glop` to `on_killed_glop`
+  - `attacked_glop` to `on_attacked_glop`
+  - `_last_frame_tick` to `_fps_last_frame_tick`
+  - `select_next_inventory_slot` to `sel_next_inv_slot`
+  - `display_explosion` to `on_explode_glop`
+  - `process_ai` to `on_process_ai`
+
+### Fixed
+- (from staging) Make ishadereditor compatible with the new `dict` material.
+- `*` (already correct in stable) Improve PEP8 in:
+  - example-stadium.py
+  - ishadereditor.py
+  - pyrealtime.py
+  - testing.py
+- `*` (already correct in stable) Improve pathing in example-stadium.py.
+- (from staging) Add a missing `on_vertex_format_change` call in `copy_as_mesh_instance`.
+- `*` (already correct in stable) Change `global look_at_none_warning_enable` to `look_at_pos_none_warning_enable` in one instance.
+  - Both are real globals but one was used wrongly.
+- `*` Initialize material in `KivyGlop` `__init__`.
+- `*` Add missing `self.showNextHashWarning = True` in `KivyGlops`' `__init__`.
+- `*` (only in staging) change `siedsied` to `sied` (There was one instance in pyglops.py).
+- (from staging) Change `if line_strip[:1] != "# ":` to `if line_strip[:1] != "#":`
+- Improve use of PEP8 (Also make fixes in staging from stable and fixes listed below that weren't in either).
+  - `*` (for ones only wrong in staging, see today's commit in staging).
+    - See [d928809](https://github.com/poikilos/KivyGlops/commit/d9288091c9b32fb1a02a71e94910996a871877c9)
+  - `*` at `print("y:"+str(this_glop._t_ins.y))`
+  - `*` at `print("not out of range yet")`
+  - `*` at `print("did not bump`
+  - `*` at `print("update_glsl...")` and line after that
+  - `*` at `glwCv["_world_light_dir"]` and line after that
+  - `*` at `self.scene.env_rectangle.size =` and after that `self.scene.env_rectangle.pos =` (comments)
+  - `*` at `for i in range(len(self.scene.glops)):` and lines after that (comments)
+  - `*` at `print("[ KivyGlopsWindow ] scene.camera_glop._r_ins_y.angle:` and line after that (comments)
+  - `*` at `if "bumpable_name" in result:` and 3 lines after that and one before (comments).
+  - `*` at `Process the item event so selected inventory slot`
+  - `*` at `bump loop is done in update` (comment)
+  - `*` at `if thisTextureFileName is not None:`
+  - `*` at `target.projectile_dict =` in `copy_as_subclass`
+  - `*` at `RenderContext(compute_normal_mat=True)`, `rotated in update_glsl`, `to hide` in testingkivy3d.py
+  (comments)
+  - `*` at `ok since adding it below` in wobjfile.py (comment)
+  - `*` Move comments to docstring for `give_item_by_keyword_to_player_number`.
+  - `*` Move comments to docstring for `give_item_index_to_player_number`.
+  - `*` Move comments to docstring for `def CAMERA_*`.
+  - `*` Move comments to docstring for `set_gravity`.
+  - `*` wrap `give_item_by_keyword_to_player_number`, `give_item_index_to_player_number` to reduce line length.
+  - `*` "aka" to "a.k.a." in ishadereditor.py
+- `*` (already correct in stable) `....to_string()` where `str(...)` should be used because hitbox became a dict at `bumpable is not in bumper's hitbox`
+- `*` (already correct in stable) `axes_index` to `axis_index`
+- `*` (done in staging) `hide seem` to `hide seam`
+- (from staging) change "# " to '#' in wobjfile.py
+
 
 ## [git] - 2021-06-19
 ### Fixed

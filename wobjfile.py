@@ -167,7 +167,7 @@ color_arg_type_strings.append(WColorArgInfo("blendv","blend V in map",1,1,["on|o
 color_arg_type_strings.append(WColorArgInfo("clamp","clamp to 0-1 in UV range",1,1,["on|off"]))
 color_arg_type_strings.append(WColorArgInfo("cc","color correction (only for map_Ka, map_Kd, and map_Ks)",1,1,["on|off"]))
 color_arg_type_strings.append(WColorArgInfo("mm","base gain",2,2,["black level|white level (processed before black level, so acts as range)"]))
-color_arg_type_strings.append(WColorArgInfo("t","turbulence (post-processes tiled textures to hide seem)",2,3,["u","v",'w']))
+color_arg_type_strings.append(WColorArgInfo("t","turbulence (post-processes tiled textures to hide seam)",2,3,["u","v","w"]))
 color_arg_type_strings.append(WColorArgInfo("texres","resizes texture before using, such as for NPOT textures; if used, image is forced to a square",2,3,["pixel count"]))
 
 
@@ -270,7 +270,7 @@ def get_wmaterial_dict_from_mtl(filename):
     try:
         if os.path.exists(filename):
             wmaterials = {}
-            comments = None  # list added as materials["# "] when done
+            comments = None  # list added as materials['#'] when done
             line_counting_number = 1
             this_mtl_name = None
             for line in open(filename, 'r'):
@@ -279,7 +279,7 @@ def get_wmaterial_dict_from_mtl(filename):
                     line_strip = line_strip.replace("\t", " ")
                 while ("  " in line_strip):
                     line_strip = line_strip.replace("  ", " ")
-                if (len(line_strip)>0) and (line_strip[0]!="# "):
+                if (len(line_strip)>0) and (line_strip[0]!="#"):
                     space_index = line_strip.find(" ")
                     if space_index>-1:
                         chunks_string = ""
@@ -386,9 +386,9 @@ def get_wmaterial_dict_from_mtl(filename):
                         if len(comment_notag) > 0:
                             if this_mtl_name is not None:
                                 if wmaterials[this_mtl_name] is not None:
-                                    if "# " not in wmaterials[this_mtl_name]:
-                                        wmaterials[this_mtl_name]["# "] = []
-                                    wmaterials[this_mtl_name]["# "].append(comment_notag)
+                                    if "#" not in wmaterials[this_mtl_name]:
+                                        wmaterials[this_mtl_name]["#"] = []
+                                    wmaterials[this_mtl_name]["#"].append(comment_notag)
                                 else:
                                     if comments is None:
                                         comments = []
@@ -496,7 +496,7 @@ class WObjFile:
                         line_strip = line_strip.replace("\t", " ")
                     while ("  " in line):
                         line = line.replace("  ", " ")
-                    if (len(line_strip)>0) and (line_strip[0]!="# "):
+                    if (len(line_strip)>0) and (line_strip[0]!="#"):
                         if this_object is not None:
                             this_object.has_any_data_enable = True
                         space_index = line_strip.find(" ")
@@ -748,7 +748,7 @@ class WObjFile:
                                             stated_normal_number = int(values[FACE_VN])
                                             if stated_normal_number>=1:
                                                 absolute_vn_index = stated_normal_number - 1
-                                                normal_number = this_wobject_vn_count  #  ok since adding it below
+                                                normal_number = this_wobject_vn_count   # ok since adding it below
                                             elif stated_normal_number<0:  # negative index is relative in obj standard
                                                 absolute_vn_index = absolute_vn_count + stated_normal_number  # + since negative
                                                 normal_number = this_wobject_vn_count  # ok since adding it below

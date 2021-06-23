@@ -45,7 +45,7 @@ VFORMAT_VECTOR_LEN_INDEX = 1
 VFORMAT_TYPE_INDEX = 2
 
 def normalize_3d_by_ref(this_vec3):
-    # see <https://stackoverflow.com/questions/23303598/3d-vector-normalization-issue# 23303817>
+    # see <https://stackoverflow.com/questions/23303598/3d-vector-normalization-issue#23303817>
     length = math.sqrt(this_vec3[0] * this_vec3[0] + this_vec3[1] * this_vec3[1] + this_vec3[2] * this_vec3[2])
     if length > 0:
         this_vec3[0] /= length
@@ -310,11 +310,11 @@ class TestingKivy3D(BoxLayout):
         self.hud_form = BoxLayout(orientation="vertical", size_hint=(1.0, 1.0))
         self.hud_buttons_form = BoxLayout(orientation="horizontal",
                                           size_hint=(1.0, 0.1))
-        # fix incorrect keycodes if present (such as in kivy <= 1.8.0):
-        if (Keyboard.keycodes["-"]==41):
-            Keyboard.keycodes["-"]=45
-        if (Keyboard.keycodes["="]==43):
-            Keyboard.keycodes["="]=61
+        #fix incorrect keycodes if present (such as in kivy <= 1.8.0):
+        if (Keyboard.keycodes['-']==41):
+            Keyboard.keycodes['-']=45
+        if (Keyboard.keycodes['=']==43):
+            Keyboard.keycodes['=']=61
 
         try:
             self._keyboard = Window.request_keyboard(
@@ -330,11 +330,11 @@ class TestingKivy3D(BoxLayout):
 
         self.gl_widget.canvas = RenderContext(compute_normal_mat=True)
         self.gl_widget.canvas["_world_light_dir"] = (0.0, 0.5, 1.0)
-        self.gl_widget.canvas["_world_light_dir_eye_space"] = (0.0, 0.5, 1.0) # rotated in update_glsl
+        self.gl_widget.canvas["_world_light_dir_eye_space"] = (0.0, 0.5, 1.0)  # rotated in update_glsl
         self.gl_widget.canvas["camera_light_multiplier"] = (1.0, 1.0, 1.0, 1.0)
         # self.gl_widget.canvas.shader.source = resource_find('simple1b.glsl')
         # self.gl_widget.canvas.shader.source = resource_find('shade-kivyops-standard.glsl')  # NOT working
-        # self.gl_widget.canvas.shader.source = resource_find('shade-normal-only.glsl') # partially working
+        # self.gl_widget.canvas.shader.source = resource_find('shade-normal-only.glsl')  # partially working
         # self.gl_widget.canvas.shader.source = resource_find('shade-texture-only.glsl')
         # self.gl_widget.canvas.shader.source = resource_find('shade-kivyops-minimal.glsl')  # NOT working
 
@@ -359,7 +359,7 @@ class TestingKivy3D(BoxLayout):
 
         self.gl_widget.canvas.add(PushMatrix())
 
-        self._contexts = InstructionGroup() # RenderContext(compute_normal_mat=True)
+        self._contexts = InstructionGroup()  # RenderContext(compute_normal_mat=True)
         self.gl_widget.canvas.add(self._contexts)
 
         self.finalize_canvas()
@@ -427,7 +427,7 @@ class TestingKivy3D(BoxLayout):
         #     this_glop.generate_kivy_mesh()
         #     print("WARNING: glop had no mesh, so was generated when added to render context. Please ensure it is a KivyGlop and not a PyGlop (however, vertex indices misread could also lead to missing Mesh object).")
         # print("_color_instruction.r,.g,.b,.a: "+str( [this_glop._color_instruction.r, this_glop._color_instruction.g, this_glop._color_instruction.b, this_glop._color_instruction.a] ))
-        # print("u_color: "+str(this_glop.material.diffuse_color))
+        # print("u_color: "+str(this_glop.material['diffuse_color']))
         if this_glop._axes_mesh is not None:
             context.add(this_glop._axes_mesh)  # debug only unless in testingkivy3d.py
         # if this_glop._mesh is not None:
@@ -450,7 +450,7 @@ class TestingKivy3D(BoxLayout):
             print("[ TestingKivy3D ] add_op could not finish adding instructiongroup")
             view_traceback()
 
-        # self._contexts.remove(this_glop.get_context()) #   to hide
+        # self._contexts.remove(this_glop.get_context())  # to hide
 
     def inventory_use_button_press(self, instance):
         print("Pressed button " + instance.text)
@@ -506,7 +506,7 @@ class TestingKivy3D(BoxLayout):
 
         self.gl_widget.canvas['projection_mat'] = projectionMatrix
         self.gl_widget.canvas['modelview_mat'] = modelViewMatrix
-        self.gl_widget.canvas["camera_world_pos"] = [self.camera_t_ins.x, self.camera_t_ins.y, self.camera_t_ins.z]
+        self.gl_widget.canvas['camera_world_pos'] = [self.camera_t_ins.x, self.camera_t_ins.y, self.camera_t_ins.z]
         self.gl_widget.canvas['ambient_light'] = (0.1, 0.1, 0.1)
 
         # self.canvas['projection_mat'] = projectionMatrix

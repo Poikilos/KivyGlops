@@ -32,7 +32,7 @@ from kivy.clock import Clock
 from pygments.lexers import GLShaderLexer
 from kivyglops import *
 
-# aka MainForm
+# a.k.a. MainForm
 class ShaderEditor(FloatLayout):
     pass
     # source = StringProperty('data/logo/kivy-icon-512.png')
@@ -158,7 +158,7 @@ void main (void){
             # verts, indices = this_glop.generate_kivy_mesh()
             print("WARNING: glop had no mesh, so was generated when added to render context. Please ensure it is a KivyGlop and not a PyGlop (however, vertex indices misread could also lead to missing Mesh object).")
         # print("_color_instruction.r,.g,.b,.a: "+str( [this_glop._color_instruction.r, this_glop._color_instruction.g, this_glop._color_instruction.b, this_glop._color_instruction.a] ))
-        # print("u_color: "+str(this_glop.material.diffuse_color))
+        # print("u_color: "+str(this_glop.material['diffuse_color']))
         # this_glop.generate_axes()
         # this_glop._axes_mesh.
         if this_glop._axes_mesh is not None:

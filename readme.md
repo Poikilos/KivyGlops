@@ -41,6 +41,11 @@ Control 3D objects and the camera in your 3D Kivy app!
 
 
 ## Known Issues
+* `on_obtain_glop` is missing from staging (only has warning on deprecated `def obtain_glop` which still works)
+* (documentation) Change `get_owner_index` to `get_owner_key`
+* (documentation) Change `pivot_to_geometry_enable` to `pivot_to_g_enable` (or add backward compatibility)
+* Change `deg CAMERA_*` methods to static constants, and add object methods to set them for the purpose of retaining the docstrings.
+* In `get_keycode` in staging, remove bare `except`; in stable, add the correct `except` that is missing.
 * Use `resource_find` in `KivyGlop` to validate `source_path` and `material['properties']['diffuse_path']` before using the `PyGlop` `get_texture_diffuse_path` method which can't because it doesn't depend on Kivy.
 * Remove all manual YAML generation.
 * Add `plainReplacements['.target'] = ".properties['target']"` to KivyGlops-modernize.py
