@@ -3029,7 +3029,7 @@ class KivyGlops(PyGlops):
                             walk_info = self.get_walk_info(
                                 m_glop._t_ins.xyz,
                                 (mgp['hitbox']['maximums'][0],
-                                 -m_glop['minimums'][1])
+                                 -mgp['hitbox']['minimums'][1])
                             )
                         else:
                             walk_info = self.get_walk_info(

@@ -38,7 +38,7 @@ class MainScene(KivyGlops):
         # self.load_obj("meshes/stadium,primitive.obj")
         self.load_obj("meshes/stadium,primitive-simpler.obj")
 
-        walkmesh_enable = False
+        walkmesh_enable = True
         if walkmesh_enable:
             walkmesh_names = self.get_similar_names("walkmesh")
             for name in walkmesh_names:
