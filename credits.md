@@ -1,11 +1,11 @@
 
 KivyForest-ground
-by expertmm
+by Poikilos
 Based on Forest floor fire
 By Yoav David (Own work) [CC BY-SA 3.0 (http://creativecommons.org/licenses/by-sa/3.0)], via Wikimedia Commons
 
 testnurbs-all-textured
-by expertmm
+by Poikilos
 based on testnurbs
 by nskrypnik
 

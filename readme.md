@@ -1,7 +1,7 @@
 # KivyGlops
 Control 3D objects and the camera in your 3D Kivy app!
-<https://github.com/expertmm/KivyGlops>
-![Screenshot](https://raw.githubusercontent.com/expertmm/KivyGlops/master/screenshot01.png)
+<https://github.com/poikilos/KivyGlops>
+![Screenshot](screenshot01.png)
 
 ## Key Features
 * 3D Objects can be moved and rotated separately (movement and rotation has been tested, and scaling is available)
@@ -126,7 +126,7 @@ Control 3D objects and the camera in your 3D Kivy app!
 * (2017-12-21) added copy constructors to PyGlops, PyGlopsMaterial, and where appropriate, subclasses
 * (2017-12-21) renamed bump_sounds to bump_sound_paths for clarity
 * (2017-12-21) renamed get_dict_deepcopy_except_my_type to deepcopy_with_my_type and made it work for either list or dict (and should work for any subclass since checks for type(self), so was eliminated from subclass)
-* (2017-12-20) Changed to more permissive license (see [LICENSE](https://github.com/expertmm/KivyGlops/blob/master/LICENSE))
+* (2017-12-20) Changed to more permissive license (see [license.txt](license.txt))
 * (2017-12-20) updated kivyglopstesting.py to account for refactoring
 * (2017-12-20) renamed kivyglopsminimal.py to etc/kivyglops-mini-deprecated.py
 * (2017-12-19) wobjfile.py: elimintated smoothing_group in favor of this_face_group_type and this_face_group_name (this_face_group_type "s" is a smoothing group)
@@ -266,7 +266,7 @@ Control 3D objects and the camera in your 3D Kivy app!
         self.canvas['resolution'] = list(map(float, self.size))
     )
 ## License
-See [LICENSE](https://github.com/expertmm/KivyGlops/blob/master/LICENSE)
+See [license.txt](license.txt).
 
 ### Authors
 Software is copyright Jake Gustafson with the following exceptions:
