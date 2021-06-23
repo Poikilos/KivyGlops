@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
 ## [git] - 2021-06-19
+### Fixed
+- `*` (ishadereditor.py) change `is ... not this_glop` to `... is not this_glop` and remove an extra parenthesis.
+
+
+## [git] - 2021-06-19
 ### Added
 - globals and common functions from staging (KivyGlops-audit-3a66898)
 
