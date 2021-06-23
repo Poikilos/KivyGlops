@@ -606,105 +606,139 @@ def hitbox_contains_vec3(o, pos):
 
 
 class PyGlop:
-    # update copy constructor if adding/changing copyable members
-    name = None # object name such as from OBJ's 'o' statement
-    dat = None
-    source_path = None  # required so that meshdata objects can be uniquely identified (where more than one file has same object name)
-    properties = None # dictionary of properties--has indices such as usemtl
-    vertex_depth = None
-    material = None
-    _min_coords = None  # bounding cube minimums in local coordinates
-    _max_coords = None  # bounding cube maximums in local coordinates
-    _pivot_point = None  # TODO: asdf eliminate this--instead always use 0,0,0 and move vertices to change pivot; currently calculated from average of vertices if was imported from obj
-    foot_reach = None  #  distance from center (such as root bone) to floor
-    eye_height = None  #  distance from floor
-    hit_radius = None
-    item_dict = None
-    projectile_dict = None #  TEMPORARY, only while in air, but based on item_dict["as_projectile"]
-    actor_dict = None
-    bump_enable = None
-    reach_radius = None
-    in_range_indices = None
-    physics_enable = None
-    x_velocity = None
-    y_velocity = None
-    z_velocity = None
-    _cached_floor_y = None
-    infinite_inventory_enable = None
-    look_target_glop = None
-    visible_enable = None
-    vertex_format = None
-    vertices = None
-    indices = None
-    # opacity = None  moved to material.diffuse_color 4th channel
+    '''
+    PyGlop defines a single OpenGL-ready object. PyGlops should be used
+    for importing, since one mesh file (such as obj) can contain several
+    meshes. PyGlops handles the 3D scene.
+    '''
 
-    # region runtime variables
-    glop_index = None  #  set by add_glop
-    # endregion runtime variables
+    def __init__(self, default_templates=None):
+        # update copy constructor if adding/changing copyable members
+        self.name = None  # object name such as from OBJ's 'o' statement
+        self.dat = None
+        self.source_path = None
+        # ^ required so that meshdata objects can be
+        #   uniquely identified (where more than one
+        #   file has same object name)
+        self.properties = None
+        # ^ dictionary of properties (keys such as usemtl)
+        self.vertex_depth = None
+        self.material = None
+        self._min_coords = None
+        # ^ bounding cube minimums in local coordinates
+        self._max_coords = None
+        # ^ bounding cube maximums in local coordinates
+        self._pivot_point = None
+        # TODO: (?) eliminate _pivot_point--instead always use
+        # 0,0,0 and move vertices to change pivot;
+        # currently calculated from average of vertices
+        # if was imported from obj
+        self.foot_reach = None
+        # ^ distance from center (such as root bone) to floor
+        self.eye_height = None  # distance from floor
+        self.hit_radius = None
+        self.item_dict = None
+        self.projectile_dict = None
+        # ^ TEMPORARY, only while in air, but based on
+        # item_dict (only uses item_dict[key] for key
+        # in item_dict['projectile_keys'])
+        self.actor_dict = None
+        self.bump_enable = None
+        self.reach_radius = None
+        self.in_range_indices = None
+        # ^ ONLY set if bumpable (not bumper)
+        self.physics_enable = None
+        self.x_velocity = None
+        self.y_velocity = None
+        self.z_velocity = None
+        self._cached_floor_y = None
+        self.infinite_inventory_enable = None
+        self.look_target_glop = None
+        self.visible_enable = None
+        self.vertex_format = None
+        self.vertices = None
+        self.indices = None
+        # self.opacity = None
+        # ^ moved to material['diffuse_color'] 4th channel
 
-    # region vars based on OpenGL ES 1.1 MOVED TO material
-    # ambient_color = None  #  vec4
-    # diffuse_color = None  #  vec4
-    # specular_color = None  #  vec4
-    # # emissive_color = None  #  vec4
-    # specular_exponent = None  #  float
-    # endregion vars based on OpenGL ES 1.1 MOVED TO material
+        # region runtime variables
+        self.glop_index = None  # set by add_glop
+        # endregion runtime variables
 
-    # region calculated from vertex_format
-    _POSITION_OFFSET = None
-    _NORMAL_OFFSET = None
-    _TEXCOORD0_OFFSET = None
-    _TEXCOORD1_OFFSET = None
-    COLOR_OFFSET = None
-    POSITION_INDEX = None
-    NORMAL_INDEX = None
-    TEXCOORD0_INDEX = None
-    TEXCOORD1_INDEX = None
-    COLOR_INDEX = None
-    # endregion calculated from vertex_format
+        # region vars based on OpenGL ES 1.1 MOVED TO material
+        # self.ambient_color = None  # vec4
+        # self.diffuse_color = None  # vec4
+        # self.specular_color = None  # vec4
+        # # self.emissive_color = None  # vec4
+        # self.specular_exponent = None  # float
+        # endregion vars based on OpenGL ES 1.1 MOVED TO material
 
-    def __init__(self):
-        self._init_glop()
+        # region calculated from vertex_format
+        self._POSITION_OFFSET = None
+        self._NORMAL_OFFSET = None
+        self._TEXCOORD0_OFFSET = None
+        self._TEXCOORD1_OFFSET = None
+        self.COLOR_OFFSET = None
+        self.POSITION_INDEX = None
+        self.NORMAL_INDEX = None
+        self.TEXCOORD0_INDEX = None
+        self.TEXCOORD1_INDEX = None
+        self.COLOR_INDEX = None
+        # endregion calculated from vertex_format
 
-    def _init_glop(self):  #  formerly __init__ but that would interfere with super if subclass has multiple inheritance
+        self._init_glop(default_templates=default_templates)
+
+    def _init_glop(self, default_templates=None):
+        # formerly __init__ but that would interfere with super
+        # if subclass has multiple inheritance
         try:
             self.properties = {}
             self.dat = {}
-            self.dat["links"] = []  #  list of relationship dicts
-            self.separable_offsets = []  #  if more than one submesh is in vertices, chunks are saved in here, such as to assist with explosions
+            self.dat['links'] = []  # list of relationship dicts
+            self.separable_offsets = []  # if more than one submesh is in vertices, chunks are saved in here, such as to assist with explosions
             self.visible_enable = True
             self.properties['hitbox'] = None
             self.physics_enable = False
             self.infinite_inventory_enable = True
             self.in_range_indices = []
-            self.eye_height = 0.0  #  or 1.7 since 5'10" person is ~1.77m, and eye down a bit
-            self.hit_radius = 0.1524  #  .5' equals .1524m
-            self.reach_radius = 0.381  #  2.5' .381m
+            self.eye_height = 0.0  # or 1.7 since 5'10" person is ~1.77m, and eye down a bit
+            self.hit_radius = 0.1524  # .5' equals .1524m
+            self.reach_radius = 0.381  # 2.5' .381m
             self.bump_enable = False
             self.x_velocity = 0.0
             self.y_velocity = 0.0
             self.z_velocity = 0.0
             self.properties = {}
-            self.properties["bump_sound_paths"] = []
-            self.properties["damaged_sound_paths"] = []  #  even if not an actor
+            self.properties['bump_sound_paths'] = []
+            self.properties["damaged_sound_paths"] = []  # even if not an actor
             # formerly in MeshData:
-            #  order MUST match V_POS_INDEX etc above
-            self.vertex_format = [(b'a_position', 4, 'float'),  #  Munshi prefers vec4 (Kivy prefers vec3)
-                                  (b'a_texcoord0', 4, 'float'),  #  Munshi prefers vec4 (Kivy prefers vec2); vTexCoord0; available if enable_tex[0] is true
-                                  (b'a_texcoord1', 4, 'float'),  #  Munshi prefers vec4 (Kivy prefers vec2);  available if enable_tex[1] is true
-                                  (b'a_color', 4, 'float'),  #  vColor (diffuse color of vertex)
-                                  (b'a_normal', 3, 'float')  #  vNormal; Munshi prefers vec3 (Kivy also prefers vec3)
-                                  ]
+            # order MUST match V_POS_INDEX etc above
 
+            # a_position: Munshi prefers vec4 (Kivy prefers vec3)
+            # a_texcoord0: Munshi prefers vec4 (Kivy prefers vec2);
+            #  vTexCoord0; available if enable_tex[0] is true
+            # a_texcoord1: Munshi prefers vec4 (Kivy prefers vec2);
+            #  available if enable_tex[1] is true
+            # a_color: vColor (diffuse color of vertex)
+            # a_normal: vNormal; Munshi prefers vec3 (Kivy also
+            #  prefers vec3)
+            self.vertex_format = [(b'a_position', 4, 'float'),
+                                  (b'a_texcoord0', 4, 'float'),
+                                  (b'a_texcoord1', 4, 'float'),
+                                  (b'a_color', 4, 'float'),
+                                  (b'a_normal', 3, 'float')
+                                  ]
+            # calculate vertex_depth etc:
             self.on_vertex_format_change()
 
-            self.indices = []  #  list of tris (1 big linear list of indices)
+            self.indices = []
+            # ^ list of tris (1 big linear list of indices)
 
-            self.eye_height = 1.7  #  1.7 since 5'10" person is ~1.77m, and eye down a bit
+            self.eye_height = 1.7  # 1.7 since 5'10" person is ~1.77m, and eye down a bit
             self.hit_radius = .2
             self.reach_radius = 2.5
 
-            #  Default basic material of this glop
+            # Default basic material of this glop
             self.material = new_material()
             self.material['diffuse_color'] = (1.0, 1.0, 1.0, 1.0)
             # ^ overlay vertex color onto this using vertex alpha
@@ -713,9 +747,11 @@ class PyGlop:
             self.material['specular_coefficient'] = 16.0
             # self.material['opacity'] = 1.0
 
-            # TODO: find out where this code goes (was here for unknown reason)
+            # TODO: find out where this code goes
+            # (was here for unknown reason)
             # if result is None:
-            #     print("WARNING: no material for Glop named '"+str(self.name)+"' (NOT YET IMPLEMENTED)")
+            #     print("WARNING: no material for Glop named '" +
+            #           str(self.name) + "' (NOT YET IMPLEMENTED)")
             # return result
         except:
             print("[ PyGlop ] ERROR--_init_glop could not finish:")
