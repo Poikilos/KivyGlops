@@ -1,3 +1,4 @@
+// To set globals, use "glwCv" (same as gl_widget.canvas) in __init__.py
 ---VERTEX SHADER-------------------------------------------------------
 //Spec: see README.md
 
@@ -34,9 +35,9 @@
 
 // And last but not least there are some built-in types which are used for shader output:
 
-// gl_Position              4D vector representing the final processed vertex position. Only 
+// gl_Position              4D vector representing the final processed vertex position. Only
                     // available in vertex shader.
-// gl_FragColor             4D vector representing the final color which is written in the frame 
+// gl_FragColor             4D vector representing the final color which is written in the frame
                     // buffer. Only available in fragment shader.
 // gl_FragDepth             float representing the depth which is written in the depth buffer.
                     // Only available in fragment shader.
@@ -109,11 +110,11 @@ void main()
 	//}
 
     //compute vertex position in eye_space and normalize normal vector
-    vec4 pos = modelview_mat * a_position; //vec4(v_pos,1.0); 
+    vec4 pos = modelview_mat * a_position; //vec4(v_pos,1.0);
     vertex_pos = pos;
     normal_vec = vec4(a_normal,0.0);
     //gl_Position = projection_mat * pos;
-    
+
     // Transforming The Vertex
     /* gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex; this is the c++ way*/
     //vec4 pos = modelview_mat * vec4(a_position,1.0);
@@ -125,7 +126,7 @@ void main()
     //uv = a_texcoord0; //uv = uv1; //http://www.kickjs.org/example/shader_editor/shader_editor.html
     // compute light info
     //n = normalize (normal_mat * a_normal); //n = normalize(_norm * normal); //http://www.kickjs.org/example/shader_editor/shader_editor.html
-    
+
 }
 
 ---FRAGMENT SHADER----------------------------------------------------
@@ -166,7 +167,7 @@ void main()
 {
     // Setting Each Pixel To Red
     //gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
-    
+
     //correct normal, and compute light vector (below assumes light at the eye)
     vec4 a_normal = normalize( normal_mat * normal_vec ) ;
     vec4 v_light = normalize( vec4(0,0,0,1) - vertex_pos );
@@ -179,5 +180,5 @@ void main()
     //below is from http://www.kickjs.org/example/shader_editor/shader_editor.html
     //float diffuse = max(0.0,dot(normalize(n),_world_light_dir_eye_space));
     //gl_FragColor = vec4(texture2D(tex,uv).xyz*diffuse,1.0);
-    
+
 }

@@ -10,7 +10,7 @@ DeNapes
 Creative Commons 0
 <https://www.blendswap.com/blends/view/75404>
 
-expertmm manifold version:
+### Poikilos manifold version:
 (edited in Blender)
 * baked cycles material to new UV texture spaceship,simple-denapes-diffuse.png
 * remove doubles

@@ -23,7 +23,7 @@ def find_not_any(haystack, needle_chars):
             result = i
             break
     return result
-    
+
 def split_non_quoted(line, splitters, inline_comment_marker="#"):
     results = None
     if line is not None:
@@ -117,7 +117,7 @@ def lint_that_python(filename):
                     if indent_end >= 0:
                         line = line_original.rstrip()
                         line_strip = line.strip()
-                        
+
                         if in_multiline_enable:
                             multiline_end = line.find("'''")
                             if multiline_end > -1:

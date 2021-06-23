@@ -7,12 +7,12 @@ from kivy.logger import Logger
 from kivy.vector import Vector
 from kivy.core.image import Image
 from kivy.core.window import Keyboard
-#from kivy.graphics.transformation import Matrix
-#from kivy.graphics.opengl import *
-#from kivy.graphics import *
-#from objloader import ObjFile
-#from pyrealtime import *
-#from kivy.clock import Clock
+# from kivy.graphics.transformation import Matrix
+# from kivy.graphics.opengl import *
+# from kivy.graphics import *
+# from objloader import ObjFile
+# from pyrealtime import *
+# from kivy.clock import Clock
 from kivy.input.providers.mouse import MouseMotionEvent
 from kivy.factory import Factory
 from kivy.uix.boxlayout import BoxLayout
@@ -30,13 +30,19 @@ else:
     profile_path = os.environ['HOME']
 
 
+script_path = os.path.abspath(__file__)
+my_dir = os.path.dirname(script_path)
+
 class MainScene(KivyGlops):
 
     def on_load_glops(self):
         try_paths = [
             # "meshes/stadium,primitive.obj",
             "meshes/stadium,primitive-simpler.obj",
-            "../KivyGlops/meshes/stadium,primitive-simpler.obj",
+            os.path.join(my_dir,
+                         "meshes/stadium,primitive-simpler.obj"),
+            "stadium,primitive-simpler.obj",
+            # "../KivyGlops/meshes/stadium,primitive-simpler.obj",
         ]
         for try_path in try_paths:
             result = self.load_obj(try_path)
@@ -50,7 +56,7 @@ class MainScene(KivyGlops):
             print("Found possible walkmesh: "+name)
             is_ok = self.use_walkmesh(name, hide=True)
 
-        #self.load_obj("player1.obj")
+        # self.load_obj("player1.obj")
 
         item_dict = dict()
         item_dict["name"] = "rock"
@@ -61,10 +67,10 @@ class MainScene(KivyGlops):
         item_dict["hit_damage"] = .3
         item_dict["projectile_keys"] = ["hit_damage"]
 
-        #weapon = dict()
-        #weapon["hit_damage"] = .3
+        # weapon = dict()
+        # weapon["hit_damage"] = .3
 
-        #item_dict["as_projectile"] = weapon
+        # item_dict["as_projectile"] = weapon
 
         for index in self.get_indices_of_similar_names("rock"):
             print("Preparing item at index " + str(index))
@@ -106,13 +112,13 @@ class MainScene(KivyGlops):
         self.glops[attacked_index].actor_dict["hp"] -= weapon_dict["hit_damage"]
         if self.glops[attacked_index].actor_dict["hp"] <= 0:
             self.explode_glop_at(attacked_index, weapon_dict)
-        #if get_verbose_enable():
+        # if get_verbose_enable():
         print(str(self.glops[attacked_index].name) + "'s hp: " + \
               str(self.glops[attacked_index].actor_dict["hp"]))
 
     def obtain_glop(self, bumpable_name, bumper_name):
-        #if "rock" in bumpable_name.lower():
-        #    self.play_sound("sounds/rock-pickup.wav")
+        # if "rock" in bumpable_name.lower():
+        #     self.play_sound("sounds/rock-pickup.wav")
         pass
 
     def on_update_glops(self):
@@ -125,15 +131,15 @@ scene = MainScene(KivyGlopsWindow())
 class KivyGlopsExampleApp(App):
     def build(self):
         return scene.ui
-        #mainform = MainForm()
-        #boxlayout = TextForm()
-        #boxlayout.add_widget(mainform)
-        #boxlayout.cols = 1
-        #boxlayout.orientation = "vertical"
-        #boxlayout.useButton = Factory.Button(text="Use", id="useButton", \
-        #                                     size_hint=(.1,.1))
-        #boxlayout.add_widget(boxlayout.useButton)
-        #return boxlayout
+        # mainform = MainForm()
+        # boxlayout = TextForm()
+        # boxlayout.add_widget(mainform)
+        # boxlayout.cols = 1
+        # boxlayout.orientation = "vertical"
+        # boxlayout.useButton = Factory.Button(text="Use", id="useButton", \
+        #                                      size_hint=(.1,.1))
+        # boxlayout.add_widget(boxlayout.useButton)
+        # return boxlayout
 
 
 if __name__ == "__main__":

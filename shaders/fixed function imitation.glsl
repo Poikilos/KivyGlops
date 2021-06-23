@@ -1,3 +1,4 @@
+// To set globals, use "glwCv" (same as gl_widget.canvas) in __init__.py
 //The code below is verbatim from:
 //Munshi. "Example 8-8. OpenGL ES 1.1 Fixed Function Vertex Pipeline." OpenGL ES 2.0 Programming Guide. <https://www.safaribooksonline.com/library/view/opengl-es-20/9780321563835/ch08.html>. 8 Jan 2016.
 //except where the following changes were made:
@@ -145,7 +146,7 @@ vec4 lighting_equation(int i)
   vec3    h_vec;
   float   ndotl, ndoth;
   float   att_factor;
-  
+
   att_factor = c_one;
   vec3    VPpli;
   if(light_state[i].position.w != c_zero)

@@ -27,8 +27,6 @@ class PyRealTimeKeyState:
 
 class PyRealTimeController:
 
-    _keystates = None
-
     def __init__(self):
         self._keystates = dict()
 

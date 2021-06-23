@@ -1,3 +1,4 @@
+// To set globals, use "glwCv" (same as gl_widget.canvas) in __init__.py
 ---VERTEX SHADER-------------------------------------------------------
 #ifdef GL_ES
     precision highp float;
