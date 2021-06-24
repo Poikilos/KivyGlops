@@ -2414,29 +2414,20 @@ def new_tuple(length, fill_start=0, fill_len=-1, fill_value=1.0):
     return tuple(tmp)  # result
 
 
-class PyGlopsLight:
+def new_light():
+    ret = {}
     # region vars based on OpenGL ES 1.1
-    position = None  #  vec4 light position for a point/spot light or normalized dir. for a directional light
-    ambient_color = None  #  vec4
-    diffuse_color = None  #  vec4
-    specular_color = None  #  vec4
-    spot_direction = None  #  vec3
-    attenuation_factors = None  #  vec3
-    spot_exponent = None  #  float
-    spot_cutoff_angle = None  #  float
-    compute_distance_attenuation = None  #  bool
+    ret['position'] = (0.0, 0.0, 0.0, 0.0)
+    ret['ambient_color'] = (0.0, 0.0, 0.0, 0.0)
+    ret['diffuse_color'] = (0.0, 0.0, 0.0, 0.0)
+    ret['specular_color'] = (0.0, 0.0, 0.0, 0.0)
+    ret['spot_direction'] = (0.0, 0.0, 0.0)
+    ret['attenuation_factors'] = (0.0, 0.0, 0.0)
+    ret['spot_exponent'] = 1.0
+    ret['spot_cutoff_angle'] = 45.0
+    ret['compute_distance_attenuation'] = False
     # endregion vars based on OpenGL ES 1.1
-
-    def __init__(self):
-       self.position = (0.0, 0.0, 0.0, 0.0)
-       self.ambient_color = (0.0, 0.0, 0.0, 0.0)
-       self.diffuse_color = (0.0, 0.0, 0.0, 0.0)
-       self.specular_color = (0.0, 0.0, 0.0, 0.0)
-       self.spot_direction = (0.0, 0.0, 0.0)
-       self.attenuation_factors = (0.0, 0.0, 0.0)
-       self.spot_exponent = 1.0
-       self.spot_cutoff_angle = 45.0
-       self.compute_distance_attenuation = False
+    return ret
 
 
 class PyGlops:
