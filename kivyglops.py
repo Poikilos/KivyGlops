@@ -1223,6 +1223,7 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
 class KivyGlops(PyGlops):
 
     def __init__(self, new_ui):
+        self.showNextHashWarning = True
         # region moved from ui
         self.projection_near = None
         self.look_point = None
@@ -1782,7 +1783,7 @@ class KivyGlops(PyGlops):
                                             if self.glops[bumper_index].bump_enable:
                                                 if (self.glops[bumpable_index].projectile_dict is None) or \
                                                    (self.glops[bumper_index].properties['hitbox'] is None) or \
-                                                   self.glops[bumper_index].properties['hitbox'].contains_vec3(get_vec3_from_point(self.glops[bumpable_index]._t_ins)):
+                                                   hitbox_contains_vec3(self.glops[bumper_index].properties['hitbox'], self.glops[bumpable_index]._t_ins.xyz):
                                                     # NOTE: already checked
                                                     # bumpable_index bump_enable above
                                                     # print("distance:" + str(total_hit_radius) + " <= total_hit_radius:" + str(total_hit_radius))
@@ -2602,10 +2603,10 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             pass  # keyboard.release()
         # elif keycode[1] == 'w':
         #     self.scene.player_glop._t_ins.z += \
-        #         self.lupf
+        #         land_units_per_last_wait
         # elif keycode[1] == 's':
         #     self.scene.player_glop._t_ins.z -= \
-        #         self.lupf
+        #         land_units_per_last_wait
         # elif text == 'a':
         #     self.scene.player1_controller["left"] = True
         #     self.moving_x = -1.0
