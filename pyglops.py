@@ -1153,11 +1153,17 @@ class PyGlop:
             this_vertex_relative_distance = \
                 get_distance_vec3(sv[vo:], this_point)
             if this_vertex_relative_distance > hr:
-                self.properties['hit_radius'] = this_vertex_relative_distance
+                hr = this_vertex_relative_distance
             # sv[vo+0] -= this_point[0]
             # sv[vo+1] -= this_point[1]
             # sv[vo+2] -= this_point[2]
             v_offset += self.vertex_depth
+        if phr is not None:
+            phr = hr
+            self.properties['hit_radius'] = phr
+        else:
+            print("[ PyGlop ] WARNING in apply_vertex_offset:"
+                  " hit_radius will not change since it isn't present.")
 
     def apply_pivot(self):
         self.apply_vertex_offset(self._pivot_point)
