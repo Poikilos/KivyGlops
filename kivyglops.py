@@ -451,18 +451,39 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
         _axes_indices = []
 
         IS_SELF_VFORMAT_OK = True
-        if self._POSITION_OFFSET<0:
-            IS_SELF_VFORMAT_OK = False
-            print("generate_axes couldn't find name containing 'pos' or 'position' in any vertex format element (see pyops.py PyGlop constructor)")
-        if self._NORMAL_OFFSET<0:
-            IS_SELF_VFORMAT_OK = False
-            print("generate_axes couldn't find name containing 'normal' in any vertex format element (see pyops.py PyGlop constructor)")
-        if self._TEXCOORD0_OFFSET<0:
-            IS_SELF_VFORMAT_OK = False
-            print("generate_axes couldn't find name containing 'texcoord' in any vertex format element (see pyops.py PyGlop constructor)")
-        if self.COLOR_OFFSET<0:
-            IS_SELF_VFORMAT_OK = False
-            print("generate_axes couldn't find name containing 'color' in any vertex format element (see pyops.py PyGlop constructor)")
+        try:
+            fail_prefix = ("[ KivyGlop ] ERROR in " + f_name + ":" +
+                           " could not find name containing ")
+            fail_suffix = (" in any vertex format element" +
+                           " (see PyGlop __init__)")
+            if self._POSITION_OFFSET < 0:
+                IS_SELF_VFORMAT_OK = False
+                print(fail_prefix + "'pos' or 'position'" + fail_suffix)
+            if self._NORMAL_OFFSET < 0:
+                IS_SELF_VFORMAT_OK = False
+                print(fail_prefix + "'normal'" + fail_suffix)
+            if self._TEXCOORD0_OFFSET < 0:
+                IS_SELF_VFORMAT_OK = False
+                print(fail_prefix + "'texcoord'" + fail_suffix)
+            if self.COLOR_OFFSET < 0:
+                IS_SELF_VFORMAT_OK = False
+                print(fail_prefix + "'color'" + fail_suffix)
+        except TypeError as ex:
+            if "NoneType" in str(ex):
+                IS_SELF_VFORMAT_OK = False
+                print("[ KivyGlop ] ERROR in " + f_name + ":"
+                      " self._POSITION_OFFSET is {}; "
+                      " self._NORMAL_OFFSET is {}; "
+                      " self._TEXCOORD0_OFFSET is {}; "
+                      " self.COLOR_OFFSET is {}; "
+                      "".format(
+                          self._POSITION_OFFSET,
+                          self._NORMAL_OFFSET,
+                          self._TEXCOORD0_OFFSET,
+                          self.COLOR_OFFSET,
+                      ))
+            else:
+                raise(ex)
 
         offset = 0
         white = (1.0, 1.0, 1.0, 1.0)
@@ -498,20 +519,41 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
 
         _axes_vertices = []
         _axes_indices = []
-
+        if self.vertex_depth is None:
+            print("[ KivyGlop ] WARNING in generate_axes: "
+                  "vertex_depth was None--trying "
+                  "on_vertex_format_change...")
+            self.on_vertex_format_change()
         IS_SELF_VFORMAT_OK = True
-        if self._POSITION_OFFSET<0:
-            IS_SELF_VFORMAT_OK = False
-            print("generate_axes couldn't find name containing 'pos' or 'position' in any vertex format element (see pyops.py PyGlop constructor)")
-        if self._NORMAL_OFFSET<0:
-            IS_SELF_VFORMAT_OK = False
-            print("generate_axes couldn't find name containing 'normal' in any vertex format element (see pyops.py PyGlop constructor)")
-        if self._TEXCOORD0_OFFSET<0:
-            IS_SELF_VFORMAT_OK = False
-            print("generate_axes couldn't find name containing 'texcoord' in any vertex format element (see pyops.py PyGlop constructor)")
-        if self.COLOR_OFFSET<0:
-            IS_SELF_VFORMAT_OK = False
-            print("generate_axes couldn't find name containing 'color' in any vertex format element (see pyops.py PyGlop constructor)")
+        try:
+            fail_prefix = ("[ KivyGlop ] ERROR in " + f_name + ":" +
+                           " could not find name containing ")
+            fail_suffix = (" in any vertex format element" +
+                           " (see PyGlop __init__)")
+            if self._POSITION_OFFSET < 0:
+                IS_SELF_VFORMAT_OK = False
+                print(fail_prefix + "'pos' or 'position'" + fail_suffix)
+            if self._NORMAL_OFFSET < 0:
+                IS_SELF_VFORMAT_OK = False
+                print(fail_prefix + "'normal'" + fail_suffix)
+            if self._TEXCOORD0_OFFSET < 0:
+                IS_SELF_VFORMAT_OK = False
+                print(fail_prefix + "'texcoord'" + fail_suffix)
+            if self.COLOR_OFFSET < 0:
+                IS_SELF_VFORMAT_OK = False
+                print(fail_prefix + "'color'" + fail_suffix)
+        except TypeError as ex:
+            if "NoneType" in str(ex):
+                # TODO: ^ see what happened then choose what to handle
+                IS_SELF_VFORMAT_OK = False
+                print("[ KivyGlop ] ERROR in " + f_name + ":" +
+                      " couldn't find offsets")
+                return None
+                # Stop here, otherwise there will be a
+                # `ZeroDivisionError: division by zero` in
+                # append_vertex.
+            else:
+                raise ex
 
         offset = 0
         red = (1.0, 0.0, 0.0)
@@ -606,15 +648,22 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
                               20, 23, 22
                               ])
 
-        # new_texcoord = new_tuple(self.vertex_format[self.TEXCOORD0_INDEX][VFORMAT_VECTOR_LEN_INDEX])
-
-        self._axes_mesh = Mesh(
-                               vertices=_axes_vertices,
-                               indices=_axes_indices,
-                               fmt=self.vertex_format,
-                               mode='triangles',
-                               texture=None,
-                              )
+        # new_texcoord = new_tuple(
+        #     self.vertex_format[
+        #         self.TEXCOORD0_INDEX][VFORMAT_VECTOR_LEN_INDEX])
+        if IS_SELF_VFORMAT_OK:
+            self._axes_mesh = Mesh(
+                vertices=_axes_vertices,
+                indices=_axes_indices,
+                fmt=self.vertex_format,
+                mode='triangles',
+                texture=None,
+            )
+        else:
+            # error already shown
+            # print("[ KivyGlop ] ERROR in generate_axes:"
+            #       " bad vertex_format")
+            pass
         # return _axes_vertices, _axes_indices
 
     # "Called by the repr() built-in function to compute the "official"
@@ -826,46 +875,56 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
         if self.name is not None:
             glop_msg += " '" + self.name + "'"
         if get_verbose_enable():
-            print("[ KivyGlop ] calculate_hit_range (hitbox) for " + glop_msg + "...")
-        if self.vertices is not None:
-            vertex_count = int(len(self.vertices)/self.vertex_depth)
-            if vertex_count>0:
-                self.properties['hitbox'] = {}
-                v_offset = 0
-                self.hit_radius = 0.0
-                # intentionally set to ridiculously far in opposite direction:
-                self.properties['hitbox']['minimums'] = [sys.float_info.max] * 3
-                self.properties['hitbox']['maximums'] = [sys.float_info.min] * 3
-                for v_number in range(0, vertex_count):
-                    for i in range(0,3):
-                        if self.vertices[v_offset+self._POSITION_OFFSET+i] < self.properties['hitbox']['minimums'][i]:
-                            self.properties['hitbox']['minimums'][i] = self.vertices[v_offset+self._POSITION_OFFSET+i]
-                        if self.vertices[v_offset+self._POSITION_OFFSET+i] > self.properties['hitbox']['maximums'][i]:
-                            self.properties['hitbox']['maximums'][i] = self.vertices[v_offset+self._POSITION_OFFSET+i]
-                    this_vertex_relative_distance = get_distance_vec3(self.vertices[v_offset+self._POSITION_OFFSET:v_offset+self._POSITION_OFFSET+3], self._pivot_point)
-                    if this_vertex_relative_distance > self.hit_radius:
-                        self.hit_radius = this_vertex_relative_distance
-                    v_offset += self.vertex_depth
-                phi_eye_height = 86.5 * self.properties['hitbox']['maximums'][1]
-                if self.eye_height > phi_eye_height:
-                    print("[ KivyGlop ] WARNING in calculate_hit_range:" + \
-                          " eye_height " + str(self.eye_height) + \
-                          " is beyond phi_eye_height" + \
-                          str(phi_eye_height) + \
-                          " so is being set to that value")
-                    self.eye_height = self.properties['hitbox']['maximums'][1]
-                print("    done calculate_hit_range")
-            else:
-                self.properties['hitbox'] = None  # avoid 0-size hitbot which would prevent bumps
-                if self.hit_radius is None:
-                    self.hit_radius = .4444  # flag value
-                print("    skipped (0 vertices).")
-        else:
+            print("[ KivyGlop ] calculate_hit_range (hitbox) for "
+                  + glop_msg + "...")
+        if self.vertices is None:
             self.properties['hitbox'] = None
             # ^ avoid 0-size hitbox which would prevent bumps
             if self.hit_radius is None:
                 self.hit_radius = .4444  # flag value
             print("[ KivyGlop ] hitbox skipped since vertices None.")
+            return None
+        vertex_count = int(len(self.vertices)/self.vertex_depth)
+        if vertex_count <= 0:
+            self.properties['hitbox'] = None
+            # ^ avoid 0-size hitbox which would prevent bumps
+            if self.hit_radius is None:
+                self.hit_radius = .4444  # flag value
+            print("    skipped (0 vertices).")
+            return None
+        self.properties['hitbox'] = {}
+        v_offset = 0
+        self.hit_radius = 0.0
+        hb = self.properties.get('hitbox')
+        hr = self.properties.get('hit_radius')
+        PO = self._POSITION_OFFSET
+        if hb is None:
+            hb = new_hitbox()
+            self.properties['hitbox'] = hb
+            print("WARNING: created 'hitbox' key for {}"
+                  "".format(self.name))
+        # intentionally set to ridiculously far in opposite direction:
+        self.properties['hitbox']['minimums'] = [sys.float_info.max] * 3
+        self.properties['hitbox']['maximums'] = [sys.float_info.min] * 3
+        for v_number in range(0, vertex_count):
+            for i in range(0,3):
+                if self.vertices[v_offset+self._POSITION_OFFSET+i] < self.properties['hitbox']['minimums'][i]:
+                    self.properties['hitbox']['minimums'][i] = self.vertices[v_offset+self._POSITION_OFFSET+i]
+                if self.vertices[v_offset+self._POSITION_OFFSET+i] > self.properties['hitbox']['maximums'][i]:
+                    self.properties['hitbox']['maximums'][i] = self.vertices[v_offset+self._POSITION_OFFSET+i]
+            this_vertex_relative_distance = get_distance_vec3(self.vertices[v_offset+self._POSITION_OFFSET:v_offset+self._POSITION_OFFSET+3], self._pivot_point)
+            if this_vertex_relative_distance > self.hit_radius:
+                self.hit_radius = this_vertex_relative_distance
+            v_offset += self.vertex_depth
+        phi_eye_height = 86.5 * self.properties['hitbox']['maximums'][1]
+        if self.eye_height > phi_eye_height:
+            print("[ KivyGlop ] WARNING in calculate_hit_range:" + \
+                  " eye_height " + str(self.eye_height) + \
+                  " is beyond phi_eye_height" + \
+                  str(phi_eye_height) + \
+                  " so is being set to that value")
+            self.eye_height = self.properties['hitbox']['maximums'][1]
+        print("    done calculate_hit_range")
 
     def rotate_x_relative(self, angle):
         self._r_ins_x.angle += angle
@@ -1319,7 +1378,10 @@ class KivyGlops(PyGlops):
                 # texture.wrap = repeat
                 # self.env_rectangle = Rectangle(texture=texture)
                 self.env_rectangle = Rectangle(source=path)
-                self.env_rectangle.texture.wrap = "repeat"
+                self.env_orig_rect = Rectangle(source=path)
+                # default is clamp_to_edge
+                # self.env_rectangle.texture.wrap = "repeat"
+                self.env_rectangle.texture.wrap = "mirrored_repeat"
                 self.ui.canvas.before.add(self.env_rectangle)
                 self.env_flip_enable = unflip_enable
             else:

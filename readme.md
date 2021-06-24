@@ -28,6 +28,8 @@ Control 3D objects and the camera in your 3D Kivy app!
 * each program you make should be a subclass of KivyGlops or other PyGlops subclass (if you subclass PyGlops for framework you are using other than Kivy, your *Glops class should have all methods that KivyGlops has since PyGlops expects self to have implemented methods such as load_obj)
 * pyrealtime module (which does not require Kivy) keeps track of keyboard state, allowing getting keystate asynchronously
 * To modify any files (other than examples or tests) see "Developer Notes" section of this file for more information.
+* You can handle using empty inventory slots or a no-name item: calling `use_item_at` will trigger `on_item_use` even if using an empty item (`item_dict['name'] == "Empty"` or `name` is not present). In that case, return `True` if the command was used successfully or `False` if not, and `use_item_at` will return your value.
+* `throw_glop` have a `True` return if succeeded, otherwise `False`.
 
 ### Teaching using KivyGlops:
 * update-kivyglops from LAN.bat will only work for students if teacher places KivyGlops in R:\Classes\ComputerProgramming\Examples\KivyGlops

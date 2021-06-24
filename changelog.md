@@ -7,6 +7,54 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [git] - 2021-06-23
 ### Added
+(from staging)
+- (PyGlop) Warn if vector length (vertex depth) < 4 in `append_wobject`.
+
+### Changed
+(from staging except where noted with `*`)
+- Invert some checks to reduce the level of nested statements in:
+  - (KivyGlop) `calculate_hit_range`
+  - (PyGlop) `append_wobject`
+  - `*` (PyGlop) `apply_vertex_offset`
+  - `*` (PyGlop) `has_item`
+  - (PyGlops) `set_as_actor_at`
+  - (PyGlops) `set_as_item_at`
+    - `*` (PyGlops) Finish incomplete code changes for inverting checks for when: item_dict is missing, no `'name'`, not `is_ready`, not `cooldown` reached in `set_as_item_at`.
+  - (PyGlops) `throw_glop`
+- Change `env_rectangle.texture.wrap`'s value to "mirrored_repeat"
+- Add/change variables to shorten lines:
+  - `ad = self.actor_dict` in `pop_glop_item`, `has_item`
+  - `sv = self.vertices` and `vo = v_offset+self._POSITION_OFFSET` in `apply_vertex_offset`
+  - `ov = od[this_key]` in `deepcopy_with_my_type`
+  - `hb = self.properties.get('hitbox')`, `phr = self.properties.get('hit_radius')`, `hr = phr` in `apply_vertex_offset`
+  - `rmte = ref_my_type_enable` in `deepcopy_with_my_type` & change uses.
+  - Use `vf` `pi` in `append_wobject`
+    - `*` Use `vf` where longhand was used in `append_wobject`.
+  - Change `axisIndex` to `axI` in `angles_to_angle_and_matrix`
+  - `ddu = debug_dict[user_glop.name]`, `ugad = user_glop.actor_dict` in `use_item_at`
+  - `fgid` and `fgpd` in `throw_glop`
+    - rename `fgid` and `fgpd` to `item` and `projectile`
+  - `hb`, `hr`, `PO` in `calculate_hit_range`
+- Utilize `get_is_glop` instead of `isinstance` in `deepcopy_with_my_type`.
+- `*` Add a True return if the item was used in `use_item_at` and `throw_glop`, otherwise False.
+- Change some local variable names.
+- `*` change `not...in` to `not in` in `preprocess_item`.
+
+### Fixed
+(from staging)
+- Handle missing vertex format metadata in:
+  - `generate_plane`
+  - `generate_axes`
+- `*` change "calling method" to "calling_method" where wrong (wrong in fewer but one or more places in staging).
+- (not wrong in stable) Fix PEP8 issues in staging.
+- Fix PEP8 issues in both staging and stable.
+- Change `ancestors=ancestors` to `ancestors=ancestors[:oa_len]`  in `deepcopy_with_my_type`.
+  - `*` Change `orig_ancestors_len` in beginning of `deepcopy_with_my_type` and change uses.
+  - `*` Move `rmve` (added to stable) to beginning of `deepcopy_with_my_type`.
+- Implement new `hitbox` key (no longer a member) in `calculate_hit_range`
+
+## [git] - 2021-06-23
+### Added
 (from staging: KivyGlops-audit-3a66898)
 - Add methods to standardize position get/set for PyGlops and subclasses.
 - Add `unflip_enable` variable and corresponding `set_background_cylmap` param and set `self.env_flip_enable` from that.
