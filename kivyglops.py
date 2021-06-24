@@ -1681,6 +1681,138 @@ class KivyGlops(PyGlops):
         #     # actual number is fromprojectionMatrix matrix
         # screen_h_arc_theta = 18.0
         #     # actual number is from projectionMatrix matrix
+        got_frame_delay = 0.0
+        if self.last_update_s is not None:
+            got_frame_delay = best_timer() - self.last_update_s
+        self.last_update_s = best_timer()
+
+        for i in range(0,len(self.glops)):
+            if self.glops[i].look_target_glop is not None:
+                self.glops[i].look_at(self.glops[i].look_target_glop)
+                # print(str(self.glops[i].name)+" looks at "+str(self.glops[i].look_target_glop.name))
+                # print("  at "+str((self.camera_glop._t_ins.x, self.camera_glop._t_ins.y, self.camera_glop._t_ins.z)))
+
+        self.on_update_glops()
+
+        rotation_multiplier_y = 0.0  # 1.0 is maximum speed
+        moving_x = 0.0  # 1.0 is maximum speed
+        moving_y = 0.0  # 1.0 is maximum speed
+        moving_z = 0.0  # 1.0 is maximum speed; NOTE: increased z should move object closer to viewer in right-handed coordinate system
+        moving_theta = 0.0
+        position_change = [0.0, 0.0, 0.0]
+
+        # for keycode strings, see  http://kivy.org/docs/_modules/kivy/core/window.html
+        p1c = self.player1_controller
+        chars = p1c.get_keymap_dict()
+        if p1c.get_pressed(self.ui.get_keycode(chars['left'])):
+            # if p1c.get_pressed(self.ui.get_keycode("shift")):
+            moving_x = 1.0
+            # else:
+            #     rotation_multiplier_y = -1.0
+        if p1c.get_pressed(self.ui.get_keycode(chars['right'])):
+            # if p1c.get_pressed(self.ui.get_keycode("shift")):
+            moving_x = -1.0
+            # else:
+            #     rotation_multiplier_y = 1.0
+        if p1c.get_pressed(self.ui.get_keycode(chars['up'])):
+            if self._fly_enables[self.player_glop.name]:
+                # intentionally use z,y:
+                moving_z, moving_y = get_rect_from_polar_rad(1.0, self.player_glop._r_ins_x.angle)
+            else:
+                moving_z = 1.0
+
+        if p1c.get_pressed(self.ui.get_keycode(chars['down'])):
+            # ^ r for Colemak
+            if self._fly_enables[self.player_glop.name]:
+                # intentionally use z,y:
+                moving_z, moving_y = get_rect_from_polar_rad(1.0, self.player_glop._r_ins_x.angle)
+                moving_z *= -1.0
+                moving_y *= -1.0
+            else:
+                moving_z = -1.0
+
+        if p1c.get_pressed(self.ui.get_keycode("enter")):
+            self.use_selected(self.player_glop)
+
+
+        land_units_this_frame = 12. / self.ui.frames_per_second
+        # ^ TODO: compute this
+        turn_radians_per_frame = math.radians(90.) / self.ui.frames_per_second
+        # above are changed to glop settings if present:
+        if (self.player_glop.actor_dict is not None):
+            if ("land_units_per_second" in self.player_glop.actor_dict):
+                land_units_this_frame = float(self.player_glop.actor_dict["land_units_per_second"]) / self.ui.frames_per_second
+            if "land_degrees_per_second" in self.player_glop.actor_dict:
+                turn_radians_per_frame = math.radians(float(self.player_glop.actor_dict["land_degrees_per_second"])) / self.ui.frames_per_second
+
+        if rotation_multiplier_y != 0.0:
+            delta_y = turn_radians_per_frame * rotation_multiplier_y
+            self.player_glop._r_ins_y.angle += delta_y
+            # origin_distance = math.sqrt(self.player_glop._t_ins.x*self.player_glop._t_ins.x + self.player_glop._t_ins.z*self.player_glop._t_ins.z)
+            # self.player_glop._t_ins.x -= origin_distance * math.cos(delta_y)
+            # self.player_glop._t_ins.z -= origin_distance * math.sin(delta_y)
+
+        # xz coords of edges of 16x16 square are:
+        # move in the direction you are facing
+        moving_theta = 0.0
+        if moving_x != 0.0 or moving_y != 0.0 or moving_z != 0.0:
+            # makes movement relative to rotation (which alaso limits speed when moving diagonally):
+            moving_theta = theta_radians_from_rectangular(moving_x, moving_z)
+            moving_r_multiplier = math.sqrt((moving_x*moving_x)+(moving_z*moving_z))
+            if moving_r_multiplier > 1.0:
+                moving_r_multiplier = 1.0  # Limited so that you can't move faster when moving diagonally
+
+            # TODO: reprogram so adding math.radians(-90) is not needed (?)
+            position_change[0] = land_units_this_frame*moving_r_multiplier * math.cos(self.player_glop._r_ins_y.angle+moving_theta+math.radians(-90))
+            position_change[1] = land_units_this_frame*moving_y
+            position_change[2] = land_units_this_frame*moving_r_multiplier * math.sin(self.player_glop._r_ins_y.angle+moving_theta+math.radians(-90))
+
+            # if (self.player_glop._t_ins.x + move_by_x > self._world_cube.get_max_x()):
+            #     move_by_x = self._world_cube.get_max_x() - self.player_glop._t_ins.x
+            #     print(str(self.player_glop._t_ins.x)+" of max_x:"+str(self._world_cube.get_max_x()))
+            # if (self.player_glop._t_ins.z + move_by_z > self._world_cube.get_max_z()):
+            #     move_by_z = self._world_cube.get_max_z() - self.player_glop._t_ins.z
+            #     print(str(self.player_glop._t_ins.z)+" of max_z:"+str(self._world_cube.get_max_z()))
+            # if (self.player_glop._t_ins.x + move_by_x < self._world_cube.get_min_x()):
+            #     move_by_x = self._world_cube.get_min_x() - self.player_glop._t_ins.x
+            #     print(str(self.player_glop._t_ins.x)+" of max_x:"+str(self._world_cube.get_max_x()))
+            # if (self.player_glop._t_ins.z + move_by_z < self._world_cube.get_min_z()):
+            #     move_by_z = self._world_cube.get_min_z() - self.player_glop._t_ins.z
+            #     print(str(self.player_glop._t_ins.z)+" of max_z:"+str(self._world_cube.get_max_z()))
+
+            # print(str(self.player_glop._t_ins.x)+","+str(self.player_glop._t_ins.z)+" each coordinate should be between matching one in "+str(self._world_cube.get_min_x())+","+str(self._world_cube.get_min_z())+" and "+str(self._world_cube.get_max_x())+","+str(self._world_cube.get_max_z()))
+            # print(str( (self.player_glop._t_ins.x, self.player_glop._t_ins.y, self.player_glop._t_ins.z) )+" each coordinate should be between matching one in "+str(self.world_boundary_min)+" and "+str(self.world_boundary_max))
+
+        # for axis_index in range(0,3):
+        if position_change[0] is not None:
+            self.player_glop._t_ins.x += position_change[0]
+        if position_change[1] is not None:
+            self.player_glop._t_ins.y += position_change[1]
+        if position_change[2] is not None:
+            self.player_glop._t_ins.z += position_change[2]
+
+        self.constrain_glop_to_walkmesh(self.player_glop)
+
+        # self.prev_inbounds_camera_translate = self.camera_glop._t_ins.x, self.camera_glop._t_ins.y, self.camera_glop._t_ins.z
+
+        # else:
+        #     self.camera_glop._t_ins.x += self.land_units_this_frame * moving_x
+        #     self.camera_glop._t_ins.z += self.land_units_this_frame * moving_z
+
+        # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #   DONE FINALIZING PLAYER LOCATION  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+
+        if self._camera_person_number == 1:
+            self.camera_glop._t_ins.x = self.player_glop._t_ins.x
+            self.camera_glop._t_ins.y = self.player_glop._t_ins.y + self.player_glop.eye_height
+            self.camera_glop._t_ins.z = self.player_glop._t_ins.z
+            self.camera_glop._r_ins_x.angle = self.player_glop._r_ins_x.angle
+            self.camera_glop._r_ins_y.angle = self.player_glop._r_ins_y.angle
+            self.camera_glop._r_ins_z.angle = self.player_glop._r_ins_z.angle
+        elif self._camera_person_number == 0:
+            pass
+        else:
+            print("ERROR: _camera_person_number " + str(_camera_person_number) + " is not yet implemented.")
 
         global missing_bumper_warning_enable
         global missing_bumpable_warning_enable
