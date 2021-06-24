@@ -1731,12 +1731,13 @@ class KivyGlops(PyGlops):
             self.use_selected(self.player_glop)
 
 
-        walk_units_per_frame = 12. / self.ui.frames_per_second
+        land_units_this_frame = 12. / self.ui.frames_per_second
+        # ^ TODO: compute this
         turn_radians_per_frame = math.radians(90.) / self.ui.frames_per_second
         # above are changed to glop settings if present:
         if (self.player_glop.actor_dict is not None):
             if ("land_units_per_second" in self.player_glop.actor_dict):
-                walk_units_per_frame = float(self.player_glop.actor_dict["land_units_per_second"]) / self.ui.frames_per_second
+                land_units_this_frame = float(self.player_glop.actor_dict["land_units_per_second"]) / self.ui.frames_per_second
             if "land_degrees_per_second" in self.player_glop.actor_dict:
                 turn_radians_per_frame = math.radians(float(self.player_glop.actor_dict["land_degrees_per_second"])) / self.ui.frames_per_second
 
@@ -1758,9 +1759,9 @@ class KivyGlops(PyGlops):
                 moving_r_multiplier = 1.0  # Limited so that you can't move faster when moving diagonally
 
             # TODO: reprogram so adding math.radians(-90) is not needed (?)
-            position_change[0] = walk_units_per_frame*moving_r_multiplier * math.cos(self.player_glop._r_ins_y.angle+moving_theta+math.radians(-90))
-            position_change[1] = walk_units_per_frame*moving_y
-            position_change[2] = walk_units_per_frame*moving_r_multiplier * math.sin(self.player_glop._r_ins_y.angle+moving_theta+math.radians(-90))
+            position_change[0] = land_units_this_frame*moving_r_multiplier * math.cos(self.player_glop._r_ins_y.angle+moving_theta+math.radians(-90))
+            position_change[1] = land_units_this_frame*moving_y
+            position_change[2] = land_units_this_frame*moving_r_multiplier * math.sin(self.player_glop._r_ins_y.angle+moving_theta+math.radians(-90))
 
             # if (self.player_glop._t_ins.x + move_by_x > self._world_cube.get_max_x()):
             #     move_by_x = self._world_cube.get_max_x() - self.player_glop._t_ins.x
@@ -1791,8 +1792,8 @@ class KivyGlops(PyGlops):
         # self.prev_inbounds_camera_translate = self.camera_glop._t_ins.x, self.camera_glop._t_ins.y, self.camera_glop._t_ins.z
 
         # else:
-        #     self.camera_glop._t_ins.x += self.walk_units_per_frame * moving_x
-        #     self.camera_glop._t_ins.z += self.walk_units_per_frame * moving_z
+        #     self.camera_glop._t_ins.x += self.land_units_this_frame * moving_x
+        #     self.camera_glop._t_ins.z += self.land_units_this_frame * moving_z
 
         # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #   DONE FINALIZING PLAYER LOCATION  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -2732,10 +2733,10 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             pass  # keyboard.release()
         # elif keycode[1] == 'w':
         #     self.scene.player_glop._t_ins.z += \
-        #         land_units_per_last_wait
+        #         land_units_this_frame
         # elif keycode[1] == 's':
         #     self.scene.player_glop._t_ins.z -= \
-        #         land_units_per_last_wait
+        #         land_units_this_frame
         # elif text == 'a':
         #     self.scene.player1_controller["left"] = True
         #     self.moving_x = -1.0
