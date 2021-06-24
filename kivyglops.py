@@ -999,9 +999,9 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
         # print("_on_change_s_ins for object named '"+this_name+"'")
         # print ("_pivot_point:"+str(self._pivot_point))
         # print ("_pivot_scaled_point:"+str(self._pivot_scaled_point))
-        # if self.hitbox is not None:
-        #     only should be recalculated if already
-        #     (already bumper or bumpable list)
+        # if self.properties['hitbox'] is not None:
+        #     # ^ only should be recalculated if already
+        #     #   (already bumper or bumpable list)
         self.calculate_hit_range()
 
     def apply_translate(self):
@@ -1126,7 +1126,15 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
             # can't do it so don't try
             return None
 
-    def prepare_canvas(self, use_meshes=None):
+    def prepare_canvas(self, use_meshes=None, xyz_widget_index=-1):
+        '''
+        Keyword arguments:
+        use_meshes -- Set the list of meshes to override `[self._mesh]`.
+        xyz_widget_index -- The index in use_meshes that is the XYZ
+                            widget that shows this model's orientation.
+        '''
+        # props = self.properties
+        # hitbox = props['hitbox']
         if self._mesh is None:
             # verts, indices = self.generate_kivy_mesh()
             self._generate_kivy_mesh()
@@ -1146,7 +1154,8 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
         # self.generate_axes()
         # self.generate_plane()
         self.set_uniform("texture0_enable", False)
-        for use_mesh in use_meshes:
+        for i in range(len(use_meshes)):
+            use_mesh = use_meshes[i]
             # self._axes_mesh.
             # self._s_ins = Scale(0.6)
             self._pushmatrix = PushMatrix()
@@ -1219,9 +1228,6 @@ class KivyGlops(PyGlops):
         self.selected_glop = None
         self.selected_glop_index = None
         self.mode = None
-        # self.moving_x = 0.0
-        # self.moving_z = 0.0
-        # self._turning_y = 0.0
         self.controllers = None
         self.player1_controller = None
         self._previous_world_light_dir = None
@@ -1473,11 +1479,10 @@ class KivyGlops(PyGlops):
                     if not os.path.isdir(cache_path):
                         os.mkdir(cache_path)
                         cache_path_enable = True
-                    # super(KivyGlops, self).load_obj(source_path)
                     new_glops = self.get_glop_list_from_obj(
                         source_path,
                         self.new_glop_method
-                    )  # asdf
+                    )
                     if new_glops is None:
                         print("[ KivyGlops ] (load_obj) "
                               "FAILED TO LOAD '" + str(source_path)
@@ -2062,8 +2067,6 @@ class KivyGlops(PyGlops):
         #     0, self.camera_glop._t_ins.y,0, self.look_point[0],
         #     self.look_point[1], self.look_point[2], 0, 1, 0)
 
-        # self.modelViewMatrix = self.modelViewMatrix.look_at(0,self.camera_glop._t_ins.y,0, self.look_point[0], self.look_point[1], self.look_point[2], 0, 1, 0)
-
         # Since camera's target should be relative to camera,
         # add camera's position:
 
@@ -2076,7 +2079,6 @@ class KivyGlops(PyGlops):
         self.modelViewMatrix.translate(self.camera_glop._t_ins.x,
                                        self.camera_glop._t_ins.y,
                                        self.camera_glop._t_ins.z)
-        # moving_theta = theta_radians_from_rectangular(moving_x, moving_z)
         self.modelViewMatrix = self.modelViewMatrix.look_at(
             self.camera_glop._t_ins.x,
             self.camera_glop._t_ins.y,
@@ -2619,7 +2621,8 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             # self._contexts.clear()
             for this_glop in self.scene.glops:
                 if this_glop._axes_mesh is not None:
-                    this_glop.prepare_canvas([this_glop._axes_mesh])
+                    this_glop.prepare_canvas([this_glop._axes_mesh],
+                                             xyz_widget_index=0)
                     context = this_glop.get_context()
                     this_glop.set_uniform("texture0_enable", False)
                 else:
@@ -2728,9 +2731,11 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         if keycode[1] == 'escape':
             pass  # keyboard.release()
         # elif keycode[1] == 'w':
-        #     self.scene.player_glop._t_ins.z += self.walk_units_per_frame
+        #     self.scene.player_glop._t_ins.z += \
+        #         land_units_per_last_wait
         # elif keycode[1] == 's':
-        #     self.scene.player_glop._t_ins.z -= self.walk_units_per_frame
+        #     self.scene.player_glop._t_ins.z -= \
+        #         land_units_per_last_wait
         # elif text == 'a':
         #     self.scene.player1_controller["left"] = True
         #     self.moving_x = -1.0
