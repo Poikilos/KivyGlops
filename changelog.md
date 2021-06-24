@@ -9,6 +9,45 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
 ## [git] - 2021-06-23
+### Added
+(from master)
+- docstring for `get_pressed`
+- error checking in `sel_next_inv_slot`
+- more feedback in `seid` (selected item event dict)
+- `get_has_gravity`, `get_class_name`, `set_gravity_enable`, `get_fly_by_name` methods of `PyGlops`
+- (PyGlop) `set_coord` and `get_coord` (already present in `KivyGlop`)
+- `FACE_*` static variables for `WObjFile`
+
+### Changed
+(from master)
+- Make PEP8 changes.
+- Use `'` instead of `"` in several uses of dictionaries.
+- Rename some local variables.
+- Check for `'throw'` instead of `'throw'` in `use` in `use_item_at`
+- Warn on boolean in `set_gravity`.
+- (`kill_glop_at`) Hide the glop before calling `on_killed_glop`. Set `actor_dict['alive_enable'] = False` or warn if not actor.
+- use `match_fn` in `index_of_mesh`
+- check for `throw` or `shoot` instead of `throw_` in `use` in `throw_glop`
+- Deprecate `obtain_glop` and instead have `_deprecated_on_obtain_glop_by_name` and rename `obtain_glop_at` to `on_obtain_glop`
+- Rename `dat` to `state`.
+- Update `set_player_fly` & deprecate `set_fly`.
+- (pyglops.py) Change to `settings` dictionary for globals.
+  - Replace `_fly_enables`, `_default_fly_enable` (Use `get_fly_by_name`.)
+  - Replace `_camera_person_number` (Use `sg = self.settings['globals']` `sg['camera_perspective_number']`)
+
+### Fixed
+(from master)
+- Utilize `....new_glop_method` instead of `type(...)`.
+- Correctly implement `__str__` for `PyGlops`.
+- Move `showNextHashWarning` from `KivyGlop` to `PyGlop`.
+- Remove the try block with a bare `except` in `PyGlops` `__init__`.
+
+## Removed
+- Deprecate `set_fly` (show warning).
+- Deprecate `bump_glop`.
+
+
+## [git] - 2021-06-23
 ### Changed
 - (from master) Rename `axes_index` to `xyz_widget_index`.
 

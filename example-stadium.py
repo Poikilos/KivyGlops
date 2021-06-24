@@ -116,7 +116,7 @@ class MainScene(KivyGlops):
         print(str(self.glops[attacked_index].name) + "'s hp: " + \
               str(self.glops[attacked_index].actor_dict["hp"]))
 
-    def obtain_glop(self, bumpable_name, bumper_name):
+    def obtain_glop_at(self, bumpable_index, bumper_index):
         # if "rock" in bumpable_name.lower():
         #     self.play_sound("sounds/rock-pickup.wav")
         pass

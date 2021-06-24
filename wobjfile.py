@@ -434,6 +434,15 @@ def show_object_faces_msg(this_object, msg_filename):
 
 class WObjFile:
 
+    STATIC_HELP = {
+        'FACE_V': "index of vertex index in the face (face is a list)",
+        'FACE_TC': "index of tc0 index in the face (face is a list)",
+        'FACE_VN': "index of normal index in the face (face is a list)",
+    }
+    FACE_V = 0
+    FACE_TC = 1
+    FACE_VN = 2
+
     def __init__(self):
         self.filename = None
         self.wobjects = None
@@ -443,6 +452,9 @@ class WObjFile:
         self.short_name_in_messages_enable = True
 
     def load(self, filename):
+        FACE_V = WObjFile.FACE_V
+        FACE_TC = WObjFile.FACE_TC
+        FACE_VN = WObjFile.FACE_VN
         f_name = "load"
         if (self.filename is not None):
             print("[ WObjFile ] WARNING in load: WObjFile already " + \
