@@ -886,7 +886,8 @@ class PyGlop:
             target.look_target_glop = self.look_target_glop
             # ^ by reference since is a reference to begin with
             if self.properties.get('hitbox') is not None:
-                target.properties['hitbox'] = copy_hitbox(self.hitbox)
+                target.properties['hitbox'] = \
+                    copy_hitbox(self.properties['hitbox'])
             target.visible_enable = self.visible_enable
             target.vertex_format = copy.deepcopy(self.vertex_format)
             if ref_my_verts_enable:
@@ -1137,10 +1138,10 @@ class PyGlop:
                 # opposite direction:
                 hb['minimums'][i] = sys.maxsize
                 hb['maximums'][i] = -sys.maxsize
-        # phr = self.properties.get('hit_radius')
-        # hr = 0.0  # use separate var to reduce dict access and if's
-        # if phr is not None:
-        #     hr = phr
+        phr = self.properties.get('hit_radius')
+        hr = 0.0  # use separate var to reduce dict access and if's
+        if phr is not None:
+            hr = phr
         for v_number in range(0, vertex_count):
             vo = v_offset+self._POSITION_OFFSET
             for i in range(0, 3):
@@ -1152,12 +1153,18 @@ class PyGlop:
                         hb['maximums'][i] = sv[vo+i]
             this_vertex_relative_distance = \
                 get_distance_vec3(sv[vo:], this_point)
-            if this_vertex_relative_distance > self.properties['hit_radius']:
-                self.properties['hit_radius'] = this_vertex_relative_distance
+            if this_vertex_relative_distance > hr:
+                hr = this_vertex_relative_distance
             # sv[vo+0] -= this_point[0]
             # sv[vo+1] -= this_point[1]
             # sv[vo+2] -= this_point[2]
             v_offset += self.vertex_depth
+        if phr is not None:
+            phr = hr
+            self.properties['hit_radius'] = phr
+        else:
+            print("[ PyGlop ] WARNING in apply_vertex_offset:"
+                  " hit_radius will not change since it isn't present.")
 
     def apply_pivot(self):
         self.apply_vertex_offset(self._pivot_point)
@@ -3277,7 +3284,7 @@ class PyGlops:
             if ('name' in item_dict) and (item_dict['name'] == "Empty"):
                 # Still let programmer handle the Empty item:
                 return self.on_item_use(user_glop, item_dict, None)
-                
+
             if "fire_type" in item_dict:
                 print("[ PyGlops ] WARNING: fire_type is " + \
                       "deprecated. Add the use to the item dict's" + \

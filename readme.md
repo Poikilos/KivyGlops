@@ -1,7 +1,7 @@
 # KivyGlops
 Control 3D objects and the camera in your 3D Kivy app!
-<https://github.com/expertmm/KivyGlops>
-![Screenshot](https://raw.githubusercontent.com/expertmm/KivyGlops/master/screenshot01.png)
+<https://github.com/poikilos/KivyGlops>
+![Screenshot](screenshot01.png)
 
 ## Key Features
 * 3D Objects can be moved and rotated separately (movement and rotation has been tested, and scaling is available)
@@ -107,16 +107,16 @@ Control 3D objects and the camera in your 3D Kivy app!
 * implement Clara.io PBR extensions to OBJ format (see wobjfile.py vs "Physically-based Rendering" section of <https://en.wikipedia.org/wiki/Wavefront_.obj_file>)
 * `texcoord_number` is always None during `this_face.append([vertex_number,texcoord_number,normal_number])` in wobjfile.py; see also stated_texcoord_number from which texcoord_number is derived when stated_texcoord_number is good
 * fix issues introduced by refactoring:
-        * throw_arc has no gravity
-        * walkmesh is ignored
-        * cylinder map doesn't work (is loaded at bottom left under 3D scene?)
+  * throw_arc has no gravity
+  * walkmesh is ignored
+  * cylinder map doesn't work (is loaded at bottom left under 3D scene?)
 * Music loop option is not actually handled
 * move event handlers and any other methods starting with underscore from kivyglops.py to pyglops.py where possible
-    * moved from KivyGlopsWindow to PyGlops [new ones in brackets]:
-        * _internal_bump_glop, after_selected_item, add_actor_weapon, get_player_glop_index
-        * [give_item_by_keyword_to_player_number, give_item_index_to_player_number,_run_command, _run_semicolon_separated_commands, _run_commands, _run_command]
-    * copied to KivyGlops and PyGlops, leaving KivyGlopsWindow methods that call them: hide_glop
-        * already done: set_fly [later refactored into set_player_fly]
+  * moved from KivyGlopsWindow to PyGlops [new ones in brackets]:
+    * _internal_bump_glop, after_selected_item, add_actor_weapon, get_player_glop_index
+    * [give_item_by_keyword_to_player_number, give_item_index_to_player_number,_run_command, _run_semicolon_separated_commands, _run_commands, _run_command]
+  * copied to KivyGlops and PyGlops, leaving KivyGlopsWindow methods that call them: hide_glop
+    * already done: set_fly [later refactored into set_player_fly]
 * push_glop_item should create usable parent-child relationship for movement (at least for selected_item or costume accessories--there is no need to move inventory objects until they are visibly selected/held); or move item to the glop's canvas to accomplish that automatically
 * pyglops: get_player_glop_index(player_number) should distinguish between multiple players (instead of ignoring param and using get_player_glop_index then falling through to which `is player_glop`)
 * should behave as though you have 1 crate when you have 1 (instead of when you have 2)
@@ -127,10 +127,10 @@ Control 3D objects and the camera in your 3D Kivy app!
 * Implement lighting by improving shader (instead of only flat shading of textured objects being available)
 * Calculate rotation on other axes before calling look_at (only does y rotation currently, using a&d keys)
 * Does not load map types from mtl that do not start with "map_":
-    _map_bump_filename = None  # map_bump or bump: use luminance
-    _map_displacement = None  # disp
-    _map_decal = None # decal: stencil; defaults to 'matte' channel of image
-    _map_reflection = None  # refl; can be -type sphere
+  * `_map_bump_filename = None  # map_bump or bump: use luminance`
+  * `_map_displacement = None  # disp`
+  * `_map_decal = None # decal: stencil; defaults to 'matte' channel of image`
+  * `_map_reflection = None  # refl; can be -type sphere`
 
 ## Planned Features
 * support surf and mg commands in OBJ
@@ -152,7 +152,7 @@ Control 3D objects and the camera in your 3D Kivy app!
         self.canvas['resolution'] = list(map(float, self.size))
     )
 ## License
-See [LICENSE](https://github.com/expertmm/KivyGlops/blob/master/LICENSE)
+See [license.txt](license.txt)
 
 ### Authors
 Software is copyright Jake Gustafson with the following exceptions:
@@ -178,6 +178,7 @@ uniform mat4 projection_mat;  //derived from self.canvas["projection_mat"] = pro
 * eventually dat will contain everything, so that emit_yaml can eventually be used to save glop format ("tmp" dict member should not be saved)
 (these notes only apply to modifying the KivyGlops project files including PyGlops, or making a new subclass of PyGlop*)
 * ui is usually a KivyGlopsWindow but could be other frameworks. Must have:
+  ```
         width
         height
         frames_per_second
@@ -190,16 +191,17 @@ uniform mat4 projection_mat;  //derived from self.canvas["projection_mat"] = pro
                 _contexts
                 _contexts.remove(this_glop.get_context())
                 canvas
+```
 * Subclass of KivyGlops must have:
-    * a new_glop method which returns your subclass of PyGlop (NOT of PyGlops), unless you are handling the `super(MySubclassOfGlop, self).__init__(self.new_glop)` (where MySubclassOfGlop is your class) `self.new_glop param` in your subclass' `__init__` method another way.
+  * a new_glop method which returns your subclass of PyGlop (NOT of PyGlops), unless you are handling the `super(MySubclassOfGlop, self).__init__(self.new_glop)` (where MySubclassOfGlop is your class) `self.new_glop param` in your subclass' `__init__` method another way.
 * All subclasses of PyGlops should overload __init__, call super at beginning of it, and glops_init at end of it, like KivyGlops does.
 * PyGlops module (which does not require Kivy) loads obj files using intermediate WObjFile class (planned: save&load native PyGlops files), and provides base classes for all classes in KivyGlops module
 
 ### Kivy `instructions` library notes
 (see <https://github.com/kivy/kivy/blob/master/kivy/graphics/instructions.pxd>)
 * RenderContext is a subclass of Canvas but adds many features such as:
-    * `set_texture(index,texture)`
-    * `push_state(name)` `pop_state(name)` `set_states(dict states)` (not available to python)
+  * `set_texture(index,texture)`
+  * `push_state(name)` `pop_state(name)` `set_states(dict states)` (not available to python)
 * Canvas is a subclass of InstructionGroup
 * shader values can be set using `set_state` and a subcontext can be created using `push_state` in ContextInstruction
 * InstructionGroup has `insert(index, instruction)` and `remove(index)` and a list named `children`
@@ -207,27 +209,27 @@ uniform mat4 projection_mat;  //derived from self.canvas["projection_mat"] = pro
 ### wmaterial dict spec
 This dict replaces deprecated WMaterial class in wobjfile.py.
 This spec allows one dict to be used to completely store the Wavefront mtl format as per the full mtl spec such as at <http://paulbourke.net/dataformats/mtl/>.
-    * The wmaterials dict is the material library property of the WObjFile instance. Each wmaterial inside the wmaterials dict is a Wavefront material.
-    * The wmaterial's key in the wmaterials dict is the material name (given after "newmtl" in mtl file)
-    * each key is a material command, referring to a deeper dict, except "#" which is comments list
-        * each material command dict has the following keys:
-            * "values" (a list of values)
-                * if the command's (such as Kd) expected values are color values (whether rgb, or CIEXYZ if commands ends in " xyz"), only one color value means other 2 are same (grayscale)!
-                * if the command's expected value is a filename, values is still a list--first value is filename, additional values are params (usually a factor by which to multiply values in the file)
-                    * map can override: `Ka` (ambient color), `Kd` (diffuse color), `Ks` (specular color), `Ns` (specular coefficient scalar), `d` (opacity scalar), and surface normal (by way of bump map not normal map) according to spec
-                        * displacement map is `disp` (in modern terms, a vertex displacement map)
-                        * bump map is `bump`--though it affects normals, it is a standard bump map which in modern terms is a detail map (previously known as a [fragment]] displacement map; "represents the topology or height of the surface relative to the average surface.  Dark areas are depressions and light areas are high points." -Ramey)
-                        * `refl` is a reflection map, or in modern terms, an environment map (is NOT a reflectance map): type can be sphere, or there can be several cube_* maps where * is the side (front, back, top, bottom, left, right)
-            * "tmp" (a dict of temporary values such as "file_path", which was formerly stored in wmaterial.file_path, and "directory"; both of which are only for using relative paths in the mtl file)
-            * "#" (comments list)
-            * additional keys are args, where value is a list of the arg's values (if space-separated value in original mtl file starts with hyphen, it is an arg; an arg takes remaining values as items of its list, until next hyphen (or last entry, which is always appended to 'values')
-                * may be an empty list, such as when key is "halo" (as specified by `-halo` option in mtl file)
-    * examples (wmaterial is equivalent to wmaterials[material_name]):
-        * if line in mtl file is `Kd 0.5 0.5 0.5` then dict wmaterial["Kd"] will have a list at "values" key which is ["0.5", "0.5", "0.5"]
-        * if line in mtl file is `bump -s 1 1 1 -o 0 0 0 -bm 1 sand.mpb` then the dict wmaterial["bump"] will have a list at "values" key which is a list containing only the string sand.mpb; and dict at "bump" key containing keys s, o, and bm which refer to lists containing the values following those args
-        * if line in mtl file is `Ka spectral file.rfl 1.0` then, as per spec, `Ka spectral` is considered as the statement (or command) and wmaterial["Ka spectral"] will be a dict containing only one key, "values" (since there are no other args in this case), which is `["file.rfl", "1.0"]` where 1.0 is the factor by which to multiply values in the file, as specified in the given mtl line.
-        * if line in mtl file is `Ka xyz 1.0 1.0 1.0` then, as per spec, `Ka xyz` is considered as the statement (or command) and wmaterial["Ka spectral"] will be a dict containing only one key, "values" (since there are no other args in this case), which is `["1.0", "1.0", "1.0"]`.
-        * if line in mtl file is `refl -type cube_top file.png` then the dict wmaterial["refl -type cube_top"] will have a list at "values" key which is ["file.png"]; the entire preceding part `refl -type cube_top` will be considered as the command to avoid overlap (to force consistent rule: one instance of command per material).
+* The wmaterials dict is the material library property of the WObjFile instance. Each wmaterial inside the wmaterials dict is a Wavefront material.
+* The wmaterial's key in the wmaterials dict is the material name (given after "newmtl" in mtl file)
+* each key is a material command, referring to a deeper dict, except "#" which is comments list
+  * each material command dict has the following keys:
+    * "values" (a list of values)
+      * if the command's (such as Kd) expected values are color values (whether rgb, or CIEXYZ if commands ends in " xyz"), only one color value means other 2 are same (grayscale)!
+      * if the command's expected value is a filename, values is still a list--first value is filename, additional values are params (usually a factor by which to multiply values in the file)
+        * map can override: `Ka` (ambient color), `Kd` (diffuse color), `Ks` (specular color), `Ns` (specular coefficient scalar), `d` (opacity scalar), and surface normal (by way of bump map not normal map) according to spec
+          * displacement map is `disp` (in modern terms, a vertex displacement map)
+          * bump map is `bump`--though it affects normals, it is a standard bump map which in modern terms is a detail map (previously known as a [fragment]] displacement map; "represents the topology or height of the surface relative to the average surface.  Dark areas are depressions and light areas are high points." -Ramey)
+          * `refl` is a reflection map, or in modern terms, an environment map (is NOT a reflectance map): type can be sphere, or there can be several cube_* maps where * is the side (front, back, top, bottom, left, right)
+    * "tmp" (a dict of temporary values such as "file_path", which was formerly stored in wmaterial.file_path, and "directory"; both of which are only for using relative paths in the mtl file)
+    * "#" (comments list)
+    * additional keys are args, where value is a list of the arg's values (if space-separated value in original mtl file starts with hyphen, it is an arg; an arg takes remaining values as items of its list, until next hyphen (or last entry, which is always appended to 'values')
+      * may be an empty list, such as when key is "halo" (as specified by `-halo` option in mtl file)
+* examples (wmaterial is equivalent to wmaterials[material_name]):
+  * if line in mtl file is `Kd 0.5 0.5 0.5` then dict wmaterial["Kd"] will have a list at "values" key which is ["0.5", "0.5", "0.5"]
+  * if line in mtl file is `bump -s 1 1 1 -o 0 0 0 -bm 1 sand.mpb` then the dict wmaterial["bump"] will have a list at "values" key which is a list containing only the string sand.mpb; and dict at "bump" key containing keys s, o, and bm which refer to lists containing the values following those args
+  * if line in mtl file is `Ka spectral file.rfl 1.0` then, as per spec, `Ka spectral` is considered as the statement (or command) and wmaterial["Ka spectral"] will be a dict containing only one key, "values" (since there are no other args in this case), which is `["file.rfl", "1.0"]` where 1.0 is the factor by which to multiply values in the file, as specified in the given mtl line.
+  * if line in mtl file is `Ka xyz 1.0 1.0 1.0` then, as per spec, `Ka xyz` is considered as the statement (or command) and wmaterial["Ka spectral"] will be a dict containing only one key, "values" (since there are no other args in this case), which is `["1.0", "1.0", "1.0"]`.
+  * if line in mtl file is `refl -type cube_top file.png` then the dict wmaterial["refl -type cube_top"] will have a list at "values" key which is ["file.png"]; the entire preceding part `refl -type cube_top` will be considered as the command to avoid overlap (to force consistent rule: one instance of command per material).
 
 ### Regression Tests
 * deleting stuff from _bumper_indices or _bumpable_indices while running the bump loop [see "  # can't delete until bump loop is done in update" (set to None instead--they will be cleaned up by update after the bump loop--see #endregion bump loop)
@@ -259,6 +261,7 @@ if self.glops[index].item_dict is not None:
 vertex color is always RGBA
 if vertex_color_enable then vertex color must be set for every vertex, and object diffuse_color is ignored
 texture is overlayed onto vertex color
+
 #### OpenGL ES notes
 * mix is the ES equivalent of lerp (linear interpolation), which is the same as alpha blending
 
