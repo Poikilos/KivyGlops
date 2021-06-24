@@ -673,6 +673,8 @@ if __name__ == "__main__":
     plainReplacements['.hitbox'] = ".properties['hitbox']"
     plainReplacements[".minimums"] = "['minimums']"
     plainReplacements[".maximums"] = "['maximums']"
+    plainReplacements["[\"player_glop\"]"] = "['player_glop']"
+    plainReplacements["[\"selected_item\"]"] = "['selected_item']"
     for k, v in plainReplacements.items():
         project.replace_all(k, v, identifier=False)
     crunchedParts = [">=", "<=", "==", "!=", "<", ">"]
