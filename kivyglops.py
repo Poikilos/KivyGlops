@@ -464,10 +464,10 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
                 print(fail_prefix + "'normal'" + fail_suffix)
             if self._TEXCOORD0_OFFSET < 0:
                 IS_SELF_VFORMAT_OK = False
-                print(fail_prefix + " 'texcoord'" + fail_suffix)
+                print(fail_prefix + "'texcoord'" + fail_suffix)
             if self.COLOR_OFFSET < 0:
                 IS_SELF_VFORMAT_OK = False
-                print(fail_prefix + " 'color'" + fail_suffix)
+                print(fail_prefix + "'color'" + fail_suffix)
         except TypeError as ex:
             if "NoneType" in str(ex):
                 IS_SELF_VFORMAT_OK = False
@@ -886,47 +886,47 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
                   " (name={}).".format(self.name))
             return None
         vertex_count = int(len(self.vertices)/self.vertex_depth)
-        if vertex_count > 0:
-            v_offset = 0
-            self.properties['hit_radius'] = 0.0
-            hb = self.properties.get('hitbox')
-            hr = self.properties.get('hit_radius')
-            PO = self._POSITION_OFFSET
-            if hb is None:
-                hb = new_hitbox()
-                self.properties['hitbox'] = hb
-                print("WARNING: created 'hitbox' key for {}"
-                      "".format(self.name))
-            for i in range(0, 3):
-                # intentionally set to rediculously far in opposite
-                # direction:
-                hb['minimums'][i] = sys.maxsize
-                hb['maximums'][i] = -sys.maxsize
-            for v_number in range(0, vertex_count):
-                for i in range(0,3):
-                    if self.vertices[v_offset+self._POSITION_OFFSET+i] < self.properties['hitbox']['minimums'][i]:
-                        self.properties['hitbox']['minimums'][i] = self.vertices[v_offset+self._POSITION_OFFSET+i]
-                    if self.vertices[v_offset+self._POSITION_OFFSET+i] > self.properties['hitbox']['maximums'][i]:
-                        self.properties['hitbox']['maximums'][i] = self.vertices[v_offset+self._POSITION_OFFSET+i]
-                this_vertex_relative_distance = get_distance_vec3(self.vertices[v_offset+self._POSITION_OFFSET:v_offset+self._POSITION_OFFSET+3], self._pivot_point)
-                if this_vertex_relative_distance > self.properties['hit_radius']:
-                    self.properties['hit_radius'] = this_vertex_relative_distance
-                v_offset += self.vertex_depth
-            phi_eye_height = 86.5 * self.properties['hitbox']['maximums'][1]
-            if self.eye_height > phi_eye_height:
-                print("[ KivyGlop ] WARNING in calculate_hit_range:" + \
-                      " eye_height " + str(self.eye_height) + \
-                      " is beyond phi_eye_height" + \
-                      str(phi_eye_height) + \
-                      " so is being set to that value")
-                self.eye_height = self.properties['hitbox']['maximums'][1]
-            print("    done calculate_hit_range")
-        else:
+        if vertex_count <= 0:
             self.properties['hitbox'] = None
             # ^ avoid 0-size hitbox which would prevent bumps
             if self.properties.get('hit_radius') is None:
                 self.properties['hit_radius'] = .4444  # flag value
             print("    skipped (0 vertices).")
+            return None
+        v_offset = 0
+        self.properties['hit_radius'] = 0.0
+        hb = self.properties.get('hitbox')
+        hr = self.properties.get('hit_radius')
+        PO = self._POSITION_OFFSET
+        if hb is None:
+            hb = new_hitbox()
+            self.properties['hitbox'] = hb
+            print("WARNING: created 'hitbox' key for {}"
+                  "".format(self.name))
+        for i in range(0, 3):
+            # intentionally set to ridiculously far in opposite
+            # direction:
+            hb['minimums'][i] = sys.maxsize
+            hb['maximums'][i] = -sys.maxsize
+        for v_number in range(0, vertex_count):
+            for i in range(0,3):
+                if self.vertices[v_offset+self._POSITION_OFFSET+i] < self.properties['hitbox']['minimums'][i]:
+                    self.properties['hitbox']['minimums'][i] = self.vertices[v_offset+self._POSITION_OFFSET+i]
+                if self.vertices[v_offset+self._POSITION_OFFSET+i] > self.properties['hitbox']['maximums'][i]:
+                    self.properties['hitbox']['maximums'][i] = self.vertices[v_offset+self._POSITION_OFFSET+i]
+            this_vertex_relative_distance = get_distance_vec3(self.vertices[v_offset+self._POSITION_OFFSET:v_offset+self._POSITION_OFFSET+3], self._pivot_point)
+            if this_vertex_relative_distance > self.properties['hit_radius']:
+                self.properties['hit_radius'] = this_vertex_relative_distance
+            v_offset += self.vertex_depth
+        phi_eye_height = 86.5 * self.properties['hitbox']['maximums'][1]
+        if self.eye_height > phi_eye_height:
+            print("[ KivyGlop ] WARNING in calculate_hit_range:" + \
+                  " eye_height " + str(self.eye_height) + \
+                  " is beyond phi_eye_height" + \
+                  str(phi_eye_height) + \
+                  " so is being set to that value")
+            self.eye_height = self.properties['hitbox']['maximums'][1]
+        print("    done calculate_hit_range")
 
     def rotate_x_relative(self, angle):
         self._r_ins_x.angle += angle

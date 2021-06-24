@@ -7,6 +7,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 `*`: For things done in stable but not here nor master, see the stable changelog.
 
+
+## [git] - 2021-06-23
+
+### Changed
+- Invert some checks to reduce the level of nested statements in:
+  - `*` (PyGlop) `apply_vertex_offset`
+  - `*` (PyGlop) `has_item`
+  - (PyGlops) `set_as_item_at`
+    - `*` (PyGlops) Finish incomplete code changes for inverting checks for when: item_dict is missing, no `'name'`, not `is_ready`, not `cooldown` reached in `set_as_item_at`.
+- Add/change variables to shorten lines:
+  - Use `vf` `pi` in `append_wobject`
+    - `*` Use `vf` where longhand was used in `append_wobject`.
+- `*` Add a True return if the item was used in `use_item_at` and `throw_glop`, otherwise False.
+- `*` change `not...in` to `not in` in `preprocess_item`.
+
+### Fixed
+- `*` change "calling method" to "calling_method" where wrong (wrong in fewer but one or more places in staging).
+- Change `ancestors=ancestors` to `ancestors=ancestors[:oa_len]`  in `deepcopy_with_my_type`.
+  - `*` Change `orig_ancestors_len` in beginning of `deepcopy_with_my_type` and change uses.
+  - `*` Move `rmve` (added to stable) to beginning of `deepcopy_with_my_type`.
+
+
 ## [git] - 2021-06-23
 ### Added
 - `*` comment: `#  stays false if inventory was full` after `sied['fit_enable'] = False` in pyglops.py.
