@@ -2603,10 +2603,10 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             pass  # keyboard.release()
         # elif keycode[1] == 'w':
         #     self.scene.player_glop._t_ins.z += \
-        #         land_units_per_last_wait
+        #         land_units_this_frame
         # elif keycode[1] == 's':
         #     self.scene.player_glop._t_ins.z -= \
-        #         land_units_per_last_wait
+        #         land_units_this_frame
         # elif text == 'a':
         #     self.scene.player1_controller["left"] = True
         #     self.moving_x = -1.0
