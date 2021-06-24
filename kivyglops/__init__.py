@@ -1187,7 +1187,14 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
             # can't do it so don't try
             return None
 
-    def prepare_canvas(self, use_meshes=None, axes_index=-1):
+    def prepare_canvas(self, use_meshes=None, axes_widget_index=-1):
+        '''
+        Keyword arguments:
+        use_meshes -- Set the list of meshes to override `[self._mesh]`.
+        axes_widget_index -- The index in use_meshes that is the XYZ
+                             axes widget that shows this model's
+                             orientation.
+        '''
         props = self.properties
         hitbox = props['hitbox']
         if self._mesh is None:
@@ -1225,7 +1232,7 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
             context.add(self._s_ins)
             # NOTE: this can cause an untraceable segfault if bad scale
             # such as 0.0, so code below hopefully corrects all issues
-            if i == axes_index:
+            if i == axes_widget_index:
                 this_s_ins = None
                 if hitbox is not None and \
                         hitbox['maximums'] is not None:
@@ -3978,7 +3985,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             for this_glop in self.scene.glops:
                 if this_glop._axes_mesh is not None:
                     this_glop.prepare_canvas([this_glop._axes_mesh],
-                                             axes_index=0)
+                                             axes_widget_index=0)
                     context = this_glop.get_context()
                     this_glop.set_uniform("texture0_enable", False)
                 else:
