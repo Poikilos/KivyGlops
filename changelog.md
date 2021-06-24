@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 `*`: not done in master (or not known to be done)
 
+
+## [git 7161e2477eda4751665567e93a5b0ccb3b8b8f34] - 2021-06-23
+### Changed
+- (from staging after fix) Add a variable to shorten lines & to reduce dict use in apply_vertex_offset.
+
+
 ## [git] - 2021-06-23
 ### Added
 (from staging)
