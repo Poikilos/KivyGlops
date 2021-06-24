@@ -189,7 +189,7 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
         # ^ overlay vertex color onto this using vertex alpha
         self.material['ambient_color'] = (0.0, 0.0, 0.0, 1.0)
         self.material['specular_color'] = (1.0, 1.0, 1.0, 1.0)
-        self.material['specular_coefficent'] = 16.0
+        self.material['specular_coefficient'] = 16.0
 
         self._own_shader_enable = False
         # ^ if False during add_glop, gets shader of parent if
@@ -1548,9 +1548,9 @@ class KivyGlops(PyGlops):
         self.kill_glop_at(index, weapon_dict)
 
     def on_explode_glop(self, pos, radius, attacked_index, weapon_dict):
-        print("[ KivyGlops ] NOTICE: there is no default "
-              "on_explode_glop in this version, so nothing will "
-              "be shown")
+        print("[ KivyGlops ] NOTICE: there is no default"
+              " on_explode_glop in this version, so nothing will"
+              " be shown")
 
     def play_sound(self, path, loop=False):
         if path is not None:
@@ -2285,9 +2285,9 @@ class KivyGlops(PyGlops):
             if lups is None:
                 lups = sta['land_speed']
             # land units per frame:
-            lupf = lups * got_frame_delay
-            if lupf <= 0.:
-                lupf = 0.
+            land_units_this_frame = lups * got_frame_delay
+            if land_units_this_frame <= 0.:
+                land_units_this_frame = 0.
                 global show_zero_walk_upf_warning_enable
                 if show_zero_walk_upf_warning_enable:
                     print("[ KivyGlops ] WARNING in update: zero "
@@ -2636,10 +2636,10 @@ class KivyGlops(PyGlops):
 
                 # else:
                 #     self.camera_glop._t_ins.x += \
-                #         self.lupf * \
+                #         self.land_units_this_frame * \
                 #         choice_local_vel_mult[0]
                 #     self.camera_glop._t_ins.z += \
-                #         self.lupf * \
+                #         self.land_units_this_frame * \
                 #         choice_local_vel_mult[2]
 
                 # TODO:? if mgs['look_theta_multipliers'][1] != 0.0:
@@ -2650,7 +2650,7 @@ class KivyGlops(PyGlops):
                 #         choice_try_theta_multipliers[1]
 
                 if mgs['dst_angles'] is not None:
-                    # if lupf is not None:
+                    # if land_units_this_frame is not None:
                     for a_i in range(3):
                         delta_theta = mgs['dst_angles'][a_i] - mgas[a_i]
                         if delta_theta > lrpf:
@@ -2685,7 +2685,7 @@ class KivyGlops(PyGlops):
                     #     print("[ KivyGlops ] ERROR in update:"
                     #           " choice_world_turn_theta was set"
                     #           " for unit, but engine forgot to set"
-                    #           " lupf")
+                    #           " land_units_this_frame")
 
             # end if on_ground_enable or flying can control own movement
             pstep(debug_dict, pre="m_glop " + m_glop.name)
@@ -2985,9 +2985,9 @@ class KivyGlops(PyGlops):
                 dN += " (player)"
             debug_dict[dN] = {}
             ddG = debug_dict[dN]
-            ddG["choice_world_vel"] = \
+            ddG['choice_world_vel'] = \
                 choice_world_vel
-            ddG["choice_world_vel_mult"] = \
+            ddG['choice_world_vel_mult'] = \
                 choice_world_vel_mult
             # ^ None unless controlled above (such as player 1)
             '''
@@ -3116,7 +3116,7 @@ class KivyGlops(PyGlops):
                             # BEFORE event is handled
                         else:
                             pass
-                            # mgs["not_at_rest_event_enable"] = True
+                            # mgs['not_at_rest_event_enable'] = True
                             # TODO: (?) make an on_not_at_rest event
                 if walk_info['change_enable']:
                     if get_verbose_enable():
@@ -3308,8 +3308,8 @@ class KivyGlops(PyGlops):
                 or (self._previous_camera_rotate_y_angle is None)
                 or (self._previous_camera_rotate_y_angle
                     != self.camera_glop._r_ins_y.angle)):
-            # glwCv['_world_light_dir'] = (0.0,.5,1.0);
-            # glwCv['_world_light_dir_eye_space'] = (0.0,.5,1.0);
+            # glwCv['_world_light_dir'] = (0.0,.5,1.0)
+            # glwCv['_world_light_dir_eye_space'] = (0.0,.5,1.0)
             world_light_theta = theta_radians_from_rectangular(
                 glwCv['_world_light_dir'][0],
                 glwCv['_world_light_dir'][2]
@@ -3594,14 +3594,15 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             debug_dict['camera_glop'] = {}
         if 'View' not in debug_dict:
             debug_dict['View'] = {}
-        # debug_dict['View']["NOTE"] = "should match camera_glop"
+        # debug_dict['View']['NOTE'] = "should match camera_glop"
         debug_dict['View']['mouse_pos'] = str(pos)
         debug_dict['View']['size'] = str((self.width, self.height))
-        debug_dict['View']['pitch,yaw'] = \
-            str((int(math.degrees(x_angle)),
-                 int(math.degrees(y_angle))))
-        if self.screen_w_arc_theta is not None and \
-                self.screen_h_arc_theta is not None:
+        debug_dict['View']['pitch,yaw'] = str((
+            int(math.degrees(x_angle)),
+            int(math.degrees(y_angle))
+        ))
+        if ((self.screen_w_arc_theta is not None)
+                and (self.screen_h_arc_theta is not None)):
             debug_dict['View']['field of view'] = \
                 str((int(math.degrees(self.screen_w_arc_theta)),
                      int(math.degrees(self.screen_h_arc_theta))))
@@ -3663,7 +3664,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                         self.gl_widget.canvas.shader.source
                 # NOTE: projectionMatrix and modelViewMatrix don't exist
                 # yet if add_glop was called before first frame!
-                # this_glop.set_uniform("projection_mat",
+                # this_glop.set_uniform('projection_mat',
                 #                       self.scene.projectionMatrix)
                 # this_glop.set_uniform('modelview_mat',
                 #                       self.scene.modelViewMatrix)
@@ -4094,10 +4095,10 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
             pass  # keyboard.release()
         # elif keycode[1] == 'w':
         #     self.scene.player_glop._t_ins.z += \
-        #         self.lupf
+        #         land_units_this_frame
         # elif keycode[1] == 's':
         #     self.scene.player_glop._t_ins.z -= \
-        #         self.lupf
+        #         land_units_this_frame
         # elif text == 'a':
         #     self.scene.player1_controller['left'] = True
         #     self.choice_local_vel_mult[0] = -1.0

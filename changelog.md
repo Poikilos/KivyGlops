@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## [git] - 2021-06-24
+### Added
+(from staging)
+- keymaps (Colemake arsw movement mode and QWERTY/Colemak shortcuts)
+
+### Changed
+(from staging)
+- Invert checks in `use_item_at`, `apply_vertex_offset` to reduce indentation.
+- Improve texture path processing in `get_texture_diffuse_path`.
+- Rename `get_owner_index` to `get_owner_key`.
+- Rename `lupf` (a.k.a. `land_units_per_frame`) to `land_units_this_frame`.
+- Make PEP8 changes (Some will also fixed in staging in next commit there).
+
+## Fixed
+(from staging)
+- Add the missing return to `copy_material`
+- Fix spelling for `specular_coefficient`.
+
+
 ## [git] - 2021-03-16
 ## Fixed
 - Fix missing `{}` in bad index error format.

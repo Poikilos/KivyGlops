@@ -629,10 +629,11 @@ if __name__ == "__main__":
     wholeWordChanges['owner_index'] = 'owner_key'
     wholeWordChanges['select_next_inventory_slot'] = 'sel_next_inv_slot'
 
-    wholeWordChanges['walk_units_per_frame'] = 'lupf'
+    wholeWordChanges['walk_units_per_frame'] = 'land_units_this_frame'
     # ^ walk_units_per_frame changed to land_units_per_frame from
     #   3a66898 to 9f43bc3
-    wholeWordChanges['land_units_per_frame'] = 'lupf'
+    wholeWordChanges['land_units_per_frame'] = 'land_units_this_frame'
+    wholeWordChanges['lupf'] = 'land_units_this_frame'
     wholeWordChanges['get_index_by_name'] = 'find_by_name'
     # wholeWordChanges['true_like_strings'] = 'truthies'
     # wholeWordChanges['set_true_like_strings'] = 'set_truthies'
