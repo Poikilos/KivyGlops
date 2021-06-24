@@ -9,6 +9,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
 ## [git] - 2021-06-23
+### Changed
+- (from master) Rename `axes_index` to `xyz_widget_index`.
+
+
+## [git] - 2021-06-23
 
 ### Changed
 - Invert some checks to reduce the level of nested statements in:
@@ -75,5 +80,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - `*` wrap `give_item_by_keyword_to_player_number`, `give_item_index_to_player_number` to reduce line length.
   - `*` "aka" to "a.k.a." in ishadereditor.py
 - `*` (already correct in stable) `....to_string()` where `str(...)` should be used because hitbox became a dict at `bumpable is not in bumper's hitbox`
-- `*` (already correct in stable) `axes_index` to `axis_index`
 - `*` (done in staging) `hide seem` to `hide seam`
