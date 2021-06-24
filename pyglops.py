@@ -637,7 +637,6 @@ class PyGlop:
         self.foot_reach = None
         # ^ distance from center (such as root bone) to floor
         self.eye_height = None  # distance from floor
-        self.hit_radius = None
         self.item_dict = None
         self.projectile_dict = None
         # ^ TEMPORARY, only while in air, but based on
@@ -703,7 +702,7 @@ class PyGlop:
             self.infinite_inventory_enable = True
             self.in_range_indices = []
             self.eye_height = 0.0  # or 1.7 since 5'10" person is ~1.77m, and eye down a bit
-            self.hit_radius = 0.1524  # .5' equals .1524m
+            self.properties['hit_radius'] = 0.1524  # .5' equals .1524m
             self.reach_radius = 0.381  # 2.5' .381m
             self.bump_enable = False
             self.x_velocity = 0.0
@@ -736,7 +735,7 @@ class PyGlop:
             # ^ list of tris (1 big linear list of indices)
 
             self.eye_height = 1.7  # 1.7 since 5'10" person is ~1.77m, and eye down a bit
-            self.hit_radius = .2
+            self.properties['hit_radius'] = .2
             self.reach_radius = 2.5
 
             # Default basic material of this glop
@@ -860,7 +859,8 @@ class PyGlop:
             # ^ distance from center (such as root bone) to floor
             target.eye_height = self.eye_height
             # ^ distance from floor
-            target.hit_radius = self.hit_radius
+            target.properties['hit_radius'] = \
+                self.properties['hit_radius']
             target.item_dict = self.deepcopy_with_my_type(
                 self.item_dict,
                 ancestors=ancestors,
@@ -1107,7 +1107,7 @@ class PyGlop:
     def get_has_hit_range(self):
         # print("get_has_hit_range should be implemented by subclass.")
         return (self.properties.get('hitbox') is not None) and \
-               (self.hit_radius is not None)
+               (self.properties.get('hit_radius') is not None)
 
     def calculate_hit_range(self):
         print("calculate_hit_range should be implemented by subclass.")
@@ -1137,10 +1137,10 @@ class PyGlop:
                 # opposite direction:
                 hb['minimums'][i] = sys.maxsize
                 hb['maximums'][i] = -sys.maxsize
-        phr = self.properties.get('hit_radius')
-        hr = 0.0  # use separate var to reduce dict access and if's
-        if phr is not None:
-            hr = phr
+        # phr = self.properties.get('hit_radius')
+        # hr = 0.0  # use separate var to reduce dict access and if's
+        # if phr is not None:
+        #     hr = phr
         for v_number in range(0, vertex_count):
             vo = v_offset+self._POSITION_OFFSET
             for i in range(0, 3):
@@ -1150,9 +1150,10 @@ class PyGlop:
                         hb['minimums'][i] = sv[vo+i]
                     if sv[vo+i] > hb['maximums'][i]:
                         hb['maximums'][i] = sv[vo+i]
-            this_vertex_relative_distance = get_distance_vec3(sv[vo:], this_point)
-            if this_vertex_relative_distance > self.hit_radius:
-                self.hit_radius = this_vertex_relative_distance
+            this_vertex_relative_distance = \
+                get_distance_vec3(sv[vo:], this_point)
+            if this_vertex_relative_distance > self.properties['hit_radius']:
+                self.properties['hit_radius'] = this_vertex_relative_distance
             # sv[vo+0] -= this_point[0]
             # sv[vo+1] -= this_point[1]
             # sv[vo+2] -= this_point[2]
@@ -2960,11 +2961,12 @@ class PyGlops:
             template_dict = {}
         actor_dict = self.glops[index].deepcopy_with_my_type(template_dict)
         self.glops[index].actor_dict = actor_dict
-        if self.glops[index].hit_radius is None:
+        if self.glops[index].properties['hit_radius'] is None:
             if 'hit_radius' in actor_dict:
-                self.glops[index].hit_radius = actor_dict['hit_radius']
+                # TODO: ^ remove this deprecated behavior
+                self.glops[index].properties['hit_radius'] = actor_dict['hit_radius']
             else:
-                self.glops[index].hit_radius = .5
+                self.glops[index].properties['hit_radius'] = .5
         if 'throw_speed' not in self.glops[index].actor_dict:
             self.glops[index].actor_dict['throw_speed'] = 15.
             # ignored if item has projectile_speed
@@ -3197,7 +3199,7 @@ class PyGlops:
         self.glops[i].in_range_indices = []
         # ^ allows to be obtained at start of main event
         #   loop since considered not in range already
-        self.glops[i].hit_radius = 0.1
+        self.glops[i].properties['hit_radius'] = 0.1
         if pivot_to_g_enable:
             self.glops[i].transform_pivot_to_geometry()
 
@@ -3210,13 +3212,13 @@ class PyGlops:
                 min_y = this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+1]
             v_offset += this_glop.vertex_depth
         if min_y is not None:
-            self.glops[i].hit_radius = min_y
-            if self.glops[i].hit_radius < 0.0:
-                self.glops[i].hit_radius = 0.0 - self.glops[i].hit_radius
+            self.glops[i].properties['hit_radius'] = min_y
+            if self.glops[i].properties['hit_radius'] < 0.0:
+                self.glops[i].properties['hit_radius'] = 0.0 - self.glops[i].properties['hit_radius']
         else:
             print("ERROR: could not read any y values from glop named " + \
                   str(this_glop.name))
-        # self.glops[i].hit_radius = 1.0
+        # self.glops[i].properties['hit_radius'] = 1.0
         self._bumpable_indices.append(i)
         return result
 

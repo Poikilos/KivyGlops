@@ -827,7 +827,7 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
         else:
             result.vertex_format = copy.deepcopy(self.vertex_format)
             result.on_vertex_format_change()
-        result.hit_radius = self.hit_radius
+        result.properties['hit_radius'] = self.properties['hit_radius']
         result.properties['hitbox'] = self.properties['hitbox']
         context = result.get_context()
         result._t_ins.x = self._t_ins.x
@@ -880,21 +880,22 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
         if self.vertices is None:
             self.properties['hitbox'] = None
             # ^ avoid 0-size hitbox which would prevent bumps
-            if self.hit_radius is None:
-                self.hit_radius = .4444  # flag value
-            print("[ KivyGlop ] hitbox skipped since vertices None.")
+            if self.properties['hit_radius'] is None:
+                self.properties['hit_radius'] = .4444  # flag value
+            print("[ KivyGlop ] hitbox skipped since vertices None"
+                  " (name={}).".format(self.name))
             return None
         vertex_count = int(len(self.vertices)/self.vertex_depth)
         if vertex_count <= 0:
             self.properties['hitbox'] = None
             # ^ avoid 0-size hitbox which would prevent bumps
-            if self.hit_radius is None:
-                self.hit_radius = .4444  # flag value
+            if self.properties.get('hit_radius') is None:
+                self.properties['hit_radius'] = .4444  # flag value
             print("    skipped (0 vertices).")
             return None
         self.properties['hitbox'] = {}
         v_offset = 0
-        self.hit_radius = 0.0
+        self.properties['hit_radius'] = 0.0
         hb = self.properties.get('hitbox')
         hr = self.properties.get('hit_radius')
         PO = self._POSITION_OFFSET
@@ -913,8 +914,8 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
                 if self.vertices[v_offset+self._POSITION_OFFSET+i] > self.properties['hitbox']['maximums'][i]:
                     self.properties['hitbox']['maximums'][i] = self.vertices[v_offset+self._POSITION_OFFSET+i]
             this_vertex_relative_distance = get_distance_vec3(self.vertices[v_offset+self._POSITION_OFFSET:v_offset+self._POSITION_OFFSET+3], self._pivot_point)
-            if this_vertex_relative_distance > self.hit_radius:
-                self.hit_radius = this_vertex_relative_distance
+            if this_vertex_relative_distance > self.properties['hit_radius']:
+                self.properties['hit_radius'] = this_vertex_relative_distance
             v_offset += self.vertex_depth
         phi_eye_height = 86.5 * self.properties['hitbox']['maximums'][1]
         if self.eye_height > phi_eye_height:
@@ -1267,7 +1268,7 @@ class KivyGlops(PyGlops):
 
             self.player_glop = KivyGlop()
             self.player_glop.eye_height = 1.7  # 1.7 since 5'10" person is ~1.77m, and eye down a bit
-            self.player_glop.hit_radius = .2  # default is 0.1524  # .5' equals .1524m
+            self.player_glop.properties['hit_radius'] = .2  # default is 0.1524  # .5' equals .1524m
             self.player_glop.reach_radius = 2.5  # default is 0.381 # 2.5' .381m
 
             # x,y,z where y is up:
@@ -1401,7 +1402,7 @@ class KivyGlops(PyGlops):
     def explode_glop_at(self, index, weapon_dict=None):
         self.on_explode_glop(
             get_vec3_from_point(self.glops[index]._t_ins),
-            self.glops[index].hit_radius,
+            self.glops[index].properties['hit_radius'],
             index,
             weapon_dict
         )
@@ -1622,7 +1623,7 @@ class KivyGlops(PyGlops):
                 corrected_pos = self.get_nearest_walkmesh_vec3_using_xz(this_glop._t_ins.xyz)
                 if corrected_pos is not None:
                     pushed_angle = get_angle_between_two_vec3_xz(this_glop._t_ins.xyz, corrected_pos)
-                    corrected_pos = get_pushed_vec3_xz_rad(corrected_pos, this_glop.hit_radius, pushed_angle)
+                    corrected_pos = get_pushed_vec3_xz_rad(corrected_pos, this_glop.properties['hit_radius'], pushed_angle)
                     if not height_only_enable:
                         this_glop._t_ins.x = corrected_pos[0]
                         this_glop._t_ins.y = corrected_pos[1]   # TODO: check y (vertical) axis against eye height and jump height etc
@@ -1889,12 +1890,12 @@ class KivyGlops(PyGlops):
                             if bumper_index is not None:
                                 bumper_name = self.glops[bumper_index].name
                                 distance = get_distance_kivyglops(self.glops[bumpable_index], self.glops[bumper_index])
-                                if self.glops[bumpable_index].hit_radius is not None and self.glops[bumpable_index].hit_radius is not None:
+                                if self.glops[bumpable_index].properties['hit_radius'] is not None and self.glops[bumpable_index].properties['hit_radius'] is not None:
                                     total_hit_radius = 0.0
                                     if self.glops[bumpable_index].projectile_dict is not None:
-                                        total_hit_radius = self.glops[bumpable_index].hit_radius + self.glops[bumper_index].hit_radius
+                                        total_hit_radius = self.glops[bumpable_index].properties['hit_radius'] + self.glops[bumper_index].properties['hit_radius']
                                     else:
-                                        total_hit_radius = self.glops[bumpable_index].hit_radius + self.glops[bumper_index].reach_radius
+                                        total_hit_radius = self.glops[bumpable_index].properties['hit_radius'] + self.glops[bumper_index].reach_radius
                                     if distance <= total_hit_radius:
                                         # print("total_hit_radius:" + str(total_hit_radius))
                                         if not (bumper_index in self.glops[bumpable_index].in_range_indices):
@@ -1948,7 +1949,7 @@ class KivyGlops(PyGlops):
                         # TODO: get from walkmesh instead
                     if self.glops[bumpable_index].physics_enable:
                         if self.glops[bumpable_index]._cached_floor_y is not None:
-                            if self.glops[bumpable_index]._t_ins.y - self.glops[bumpable_index].hit_radius - kEpsilon > self.glops[bumpable_index]._cached_floor_y:
+                            if self.glops[bumpable_index]._t_ins.y - self.glops[bumpable_index].properties['hit_radius'] - kEpsilon > self.glops[bumpable_index]._cached_floor_y:
                                 # TODO: why does this make things float? self.glops[bumpable_index]._r_ins_x.angle += 15.
                                 self.glops[bumpable_index]._t_ins.x += self.glops[bumpable_index].x_velocity * got_frame_delay
                                 self.glops[bumpable_index]._t_ins.y += self.glops[bumpable_index].y_velocity * got_frame_delay
@@ -1963,7 +1964,7 @@ class KivyGlops(PyGlops):
                             else:
                                 # TODO: optionally, such as for bottom-heavy items: self.glops[bumpable_index]._r_ins_x.angle = 0.
                                 # if self.glops[bumpable_index].z_velocity > kEpsilon:
-                                if (self.glops[bumpable_index].y_velocity < 0.0 - (kEpsilon + self.glops[bumpable_index].hit_radius)):
+                                if (self.glops[bumpable_index].y_velocity < 0.0 - (kEpsilon + self.glops[bumpable_index].properties['hit_radius'])):
                                     # print("  HIT GROUND Y:"+str(self.glops[bumpable_index]._cached_floor_y))
                                     # bump_sound_paths is guaranteed by PyGlop _init_glop to exist
                                     if len(self.glops[bumpable_index].properties["bump_sound_paths"]) > 0:
@@ -1973,14 +1974,14 @@ class KivyGlops(PyGlops):
                                     if self.glops[bumpable_index].projectile_dict is not None:
                                         self.glops[bumpable_index].projectile_dict = None
 
-                                self.glops[bumpable_index]._t_ins.y = self.glops[bumpable_index]._cached_floor_y + self.glops[bumpable_index].hit_radius
+                                self.glops[bumpable_index]._t_ins.y = self.glops[bumpable_index]._cached_floor_y + self.glops[bumpable_index].properties['hit_radius']
                                 if self.glops[bumpable_index].x_velocity != 0.0 or \
                                    self.glops[bumpable_index].y_velocity != 0.0 or \
                                    self.glops[bumpable_index].z_velocity != 0.0:
                                     if get_verbose_enable():
                                         print("[ KivyGlops ] stopped glop {" + \
                                               "hit_radius:" + \
-                                              str(self.glops[bumpable_index].hit_radius) + \
+                                              str(self.glops[bumpable_index].properties['hit_radius']) + \
                                               "; glop._cached_floor_y:" + \
                                               str(self.glops[bumpable_index]._cached_floor_y) + \
                                               "}")
