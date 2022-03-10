@@ -1960,7 +1960,9 @@ class KivyGlops(PyGlops):
 
             # ACTUAL MOVEMENT is done only if the object is at rest
             # (see else case below).
-
+            why_not_at_rest = None
+            if not motivated_glop.physics_enable:
+                motivated_glop.state['at_rest_enable'] = True
             if not motivated_glop.state['at_rest_enable']:
                 if motivated_glop._cached_floor_y is None:
                     motivated_glop._cached_floor_y = self._world_min_y
@@ -2023,9 +2025,12 @@ class KivyGlops(PyGlops):
                             #print("[ KivyGlops ] (verbose message) FRAME INTERVAL:"+str(got_frame_delay))
                         else:
                             print("[ KivyGlops ] WARNING in update: no frame delay is detectable (update normally runs automatically once per frame but seems to be running more often)")
+                else:
+                    why_not_at_rest = ("physics are not enabled"
+                                       " for this glop")
                 if moving_x != 0.0 or moving_y != 0.0 or moving_z != 0.0:
                     if get_verbose_enable():
-                        print("[ KivyGlops ] (verbose message in update) glop " + motivated_glop.name + " tried to move, but was not at rest (was affected by physics)")
+                        print("[ KivyGlops ] (verbose message in update) glop " + motivated_glop.name + " tried to move, but wasn't at rest (was affected by physics): " + str(why_not_at_rest))
             else:  # is at_rest, so can control own movement
                 position_change = [0.0, 0.0, 0.0]
                 if rotation_multiplier_y != 0.0:
