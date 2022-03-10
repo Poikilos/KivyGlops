@@ -745,7 +745,7 @@ class PyGlop:
             # ^ overlay vertex color onto this using vertex alpha
             self.material['ambient_color'] = (0.0, 0.0, 0.0, 1.0)
             self.material['specular_color'] = (1.0, 1.0, 1.0, 1.0)
-            self.material['specular_coefficent'] = 16.0
+            self.material['specular_coefficient'] = 16.0
             # self.material['opacity'] = 1.0
 
             # TODO: find out where this code goes
@@ -1660,7 +1660,7 @@ class PyGlop:
                     get_fvec4_from_svec_any_len(Ks)
             if 'Ns' in wmaterial:
                 Ns = wmaterial['Ns']['values']
-                self.material['specular_coefficent'] = float(Ns[0])
+                self.material['specular_coefficient'] = float(Ns[0])
             # TODO: store as diffuse color alpha instead:
             # self.opacity = wmaterial.get('d')
             # TODO: store as diffuse color alpha instead:

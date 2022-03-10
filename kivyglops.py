@@ -139,7 +139,7 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
         # ^ overlay vertex color onto this using vertex alpha
         self.material['ambient_color'] = (0.0, 0.0, 0.0, 1.0)
         self.material['specular_color'] = (1.0, 1.0, 1.0, 1.0)
-        self.material['specular_coefficent'] = 16.0
+        self.material['specular_coefficient'] = 16.0
 
         self._own_shader_enable = False
         # ^ if False during add_glop, gets shader of parent if
