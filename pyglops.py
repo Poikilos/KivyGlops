@@ -3137,11 +3137,11 @@ class PyGlops:
             if 'throw_arc' in item_dict['uses'] or \
                'throw_linear' in item_dict['uses']:
                 # del item_dict['use']['throw_arc']
-                # item_dict['use']["attack"]
+                # item_dict['use']['attack']
                 if 'projectile_keys' not in item_dict:
                     print("[ PyGlops ] WARNING in " + f_name + ": no ['as_projectile'] in item, so if thrown, projectile_dict will have only defaults such as owner and owner_key--for example, won't have any custom weapon_dict vars " + str(item_dict) + " available to on_attacked_glop")
                 # else:
-                    # if not ("hit_damage" in item_dict['as_projectile']):
+                    # if not ('hit_damage' in item_dict['as_projectile']):
                     #     print("[ PyGlops ] WARNING: no ['hit_damage'] in ['as_projectile'] in item--so won't do damage")
         else:
             # It must be a item with no use.
@@ -3664,16 +3664,16 @@ class PyGlops:
 
     def update_item_visual_debug(self):
         if self.player_glop is not None:
-            if "player_glop" not in debug_dict:
-                debug_dict["player_glop"] = {}
+            if 'player_glop' not in debug_dict:
+                debug_dict['player_glop'] = {}
             if self.player_glop.actor_dict['inventory_index'] > -1:
                 try:
                     if 'glop_name' in self.player_glop.actor_dict['inventory_items'][self.player_glop.actor_dict['inventory_index']]:
-                        debug_dict["player_glop"]["selected_item.glop_name"] = self.player_glop.actor_dict['inventory_items'][self.player_glop.actor_dict['inventory_index']]['glop_name']
+                        debug_dict['player_glop']["selected_item.glop_name"] = self.player_glop.actor_dict['inventory_items'][self.player_glop.actor_dict['inventory_index']]['glop_name']
                     else:
-                        debug_dict["player_glop"]["selected_item.glop_name"] = "Unnamed item"
+                        debug_dict['player_glop']["selected_item.glop_name"] = "Unnamed item"
                 except:
-                    debug_dict["player_glop"]["selected_item"] = "<bad inventory_index=\"" + str(self.player_glop.actor_dict['inventory_index']) + ">"
+                    debug_dict['player_glop']["selected_item"] = "<bad inventory_index=\"" + str(self.player_glop.actor_dict['inventory_index']) + ">"
 
     def use_selected(self, user_glop):
         f_name = "use_selected"

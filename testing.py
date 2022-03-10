@@ -115,7 +115,7 @@ class MainScene(KivyGlops):
                 is_ok = self.use_walkmesh(name, hide=True)
 
             item_dict = dict()
-            item_dict["name"] = "barrel"
+            item_dict['name'] = "barrel"
             item_dict["bump"] = "hide; obtain"
             # item_dict["use"] = "throw_arc"
             item_dict["uses"] = ["throw_arc"]
@@ -130,7 +130,7 @@ class MainScene(KivyGlops):
 
             # self.play_music("music/edinburgh-loop.ogg")
 
-            item_dict["name"] = "crate"
+            item_dict['name'] = "crate"
             item_dict["use_sound"] = "sounds/woosh-medium.wav"
             if test_infinite_crates:
                 item_dict["droppable"] = False
@@ -159,7 +159,7 @@ class MainScene(KivyGlops):
             self.load_obj("spaceship,simple-denapes.obj")
 
             ship_info = dict()
-            ship_info["hp"] = 1.0
+            ship_info['hp'] = 1.0
 
             player1_index = self.get_player_glop_index(1)
             # self.set_as_actor_at(player1_index, ship_info)  # already done by PyGlops or KivyGlops __init__
@@ -169,7 +169,7 @@ class MainScene(KivyGlops):
             weapon["fired_sprite_path"] = "blue_jet_bulb.png"
             weapon["fired_sprite_size"] = .5,.5  # width and height in meters
             weapon["uses"] = ["throw_linear"]  # weapon["fire_type"] = "throw_arc"
-            weapon["hit_damage"] = .3
+            weapon['hit_damage'] = .3
             self.add_actor_weapon(player1_index, weapon)
             # self.player_glop = self.glops[player1_index]  # already done by PyGlops __init__
             # test_deepcopy_weapon = self.player_glop.deepcopy_with_my_type(weapon)
@@ -184,12 +184,12 @@ class MainScene(KivyGlops):
         # test_deepcopy_weapon = self.player_glop.deepcopy_with_my_type(weapon)
 
     def on_attacked_glop(self, attacked_index, attacker_index, weapon_dict):
-        self.glops[attacked_index].actor_dict["hp"] -= weapon_dict["hit_damage"]
-        if self.glops[attacked_index].actor_dict["hp"] <= 0:
+        self.glops[attacked_index].actor_dict['hp'] -= weapon_dict['hit_damage']
+        if self.glops[attacked_index].actor_dict['hp'] <= 0:
             self.explode_glop_at(attacked_index, weapon_dict)
-            print("[ testing ] (on_attacked_glop: after exploding) HP: "+str(self.glops[attacked_index].actor_dict["hp"]))
+            print("[ testing ] (on_attacked_glop: after exploding) HP: "+str(self.glops[attacked_index].actor_dict['hp']))
         else:
-            print("[ testing ] (on_attacked_glop) HP: "+str(self.glops[attacked_index].actor_dict["hp"]))
+            print("[ testing ] (on_attacked_glop) HP: "+str(self.glops[attacked_index].actor_dict['hp']))
 
     def obtain_glop(self, bumpable_name, bumper_name):
         if "barrel" in bumpable_name.lower():

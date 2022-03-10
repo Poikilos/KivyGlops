@@ -55,7 +55,7 @@ Control 3D objects and the camera in your 3D Kivy app!
 * Should copy as mesh instance generate a copy of the hitbox rather than using a reference?
 * kivyglops.py (or kivyglops/__init__.py): Should `phi_eye_height` be .865 rather than 86.5??
 * pyglops.py: remove kivy-specific _translate_instruction_* (in throw cases)
-* projectile_speed of `item_dict` or of `item_dict["as_projectile"]` should override throw_speed of actor ONLY if present
+* projectile_speed of `item_dict` or of `item_dict['as_projectile']` should override throw_speed of actor ONLY if present
 * allow rocks to roll (and keep projectile_dict until they stop) in opengl9
 * pyglops.py: (_internal_bump_glop; may not be an issue) plays `properties["bump_sound_paths"]` for both bumper (actor) and bumpable (item)
 * pyglops.py: eliminate item_dict["fire_type"] dict (may contain "throw_linear" key) and merge with item_dict["uses"] (test with opengl6 or opengl7 since they use a weapon dict that is NOT a glop (only has fired_glop)--they may need to be changed)
@@ -254,8 +254,8 @@ else:
     #item
     self._bumpable_indices.append(index)
 if self.glops[index].item_dict is not None:
-    if "as_projectile" in self.glops[index].item_dict
-        self.glops[index].projectile_dict = self.glops[index].item_dict["as_projectile"]
+    if 'as_projectile' in self.glops[index].item_dict
+        self.glops[index].projectile_dict = self.glops[index].item_dict['as_projectile']
 ```
 
 ### Shader Spec

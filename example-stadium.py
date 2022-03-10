@@ -59,18 +59,18 @@ class MainScene(KivyGlops):
         # self.load_obj("player1.obj")
 
         item_dict = dict()
-        item_dict["name"] = "rock"
+        item_dict['name'] = "rock"
         item_dict["bump"] = "hide; obtain"
         item_dict["uses"] = ["throw_arc", "melee"]
         item_dict["target_types"] = ["surface", "actor", "glop"]  # TODO
         item_dict["cooldown"] = .7
-        item_dict["hit_damage"] = .3
-        item_dict["projectile_keys"] = ["hit_damage"]
+        item_dict['hit_damage'] = .3
+        item_dict['projectile_keys'] = ['hit_damage']
 
         # weapon = dict()
-        # weapon["hit_damage"] = .3
+        # weapon['hit_damage'] = .3
 
-        # item_dict["as_projectile"] = weapon
+        # item_dict['as_projectile'] = weapon
 
         for index in self.get_indices_of_similar_names("rock"):
             print("Preparing item at index " + str(index))
@@ -82,7 +82,7 @@ class MainScene(KivyGlops):
         self.set_background_cylmap("maps/sky-texture-seamless.jpg")
 
         human_info = dict()
-        human_info["hp"] = 1.0
+        human_info['hp'] = 1.0
 
         player1_index = self.get_player_glop_index(1)
         self.set_as_actor_at(player1_index, human_info)
@@ -92,7 +92,7 @@ class MainScene(KivyGlops):
         self.add_damaged_sound_at(player1_index, "sounds/body-hit4.wav")
 
         chimp_info = dict()
-        chimp_info["hp"] = 1.0
+        chimp_info['hp'] = 1.0
 
         chimp_info["land_units_per_second"] = self.glops[player1_index].actor_dict["land_units_per_second"] / 2.
         # If the ranges below are not set, PyGlops will set defaults for them:
@@ -109,12 +109,12 @@ class MainScene(KivyGlops):
             self.add_damaged_sound_at(index, "sounds/chimp-upset1.wav")
 
     def on_attacked_glop(self, attacked_index, attacker_index, weapon_dict):
-        self.glops[attacked_index].actor_dict["hp"] -= weapon_dict["hit_damage"]
-        if self.glops[attacked_index].actor_dict["hp"] <= 0:
+        self.glops[attacked_index].actor_dict['hp'] -= weapon_dict['hit_damage']
+        if self.glops[attacked_index].actor_dict['hp'] <= 0:
             self.explode_glop_at(attacked_index, weapon_dict)
         # if get_verbose_enable():
         print(str(self.glops[attacked_index].name) + "'s hp: " + \
-              str(self.glops[attacked_index].actor_dict["hp"]))
+              str(self.glops[attacked_index].actor_dict['hp']))
 
     def obtain_glop(self, bumpable_name, bumper_name):
         # if "rock" in bumpable_name.lower():
