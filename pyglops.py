@@ -3092,20 +3092,22 @@ class PyGlops:
             throw_enable = False
             for use in item_dict['uses']:
                 if ('throw' in use) or ('shoot' in use):
-                    #del item_dict['use']['throw_arc']
-                    #item_dict['use']["attack"]
-                    if "projectile_keys" not in item_dict:
+                    # del item_dict['use']['throw_arc']
+                    # item_dict['use']['attack']
+                    if 'projectile_keys' not in item_dict:
                         print("[ PyGlops ] WARNING in " + f_name + ": no" + \
                               " ['as_projectile'] in item, so if thrown, " + \
                               "projectile_dict will have only defaults " + \
                               "such as owner and owner_key--for example," + \
                               " won't have any custom weapon_dict vars " + \
                               str(item_dict) + " available to on_attacked_glop")
-                    #else:
-                        #if "hit_damage" not in item_dict['as_projectile']:
-                        #    print("[ PyGlops ] WARNING: no " + \
-                        #          "['hit_damage'] in ['as_projectile'] in" + \
-                        #          "item--so won't do damage")
+                    # else:
+                    #     if 'hit_damage' not in \
+                    #             item_dict['as_projectile']:
+                    #         print("[ PyGlops ] WARNING: no "
+                    #               "['hit_damage'] "
+                    #               "in ['as_projectile']"
+                    #               "in item--so won't do damage")
         else:
             # must be a item with no use
             pass
@@ -3196,7 +3198,7 @@ class PyGlops:
                 print(
                     "[ PyGlops] ERROR in use_item_at: user_glop is None"
                 )
-                return
+                return None
 
             if user_glop.name is None:
                 user_glop.name = str(uuid.uuid4())
@@ -3398,11 +3400,11 @@ class PyGlops:
         fires_glops = None
         if user_glop is None:
             print("[pyglops.py] user_glop is None in throw_glop")
-            return
+            return False
         if og is not None:
             fires_glops = [og]
-        elif (item_dict is not None) and \
-                ('fires_glops' in item_dict):
+        elif ((item_dict is not None)
+                and ('fires_glops' in item_dict)):
             fires_glops = item_dict['fires_glops']
         else:
             print("[ PyGlops ] ERROR in throw_copy: nothing"
@@ -3411,7 +3413,7 @@ class PyGlops:
                   " original_glop param set")
         if fires_glops is None:
             print("[ PyGlops ] ERROR in throw_glop: user_glop None")
-            return
+            return False
         for fires_glop in fires_glops:
             # formerly in item_dict['fires_glops']
             if this_use is None:
@@ -3450,7 +3452,7 @@ class PyGlops:
                 fired_glop = fires_glop.copy_as_mesh_instance()
             else:
                 fired_glop = fires_glop
-            if og is None or fired_glop is not og:
+            if (og is None) or (fired_glop is not og):
                 fired_glop.name = \
                     "fired[" + str(self.fired_count) + "]"
                 self.fired_count += 1
@@ -3627,7 +3629,6 @@ class PyGlops:
             # item is bumpable (but only actor can be bumper)
             self._bumpable_indices.append(fired_glop.glop_index)
 
-
             # TODO: why was this nonsense here:
             # if favorite_pivot is None:
             #     favorite_pivot = fired_glop._t_ins.xyz
@@ -3677,18 +3678,18 @@ class PyGlops:
 
     def update_item_visual_debug(self):
         if self.player_glop is not None:
-            if "player_glop" not in debug_dict:
-                debug_dict["player_glop"] = {}
+            if 'player_glop' not in debug_dict:
+                debug_dict['player_glop'] = {}
             if self.player_glop.actor_dict['inventory_index'] > -1:
                 try:
                     if 'glop_name' in self.player_glop.actor_dict['inventory_items'][self.player_glop.actor_dict['inventory_index']]:
-                        debug_dict["player_glop"]["selected_item.glop_name"] = self.player_glop.actor_dict['inventory_items'][self.player_glop.actor_dict['inventory_index']]['glop_name']
+                        debug_dict['player_glop']["selected_item.glop_name"] = self.player_glop.actor_dict['inventory_items'][self.player_glop.actor_dict['inventory_index']]['glop_name']
                     else:
-                        debug_dict["player_glop"]["selected_item.glop_name"] = "<unnamed item>"
+                        debug_dict['player_glop']["selected_item.glop_name"] = "<unnamed item>"
                 except:
-                    debug_dict["player_glop"]["selected_item"] = "<bad inventory_index=\"" + str(self.player_glop.actor_dict['inventory_index']) + ">"
+                    debug_dict['player_glop']["selected_item"] = "<bad inventory_index=\"" + str(self.player_glop.actor_dict['inventory_index']) + ">"
             else:
-                debug_dict["player_glop"]["selected_item"] = "<no slot selected>"
+                debug_dict['player_glop']["selected_item"] = "<no slot selected>"
 
     def use_selected(self, user_glop):
         f_name = "use_selected"

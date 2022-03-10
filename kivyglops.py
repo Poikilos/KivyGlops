@@ -1961,7 +1961,7 @@ class KivyGlops(PyGlops):
             # ACTUAL MOVEMENT is done only if the object is at rest
             # (see else case below).
 
-            if not motivated_glop.state["at_rest_enable"]:
+            if not motivated_glop.state['at_rest_enable']:
                 if motivated_glop._cached_floor_y is None:
                     motivated_glop._cached_floor_y = self._world_min_y
                     #TODO: get from walkmesh instead
@@ -1972,7 +1972,7 @@ class KivyGlops(PyGlops):
                             #this_glop_free_enable = True
                             pass
                         else: # STOP object (remove owner and projectile_dict)
-                            motivated_glop.state["at_rest_enable"] = True
+                            motivated_glop.state['at_rest_enable'] = True
                     else:
                         pass
                         #no cached floor, so move without regard to ground
@@ -2011,7 +2011,7 @@ class KivyGlops(PyGlops):
                         motivated_glop.z_velocity = 0.0
                         self.on_at_rest_at(bumpable_index)
                         #this_glop_free_enable = False
-                    if not motivated_glop.state["at_rest_enable"]:
+                    if not motivated_glop.state['at_rest_enable']:
                         motivated_glop._r_ins_x.angle += 15.  #TODO: why does chaning rotation make things stop above ground(?)
                         motivated_glop._t_ins.x += motivated_glop.x_velocity * got_frame_delay
                         motivated_glop._t_ins.y += motivated_glop.y_velocity * got_frame_delay
@@ -2503,14 +2503,14 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         global debug_dict  # from common.py
         x_angle = -math.pi + (float(pos[0])/float(self.width-1))*(2.0*math.pi)
         y_angle = -(math.pi/2.0) + (float(pos[1])/float(self.height-1))*(math.pi)
-        if "View" not in debug_dict:
-            debug_dict["View"] = dict()
-        debug_dict["View"]["mouse_pos"] = str(pos)
-        debug_dict["View"]["size"] = str( (self.width, self.height) )
-        debug_dict["View"]["pitch,yaw"] = str((int(math.degrees(x_angle)),
+        if 'View' not in debug_dict:
+            debug_dict['View'] = dict()
+        debug_dict['View']['mouse_pos'] = str(pos)
+        debug_dict['View']['size'] = str( (self.width, self.height) )
+        debug_dict['View']['pitch,yaw'] = str((int(math.degrees(x_angle)),
                                                     int(math.degrees(y_angle))))
         if self.screen_w_arc_theta is not None and self.screen_h_arc_theta is not None:
-            debug_dict["View"]["field of view"] = \
+            debug_dict['View']['field of view'] = \
                 str((int(math.degrees(self.screen_w_arc_theta)),
                      int(math.degrees(self.screen_h_arc_theta))))
         else:
@@ -2646,11 +2646,11 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                 x_rad, y_rad = self.get_view_angles_by_pos_rad(Window.mouse_pos)
                 self.scene.player_glop._r_ins_y.angle = x_rad
                 self.scene.player_glop._r_ins_x.angle = y_rad
-                if "View" not in debug_dict:
-                    debug_dict["View"] = dict()
-                debug_dict["View"]["camera x,y: "] = str(self.scene.camera_glop._t_ins.xyz)
+                if 'View' not in debug_dict:
+                    debug_dict['View'] = dict()
+                debug_dict['View']["camera x,y: "] = str(self.scene.camera_glop._t_ins.xyz)
                 if self._average_fps is not None:
-                    debug_dict["View"]["fps"] = str(self._average_fps)
+                    debug_dict['View']['fps'] = str(self._average_fps)
                 #global debug_dict
                 #if "Player" not in debug_dict:
                 #    debug_dict["Player"] = {}
@@ -2872,19 +2872,19 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
 
         global debug_dict
         # ensure essential dicts exist to avoid needing checks later:
-        if "View" not in debug_dict:
-            debug_dict["View"] = {}
-        debug_dict["View"]["modelview_mat"] = str(self.gl_widget.canvas['modelview_mat'])
-        if "camera_glop" not in debug_dict:
-            debug_dict["camera_glop"] = {}
-        debug_dict["camera_glop"]["rot_y"] = str(self.scene.camera_glop._r_ins_y.angle)
-        if "player_glop" not in debug_dict:
-            debug_dict["player_glop"] = {}
+        if 'View' not in debug_dict:
+            debug_dict['View'] = {}
+        debug_dict['View']["modelview_mat"] = str(self.gl_widget.canvas['modelview_mat'])
+        if 'camera_glop' not in debug_dict:
+            debug_dict['camera_glop'] = {}
+        debug_dict['camera_glop']["rot_y"] = str(self.scene.camera_glop._r_ins_y.angle)
+        if 'player_glop' not in debug_dict:
+            debug_dict['player_glop'] = {}
         if "land_units_per_second" in self.scene.player_glop.actor_dict:
-            debug_dict["player_glop"]["land_units_per_second"] = self.scene.player_glop.actor_dict["land_units_per_second"]
-        if "hp" in self.scene.player_glop.actor_dict:
-            debug_dict["player_glop"]["hp"] = self.scene.player_glop.actor_dict["hp"]
-        self.scene.camera_glop.debug_to(debug_dict["camera_glop"])
+            debug_dict['player_glop']["land_units_per_second"] = self.scene.player_glop.actor_dict["land_units_per_second"]
+        if 'hp' in self.scene.player_glop.actor_dict:
+            debug_dict['player_glop']['hp'] = self.scene.player_glop.actor_dict['hp']
+        self.scene.camera_glop.debug_to(debug_dict['camera_glop'])
 
 
         #if get_verbose_enable():
