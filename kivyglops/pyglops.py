@@ -184,12 +184,11 @@ kEpsilon = 1.0E-6
 # ^ adjust to suit.  If you use floats, you'll
 #   probably want something like 1.0E-7 (added
 #   by Poikilos)
-# TODO: avoid local redefinitions of kEpsilon?
 
 
 def fequals(f1, f2):
     '''
-    returns true if difference is between -kEpsilon and kEpsilon
+    Check if difference is between global kEpsilon and -kEpsilon.
     '''
     if f1 > f2:
         return (f1 - f2) <= kEpsilon
@@ -658,11 +657,8 @@ def PointInsideTriangle2_vec2(check_pt, tri):
 
 def is_in_triangle_coords(px, py, p0x, p0y, p1x, p1y, p2x, p2y):
     '''
-    IsInTriangle_Barymetric within the range of Epsilon
+    IsInTriangle_Barymetric (accurate to global kEpsilon)
     '''
-    # kEpsilon = 1.0E-7
-    # ^ Adjust to suit.  If you use floats you'll
-    #   probably want something like 1E-7f (added by Poikilos)
     Area = 1/2*(-p1y*p2x + p0y*(-p1x + p2x) + p0x*(p1y - p2y) + p1x*p2y)
     s = 1/(2*Area)*(p0y*p2x - p0x*p2y + (p2y - p0y)*px + (p0x - p2x)*py)
     t = 1/(2*Area)*(p0x*p1y - p0y*p1x + (p0y - p1y)*px + (p1x - p0x)*py)
@@ -674,7 +670,8 @@ def is_in_triangle_coords(px, py, p0x, p0y, p1x, p1y, p2x, p2y):
 
 def is_in_triangle_xz(check_vec3, a_vec3, b_vec3, c_vec3):
     '''
-    IsInTriangle_Barymetric swizzled to xz (uses index 0 and 2 of vec3)
+    IsInTriangle_Barymetric swizzled to xz (uses index 0 and 2 of vec3),
+    accurate to global kEpsilon).
     '''
     # kEpsilon = 1.0E-7
     # ^ Adjust to suit.  If you use floats, you'll
@@ -690,11 +687,9 @@ def is_in_triangle_xz(check_vec3, a_vec3, b_vec3, c_vec3):
 
 def is_in_triangle_vec2(check_vec2, a_vec2, b_vec2, c_vec2):
     '''
-    IsInTriangle_Barymetric swizzled to xz (uses index 0 and 2 of vec3)
+    IsInTriangle_Barymetric swizzled to xz (uses index 0 and 2 of vec3),
+    accurate to kEpsilon.
     '''
-    # kEpsilon = 1.0E-7
-    # ^ Adjust to suit.  If you use floats, you'll
-    #   probably want something like 1E-7f (added by Poikilos)
     Area = 1/2*(-b_vec2[1]*c_vec2[0] + a_vec2[1]*(-b_vec2[0] + c_vec2[0]) + a_vec2[0]*(b_vec2[1] - c_vec2[1]) + b_vec2[0]*c_vec2[1])
     if (Area > kEpsilon) or (Area < -kEpsilon):
         s = 1/(2*Area)*(a_vec2[1]*c_vec2[0] - a_vec2[0]*c_vec2[1] + (c_vec2[1] - a_vec2[1])*check_vec2[0] + (a_vec2[0] - c_vec2[0])*check_vec2[1])
