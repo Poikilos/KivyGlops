@@ -1,5 +1,20 @@
-"""PyGlops is a game engine for python. It is "abstract" so in most
-cases classes here need to be subclassed to be useful (see KivyGlops)
+"""
+PyGlops is a game engine for python. It is "abstract" so in most
+cases classes here need to be subclassed to be useful (see KivyGlops).
+This module provides simple dependency-free access to OBJ files and
+certain 3D math operations.
+# Illumination models (as per OBJ format standard) [NOT YET IMPLEMENTED]:
+# 0. Color on and Ambient off
+# 1. Color on and Ambient on [binary:0001]
+# 2. Highlight on [binary:0010]
+# 3. Reflection on and Ray trace on [binary:0011]
+# 4. Transparency: Glass on, Reflection: Ray trace on [binary:0100]
+# 5. Reflection: Fresnel on and Ray trace on [binary:0101]
+# 6. Transparency: Refraction on, Reflection: Fresnel off and Ray trace on [binary:0110]
+# 7. Transparency: Refraction on, Reflection: Fresnel on and Ray trace on [binary:0111]
+# 8. Reflection on and Ray trace off [binary:1000]
+# 9. Transparency: Glass on, Reflection: Ray trace off [binary:1001]
+# 10. Casts shadows onto invisible surfaces [binary:1010]
 """
 __author__ = 'Jake Gustafson'
 
@@ -7,15 +22,19 @@ import os
 import math
 import sys
 import random
-# from docutils.utils.math.math2html import VerticalSpace
-# import traceback
-from common import *
-# from pyrealtime import *
-
 import timeit
 from timeit import default_timer as best_timer
 import time
+# from docutils.utils.math.math2html import VerticalSpace
+# import traceback
+
+from common import *
+# from pyrealtime import *
 from wobjfile import *
+
+TAU = math.pi * 2.
+NEG_TAU = -TAU
+
 settings = {}
 settings['globals'] = {}
 settings['globals']['attack_uses'] = \
@@ -159,7 +178,7 @@ def is_flag_f(v):
     return v == .4444
 
 
-kEpsilon = 1.0E-14
+kEpsilon = 1.0E-6
 # ^ adjust to suit.  If you use floats, you'll
 #   probably want something like 1.0E-7 (added
 #   by Poikilos [tested: using 1.0E-6 since python 3
@@ -169,12 +188,11 @@ kEpsilon = 1.0E-14
 # ^ adjust to suit.  If you use floats, you'll
 #   probably want something like 1.0E-7 (added
 #   by Poikilos)
-# TODO: avoid local redefinitions of kEpsilon?
 
 
 def fequals(f1, f2):
     '''
-    returns true if difference is between -kEpsilon and kEpsilon
+    Check if difference is between global kEpsilon and -kEpsilon.
     '''
     if f1 > f2:
         return (f1 - f2) <= kEpsilon
@@ -322,7 +340,7 @@ def angle_trunc(a):
     -the-horizontal-axis>. 29 Apr 2016
     '''
     while a < 0.0:
-        a += math.pi * 2
+        a += TAU
     return a
 
 
@@ -354,16 +372,20 @@ def get_angle_between_two_vec3_xz(a, b):
     return angle_trunc(math.atan2(deltaY, deltaX))
 
 def get_nearest_vec3_on_vec3line_using_xz(a, b, c):
-    # formerly PointSegmentDistanceSquared
     '''
-    (Deprecated in favor of get_near_line_info_xz;
+    
+    (formerly PointSegmentDistanceSquared
+    Deprecated in favor of get_near_line_info_xz;
     keep in old branches since returns differ)
     nearest point on line bc from point a, swizzled to 2d on xz plane
     '''
 
     t = None
-    # as per http://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
-    kMinSegmentLenSquared = 0.00000001 # adjust to suit.  If you use float, you'll probably want something like 0.000001f
+    # as per <http://stackoverflow.com/questions/849211
+    # /shortest-distance-between-a-point-and-a-line-segment>
+    kMinSegmentLenSquared = kEpsilon
+    # ^ kEpsilon # adjust to suit. If you use float, you'll probably
+    #   want something like 0.000001f
 
     # Epsilon is the common name for the floating point error constant
     # (needed since some base 10 numbers cannot be stored as IEEE 754
@@ -385,15 +407,18 @@ def get_nearest_vec3_on_vec3line_using_xz(a, b, c):
         distance = ((db[0] * db[0]) + (db[2] * db[2]))
         return qx, a[1], qy, distance
     else:
-        # Project a line from p to the segment [p1,p2].  By considering the line
+        # Project a line from p to the segment [p1,p2].
+        # By considering the line
         # extending the segment, parameterized as p1 + (t * (p2 - p1)),
         # we find projection of point p onto the line.
         # It falls where t = [(p - p1) . (p2 - p1)] / |p2 - p1|^2
         t = ((db[0] * dx) + (db[2] * dy)) / segLenSquared
         if t < kEpsilon:
-            # intersects at or to the "left" of first segment vertex (b[0], b[2]).  If t is approximately 0.0, then
-            # intersection is at p1.  If t is less than that, then there is no intersection (i.e. p is not within
-            # the 'bounds' of the segment)
+            # intersects at or to the 'left' of first
+            # segment vertex (b[0], b[2]).
+            # If it is approximately 0.0, then intersection is at p1.
+            # If t is less than that, then there is no intersection
+            # (such as p is not within the 'bounds' of the segment)
             if t > -kEpsilon:
                 # intersects at 1st segment vertex
                 t = 0.0
@@ -602,11 +627,8 @@ def PointInsideTriangle2_vec2(check_pt, tri):
 
 def is_in_triangle_coords(px, py, p0x, p0y, p1x, p1y, p2x, p2y):
     '''
-    IsInTriangle_Barymetric within the range of Epsilon
+    IsInTriangle_Barymetric (accurate to global kEpsilon)
     '''
-    kEpsilon = 1.0E-14
-    # ^ Adjust to suit.  If you use floats you'll
-    #   probably want something like 1E-7f (added by Poikilos)
     Area = 1/2*(-p1y*p2x + p0y*(-p1x + p2x) + p0x*(p1y - p2y) + p1x*p2y)
     s = 1/(2*Area)*(p0y*p2x - p0x*p2y + (p2y - p0y)*px + (p0x - p2x)*py)
     t = 1/(2*Area)*(p0x*p1y - p0y*p1x + (p0y - p1y)*px + (p1x - p0x)*py)
@@ -618,9 +640,10 @@ def is_in_triangle_coords(px, py, p0x, p0y, p1x, p1y, p2x, p2y):
 
 def is_in_triangle_xz(check_vec3, a_vec3, b_vec3, c_vec3):
     '''
-    IsInTriangle_Barymetric swizzled to xz (uses index 0 and 2 of vec3)
+    IsInTriangle_Barymetric swizzled to xz (uses index 0 and 2 of vec3),
+    accurate to global kEpsilon).
     '''
-    kEpsilon = 1.0E-14
+    # kEpsilon = 1.0E-7
     # ^ Adjust to suit.  If you use floats, you'll
     #   probably want something like 1E-7f (added by Poikilos)
     Area = 1/2*(-b_vec3[2]*c_vec3[0] + a_vec3[2]*(-b_vec3[0] + c_vec3[0]) + a_vec3[0]*(b_vec3[2] - c_vec3[2]) + b_vec3[0]*c_vec3[2])
@@ -634,11 +657,9 @@ def is_in_triangle_xz(check_vec3, a_vec3, b_vec3, c_vec3):
 
 def is_in_triangle_vec2(check_vec2, a_vec2, b_vec2, c_vec2):
     '''
-    IsInTriangle_Barymetric swizzled to xz (uses index 0 and 2 of vec3)
+    IsInTriangle_Barymetric swizzled to xz (uses index 0 and 2 of vec3),
+    accurate to kEpsilon.
     '''
-    kEpsilon = 1.0E-14
-    # ^ Adjust to suit.  If you use floats, you'll
-    #   probably want something like 1E-7f (added by Poikilos)
     Area = 1/2*(-b_vec2[1]*c_vec2[0] + a_vec2[1]*(-b_vec2[0] + c_vec2[0]) + a_vec2[0]*(b_vec2[1] - c_vec2[1]) + b_vec2[0]*c_vec2[1])
     if (Area > kEpsilon) or (Area < -kEpsilon):
         s = 1/(2*Area)*(a_vec2[1]*c_vec2[0] - a_vec2[0]*c_vec2[1] + (c_vec2[1] - a_vec2[1])*check_vec2[0] + (a_vec2[0] - c_vec2[0])*check_vec2[1])
@@ -3270,8 +3291,8 @@ class PyGlops:
                     print("[ PyGlops ] dgItD does not contain 'bump'")
         else:
             if get_verbose_enable():
-                # This is not actually a problem (A non-damaging
-                # non-item glop bumped something)
+                # This is not actually a problem (non-damaging non-item
+                # glop bumped something).
                 print("[ PyGlops] {}"
                       " (verbose message in "
                       "_internal_bump_glop) bumped object '{}'"
@@ -3417,6 +3438,7 @@ class PyGlops:
         if not os.path.exists(source_path):
             print("ERROR: file '"+str(source_path)+"' not found")
             return None
+
         results = []
         # ^ create now, so that if None,
         # that means source_path didn't exist
@@ -3432,7 +3454,7 @@ class PyGlops:
             print("ERROR: 0 wobjects could be read from '" +
                   source_path + "'")
             return None
-        # for i in range(0,len(this_objfile.wobjects)):
+        # for i in range(0, len(this_objfile.wobjects)):
         for key in this_objfile.wobjects:
             participle = "getting wobject"
             this_wobject = this_objfile.wobjects[key]
@@ -3538,7 +3560,7 @@ class PyGlops:
                     # if not ("hit_damage" in item_dict['as_projectile']):
                     #     print("[ PyGlops ] WARNING: no ['hit_damage'] in ['as_projectile'] in item--so won't do damage")
         else:
-            # It must be a item with no use.
+            # It is an item with no use.
             pass
         if 'droppable' in item_dict:
             print("[ PyGlops ] WARNING in " + f_name
@@ -3810,7 +3832,7 @@ class PyGlops:
                         print("[ PyGlops ] (verbose message) "
                               "removed relations from item_glop"
                               " since left inventory.")
-        except:
+        except Exception as ex:
             print("[ PyGlops ] ERROR: Could not finish use_selected:")
             if user_glop is not None:
                 print("  user_glop.name:" + str(user_glop.name))
@@ -3824,6 +3846,7 @@ class PyGlops:
             print("  traceback: '''")
             view_traceback()
             print("  '''")
+            raise ex
 
     def throw_glop(self, user_glop, item_dict, original_glop_or_None,
                    this_use=None, remove_item_dict=True,
@@ -3937,8 +3960,7 @@ class PyGlops:
             # projectile = \
             #     get_dict_deepcopy(item_dict['as_projectile'])
             fired_glop.bump_enable = True
-            fired_glop.in_range_indices = \
-                [user_glop.glop_index]
+            fired_glop.in_range_indices = [user_glop.glop_index]
 
             if fired_glop.properties.get('hitbox') is None:
                 fired_glop.calculate_hit_range()
@@ -4135,30 +4157,47 @@ class PyGlops:
 
     def use_selected(self, user_glop):
         f_name = "use_selected"
-        if user_glop is not None:
-            if user_glop.actor_dict is not None:
-                if 'inventory_items' in user_glop.actor_dict:
-                    if 'inventory_index' in user_glop.actor_dict:
-                        if user_glop.actor_dict['inventory_index'] > -1:
-                            if user_glop.actor_dict['inventory_index'] < len(user_glop.actor_dict['inventory_items']):
-                                if user_glop.actor_dict['inventory_items'][user_glop.actor_dict['inventory_index']] is not None:
-                                    self.use_item_at(user_glop, user_glop.actor_dict['inventory_index'])
-                                else:
-                                    if get_verbose_enable():
-                                        print("[ PyGlops ] (verbose message in " + f_name + ": nothing to do since selected inventory slot is None")
-                            else:
-                                print("[ PyGlops ] ERROR in " + f_name + ": inventory_index " + str(user_glop.actor_dict['inventory_index']) + " is not within inventory list range " + str(len(user_glop.actor_dict['inventory_items'])))
-                        else:
-                            if get_verbose_enable():
-                                print("[ PyGlops ] (verbose message) no inventory slot is selected in " + f_name + ": user_glop.actor_dict['inventory_index'] is < 0 for " + str(user_glop.name))
-                    else:
-                        print("[ PyGlops ] ERROR in " + f_name + ": user_glop.actor_dict['inventory_index'] is not present (actor tried to use item before inventory was ready)")
-                else:
-                    print("[ PyGlops ] ERROR in " + f_name + ": user_glop.actor_dict['inventory_items'] is None (actor without inventory tried to use item)")
-            else:
-                print("[ PyGlops ] ERROR in " + f_name + ": user_glop.actor_dict is None (non-actor tried to use item)")
-        else:
-            print("[ PyGlops ] ERROR in " + f_name + ": user_glop is None")
+        if user_glop is None:
+            print("[ PyGlops ] ERROR in " + f_name
+                  + ": user_glop is None")
+            return
+        if user_glop.actor_dict is None:
+            print("[ PyGlops ] ERROR in " + f_name
+                  + ": user_glop.actor_dict is None"
+                  " (non-actor tried to use item)")
+            return
+        if 'inventory_items' not in user_glop.actor_dict:
+            print("[ PyGlops ] ERROR in " + f_name
+                  + ": user_glop.actor_dict['inventory_items']"
+                  " is None (actor without inventory tried"
+                  " to use item)")
+            return
+        if user_glop.actor_dict.get('inventory_index') is None:
+            print("[ PyGlops ] ERROR in " + f_name
+                  + ": user_glop.actor_dict['inventory_index'] is not present"
+                  " (actor tried to use item before inventory"
+                  " was ready)")
+            return
+        if user_glop.actor_dict['inventory_index'] < 0:
+            if get_verbose_enable():
+                print("[ PyGlops ] (verbose message in " + f_name
+                      + ") no inventory slot is selected ("
+                      "user_glop.actor_dict['inventory_index']"
+                      " is < 0 for " + str(user_glop.name) + ")")
+            return
+        if user_glop.actor_dict['inventory_index'] >= len(user_glop.actor_dict['inventory_items']):
+            print("[ PyGlops ] ERROR in " + f_name
+                  + ": inventory_index " + str(user_glop.actor_dict['inventory_index'])
+                  + " is not within inventory list range "
+                  + str(len(user_glop.actor_dict['inventory_items'])))
+            return
+        if user_glop.actor_dict['inventory_items'][user_glop.actor_dict['inventory_index']] is None:
+            if get_verbose_enable():
+                print("[ PyGlops ] (verbose message in " + f_name
+                      + ": nothing to do since selected inventory"
+                      " slot is None")
+            return
+        self.use_item_at(user_glop, user_glop.actor_dict['inventory_index'])
 
     def on_load_glops(self):
         '''
@@ -4236,7 +4275,7 @@ class PyGlops:
     def _deprecated_on_obtain_glop_by_name(self, bumpable_name,
                                            bumper_name):
         '''
-        This makes your handler slow if you, as
+        This still works but makes your handler slow if you, as
         expected, have to search for the glop index by name in order to
         make use of the name. Recommended replacement event handler:
         on_obtain_glop bumpable_glop provides you with bumpable glop's
@@ -4315,11 +4354,16 @@ class PyGlops:
             v_len = len(wgv)
             distance_min = None
             while X_abs_i < v_len:
-                distance = math.sqrt( (pos[0]-wgv[X_abs_i+0])**2 + (pos[2]-wgv[X_abs_i+2])**2 )
-                if (result is None) or (distance_min) is None or (distance < distance_min):
+                distance = math.sqrt((pos[0]-wgv[X_abs_i+0])**2
+                                     + (pos[2]-wgv[X_abs_i+2])**2)
+                if ((result is None) or (distance_min is None)
+                        or (distance < distance_min)):
                     # if result is not None:
-                        # second_nearest_pt = result[0],result[1],result[2]
-                    result = wgv[X_abs_i+0], wgv[X_abs_i+1], wgv[X_abs_i+2]
+                    #     second_nearest_pt = \
+                    #         result[0],result[1],result[2]
+                    result = (wgv[X_abs_i+0],
+                              wgv[X_abs_i+1],
+                              wgv[X_abs_i+2])
                     distance_min = distance
                 X_abs_i += w_glop.vertex_depth
 
@@ -4368,8 +4412,8 @@ class PyGlops:
         return result
 
     def use_walkmesh(self, name, hide=True):
-        print("[ PyGlops ] ERROR: use_walkmesh should be implemented in"
-              " a subclass since it is dependent on display method")
+        print("[ PyGlops ] ERROR: You must implement use_walkmesh"
+              " since implementation depends on the target platform.")
         return False
 
     def get_similar_names(self, partial_name):
@@ -4380,9 +4424,12 @@ class PyGlops:
             results = list()
             for this_glop in self.glops:
                 checked_count += 1
+                # print("checked "+this_glop.name.lower())
                 if this_glop.name is not None:
                     if partial_name_lower in this_glop.name.lower():
                         results.append(this_glop.name)
+                    # else:
+                    #     print("[ PyGlops ] (debug only in get_similar_names): name "+str(this_glop.name)+" does not contain "+partial_name)
                 else:
                     print("ERROR in get_similar_names: a glop was None")
         else:

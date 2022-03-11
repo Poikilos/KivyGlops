@@ -204,7 +204,7 @@ class WObject:
     vertices = None  # v
     texcoords = None  # vt (uv point in texture where each coord is from 0.0 to 1.0); aka vertex_uvs
     normals = None  # vn
-    face_groups = None  # is a dict where key is face group name, and value is list of indices, where each index refers to a list of faces in face_lists; f; vertex# /texcoord# /normal# were *# is a counting number starting at 0 (BUT saved as 1)-- only vertex# is required (but // is used if texcoord# is not present but normal# is).
+    face_groups = None  # is a dict where key is face group name, and value is list of indices, where each index refers to a list of faces in face_lists; f; vertex#/texcoord#/normal# were *# is a counting number starting at 0 (BUT saved as 1)-- only vertex# is required (but // is used if texcoord# is not present but normal# is).
     face_dicts = None  # dict of dicts where key is smoothing group number or a UUID and each value is a dict that has 's' ("on" or "off" or None) and "faces" (list of faces, where each face is a vertex index list)
     wmaterial = None
     name = None
@@ -696,9 +696,9 @@ class WObjFile:
                                     if smoothing_key not in this_object.face_dicts:
                                         this_object.face_dicts[smoothing_key] = {}
                                     this_object.face_dicts[smoothing_key]['s'] = smoothing_mode
-                                    this_object.face_dicts[smoothing_key]["faces"] = []
+                                    this_object.face_dicts[smoothing_key]['faces'] = []
                                     for group_name in group_names:
-                                        if not (group_name in this_object.face_groups):
+                                        if group_name not in this_object.face_groups:
                                             this_object.face_groups[group_name] = []
                                         if not smoothing_key in this_object.face_groups[group_name]:
                                             this_object.face_groups[group_name].append(smoothing_key)
@@ -817,7 +817,7 @@ class WObjFile:
                                         print(msg_filename + " (" + str(line_counting_number) + ",0): (INPUT ERROR) unknown material name '" + args_string + "'")
                                 else:
                                     print(msg_filename + " (" + str(line_counting_number) + ",0): (INPUT ERROR) usemtl '" + args_string + "' is impossible since a material was not loaded with mtllib command first.")
-                            elif command=='s':
+                            elif command == "s":
                                 if args_string=="off":
                                     smoothing_param = "off"
                                 elif args_string=="0":  # 0==off in spec
