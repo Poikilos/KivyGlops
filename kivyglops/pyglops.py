@@ -4296,7 +4296,7 @@ class PyGlops:
                     event_dict = user_glop.pop_glop_item(
                         inventory_index
                     )
-                    event_dict['calling_method'] = throw_glop
+                    event_dict['calling_method'] = "throw_glop"
                     self.after_selected_item(event_dict)
                 else:
                     print("[ PyGlop ] ERROR in throw_glop: "
