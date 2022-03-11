@@ -3634,7 +3634,7 @@ class PyGlops:
                 #         (time.time() - \
                 #          item_dict['state']['last_used_time']))
                 #     print(msg)
-        except:
+        except Exception as ex:
             print("[ PyGlops ] ERROR: Could not finish use_selected:")
             if user_glop is not None:
                 print("  user_glop.name:" + str(user_glop.name))
@@ -3648,6 +3648,7 @@ class PyGlops:
             print("  traceback: '''")
             view_traceback()
             print("  '''")
+            raise ex
 
     def throw_glop(self, user_glop, item_dict, original_glop_or_None,
                    this_use=None, remove_item_dict=True,
@@ -3876,7 +3877,7 @@ class PyGlops:
                     event_dict = user_glop.pop_glop_item(
                         inventory_index
                     )
-                    event_dict['calling_method'] = throw_glop
+                    event_dict['calling_method'] = "throw_glop"
                     self.after_selected_item(event_dict)
                 else:
                     print("[ PyGlop ] ERROR in throw_glop: "
