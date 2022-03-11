@@ -1,5 +1,8 @@
+#!/usr/bin/env python
+
 """
-This module contains classes for storing and retrieving realtime input data such as key states
+This module contains classes for storing and retrieving real-time input
+data such as key states.
 """
 
 import traceback
@@ -27,14 +30,12 @@ class PyRealTimeKeyState:
 
 class PyRealTimeController:
 
-    _keystates = None
-
     def __init__(self):
         self._keystates = dict()
 
     def set_pressed(self, index, text, state):
         try:
-            if not index in self._keystates:
+            if index not in self._keystates:
                 self._keystates[index] = PyRealTimeKeyState()
             if state is not None:
                 self._keystates[index].state = state
@@ -46,8 +47,11 @@ class PyRealTimeController:
     def dump(self):
         print(self._keystates)
 
-    #returns: True or False--whether the button or key number is pressed
     def get_pressed(self, index):
+        '''
+        Get True if the button or key number `index`
+        is being pressed, otherwise get False.
+        '''
         return_pressing = False
         try:
             if index in self._keystates:

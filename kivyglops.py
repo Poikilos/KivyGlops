@@ -1316,7 +1316,7 @@ class KivyGlops(PyGlops):
             view_traceback()
 
     def new_glop_method(self):
-        #return PyGlops.new_glop_method(self)
+        # return PyGlops.new_glop_method(self)
         return KivyGlop()
 
     def on_load_glops(self):
@@ -1396,7 +1396,7 @@ class KivyGlops(PyGlops):
             if path not in self._sounds:
                 self._sounds[path] = {}
                 print("loading " + path)
-                self._sounds[path]["loader"] = SoundLoader.load(path)
+                self._sounds[path]['loader'] = SoundLoader.load(path)
 
     def explode_glop_at(self, index, weapon_dict=None):
         self.on_explode_glop(
@@ -1408,7 +1408,9 @@ class KivyGlops(PyGlops):
         self.kill_glop_at(index, weapon_dict)
 
     def on_explode_glop(self, pos, radius, attacked_index, weapon_dict):
-        print("[ KivyGlops ] NOTICE: there is no default on_explode_glop in this version, so nothing will be shown")
+        print("[ KivyGlops ] NOTICE: there is no default"
+              " on_explode_glop in this version, so nothing will"
+              " be shown")
 
     def play_sound(self, path, loop=False):
         if path is not None:
@@ -1416,7 +1418,7 @@ class KivyGlops(PyGlops):
             if self._sounds[path]:
                 if get_verbose_enable():
                     print("playing " + path)
-                self._sounds[path]["loader"].play()
+                self._sounds[path]['loader'].play()
             else:
                 print("[ KivyGlops ] ERROR: Failed to play " + path)
         else:
@@ -1526,50 +1528,78 @@ class KivyGlops(PyGlops):
                                 print("[ KivyGlops ] (load_obj) applying pivot point for " + some_name + "...")
                                 prev_pivot = new_glops[index]._pivot_point[0], new_glops[index]._pivot_point[1], new_glops[index]._pivot_point[2]
                                 new_glops[index].apply_pivot()
-                                #print("    moving from "+str( (new_glops[index]._t_ins.x, new_glops[index]._t_ins.y, new_glops[index]._t_ins.z) ))
-                                new_glops[index]._t_ins.x = prev_pivot[0]
-                                new_glops[index]._t_ins.y = prev_pivot[1]
-                                new_glops[index]._t_ins.z = prev_pivot[2]
-                            new_glops[index].prepare_canvas()  # does generate_kivy_mesh() if needed
+                                # print(
+                                #     "    moving from " +
+                                #     str((new_glops[index]._t_ins.x,
+                                #          new_glops[index]._t_ins.y,
+                                #          new_glops[index]._t_ins.z))
+                                # )
+                                new_glops[index]._t_ins.x = \
+                                    prev_pivot[0]
+                                new_glops[index]._t_ins.y = \
+                                    prev_pivot[1]
+                                new_glops[index]._t_ins.z = \
+                                    prev_pivot[2]
+                            new_glops[index].prepare_canvas()
+                            # ^ does generate_kivy_mesh() if needed
                             self.ui.add_glop(new_glops[index])
                             if results is None:
                                 results = list()
                             results.append(len(self.glops)-1)
                             if (new_glops[index].name is None) and \
                                (cache_path_enable):
-                                # ok since deleted uuid-named files already:
-                                new_glops[index].name = str(uuid.uuid4())
+                                # ok since deleted uuid-named files
+                                # already:
+                                new_glops[index].name = \
+                                    str(uuid.uuid4())
                             if new_glops[index].name is not None:
                                 new_glops[index].save(os.path.join(cache_path, good_path_name(new_glops[index].name) + ".glop"))
                         if centered:
-                            #TODO: apply pivot point instead (change vertices as if pivot point were 0,0,0) to ensure translate 0 is world 0; instead of:
-                            #center it (use only one pivot point, so all objects in obj file remain aligned with each other):
+                            # TODO: apply pivot point instead (change
+                            # vertices as if pivot point were 0,0,0) to
+                            # ensure translate 0 is world 0; instead of:
+                            # center it (use only one pivot point, so
+                            # all objects in obj file remain aligned
+                            # with each other):
 
                             for index in range(0,len(new_glops)):
-                                if index==0:
-                                    print("  centering from "+str(favorite_pivot_point))
-                                    print("  (this is the last centering message that will be shown)")
+                                if index == 0:
+                                    print("  centering from "
+                                          + str(favorite_pivot_point))
+                                    print("  (this is the last"
+                                          " centering message that"
+                                          " will be shown)")
                                     print("")
-                                new_glops[index].move_x_relative(-1.0*favorite_pivot_point[0])
-                                new_glops[index].move_y_relative(-1.0*favorite_pivot_point[1])
-                                new_glops[index].move_z_relative(-1.0*favorite_pivot_point[2])
-                                #TODO: new_glops[index].apply_translate()
-                                #TODO: new_glops[index].reset_translate()
+                                new_glops[index].move_x_relative(
+                                    -1.0*favorite_pivot_point[0]
+                                )
+                                new_glops[index].move_y_relative(
+                                    -1.0*favorite_pivot_point[1]
+                                )
+                                new_glops[index].move_z_relative(
+                                    -1.0*favorite_pivot_point[2]
+                                )
+                                # TODO: new_glops[index].
+                                #       apply_translate()
+                                # TODO: new_glops[index].
+                                #       reset_translate()
 
-                        #print("")
+                        # print("")
+                    # end else 1 or more objects found in obj
                 else:
-                    print("[ KivyGlops ] (load_obj) missing '" + \
-                          source_path + "'")
+                    print("[ KivyGlops ] (load_obj) missing '"
+                          + source_path + "'")
             else:
-                print("[ KivyGlops ] (load_obj) missing '" + \
-                      original_path + "'")
+                print("[ KivyGlops ] (load_obj) missing '"
+                      + original_path + "'")
         else:
-            print("[ KivyGlops ] (load_obj) ERROR: source_path is None" + \
-                  " for load_obj")
+            print("[ KivyGlops ] (load_obj) ERROR: source_path is"
+                  " None for load_obj")
         load_obj_s = best_timer() - load_obj_start_s
         if results is not None:
-            print("[ KivyGlops ] (load_obj) Loaded '" + original_path + \
-                  "' in " + str(load_obj_s) + " seconds.")
+            print("[ KivyGlops ] (load_obj) Loaded '{}'"
+                  " in {} seconds."
+                  "".format(original_path, load_obj_s))
             if cache_path is not None:
                 stats_name = "stats.yml"
                 stats_path = os.path.join(cache_path, stats_name)
@@ -1580,37 +1610,52 @@ class KivyGlops(PyGlops):
                     outs.close()
                     if cached_count > 0:
                         stats_name = "stats-cached.yml"
-                        stats_path = os.path.join(cache_path, stats_name)
+                        stats_path = os.path.join(cache_path,
+                                                  stats_name)
                         if not os.path.isfile(stats_path):
                             outs = open(stats_path, 'w')
-                            outs.write("cached_load_time_s: " + \
-                                       str(load_obj_s) + "\n")
+                            outs.write("cached_load_time_s: "
+                                       + str(load_obj_s) + "\n")
                             outs.close()
                     else:
                         stats_name = "stats-notcached.yml"
-                        stats_path = os.path.join(cache_path, stats_name)
+                        stats_path = os.path.join(cache_path,
+                                                  stats_name)
                         if not os.path.isfile(stats_path):
                             outs = open(stats_path, 'w')
-                            outs.write("not_cached_load_time_s: " + \
-                                       str(load_obj_s) + "\n")
+                            outs.write("not_cached_load_time_s: "
+                                       + str(load_obj_s) + "\n")
                             outs.close()
                 except:
-                    print("[ KivyGlops ] ERROR in load_obj--could not" + \
-                          " finish saving stats to '" + stats_path + "'")
+                    print("[ KivyGlops ] ERROR in load_obj--could"
+                          " not finish saving stats to '"
+                          + stats_path + "'")
         else:
             print("[ KivyGlops ] (load_obj) WARNING: Loaded 0 objects.")
         self.ui.suspend_debug_label_update(False)
         return results
 
     def get_pressed(self, key_name):
-        #WARNING: this is for backward compatibility only
-        return self.player1_controller.get_pressed(self.ui.get_keycode(key_name))
+        # WARNING: this is for backward compatibility only.
+        # Use the controller (which uses input maps first) instead.
+        if key_name is not None:
+            try:
+                return self.player1_controller.get_pressed(
+                    self.ui.get_keycode(key_name)
+                )
+            except:
+                # no keyboard attached
+                pass
+        # else don't complain: get_keycode returns None if no keyboard
+        # and that is the method to find the keycode
+        return False
 
-    def constrain_glop_to_walkmesh(self, this_glop, height_only_enable=False):
+    def constrain_glop_to_walkmesh(self, this_glop,
+                                   height_only_enable=False):
         if len(self._walkmeshes)>0:
             walkmesh_result = self.get_container_walkmesh_and_poly_index_xz(this_glop._t_ins.xyz)
             if walkmesh_result is None:
-                #print("Out of bounds")
+                # print("Out of bounds")
                 corrected_pos = None
                 #if self.prev_inbounds_camera_translate is not None:
                 #    this_glop._t_ins.x = self.prev_inbounds_camera_translate[0]
@@ -1869,7 +1914,7 @@ class KivyGlops(PyGlops):
             if lupf <= 0.:
                 lupf = 0.
                 global show_zero_walk_upf_warning_enable
-                # TODO: why does next line show exception if not
+                # FIXME: why does next line show exception if not
                 # declared as global manually??
                 if show_zero_walk_upf_warning_enable:
                     print("[ KivyGlops ] WARNING in update: zero land " + \
@@ -2247,21 +2292,42 @@ class KivyGlops(PyGlops):
         #         # str(math.degrees(moving_theta)) +
         #         # " degrees")
 
-        if (self._previous_world_light_dir is None
-            or self._previous_world_light_dir[0]!=glwCv["_world_light_dir"][0]
-            or self._previous_world_light_dir[1]!=glwCv["_world_light_dir"][1]
-            or self._previous_world_light_dir[2]!=glwCv["_world_light_dir"][2]
-            or self._previous_camera_rotate_y_angle is None
-            or self._previous_camera_rotate_y_angle != self.camera_glop._r_ins_y.angle
-            ):
-            #glwCv["_world_light_dir"] = (0.0,.5,1.0);
-            #glwCv["_world_light_dir_eye_space"] = (0.0,.5,1.0);
-            world_light_theta = theta_radians_from_rectangular(glwCv["_world_light_dir"][0], glwCv["_world_light_dir"][2])
-            light_theta = world_light_theta+self.camera_glop._r_ins_y.angle
-            light_r = math.sqrt((glwCv["_world_light_dir"][0]*glwCv["_world_light_dir"][0])+(glwCv["_world_light_dir"][2]*glwCv["_world_light_dir"][2]))
-            glwCv["_world_light_dir_eye_space"] = light_r * math.cos(light_theta), glwCv["_world_light_dir_eye_space"][1], light_r * math.sin(light_theta)
-            self._previous_camera_rotate_y_angle = self.camera_glop._r_ins_y.angle
-            self._previous_world_light_dir = glwCv["_world_light_dir"][0], glwCv["_world_light_dir"][1], glwCv["_world_light_dir"][2]
+        if ((self._previous_world_light_dir is None)
+                or (self._previous_world_light_dir[0]
+                    != glwCv['_world_light_dir'][0])
+                or (self._previous_world_light_dir[1]
+                    != glwCv['_world_light_dir'][1])
+                or (self._previous_world_light_dir[2]
+                    != glwCv['_world_light_dir'][2])
+                or (self._previous_camera_rotate_y_angle is None)
+                or (self._previous_camera_rotate_y_angle
+                    != self.camera_glop._r_ins_y.angle)):
+            # glwCv['_world_light_dir'] = (0.0, .5, 1.0)
+            # glwCv['_world_light_dir_eye_space'] = (0.0, .5, 1.0)
+            world_light_theta = theta_radians_from_rectangular(
+                glwCv['_world_light_dir'][0],
+                glwCv['_world_light_dir'][2]
+            )
+            light_theta = (world_light_theta
+                           + self.camera_glop._r_ins_y.angle)
+            light_r = math.sqrt(
+                (glwCv['_world_light_dir'][0]
+                 * glwCv['_world_light_dir'][0])
+                + (glwCv['_world_light_dir'][2]
+                   * glwCv['_world_light_dir'][2])
+            )
+            glwCv['_world_light_dir_eye_space'] = (
+                light_r * math.cos(light_theta),
+                glwCv['_world_light_dir_eye_space'][1],
+                light_r * math.sin(light_theta)
+            )
+            self._previous_camera_rotate_y_angle = \
+                self.camera_glop._r_ins_y.angle
+            self._previous_world_light_dir = (
+                glwCv['_world_light_dir'][0],
+                glwCv['_world_light_dir'][1],
+                glwCv['_world_light_dir'][2]
+            )
 
 
 class GLWidget(Widget):
@@ -2506,15 +2572,22 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
 
     def get_view_angles_by_pos_rad(self, pos):
         global debug_dict  # from common.py
-        x_angle = -math.pi + (float(pos[0])/float(self.width-1))*(2.0*math.pi)
-        y_angle = -(math.pi/2.0) + (float(pos[1])/float(self.height-1))*(math.pi)
+        x_angle = (-math.pi
+                   + (float(pos[0])/float(self.width-1))
+                      * TAU)
+        y_angle = (-(math.pi/2.0)
+                   + (float(pos[1])/float(self.height-1))
+                   * math.pi)
         if 'View' not in debug_dict:
-            debug_dict['View'] = dict()
+            debug_dict['View'] = {}
         debug_dict['View']['mouse_pos'] = str(pos)
-        debug_dict['View']['size'] = str( (self.width, self.height) )
-        debug_dict['View']['pitch,yaw'] = str((int(math.degrees(x_angle)),
-                                                    int(math.degrees(y_angle))))
-        if self.screen_w_arc_theta is not None and self.screen_h_arc_theta is not None:
+        debug_dict['View']['size'] = str((self.width, self.height))
+        debug_dict['View']['pitch,yaw'] = str((
+            int(math.degrees(x_angle)),
+            int(math.degrees(y_angle))
+        ))
+        if ((self.screen_w_arc_theta is not None)
+                and (self.screen_h_arc_theta is not None)):
             debug_dict['View']['field of view'] = \
                 str((int(math.degrees(self.screen_w_arc_theta)),
                      int(math.degrees(self.screen_h_arc_theta))))
@@ -2550,20 +2623,29 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                         self.scene.glops[i].glop_index = i
                         break
                 if this_glop.glop_index is None:
-                    print("                      ERROR: unable to correct index")
-            #self.scene.glops[len(self.scene.glops)-1].glop_index = len(self.scene.glops) - 1
-            #this_glop.glop_index = len(self.scene.glops) - 1
+                    print("                      "
+                          "ERROR: unable to correct index")
+            # self.scene.glops[len(self.scene.glops)-1].glop_index = \
+            #     len(self.scene.glops) - 1
+            # this_glop.glop_index = len(self.scene.glops) - 1
 
-            self._contexts.add(this_glop.get_context())  # _contexts is a visible instruction group
+            self._contexts.add(this_glop.get_context())
+            # ^ _contexts is a visible instruction group
             if get_verbose_enable():
-                print("[ KivyGlopsWindow ] Appended Glop (count:" + str(len(self.scene.glops)) + ").")
+                print("[ KivyGlopsWindow ] Appended Glop (count:"
+                      + str(len(self.scene.glops)) + ").")
             if _multicontext_enable:
                 if not this_glop._own_shader_enable:
-                    this_glop.canvas.shader.source = self.gl_widget.canvas.shader.source
-                #NOTE: projectionMatrix and modelViewMatrix don't exist yet if add_glop was called before first frame!
-                #this_glop.set_uniform("projection_mat", self.scene.projectionMatrix)
-                #this_glop.set_uniform("modelview_mat", self.scene.modelViewMatrix)
-                this_glop.set_uniform("camera_world_pos", self.scene.camera_glop._t_ins.xyz)
+                    this_glop.canvas.shader.source = \
+                        self.gl_widget.canvas.shader.source
+                # NOTE: projectionMatrix and modelViewMatrix don't exist
+                # yet if add_glop was called before first frame!
+                # this_glop.set_uniform('projection_mat',
+                #                       self.scene.projectionMatrix)
+                # this_glop.set_uniform('modelview_mat',
+                #                       self.scene.modelViewMatrix)
+                this_glop.set_uniform('camera_world_pos',
+                                      self.scene.camera_glop._t_ins.xyz)
 
         except:
             print("[ KivyGlopsWindow ] ERROR: Could not finish "
@@ -2675,17 +2757,17 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
                 #forcibly use parent info (should not be needed if use_parent_projection use_parent_modelview use_parent_frag_modelview options of RenderContext constructor for canvas of children)
                 #for i in range(len(self.scene.glops)):
                     #this_glop = self.scene.glops[i]
-                    #this_glop.set_uniform("modelview_mat", self.scene.modelViewMatrix)
-                    #this_glop.set_uniform("camera_world_pos", self.scene.camera_glop._t_ins.xyz)
-            #else not loaded yet so don't try to use gl_widget or glops
+                    #this_glop.set_uniform('modelview_mat', self.scene.modelViewMatrix)
+                    #this_glop.set_uniform('camera_world_pos', self.scene.camera_glop._t_ins.xyz)
+            # else not loaded yet so don't try to use gl_widget or glops
         if not self.scene._loaded_glops_enable:
             self.debug_label.opacity = 1.0
             self.scene._load_glops_enable = False
-            self.debug_label.text = "Welcome to KivyGlops\n" + \
-                                    "Controls:\n" + \
-                                    "* F3: debug screen\n\n" + \
-                                    "\n" + \
-                                    "busy loading glops...\n"
+            self.debug_label.text = ("Welcome to KivyGlops\n"
+                                     "Controls:\n"
+                                     "* F3: debug screen\n\n"
+                                     "\n"
+                                     "busy loading glops...\n")
             if not self.scene._loading_glops_enable:
                 self.scene._loading_glops_enable = True
                 Clock.schedule_once(self._deferred_load_glops, 0.)
@@ -2879,7 +2961,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         # ensure essential dicts exist to avoid needing checks later:
         if 'View' not in debug_dict:
             debug_dict['View'] = {}
-        debug_dict['View']["modelview_mat"] = str(self.gl_widget.canvas['modelview_mat'])
+        debug_dict['View']['modelview_mat'] = str(self.gl_widget.canvas['modelview_mat'])
         if 'camera_glop' not in debug_dict:
             debug_dict['camera_glop'] = {}
         debug_dict['camera_glop']["rot_y"] = str(self.scene.camera_glop._r_ins_y.angle)
@@ -2892,10 +2974,13 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         self.scene.camera_glop.debug_to(debug_dict['camera_glop'])
 
 
-        #if get_verbose_enable():
-            #print("[ KivyGlopsWindow ] scene.camera_glop._r_ins_y.angle: " + str(self.scene.camera_glop._r_ins_y.angle))
-            #print("[ KivyGlopsWindow ] modelview_mat: " + str(self.gl_widget.canvas['modelview_mat']))
-        #self.update_glsl()
+        # if get_verbose_enable():
+        #     print("[ KivyGlopsWindow ] "
+        #           "scene.camera_glop._r_ins_y.angle: "
+        #           + str(self.scene.camera_glop._r_ins_y.angle))
+        #     print("[ KivyGlopsWindow ] modelview_mat: "
+        #           + str(self.gl_widget.canvas['modelview_mat']))
+        # self.update_glsl()
         # Return True to accept the key. Otherwise, it will be used by
         # the system.
         return True
