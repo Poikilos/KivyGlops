@@ -31,7 +31,7 @@ class PyRealTimeKeyState:
 class PyRealTimeController:
 
     def __init__(self):
-        self._keystates = dict()
+        self._keystates = {}
 
     def set_pressed(self, index, text, state):
         try:

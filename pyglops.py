@@ -22,14 +22,15 @@ import os
 import math
 import sys
 import random
-#from docutils.utils.math.math2html import VerticalSpace
-#import traceback
-from common import *
-#from pyrealtime import *
-
 import timeit
 from timeit import default_timer as best_timer
 import time
+# from docutils.utils.math.math2html import VerticalSpace
+# import traceback
+
+from common import *
+# from pyrealtime import *
+from wobjfile import *
 
 TAU = math.pi * 2.
 NEG_TAU = -TAU
@@ -46,7 +47,6 @@ tab_string = "  "
 # TODO: remove resource_find but still make able to find mtl file
 # under Kivy somehow
 
-from wobjfile import *
 dump_enable = False
 add_dump_comments_enable = False
 
@@ -267,9 +267,11 @@ def get_angle_between_two_vec3_xz(a, b):
     deltaX = b[0] - a[0]
     return angle_trunc(math.atan2(deltaY, deltaX))
 
-def get_nearest_vec3_on_vec3line_using_xz(a, b, c): #formerly PointSegmentDistanceSquared
+def get_nearest_vec3_on_vec3line_using_xz(a, b, c):
     '''
-    (Deprecated in favor of get_near_line_info_xz;
+    
+    (formerly PointSegmentDistanceSquared
+    Deprecated in favor of get_near_line_info_xz;
     keep in old branches since returns differ)
     nearest point on line bc from point a, swizzled to 2d on xz plane
     '''
@@ -623,6 +625,7 @@ class PyGlop:
     def __init__(self, default_templates=None):
         # update copy constructor if adding/changing copyable members
         self.name = None  # object name such as from OBJ's 'o' statement
+        self.state = None
         self.source_path = None
         # ^ required so that meshdata objects can be
         #   uniquely identified (where more than one
@@ -718,7 +721,7 @@ class PyGlop:
             self.z_velocity = 0.0
             self.properties = {}
             self.properties['bump_sound_paths'] = []
-            self.properties["damaged_sound_paths"] = []  # even if not an actor
+            self.properties['damaged_sound_paths'] = []  # even if not an actor
             # formerly in MeshData:
             # order MUST match V_POS_INDEX etc above
 
@@ -2591,7 +2594,7 @@ class PyGlops:
         self.fired_count = None
 
         self.defaults = {}
-        self.defaults["land_units_per_second"] = 12.
+        self.defaults['land_units_per_second'] = 12.
         self.defaults["land_degrees_per_second"] = 90.
         self.attack_uses = ['throw_arc', 'throw_linear', 'melee']
         self._default_fly_enable = False
@@ -2996,17 +2999,17 @@ class PyGlops:
         bumper_name = self.glops[bumper_index].name
         #result =
         self.bump_glop(bumpable_name, bumper_name)
-        #if result is not None:
-            #if "bumpable_name" in result:
-            #    bumpable_name = result["bumpable_name"]
-            #if "bumper_name" in result:
-            #    bumper_name = result["bumper_name"]
+        # if result is not None:
+        #     if 'bumpable_name' in result:
+        #         bumpable_name = result['bumpable_name']
+        #     if 'bumper_name' in result:
+        #         bumper_name = result['bumper_name']
 
-        #if bumpable_name is not None and bumper_name is not None:
+        # if bumpable_name is not None and bumper_name is not None:
         if self.glops[bumpable_index].projectile_dict is not None:
-            if len(self.glops[bumper_index].properties["damaged_sound_paths"]) > 0:
-                rand_i = random.randrange(0,len(self.glops[bumper_index].properties["damaged_sound_paths"]))
-                self.play_sound(self.glops[bumper_index].properties["damaged_sound_paths"][rand_i])
+            if len(self.glops[bumper_index].properties['damaged_sound_paths']) > 0:
+                rand_i = random.randrange(0,len(self.glops[bumper_index].properties['damaged_sound_paths']))
+                self.play_sound(self.glops[bumper_index].properties['damaged_sound_paths'][rand_i])
             if get_verbose_enable():
                 print("[ PyGlops ] (debug only in _internal_bump_glop"
                       " PROJECTILE HIT _internal_bump_glop"
@@ -3020,6 +3023,7 @@ class PyGlops:
                 rand_i = random.randrange(0,len(self.glops[bumper_index].properties['bump_sound_paths']))
                 self.play_sound(self.glops[bumper_index].properties['bump_sound_paths'][rand_i])
             self.glops[bumpable_index].projectile_dict = None
+            # ^ End the projectile behavior.
             self.glops[bumpable_index].bump_enable = True
             # else:
             #     pass
@@ -3093,7 +3097,7 @@ class PyGlops:
         else:
             if get_verbose_enable():
                 # This is not actually a problem (non-damaging non-item
-                # glop bumped something)
+                # glop bumped something).
                 print("[ PyGlops] {}"
                       " (verbose message in "
                       "_internal_bump_glop) bumped object '{}'"
@@ -3169,8 +3173,8 @@ class PyGlops:
         actor_dict = self.glops[index].deepcopy_with_my_type(template_dict)
         self.glops[index].actor_dict = actor_dict
         if self.glops[index].properties['hit_radius'] is None:
-            if "hit_radius" in actor_dict:
-                self.glops[index].properties['hit_radius'] = actor_dict["hit_radius"]
+            if 'hit_radius' in actor_dict:
+                self.glops[index].properties['hit_radius'] = actor_dict['hit_radius']
             else:
                 self.glops[index].properties['hit_radius'] = .5
         if 'throw_speed' not in self.glops[index].actor_dict:
@@ -3182,8 +3186,8 @@ class PyGlops:
             self.glops[index].actor_dict['moveto_index'] = None
         if 'target_pos' not in self.glops[index].actor_dict:
             self.glops[index].actor_dict['target_pos'] = None
-        if "land_units_per_second" not in self.glops[index].actor_dict:
-            self.glops[index].actor_dict["land_units_per_second"] = 12.5  #since 45 KMh is average (45/60/60*1000)
+        if 'land_units_per_second' not in self.glops[index].actor_dict:
+            self.glops[index].actor_dict['land_units_per_second'] = 12.5  # since 45 KMh is average (45/60/60*1000)
         if 'ranges' not in self.glops[index].actor_dict:
             self.glops[index].actor_dict['ranges'] = {}
         if 'melee' not in self.glops[index].actor_dict['ranges']:
@@ -3194,8 +3198,8 @@ class PyGlops:
             self.glops[index].actor_dict['inventory_index'] = -1
         if 'inventory_items' not in self.glops[index].actor_dict:
             self.glops[index].actor_dict['inventory_items'] = []
-        if "unarmed_melee_enable" not in self.glops[index].actor_dict:
-            self.glops[index].actor_dict["unarmed_melee_enable"] = False
+        if 'unarmed_melee_enable' not in self.glops[index].actor_dict:
+            self.glops[index].actor_dict['unarmed_melee_enable'] = False
 
         self.glops[index].calculate_hit_range()
         self._bumper_indices.append(index)
@@ -3456,7 +3460,7 @@ class PyGlops:
         else:
             print("ERROR: could not read any y values from glop named " + \
                   str(this_glop.name))
-        #self.glops[i].properties['hit_radius'] = 1.0
+        # self.glops[i].properties['hit_radius'] = 1.0
         self._bumpable_indices.append(i)
         return result
 
@@ -3833,8 +3837,7 @@ class PyGlops:
                 self.glops.append(fired_glop)
                 fired_glop_index = None
                 # Check identity for multithreading paranoia:
-                if self.glops[len(self.glops) - 1] is \
-                        fired_glop:
+                if self.glops[len(self.glops) - 1] is fired_glop:
                     fired_glop_index = len(self.glops) - 1
                 else:
                     print("[ PyGlops ] INFO in throw_glop: "
@@ -4122,28 +4125,34 @@ class PyGlops:
                 b_vertex = this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+0], this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+1], this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+2]
                 v_offset = this_glop.indices[face_i+2]*this_glop.vertex_depth
                 c_vertex = this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+0], this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+1], this_glop.vertices[v_offset+this_glop._POSITION_OFFSET+2]
-                #side_a_distance = get_distance_vec3_xz(pos, a_vertex, b_vertex)
-                #side_b_distance = get_distance_vec3_xz(pos, b_vertex, c_vertex)
-                #side_c_distance = get_distance_vec3_xz(pos, c_vertex, a_vertex)
+                # side_a_distance = get_distance_vec3_xz(pos, a_vertex, b_vertex)
+                # side_b_distance = get_distance_vec3_xz(pos, b_vertex, c_vertex)
+                # side_c_distance = get_distance_vec3_xz(pos, c_vertex, a_vertex)
                 this_point = get_nearest_vec3_on_vec3line_using_xz(pos, a_vertex, b_vertex)
-                this_distance = this_point[3] #4th index of returned tuple is distance
+                this_distance = this_point[3]
+                # ^ 4th index of returned tuple is distance
                 tri_distance = this_distance
                 tri_point = this_point
 
                 this_point = get_nearest_vec3_on_vec3line_using_xz(pos, b_vertex, c_vertex)
-                this_distance = this_point[3] #4th index of returned tuple is distance
+                this_distance = this_point[3]
+                # ^ 4th index of returned tuple is distance
                 if this_distance < tri_distance:
                     tri_distance = this_distance
                     tri_point = this_point
 
                 this_point = get_nearest_vec3_on_vec3line_using_xz(pos, c_vertex, a_vertex)
-                this_distance = this_point[3] #4th index of returned tuple is distance
+                this_distance = this_point[3]
+                # ^ 4th index of returned tuple is distance
                 if this_distance < tri_distance:
                     tri_distance = this_distance
                     tri_point = this_point
 
                 if (closest_distance is None) or (tri_distance<closest_distance):
-                    result = tri_point[0], tri_point[1], tri_point[2]  # ok to return y since already swizzled (get_nearest_vec3_on_vec3line_using_xz copies source's y to return's y)
+                    result = tri_point[0], tri_point[1], tri_point[2]
+                    # ^ ok to return y since already swizzled
+                    #   (get_nearest_vec3_on_vec3line_using_xz
+                    #   copies source's y to return's y)
                     closest_distance = tri_distance
                 face_i += poly_sides_count
         return result
