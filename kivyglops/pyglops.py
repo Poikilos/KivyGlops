@@ -1,5 +1,8 @@
-"""PyGlops is a game engine for python. It is "abstract" so in most
-cases classes here need to be subclassed to be useful (see KivyGlops)
+"""
+PyGlops is a game engine for python. It is "abstract" so in most
+cases classes here need to be subclassed to be useful (see KivyGlops).
+This module provides simple dependency-free access to OBJ files and
+certain 3D math operations.
 """
 __author__ = 'Jake Gustafson'
 
@@ -412,7 +415,7 @@ def get_near_line_info_xz(a, b, c):
     t = None
     # as per <http://stackoverflow.com/questions/849211
     # /shortest-distance-between-a-point-and-a-line-segment>
-    kMinSegmentLenSquared = 0.00000001
+    kMinSegmentLenSquared = kEpsilon
     # ^ kEpsilon # adjust to suit. If you use float, you'll probably
     #   want something like 0.000001f
 
@@ -1388,7 +1391,9 @@ class PyGlop:
         '''
         item_dict = item_glop.item_dict
         result = self.push_item(
-            item_dict, sender_name="push_glop_item via "+sender_name)
+            item_dict,
+            sender_name="push_glop_item via "+sender_name
+        )
         result['calling_method'] = "push_glop_item"
         if result['fit_enable']:
             i, r_type = item_glop.get_link_and_type(self)
@@ -1507,9 +1512,8 @@ class PyGlop:
         sied = {}
         # ^ select item event dict
         sied['glop_index'] = self.glop_index
-        sied['fit_enable'] = False
+        sied['fit_enable'] = False  # stay False only if inventory full
         sied['fit_at'] = -1
-        # ^ stays false if inventory was full
         if item_dict is not None:
             if item_dict.get('owner_key') is None:
                 pass
@@ -1535,13 +1539,13 @@ class PyGlop:
                     self.actor_dict['inventory_items'].append(item_dict)
                     sied['fit_at'] = \
                         len(self.actor_dict['inventory_items']) - 1
-                    # print("[ PyGlop ] (verbose message) obtained
-                    # item in new slot: "+str(item_dict))
+                    # print("[ PyGlop ] (verbose message) obtained"
+                    #       "item in new slot: "+str(item_dict))
                     if get_verbose_enable():
-                        print("[ PyGlop ] (verbose message) actor "
-                              + str(self.name) + " obtained "
-                              + item_dict['name'] + " in new slot "
-                              + str(sied['fit_at']))
+                        print("[ PyGlop ] (verbose message) actor {}"
+                              " obtained {} in new slot {}"
+                              "".format(self.name, item_dict['name'],
+                                        sied['fit_at']))
                     sied['fit_enable'] = True
             if sied['fit_enable']:
                 if self.actor_dict['inventory_index'] < 0:
@@ -1561,8 +1565,9 @@ class PyGlop:
                 sied['proper_name'] = proper_name
                 sied['calling_method'] = "push_item"
         else:
-            print("[ PyGlop ] ERROR in push_item: " + sender_name
-                  + " tried to add None to inventory")
+            print("[ PyGlop ] ERROR in push_item: {} tried to add None"
+                  " to inventory"
+                  "".format(sender_name))
         return sied
 
     def sel_next_inv_slot(self, is_forward):
@@ -1690,12 +1695,14 @@ class PyGlop:
                     "".format(try_path)
                 )
                 return None
+        '''
         if result is None:
             if get_verbose_enable():
                 print("(verbose message in"
                       " get_texture_diffuse_path) The glop"
                       " named \"{}\" has no diffuse texture"
                       "".format(self.name))
+        '''
         return result
 
     def get_min_x(self):
@@ -1978,22 +1985,21 @@ class PyGlop:
             cnbs, c_len, ct = vertex_format_component
             # ^ component_name_bytestring,component_len,component_type
             component_name = cnbs.decode("utf-8")
-            lines.append(min_tab_string + component_name + ".len:" +
-                         get_yaml_from_literal_value(c_len))
-            lines.append(min_tab_string + component_name + ".type:" +
-                         get_yaml_from_literal_value(ct))
-            lines.append(min_tab_string + component_name + ".index:" +
-                         get_yaml_from_literal_value(c_i))
-            lines.append(min_tab_string + component_name +
-                         ".offset:" +
-                         get_yaml_from_literal_value(c_o))
+            lines.append(min_tab_string + component_name + ".len:"
+                         + get_yaml_from_literal_value(c_len))
+            lines.append(min_tab_string + component_name + ".type:"
+                         + get_yaml_from_literal_value(ct))
+            lines.append(min_tab_string + component_name + ".index:"
+                         + get_yaml_from_literal_value(c_i))
+            lines.append(min_tab_string + component_name + ".offset:"
+                         + get_yaml_from_literal_value(c_o))
             c_i += 1
             c_o += c_len
 
         lines.append(
-            min_tab_string + "POSITION_LEN:" +
-            str(vf[self.POSITION_INDEX][
-                VFORMAT_VECTOR_LEN_INDEX]))
+            min_tab_string + "POSITION_LEN:"
+            + str(vf[self.POSITION_INDEX][
+                  VFORMAT_VECTOR_LEN_INDEX]))
         '''
         if add_dump_comments_enable:
             # lines.append(
@@ -2273,9 +2279,9 @@ class PyGlop:
         # try:
         # if len(self.indices) < 1:
         participle = "before detecting vertex component offsets"
-        # detecting vertex component offsets is required since
+        # Detecting vertex component offsets is required since
         # indices in an obj file are sometimes relative to the
-        # first index in the FILE not the object
+        # first index in the FILE not the object.
         TCO = self._TEXCOORD0_OFFSET
         PO = self._POSITION_OFFSET
         NO = self._NORMAL_OFFSET
@@ -2290,7 +2296,8 @@ class PyGlop:
             dest_vertex_index = 0
             face_count = 0
             new_texcoord = new_tuple(
-                vf[self.TEXCOORD0_INDEX][VFORMAT_VECTOR_LEN_INDEX])
+                vf[self.TEXCOORD0_INDEX][VFORMAT_VECTOR_LEN_INDEX]
+            )
             if this_face_list is None:
                 print("[ PyGlop ] WARNING in append_wobject: "
                       + "faces list in this_wobject.face_groups["
@@ -2523,23 +2530,21 @@ class PyGlop:
                             vertex_components[TCO+element_index] = \
                                 texcoord[element_index]
 
+                    CO = self.COLOR_OFFSET
                     if len(v) > 3:
                         # Use extended vertex info (color)
                         # from a nonstandard obj file.
                         abs_index = 0
                         for element_index in range(4, len(v)):
-                            vertex_components[self.COLOR_OFFSET
-                                              + abs_index] = \
-                                                  v[element_index]
+                            vertex_components[CO+abs_index] = \
+                                v[element_index]
                             abs_index += 1
                     else:
                         # default to transparent vertex color
                         # TODO: overlay vertex color using material
                         # color as base
                         for element_index in range(0, 4):
-                            vertex_components[self.COLOR_OFFSET
-                                              + element_index] = \
-                                                  0.0
+                            vertex_components[CO+element_index] = 0.0
                     # print("    - " + str(vertex_components))  # debug only
                     self.vertices.extend(vertex_components)
                     source_face_vertex_count += 1
@@ -2684,6 +2689,7 @@ def copy_material(o, depth=0):
     ret['emissive_color'] = o['emissive_color']
     ret['specular_exponent'] = o['specular_exponent']
     return ret
+
 
 def angles_to_angle_and_matrix(angles_list_xyz):
     '''
@@ -2947,7 +2953,10 @@ class PyGlops:
         if indices is not None and len(indices) > 0:
             item_glop_index = indices[0]
             result = self.give_item_index_to_player_number(
-                player_number, item_glop_index, "hide")
+                player_number,
+                item_glop_index,
+                "hide"
+            )
         return result
 
     def give_item_index_to_player_number(self, player_number,
@@ -3030,10 +3039,12 @@ class PyGlops:
 
     def _run_command(self, command, bumpable_index, bumper_index,
                      bypass_handlers_enable=False):
+        '''
+        This is normally run by _internal_bump_glop (such as via _run_* above).
+        '''
         # if get_verbose_enable():
         #     print("[ PyGlops ] (verbose message) _run_command(" +
         #           command + ", ...)")
-        # normally run by _internal_bump_glop (such as via _run_* above)
         if command == "hide":
             self.hide_glop(self.glops[bumpable_index])
             self.glops[bumpable_index].properties['bump_enable'] = False
@@ -3043,7 +3054,7 @@ class PyGlops:
             # ^ detectable glop name formerly bumpable_name
             bgn = self.glops[bumper_index].name
             # ^ formerly bumper_name
-            self._deprecated_on_obtain_glop_by_name(dgn, bgn)  # handler
+            # self._deprecated_on_obtain_glop_by_name(dgn, bgn)  # handler
             self.on_obtain_glop(bumpable_index, bumper_index)  # handler
             for j in range(len(self._bumpable_indices)):
                 if self._bumpable_indices[j] == bumpable_index:
@@ -3076,21 +3087,20 @@ class PyGlops:
                       " self._bumpable_indices instead)")
                 view_traceback()
         else:
-            print(
-                "Glop named {} attempted an unknown glop command"
-                " (in bump event): {}"
-                "".format(self.glops[bumpable_index].name,
-                          command)
-            )
+            print("Glop named {} attempted an unknown glop command"
+                  " (in bump event): {}"
+                  "".format(self.glops[bumpable_index].name, command))
 
     def hide_glop(self, this_glop):
         print("ERROR: hide_glop should be implemented by a sub-class"
-              " since it is specific to graphics implementation")
+              " since implementation is specific"
+              " to the target platform")
         return False
 
     def show_glop(self, this_glop_index):
         print("ERROR: show_glop should be implemented by a sub-class"
-              " since it is specific to graphics implementation")
+              " since implementation is specific"
+              " to the target platform")
         return False
 
     def after_selected_item(self, select_item_event_dict):
@@ -3217,7 +3227,9 @@ class PyGlops:
                           " add_actor_weapon is calling push_item"
                           " manually")
                 item_event = self.glops[glop_index].push_item(
-                    item_dict, sender_name="add_actor_weapon")
+                    item_dict,
+                    sender_name="add_actor_weapon"
+                )
                 if ((item_event is not None)
                         and ('fit_enable' in item_event)
                         and (item_event['fit_enable'])):
@@ -3586,6 +3598,7 @@ class PyGlops:
         if not os.path.exists(source_path):
             print("ERROR: file '"+str(source_path)+"' not found")
             return None
+
         results = []
         # ^ create now, so that if None,
         # that means source_path didn't exist
@@ -3601,7 +3614,7 @@ class PyGlops:
             print("ERROR: 0 wobjects could be read from '" +
                   source_path + "'")
             return None
-        # for i in range(0,len(this_objfile.wobjects)):
+        # for i in range(0, len(this_objfile.wobjects)):
         for key in this_objfile.wobjects:
             participle = "getting wobject"
             this_wobject = this_objfile.wobjects[key]
@@ -3728,7 +3741,7 @@ class PyGlops:
                     #               "in ['as_projectile']"
                     #               "in item--so won't do damage")
         else:
-            # It must be a item with no use.
+            # It is an item with no use.
             pass
         if 'droppable' in item_dict:
             print("[ PyGlops ] WARNING in " + f_name
@@ -4281,7 +4294,8 @@ class PyGlops:
                 # (necessary since made no copy).
                 if inventory_index is not None:
                     event_dict = user_glop.pop_glop_item(
-                        inventory_index)
+                        inventory_index
+                    )
                     event_dict['calling_method'] = throw_glop
                     self.after_selected_item(event_dict)
                 else:
@@ -4304,8 +4318,8 @@ class PyGlops:
                           " original item glop since"
                           " original_glop_or_None param was"
                           " None (though left inventory)."
-                          " Pass that param when using "
-                          "duplicate_enable=False for this to"
+                          " Pass that param when using"
+                          " duplicate_enable=False for this to"
                           " work.")
 
             self.show_glop(fired_glop.glop_index)
@@ -4393,46 +4407,46 @@ class PyGlops:
         f_name = "use_selected"
         ugad = None
         if user_glop is None:
-            print("[ PyGlops ] ERROR in " + f_name +
-                  ": user_glop is None")
+            print("[ PyGlops ] ERROR in " + f_name
+                  + ": user_glop is None")
             return
         ugad = user_glop.actor_dict
         if ugad is None:
-            print("[ PyGlops ] ERROR in " +
-                  f_name + ": user_glop.actor_dict is None" +
+            print("[ PyGlops ] ERROR in " + f_name
+                  + ": user_glop.actor_dict is None"
                   " (non-actor tried to use item)")
             return
         if ugad.get('inventory_items') is None:
-            print("[ PyGlops ] ERROR in " + f_name +
-                  ": user_glop.actor_dict['inventory_items']" +
-                  " is None (actor without inventory tried" +
+            print("[ PyGlops ] ERROR in " + f_name
+                  + ": user_glop.actor_dict['inventory_items']"
+                  " is None (actor without inventory tried"
                   " to use item)")
             return
         if ugad.get('inventory_index') is None:
-            print("[ PyGlops ] ERROR in " + f_name +
-                  ': user_glop.' +
-                  "actor_dict['inventory_index'] is not present" +
-                  " (actor tried to use item before inventory" +
+            print("[ PyGlops ] ERROR in " + f_name
+                  + ": user_glop."
+                  "actor_dict['inventory_index'] is not present"
+                  " (actor tried to use item before inventory"
                   " was ready)")
             return
 
         if int(ugad['inventory_index']) < 0:
             if get_verbose_enable():
-                print("[ PyGlops ] (verbose message in " + f_name +
-                      ") no inventory slot is selected ( " +
-                      "user_glop.actor_dict['inventory_index']" +
-                      " is < 0 for " + str(user_glop.name))
+                print("[ PyGlops ] (verbose message in " + f_name
+                      + ") no inventory slot is selected ("
+                      "user_glop.actor_dict['inventory_index']"
+                      " is < 0 for " + str(user_glop.name) + ")")
             return
         if ugad['inventory_index'] >= len(ugad['inventory_items']):
-            print("[ PyGlops ] ERROR in " + f_name +
-                  ": inventory_index " + str(ugad['inventory_index']) +
-                  " is not within inventory list range " +
-                  str(len(ugad['inventory_items'])))
+            print("[ PyGlops ] ERROR in " + f_name
+                  + ": inventory_index " + str(ugad['inventory_index'])
+                  + " is not within inventory list range "
+                  + str(len(ugad['inventory_items'])))
             return
         if ugad['inventory_items'][ugad['inventory_index']] is None:
             if get_verbose_enable():
-                print("[ PyGlops ] (verbose message in " + f_name +
-                      ": nothing to do since selected inventory" +
+                print("[ PyGlops ] (verbose message in " + f_name
+                      + ": nothing to do since selected inventory"
                       " slot is None")
             return
         self.use_item_at(user_glop, ugad['inventory_index'])
@@ -4666,8 +4680,8 @@ class PyGlops:
         return result
 
     def use_walkmesh(self, name, hide=True):
-        print("[ PyGlops ] ERROR: use_walkmesh should be implemented in"
-              " a subclass since it is dependent on display method")
+        print("[ PyGlops ] ERROR: You must implement use_walkmesh"
+              " since implementation depends on the target platform.")
         return False
 
     def get_similar_names(self, partial_name):

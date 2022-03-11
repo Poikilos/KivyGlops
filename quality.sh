@@ -13,9 +13,13 @@ customDie() {
 # pep8 has been renamed to pycodestyle (GitHub issue #466)
 # Use of the pep8 tool will be removed in a future release.
 # Please install and use `pycodestyle` instead.
-
+py_quality="pycodestyle-3"
 if [ ! -f "`command -v pycodestyle-3`" ]; then
-    customDie "pycodestyle-3 is missing. You must first install the python3-pycodestyle package."
+    python3 -c 'import pycodestyle'
+    if [ $? -ne 0 ]; then
+        customDie "pycodestyle is not installed. You must first install the python3-pycodestyle package."
+    fi
+    py_quality="python3 -m pycodestyle"
 fi
 
 tmp_path=style-check-output.txt
@@ -27,9 +31,10 @@ echo > "$tmp_path"
 for name in `ls *.py` `ls kivyglops/*.py`
 do
 echo "* checking '$name'..."
-pycodestyle-3 $name  >> "$tmp_path"
+$py_quality $name  >> "$tmp_path"
 done
 
+echo "* reading $tmp_path..."
 if [ -f "`command -v outputinspector`" ]; then
     outputinspector "$tmp_path"
     # sleep 3

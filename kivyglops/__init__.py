@@ -1677,10 +1677,10 @@ class KivyGlops(PyGlops):
                                 )
                                 new_glops[index].apply_pivot()
                                 # print(
-                                #       "    moving from " +
-                                #       str((new_glops[index]._t_ins.x,
-                                #            new_glops[index]._t_ins.y,
-                                #            new_glops[index]._t_ins.z))
+                                #     "    moving from " +
+                                #     str((new_glops[index]._t_ins.x,
+                                #          new_glops[index]._t_ins.y,
+                                #          new_glops[index]._t_ins.z))
                                 # )
                                 new_glops[index]._t_ins.x = \
                                     prev_pivot[0]
@@ -1727,11 +1727,14 @@ class KivyGlops(PyGlops):
                                           " will be shown)")
                                     print("")
                                 new_glops[index].move_x_relative(
-                                    -1.0*favorite_pivot_point[0])
+                                    -1.0*favorite_pivot_point[0]
+                                )
                                 new_glops[index].move_y_relative(
-                                    -1.0*favorite_pivot_point[1])
+                                    -1.0*favorite_pivot_point[1]
+                                )
                                 new_glops[index].move_z_relative(
-                                    -1.0*favorite_pivot_point[2])
+                                    -1.0*favorite_pivot_point[2]
+                                )
                                 # TODO: new_glops[index].
                                 #       apply_translate()
                                 # TODO: new_glops[index].
@@ -1750,9 +1753,9 @@ class KivyGlops(PyGlops):
                   " None for load_obj")
         load_obj_s = best_timer() - load_obj_start_s
         if results is not None:
-            print("[ KivyGlops ] (load_obj) Loaded '"
-                  + original_path + "' in " + str(load_obj_s)
-                  + " seconds.")
+            print("[ KivyGlops ] (load_obj) Loaded '{}'"
+                  " in {} seconds."
+                  "".format(original_path, load_obj_s))
             if cache_path is not None:
                 stats_name = "stats.yml"
                 stats_path = os.path.join(cache_path, stats_name)
@@ -1789,20 +1792,21 @@ class KivyGlops(PyGlops):
         return results
 
     def get_pressed(self, key_name):
-        # WARNING: this is for backward compatibility only
+        # WARNING: this is for backward compatibility only.
+        # Use the controller (which uses input maps first) instead.
         if key_name is not None:
             try:
                 return self.player1_controller.get_pressed(
-                    self.ui.get_keycode(key_name))
+                    self.ui.get_keycode(key_name)
+                )
             except:
                 # no keyboard attached
                 pass
-        # else don't complain, get_keycode returns None if no keybaord
+        # else don't complain: get_keycode returns None if no keyboard
         # and that is the method to find the keycode
         return False
 
-    # def constrain_glop_to_walkmesh(self,
-    #                                this_glop,
+    # def constrain_glop_to_walkmesh(self, this_glop,
     #                                height_only_enable=False):
     # these_radii[0] is used to push against side if
     # height_only_enable=False (to push x,z away from wall)
@@ -3308,8 +3312,8 @@ class KivyGlops(PyGlops):
                 or (self._previous_camera_rotate_y_angle is None)
                 or (self._previous_camera_rotate_y_angle
                     != self.camera_glop._r_ins_y.angle)):
-            # glwCv['_world_light_dir'] = (0.0,.5,1.0)
-            # glwCv['_world_light_dir_eye_space'] = (0.0,.5,1.0)
+            # glwCv['_world_light_dir'] = (0.0, .5, 1.0)
+            # glwCv['_world_light_dir_eye_space'] = (0.0, .5, 1.0)
             world_light_theta = theta_radians_from_rectangular(
                 glwCv['_world_light_dir'][0],
                 glwCv['_world_light_dir'][2]
@@ -3317,11 +3321,11 @@ class KivyGlops(PyGlops):
             light_theta = (world_light_theta
                            + self.camera_glop._r_ins_y.angle)
             light_r = math.sqrt(
-                          (glwCv['_world_light_dir'][0]
-                           * glwCv['_world_light_dir'][0])
-                          + (glwCv['_world_light_dir'][2]
-                             * glwCv['_world_light_dir'][2])
-                      )
+                (glwCv['_world_light_dir'][0]
+                 * glwCv['_world_light_dir'][0])
+                + (glwCv['_world_light_dir'][2]
+                   * glwCv['_world_light_dir'][2])
+            )
             glwCv['_world_light_dir_eye_space'] = (
                 light_r * math.cos(light_theta),
                 glwCv['_world_light_dir_eye_space'][1],
@@ -3583,13 +3587,13 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
     def get_look_angles_from_2d(self, pos):
         # global debug_dict  # from common.py
         x_angle = (-math.pi
-                   + ((float(pos[0]) / float(self.width-1))
-                      * TAU))
+                   + (float(pos[0])/float(self.width-1))
+                      * TAU)
         # if x_angle < 0.:
         #     x_angle = TAU + x_angle
         y_angle = (-(math.pi/2.0)
                    + (float(pos[1])/float(self.height-1))
-                   * (math.pi))
+                   * math.pi)
         if 'camera_glop' not in debug_dict:
             debug_dict['camera_glop'] = {}
         if 'View' not in debug_dict:
