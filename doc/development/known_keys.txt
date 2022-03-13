@@ -1,8 +1,38 @@
+
+- Nested items ("-") are values not keys.
+  - Except sub items ("."), which are subkeys.
+
+## item_dict
+name
+bump
+uses
+- throw_arc
+- melee
+target_types
+- surface
+- actor
+- glop
+cooldown
+hit_damage
+projectile_keys
+
+## actor info
+(This dict is passed to set_as_actor* function(s))
+ranges
+- ranges.melee
+- ranges.throw_arc
+
+
+### custom
+(not required, but conventional and used in example(s))
+hp
+
+
+## other
 last_used_time
 parent_index
 selected_index
 faces
-s (except the OBJ-format command "s")
 loader
 _world_light_dir
 _world_light_dir_eye_space
@@ -20,3 +50,6 @@ bumper_name
 hit_radius
 land_units_per_second
 unarmed_melee_enable
+
+## conditional
+s: not a key if used as the OBJ-format command "s"
