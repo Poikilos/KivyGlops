@@ -51,7 +51,7 @@ class MainScene(KivyGlops):
         item_dict['name'] = "rock"
         item_dict['bump'] = "hide; obtain"
         item_dict['uses'] = ['throw_arc', 'melee']
-        item_dict['target_types'] = ["surface", 'actor', 'glop']  # TODO
+        item_dict['target_types'] = ["surface", "actor", "glop"]  # TODO
         item_dict['cooldown'] = .7
         item_dict['hit_damage'] = .3
         item_dict['projectile_keys'] = ['hit_damage']
@@ -142,7 +142,7 @@ class KivyGlopsExampleApp(App):
         # boxlayout.add_widget(mainform)
         # boxlayout.cols = 1
         # boxlayout.orientation = "vertical"
-        # boxlayout.useButton = Factory.Button(text='use',
+        # boxlayout.useButton = Factory.Button(text="Use",
         #                                      id="useButton",
         #                                      size_hint=(.1,.1))
         # boxlayout.add_widget(boxlayout.useButton)
