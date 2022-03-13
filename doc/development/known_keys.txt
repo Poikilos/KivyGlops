@@ -1,0 +1,22 @@
+last_used_time
+parent_index
+selected_index
+faces
+s (except the OBJ-format command "s")
+loader
+_world_light_dir
+_world_light_dir_eye_space
+projection_mat
+modelview_mat
+camera_world_pos
+land_units_per_second
+land_degrees_per_second
+rot_y
+left
+right
+damaged_sound_paths
+bumpable_name
+bumper_name
+hit_radius
+land_units_per_second
+unarmed_melee_enable
