@@ -1845,7 +1845,7 @@ class KivyGlops(PyGlops):
                                         if self.glops[bumper_index].bump_enable:
                                             if (self.glops[bumpable_index].projectile_dict is None) or \
                                                (self.glops[bumper_index].properties['hitbox'] is None) or \
-                                               self.glops[bumper_index].properties['hitbox'].contains_vec3(get_vec3_from_point(self.glops[bumpable_index]._t_ins)):
+                                               hitbox_contains_vec3(self.glops[bumper_index].properties['hitbox'], get_vec3_from_point(self.glops[bumpable_index]._t_ins)):
                                                 #NOTE: already checked
                                                 # bumpable_index bump_enable above
                                                 #print("distance:" + str(total_hit_radius) + " <= total_hit_radius:" + str(total_hit_radius))
@@ -1861,7 +1861,7 @@ class KivyGlops(PyGlops):
                                             else:
                                                 global out_of_hitbox_note_enable
                                                 if out_of_hitbox_note_enable:
-                                                    print("[ KivyGlops ] (debug only--this is normal) within total_hit_radius, but bumpable is not in bumper's hitbox: "+self.glops[bumper_index].properties['hitbox'].to_string())
+                                                    print("[ KivyGlops ] (debug only--this is normal) within total_hit_radius, but bumpable is not in bumper's hitbox: {}".format(self.glops[bumper_index].properties['hitbox']))
                                                     out_of_hitbox_note_enable = False
                                         else:
                                             if get_verbose_enable():
