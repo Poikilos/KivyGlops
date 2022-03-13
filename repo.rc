@@ -1,0 +1,77 @@
+#!/bin/sh
+SELF_DIR="."
+if [ -z "$MASTER_DIR" ]; then
+    MASTER_DIR="../KivyGlops"
+fi
+SELF_INIT_REL="kivyglops/__init__.py"
+SELF_SUBMODULES_DIR="$SELF_DIR/kivyglops"
+if [ ! -f "$SELF_DIR/$SELF_INIT_REL" ]; then
+    printf "* WARNING: No $SELF_INIT_REL, trying kivyglops.py..."
+    SELF_INIT_REL="kivyglops.py"
+    if [ ! -f "$SELF_DIR/$SELF_INIT_REL" ]; then
+        echo "  * ERROR: There is no kivyglops.py in \"$SELF_DIR\" either."
+        exit 1
+    else
+        echo "found \"$SELF_DIR/$SELF_INIT_REL\""
+    fi
+    SELF_SUBMODULES_DIR="$SELF_DIR"
+else
+    echo "* using SELF_INIT_REL=\"$SELF_INIT_REL\""
+fi
+SELF_INIT="$SELF_DIR/$SELF_INIT_REL"
+if [ ! -f "$SELF_INIT" ]; then
+    echo "ERROR: There is no SELF_INIT \"$SELF_INIT\""
+    exit 1
+fi
+
+if [ -z "$OTHER_DIR" ]; then
+    echo "ERROR: You must specify OTHER_DIR in the script calling repo.rc."
+    exit 1
+fi
+
+OTHER_PATH_FULL="`realpath $OTHER_DIR`"
+SELF_PATH_FULL="`realpath $SELF_DIR`"
+SELF_NAME="`basename $SELF_PATH_FULL`"
+SELF_BASENAME=`basename "$SELF_PATH_FULL"`
+if [ "$SELF_NAME" = "KivyGlops-audit-9f43bc3" ]; then
+    SELF_NAME="debug"
+elif [ "$SELF_NAME" = "KivyGlops-audit-3a66898" ]; then
+    SELF_NAME="staging"
+elif [ "$SELF_NAME" = "KivyGlops-stable" ]; then
+    SELF_NAME="stable"
+elif [ "$SELF_NAME" = "KivyGlops" ]; then
+    SELF_NAME="master"
+fi
+SELF_BRANCH_EXAMPLE=stable
+SELF_BASENAME_EXAMPLE=KivyGlops-$SELF_BRANCH_EXAMPLE
+if [ "$SELF_BASENAME" = "KivyGlops-stable" ]; then
+    SELF_BRANCH_EXAMPLE="x"
+    SELF_BASENAME_EXAMPLE="KivyGlops-$SELF_BRANCH_EXAMPLE"
+fi
+
+OTHER_INIT_REL="kivyglops/__init__.py"
+OTHER_SUBMODULES_DIR="$OTHER_DIR/kivyglops"
+if [ ! -f "$OTHER_DIR/$OTHER_INIT_REL" ]; then
+    printf "* WARNING: No $OTHER_INIT_REL, trying kivyglops.py..."
+    OTHER_INIT_REL="kivyglops.py"
+    if [ ! -f "$OTHER_DIR/$OTHER_INIT_REL" ]; then
+        echo "  * ERROR: There is no kivyglops.py in \"$OTHER_DIR\" either."
+        exit 1
+    else
+        echo "found \"$OTHER_DIR/$OTHER_INIT_REL\""
+    fi
+    OTHER_SUBMODULES_DIR="$OTHER_DIR"
+else
+    echo "* using OTHER_INIT_REL=\"$OTHER_INIT_REL\""
+fi
+OTHER_INIT="$OTHER_DIR/$OTHER_INIT_REL"
+if [ ! -f "$OTHER_INIT" ]; then
+    echo "ERROR: There is no OTHER_INIT \"$OTHER_INIT\""
+    exit 1
+fi
+
+if [ -z "$OTHER_DIR" ]; then
+    echo "ERROR: You must specify OTHER_DIR in the script calling repo.rc."
+    exit 1
+fi
+
