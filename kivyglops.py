@@ -1800,16 +1800,17 @@ class KivyGlops(PyGlops):
             bumper_name = self.glops[bumper_index].name
             self.on_update_glops()
         # endregion pre-bump ops
-
         # NOTE: (ANOTHER non-nested LOOP is at end of update, for physics and unit movement)
         # region nested bump loop
         for bumpable_index_index in range(0, len(self._bumpable_indices)):
+
             bumpable_index = self._bumpable_indices[bumpable_index_index]
             if bumpable_index is not None:
                 bumpable_name = self.glops[bumpable_index].name
                 self.glops[bumpable_index].state["constrained_enable"] = False
                 #deprecated this_glop_free_enable
                 #deprecated stop_this_bumpable_enable
+                stop_this_bumpable_enable = False
 
                 for rel in self.glops[bumpable_index].state["links"]:
                     if rel["r_type"] == "carry":
@@ -1817,6 +1818,8 @@ class KivyGlops(PyGlops):
                         self.glops[bumpable_index]._t_ins.y = rel["state"]["parent_glop"]._t_ins.y
                         self.glops[bumpable_index]._t_ins.z = rel["state"]["parent_glop"]._t_ins.z
                         stop_this_bumpable_enable = True
+                        # TODO: ^ Replace stop_this_bumpable_enable with
+                        #   dgs['at_rest_event_enable'] (See master branch).
                     else:
                         print("[ KivyGlops ] ERROR in update: " + \
                               "unknown link r_type " + str(rel.get("r_type")))
