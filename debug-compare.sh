@@ -1,5 +1,5 @@
 #!/bin/sh
-# meld ./ ~/git/KivyGlops-audit-3a66898
+# meld ./ ~/git/KivyGlops-audit-9f43bc3
 # region same for all scripts
 if [ -z "$MASTER_DIR" ]; then
     MASTER_DIR="../KivyGlops"
@@ -8,8 +8,8 @@ if [ ! -f "$MASTER_DIR/repo.rc" ]; then
     echo "ERROR: repo.rc is not in \"`pwd`\"."
     exit 1
 fi
-OTHER_NAME="staging"
-OTHER_BRANCH="audit-3a66898"
+OTHER_NAME="debug"
+OTHER_BRANCH="audit-9f43bc3"
 OTHER_BRANCH_SUFFIX="-$OTHER_BRANCH"
 if [ -z "$OTHER_DIR" ]; then
     OTHER_DIR="../KivyGlops$OTHER_BRANCH_SUFFIX"

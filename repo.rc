@@ -31,8 +31,8 @@ fi
 
 OTHER_PATH_FULL="`realpath $OTHER_DIR`"
 SELF_PATH_FULL="`realpath $SELF_DIR`"
-SELF_NAME="`basename $SELF_PATH_FULL`"
-SELF_BASENAME=`basename "$SELF_PATH_FULL"`
+SELF_BASENAME="`basename $SELF_PATH_FULL`"
+SELF_NAME="$SELF_BASENAME"
 if [ "$SELF_NAME" = "KivyGlops-audit-9f43bc3" ]; then
     SELF_NAME="debug"
 elif [ "$SELF_NAME" = "KivyGlops-audit-3a66898" ]; then

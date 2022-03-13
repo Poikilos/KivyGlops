@@ -46,7 +46,7 @@ fi
 
 cat <<END
 
-Comparing $SELF_NAME (left) to $OTHER_NAME ($OTHER_BRANCH branch) (right)...
+Comparing $SELF_NAME ($SELF_BASENAME) (left) to $OTHER_NAME (right)...
 
 END
 # ^ OTHER_DIR is only on the right for master:
