@@ -29,7 +29,7 @@ USAGE:
 1. Place $OTHER_BRANCH ($OTHER_NAME branch) in a folder called $OTHER_DIR (or set and export the OTHER_DIR environment variable before running this script).
 2. Clone to a folder suffixed with the branch name, such as "../$SELF_BASENAME_EXAMPLE".
 3. Check out a branch (use the 'git switch \$BRANCH' subcommand such as 'git switch $SELF_BRANCH_EXAMPLE' to do so in a single step) if you haven't done so in the previous step.
-4. Run this script from the folder created in step 3. Several copies of meld will open, comparing this branch (left) to the master branch (right).
+4. Run this script from the folder created in step 3. Several copies of meld will open, comparing the branch (left) to the master branch (right).
 END
     # ^ Step 4 differs between mastercompare.sh and other scripts since master should always be on the right.
     if [ ! -f "`command -v meld`" ]; then
