@@ -118,9 +118,9 @@ class MainScene(KivyGlops):
             item_dict['name'] = "barrel"
             item_dict["bump"] = "hide; obtain"
             #item_dict["use"] = "throw_arc"
-            item_dict["uses"] = ["throw_arc"]
-            #item_dict["uses"] = []
-            #item_dict["uses"].append("throw_arc")
+            item_dict['uses'] = ["throw_arc"]
+            #item_dict['uses'] = []
+            #item_dict['uses'].append("throw_arc")
             item_dict["cooldown"] = .7
 
             results = self.get_index_lists_by_similar_names(["crate", "barrel"])
@@ -142,7 +142,7 @@ class MainScene(KivyGlops):
             if test_infinite_crates:
                 item_dict["droppable"] = False
                 item_dict["cooldown"] = .1
-                item_dict["uses"] = ["throw_linear"]
+                item_dict['uses'] = ["throw_linear"]
 
             for index in crate_indices:
                 self.set_as_item_at(index, item_dict)
@@ -175,7 +175,7 @@ class MainScene(KivyGlops):
             weapon["droppable"] = "no"
             weapon["fired_sprite_path"] = "blue_jet_bulb.png"
             weapon["fired_sprite_size"] = .5,.5  # width and height in meters
-            weapon["uses"] = ["throw_linear"] #weapon["fire_type"] = "throw_arc"
+            weapon['uses'] = ["throw_linear"] #weapon["fire_type"] = "throw_arc"
             weapon['hit_damage'] = .3
             weapon['projectile_keys'] = ['hit_damage']
             self.add_actor_weapon(player1_index, weapon)
@@ -205,11 +205,11 @@ class MainScene(KivyGlops):
         elif self.glops[bumpable_index].item_dict['name'] == "crate":
             self.play_sound("sounds/crate-pickup.wav")
 
-    def _deprecated_on_obtain_glop_by_name(self, bumpable_name, bumper_name):
+    def _deprecated_on_obtain_glop_by_name(self, dgn, bumper_name):
         pass
-        #if "barrel" in bumpable_name.lower():
+        #if "barrel" in dgn.lower():
         #    self.play_sound("sounds/barrel,wooden-pickup.wav")
-        #if "crate" in bumpable_name.lower():
+        #if "crate" in dgn.lower():
         #    self.play_sound("sounds/crate-pickup.wav")
 
     #def on_explode_glop(self, pos, radius, attacked_index, weapon):

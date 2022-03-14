@@ -269,7 +269,7 @@ def get_angle_between_two_vec3_xz(a, b):
 
 def get_nearest_vec3_on_vec3line_using_xz(a, b, c):
     '''
-    
+
     (formerly PointSegmentDistanceSquared
     Deprecated in favor of get_near_line_info_xz;
     keep in old branches since returns differ)
@@ -2019,7 +2019,7 @@ class PyGlop:
         # texcoords_offset = None
         # vertex_depth = 8
         # based on finish_object
-        #     if self._current_object == None:
+        #     if self._current_object is None:
         #         return
         #
         if not IS_SELF_VFORMAT_OK:
@@ -2801,9 +2801,9 @@ class PyGlops:
             self.glops[bumpable_index].bump_enable = False
         elif command == "obtain":
             # first, fire the (blank) overridable event handlers:
-            bumpable_name = self.glops[bumpable_index].name
+            dgn = self.glops[bumpable_index].name
             bumper_name = self.glops[bumper_index].name
-            # self._deprecated_on_obtain_glop_by_name(bumpable_name, bumper_name)  # handler
+            # self._deprecated_on_obtain_glop_by_name(dgn, bumper_name)  # handler
             self.on_obtain_glop(bumpable_index, bumper_index)  # handler
             for j in range(len(self._bumpable_indices)):
                 if self._bumpable_indices[j] == bumpable_index:
@@ -2995,17 +2995,17 @@ class PyGlops:
             self.glops[bumpable_index].in_range_indices.append(bumper_index)
         else:
             print("[ PyGlops ] WARNING in _internal_bump_glop: '" + self.glops[bumpable_index].name + "' is already being bumped by '" + str(self.glops[bumper_index].name))
-        bumpable_name = self.glops[bumpable_index].name
+        dgn = self.glops[bumpable_index].name
         bumper_name = self.glops[bumper_index].name
         #result =
-        self.bump_glop(bumpable_name, bumper_name)
+        self.bump_glop(dgn, bumper_name)
         # if result is not None:
-        #     if 'bumpable_name' in result:
-        #         bumpable_name = result['bumpable_name']
+        #     if 'detectable_name' in result:
+        #         dgn = result['detectable_name']
         #     if 'bumper_name' in result:
         #         bumper_name = result['bumper_name']
 
-        # if bumpable_name is not None and bumper_name is not None:
+        # if dgn is not None and bumper_name is not None:
         if self.glops[bumpable_index].projectile_dict is not None:
             if len(self.glops[bumper_index].properties['damaged_sound_paths']) > 0:
                 rand_i = random.randrange(0,len(self.glops[bumper_index].properties['damaged_sound_paths']))
@@ -3047,7 +3047,7 @@ class PyGlops:
         elif self.glops[bumpable_index].item_dict is not None:
             bad_flag = "(projectile_dict)"
             this_flag = "(NOT as_projectile, NOT projectile_dict)"
-            bumpable_name = str(self.glops[bumpable_index].name)
+            dgn = str(self.glops[bumpable_index].name)
 
             if "bump" in self.glops[bumpable_index].item_dict:
                 if self.glops[bumpable_index].bump_enable:
@@ -3060,7 +3060,7 @@ class PyGlops:
                        'as_projectile' in self.glops[bumpable_index].item_dict:
                         this_flag = "(as_projectile)"
                     rock_msg = "[ PyGlops ] _internal_bump_glop " + \
-                               bumpable_name + " processing " + this_flag
+                               dgn + " processing " + this_flag
                     print(rock_msg)  # debug only
 
                     if (self.glops[bumpable_index].item_dict is None) or \
@@ -3075,7 +3075,7 @@ class PyGlops:
                                     print("[ PyGlops ] bump " + \
                                           self.glops[bumpable_index].name + \
                                           ": " + command + " " + \
-                                          bumpable_name + " by " + \
+                                          dgn + " by " + \
                                           self.glops[bumper_index].name)
                                 if command=="obtain":
                                     if self.glops[bumper_index].actor_dict is None:
@@ -4040,7 +4040,7 @@ class PyGlops:
 
     def on_killed_glop(self, index, projectile_dict):
         pass
-        if get_is_verbose():
+        if get_verbose_enable():
             print("[ PyGlops ] (verbose message in on_killed_glop)"
                   " subclass can implement on_killed_glop")
 
@@ -4049,7 +4049,8 @@ class PyGlops:
         self.hide_glop(self.glops[index])
         self.glops[index].bump_enable = False
 
-    def bump_glop(self, bumpable_name, bumper_name):
+    def bump_glop(self, detectable_name, bumper_name):
+        # deprecated
         return None
 
     def on_item_use(self, user_glop, item_dict, this_use):

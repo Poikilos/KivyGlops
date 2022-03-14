@@ -177,7 +177,7 @@ def standard_emit_yaml(lines, min_tab_string, dat):
     if callable(emit_yaml_or_None):
         dat.emit_yaml(lines, min_tab_string)
     elif isinstance(dat, list):
-        for key in range(0,len(dat)):
+        for key in range(0, len(dat)):
             if isinstance(dat[key], list) or isinstance(dat[key], dict):
                 lines.append(min_tab_string + "-")
                 standard_emit_yaml(lines, min_tab_string+tab_string, dat[key])
