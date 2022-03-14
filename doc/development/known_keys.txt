@@ -16,12 +16,27 @@ cooldown
 hit_damage
 projectile_keys
 
-## actor info
+## actor_dict
+inventory_index
+inventory_items
+target_index
+target_pos
+moveto_index
+ranges
+
+### actor info
 (This dict is passed to set_as_actor* function(s))
 ranges
 - ranges.melee
 - ranges.throw_arc
 
+### actor state
+acquire_radius
+
+## item glop
+desired_use
+desired_item_index
+uses
 
 ### custom
 (not required, but conventional and used in example(s))
@@ -45,11 +60,14 @@ rot_y
 left
 right
 damaged_sound_paths
-bumpable_name
-bumper_name
 hit_radius
 land_units_per_second
 unarmed_melee_enable
+
+### deprecated
+bumpable_name  # deprecated (from old bump_glop)
+bumper_name  # deprecated (from old bump_glop)
+
 
 ## conditional
 s: not a key if used as the OBJ-format command "s"
