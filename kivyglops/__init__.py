@@ -172,8 +172,11 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
             super(KivyGlop, self).__init__(
                 default_templates=default_templates
             )
-            # only does class inherited FIRST (see class line above)
-            # therefore _init_glop is called below
+            # super only runs the class inherited FIRST
+            # (see class definition)
+            # therefore call _init_glop below.
+            # This could be refactored if inheriting from only
+            # one class.
         except:
             print("[ KivyGlop ] ERROR--__init__ could not finish"
                   " super!")
@@ -513,10 +516,10 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
                 print(fail_prefix + "'normal'" + fail_suffix)
             if self._TEXCOORD0_OFFSET < 0:
                 IS_SELF_VFORMAT_OK = False
-                print(fail_prefix + " 'texcoord'" + fail_suffix)
+                print(fail_prefix + "'texcoord'" + fail_suffix)
             if self.COLOR_OFFSET < 0:
                 IS_SELF_VFORMAT_OK = False
-                print(fail_prefix + " 'color'" + fail_suffix)
+                print(fail_prefix + "'color'" + fail_suffix)
         except TypeError as ex:
             if "NoneType" in str(ex):
                 IS_SELF_VFORMAT_OK = False
@@ -1120,7 +1123,8 @@ class KivyGlop(PyGlop):  # formerly KivyGlop(Widget, PyGlop)
                                      + this_material_name + "')")
                     else:
                         Logger.debug(
-                            "[ KivyGlop ] (material with no name)")
+                            "[ KivyGlop ] (material with no name)"
+                        )
                 else:
                     Logger.debug("[ KivyGlop ] (no material)")
         if self._mesh is not None and this_texture_image is not None:
@@ -1404,8 +1408,7 @@ class KivyGlops(PyGlops):
 
         self.set_camera_mode(self.CAMERA_FIRST_PERSON())
         # self.player_glop = self.camera_glop
-        # TODO: separate into two objects and make camera
-        # follow player
+        # TODO: separate into two objects and make camera follow player
         self.player_glop.properties['bump_enable'] = True
         self.camera_glop.glop_index = len(self.glops)
         self.camera_glop.state['glop_index'] = \
@@ -1980,7 +1983,7 @@ class KivyGlops(PyGlops):
         self.ui.update_debug_label()
 
     def update(self):
-        VMSG = " (verbose message in update) "
+        VMSG = " (verbose message in update)"
         pgp = self.player_glop.properties
         dd = debug_dict
         sg = self.settings['globals']
@@ -2102,11 +2105,12 @@ class KivyGlops(PyGlops):
                                     if get_verbose_enable():
                                         print(
                                             "[ KivyGlops ]" + VMSG
-                                            + "used default acquire "
-                                            "radius "
+                                            + " used default acquire"
+                                            " radius "
                                             + str(ags['acquire_radius'])
                                             + " since item['ranges']['"
-                                            + this_use + "'] wasn't set"
+                                            "{}'] wasn't set"
+                                            "".format(this_use)
                                         )
                             else:
                                 if this_use in agad['ranges']:
@@ -2118,21 +2122,20 @@ class KivyGlops(PyGlops):
                                     ags['acquire_radius'] = 20.
                                     if get_verbose_enable():
                                         print(
-                                            "[ KivyGlops ] "
-                                            "(verbose message "
-                                            "in update) used"
-                                            " default acquire "
-                                            "radius "
+                                            "[ KivyGlops ]"
+                                            + VMSG + " used"
+                                            " default acquire"
+                                            " radius "
                                             + str(ags['acquire_radius'])
-                                            + " since "
-                                            "actor_dict['ranges']['"
-                                            + this_use
-                                            + "'] was not set"
+                                            + " since"
+                                            " actor_dict['ranges']['"
+                                            + "{}'] wasn't set"
+                                            "".format(this_use)
                                         )
                         else:
                             ags['acquire_radius'] = agp['reach_radius']
-                    # ACTUAL MOVEMENT is done further down, in
-                    # # region choice-based movement and physics
+                    # ACTUAL MOVEMENT is done further down,
+                    # in `region choice-based movement and physics`
         # end for a_i_i (actor)
         self.on_update_glops()
         # endregion pre-bump ops
@@ -3165,8 +3168,8 @@ class KivyGlops(PyGlops):
         elif sg['camera_perspective_number'] == self.CAMERA_FREE():
             pass
         else:
-            print("[ KivyGlops ] ERROR in update: "
-                  "settings['camera_perspective_number'] {}"
+            print("[ KivyGlops ] ERROR in update:"
+                  " settings['camera_perspective_number'] {}"
                   " is not yet implemented. Try setting number to "
                   " in scene to one of the self.CAMERA_*()"
                   " methods' returns."
