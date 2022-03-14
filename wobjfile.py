@@ -417,7 +417,7 @@ def show_object_faces_msg(this_object, msg_filename):
         faces_msg = "...WARNING: this_object face dicts contain 0 faces!"
         group_err = None
         for key in this_object.face_dicts:
-            if this_object.face_dicts[key] != None:
+            if this_object.face_dicts[key] is not None:
                 if this_object.face_dicts[key]["faces"] is not None:
                     face_count += len(this_object.face_dicts[key]["faces"])
                 else:
@@ -433,6 +433,15 @@ def show_object_faces_msg(this_object, msg_filename):
 
 
 class WObjFile:
+
+    STATIC_HELP = {
+        'FACE_V': "index of vertex index in the face (face is a list)",
+        'FACE_TC': "index of tc0 index in the face (face is a list)",
+        'FACE_VN': "index of normal index in the face (face is a list)",
+    }
+    FACE_V = 0
+    FACE_TC = 1
+    FACE_VN = 2
 
     def __init__(self):
         self.filename = None
