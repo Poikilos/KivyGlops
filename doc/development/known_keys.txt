@@ -17,12 +17,14 @@ hit_damage
 projectile_keys
 
 ## actor_dict
+(Can also be in debug_dict['Player'])
 inventory_index
 inventory_items
 target_index
 target_pos
 moveto_index
 ranges
+selected_item
 
 ### actor info
 (This dict is passed to set_as_actor* function(s))
@@ -41,6 +43,11 @@ uses
 ### custom
 (not required, but conventional and used in example(s))
 hp
+
+
+## walkmesh info
+walkmesh_index
+polygon_offset
 
 
 ## other
