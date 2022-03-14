@@ -3172,6 +3172,7 @@ class PyGlops:
             template_dict = {}
         actor_dict = self.glops[index].deepcopy_with_my_type(template_dict)
         self.glops[index].actor_dict = actor_dict
+        self.glops[index].physics_enable = True
         if self.glops[index].properties['hit_radius'] is None:
             if 'hit_radius' in actor_dict:
                 self.glops[index].properties['hit_radius'] = actor_dict['hit_radius']
@@ -3908,7 +3909,7 @@ class PyGlops:
 
             self.show_glop(fired_glop.glop_index)
             # ^ adds to display, such as adding mesh to canvas
-            fired_glop.physics_enable = True
+            # fired_glop.physics_enable = True  # done above
             fired_glop.state['at_rest_enable'] = False
             fired_glop.bump_enable = True
             # item is bumpable (but only actor can be bumper)
