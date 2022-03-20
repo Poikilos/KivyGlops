@@ -1,12 +1,12 @@
 #!/usr/bin/env python
+# This is based on a very old version of
+# https://kivy.org/docs/examples/gen__demo__shadereditor__main__py.html
+# which is MIT licensed
 
 # from kivy.uix.boxlayout import BoxLayout
 # from kivy.app import App
 # from kivy.factory import Factory
 
-# based on a very old version of
-# https://kivy.org/docs/examples/gen__demo__shadereditor__main__py.html
-# which is MIT licensed
 '''
 Live Shader Editor
 ==================
@@ -24,6 +24,7 @@ the error is visible as logging message in your terminal.
 import sys
 import os  # isfile etc
 import kivy
+kivy.require('1.0.6')
 
 from kivy.app import App
 from kivy.uix.floatlayout import FloatLayout
@@ -35,14 +36,13 @@ from kivy.clock import Clock
 from pygments.lexers import GLShaderLexer
 from kivyglops import *
 
-kivy.require('1.0.6')
-
 
 def get_verbose_enable():
     return False
 
 
-class ShaderEditor(KivyGlopsWindow):  # FloatLayout
+class ShaderEditor(KivyGlopsWindow):
+    # formerly inherited FloatLayout
     # aka MainForm
     pass
     # source = StringProperty('data/logo/kivy-icon-512.png')
@@ -149,7 +149,7 @@ void main (void){
 
     def add_glop(self, this_glop, set_visible_enable=None):
         if set_visible_enable is not None:
-            this_glop.state["visible_enable"] = set_visible_enable
+            this_glop.state['visible_enable'] = set_visible_enable
         # context = self._contexts
         # context = self.gl_widget.canvas
         # if self.scene.selected_glop_index is None:
@@ -227,7 +227,7 @@ void main (void){
         lastI = len(self.scene.glops) - 1
         self._contexts.add(self.scene.glops[lastI].get_context())
         # ^ _contexts is a visible instruction group
-        self.scene.glops[lastI].state["visible_enable"] = True
+        self.scene.glops[lastI].state['visible_enable'] = True
 
         if get_verbose_enable():
             print("Appended Glop (count:" + str(len(self.scene.glops))
@@ -375,3 +375,4 @@ class Imperative_ShaderEditorApp(App):
 
 if __name__ == '__main__':
     Imperative_ShaderEditorApp().run()
+

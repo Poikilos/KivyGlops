@@ -3,18 +3,27 @@
   - Except sub items ("."), which are subkeys.
 
 ## item_dict
-name
 bump
-uses
-- throw_arc
-- melee
+cooldown
+droppable
+hit_damage
+name
+projectile_keys
 target_types
 - surface
 - actor
 - glop
-cooldown
-hit_damage
-projectile_keys
+use
+uses
+- throw_arc
+- melee
+
+## weapon
+droppable
+fired_sprite_path
+fired_sprite_size
+uses
+- throw_linear
 
 ## actor_dict
 (Can also be in debug_dict['Player'])

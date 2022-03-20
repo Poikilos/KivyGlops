@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-"""PyGlops is a game engine for python. It is "abstract" so in most
-cases classes here need to be subclassed to be useful (see KivyGlops)
+"""
+This script tests KivyGlops with models that are at full resolution.
 """
 import math
 import os
@@ -165,8 +165,8 @@ class MainScene(KivyGlops):
                 # try_path
                 print("[ testing ] ERROR: can't find '" + seaport_name + "'")
             # medseaport1b-lowpoly (including dependencies) is available
-            # from
-            # expertmultimedia.com/usingpython/resources/Environments,Outdoor-Manmade/seaport.zip
+            # from <https://expertmultimedia.com/usingpython/
+            # resources/Environments,Outdoor-Manmade/seaport.zip>
 
             # self.load_obj("medseaport1b-minimal.obj")
 
@@ -177,7 +177,7 @@ class MainScene(KivyGlops):
                 print("[ testing ] Using walkmesh: ")
                 is_ok = self.use_walkmesh(name, hide=True)
 
-            # item_dict = dict()
+            # item_dict = {}
             item_dict['name'] = 'barrel'
             item_dict['bump'] = "hide; obtain"
             # item_dict['use'] = 'throw_arc'
@@ -244,7 +244,7 @@ class MainScene(KivyGlops):
 
             player1_index = self.get_player_glop_index(1)
             # self.set_as_actor_at(player1_index, ship_info)
-            #     already done by PyGlops or KivyGlops __init__
+            # ^ already done by PyGlops or KivyGlops __init__
 
             weapon = dict()
             weapon['name'] = "missile"
@@ -258,12 +258,12 @@ class MainScene(KivyGlops):
             weapon['projectile_keys'] = ['hit_damage']
             self.add_actor_weapon(player1_index, weapon)
             # self.player_glop = self.glops[player1_index]
-            #     already done by PyGlops __init__
+            # ^ already done by PyGlops __init__
             # test_deepcopy_weapon = \
             #     self.player_glop.deepcopy_with_my_type(weapon)
-            print("[ testing ] #" + str(player1_index) + " named " +
-                  str(self.glops[player1_index].name) +
-                  " detected as player")
+            print("[ testing ] #" + str(player1_index) + " named "
+                  + str(self.glops[player1_index].name)
+                  + " detected as player")
             enemy_indices = self.get_indices_by_source_path(
                 "spaceship,simple-denapes.obj"
             )
@@ -271,10 +271,10 @@ class MainScene(KivyGlops):
                 index = enemy_indices[i]
                 self.set_as_actor_at(index, ship_info)
                 self.add_actor_weapon(index, weapon)
-                print("[ testing ] #" + str(index) + " named " +
-                      str(self.glops[index].name) + " added as enemy")
-            print("[ testing ] " + str(len(enemy_indices)) +
-                  " enemies found.")
+                print("[ testing ] #" + str(index) + " named "
+                      + str(self.glops[index].name) + " added as enemy")
+            print("[ testing ] " + str(len(enemy_indices))
+                  + " enemies found.")
         # test_deepcopy_weapon = \
         #     self.player_glop.deepcopy_with_my_type(weapon)
 
@@ -334,6 +334,11 @@ class MainScene(KivyGlops):
             self.play_sound("sounds/crate-pickup.wav")
 
     def _deprecated_on_obtain_glop_by_name(self, egn, rgn):
+        '''
+        Sequential arguments:
+        egn -- detected glop name
+        rgn -- actor glop name
+        '''
         pass
         # if 'barrel' in egn.lower():
         #     self.play_sound("sounds/barrel,wooden-pickup.wav")
@@ -408,7 +413,7 @@ class KivyGlopsTestingApp(App):
         # boxlayout.add_widget(mainform)
         # boxlayout.cols = 1
         # boxlayout.orientation = "vertical"
-        # boxlayout.useButton = Factory.Button(text='use',
+        # boxlayout.useButton = Factory.Button(text="Use",
         #                                      id="useButton",
         #                                      size_hint=(.1,.1))
         # boxlayout.add_widget(boxlayout.useButton)
