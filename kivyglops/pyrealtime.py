@@ -121,6 +121,7 @@ class PyRealTimeController:
                   " (type \"{}\" to switch back to QWERTY"
                   " asdw movement)"
                   "".format(colemak_seq, qwerty_seq))
+
         try:
             if self._key_states.get(index) is None:
                 self._key_states[index] = PyRealTimeKeyState()
