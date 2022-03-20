@@ -1,6 +1,12 @@
-#from kivy.uix.boxlayout import BoxLayout
-#from kivy.app import App
-#from kivy.factory import Factory
+#!/usr/bin/env python
+# This is based on a very old version of
+# https://kivy.org/docs/examples/gen__demo__shadereditor__main__py.html
+# which is MIT licensed
+
+# from kivy.uix.boxlayout import BoxLayout
+# from kivy.app import App
+# from kivy.factory import Factory
+
 '''
 Live Shader Editor
 ==================
@@ -19,8 +25,6 @@ import sys
 import os  # isfile etc
 import kivy
 kivy.require('1.0.6')
-def get_verbose_enable():
-    return False
 
 from kivy.app import App
 from kivy.uix.floatlayout import FloatLayout
@@ -32,10 +36,14 @@ from kivy.clock import Clock
 from pygments.lexers import GLShaderLexer
 from kivyglops import *
 
-#aka MainForm
+
+def get_verbose_enable():
+    return False
+
 class ShaderEditor(FloatLayout):
+    # aka MainForm
     pass
-    #source = StringProperty('data/logo/kivy-icon-512.png')
+    # source = StringProperty('data/logo/kivy-icon-512.png')
 
 #---VERTEX SHADER-------------------------------------------------------
     vs = StringProperty('''

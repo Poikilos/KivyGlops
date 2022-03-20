@@ -28,9 +28,9 @@ import time
 # from docutils.utils.math.math2html import VerticalSpace
 # import traceback
 
-from common import *
+from kivyglops.common import *
 # from pyrealtime import *
-from wobjfile import *
+from kivyglops.wobjfile import *
 
 TAU = math.pi * 2.
 NEG_TAU = -TAU

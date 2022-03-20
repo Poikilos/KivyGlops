@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 '''
 This does 3D stuff with Kivy without using glops, for testing purposes.
 This may not work on any given release or commit.

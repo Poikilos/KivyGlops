@@ -14,7 +14,7 @@ import traceback
 #     pass
 #
 
-from common import *
+from kivyglops.common import *
 MODE_EDIT = "edit"
 MODE_GAME = "game"
 

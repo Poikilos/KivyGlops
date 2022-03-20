@@ -19,7 +19,7 @@ import uuid
 
 # from common import view_traceback
 # from common import get_by_name
-from common import *
+from kivyglops.common import *
 
 tab_string = "  "
 

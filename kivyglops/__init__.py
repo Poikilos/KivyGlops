@@ -12,13 +12,13 @@ import uuid
 import ast
 import hashlib
 import math
-from pyglops import *
+from kivyglops.pyglops import *
 
 from kivy.resources import resource_find
 from kivy.graphics import *
 from kivy.uix.widget import Widget
 from kivy.core.image import Image
-from pyrealtime import *
+from kivyglops.pyrealtime import *
 from kivy.clock import Clock
 
 # stuff required for KivyGlopsWindow
@@ -39,7 +39,7 @@ from kivy.vector import Vector
 
 from kivy.core.audio import SoundLoader
 
-from common import *
+from kivyglops.common import *
 
 nearest_not_found_warning_enable = True
 _multicontext_enable = False  # only should be set while not running

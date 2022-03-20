@@ -7,19 +7,19 @@ from kivy.logger import Logger
 from kivy.vector import Vector
 from kivy.core.image import Image
 from kivy.core.window import Keyboard
-#from kivy.graphics.transformation import Matrix
-#from kivy.graphics.opengl import *
-#from kivy.graphics import *
-#from objloader import ObjFile
-#from pyrealtime import *
-#from kivy.clock import Clock
+# from kivy.graphics.transformation import Matrix
+# from kivy.graphics.opengl import *
+# from kivy.graphics import *
+# from objloader import ObjFile
+# from pyrealtime import *
+# from kivy.clock import Clock
 from kivy.input.providers.mouse import MouseMotionEvent
 
 from kivy.factory import Factory
 from kivy.uix.boxlayout import BoxLayout
 
 from kivyglops import *
-from common import *
+from kivyglops.common import *
 set_verbose_enable(True)
 
 import math
