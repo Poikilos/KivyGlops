@@ -1794,12 +1794,12 @@ class KivyGlops(PyGlops):
         self.ui.suspend_debug_label_update(False)
         return results
 
-    def get_pressed(self, key_name):
+    def _get_key_state_at(self, key_name):
         # WARNING: this is for backward compatibility only.
         # Use the controller (which uses input maps first) instead.
         if key_name is not None:
             try:
-                return self.player1_controller.get_pressed(
+                return self.player1_controller._get_key_state_at(
                     self.ui.get_keycode(key_name)
                 )
             except:
@@ -2399,21 +2399,21 @@ class KivyGlops(PyGlops):
                 # OPTION 2: double-tap to not move--but start
                 # accelerating immediately while down even then)
                 tilt = .5
-                if self.player1_controller.get_pressed(
+                if self.player1_controller._get_key_state_at(
                         self.ui.get_keycode("ctrl")):
                     tilt /= 2.
-                if self.player1_controller.get_pressed(
+                if self.player1_controller._get_key_state_at(
                         self.ui.get_keycode("shift")):
                     tilt *= 2.
-                if self.player1_controller.get_pressed(
+                if self.player1_controller._get_key_state_at(
                         self.ui.get_keycode("a")):
                     choice_local_vel_mult[0] = -1.
                     # ^ full speed so same as virtual shoulder button
-                elif self.player1_controller.get_pressed(
+                elif self.player1_controller._get_key_state_at(
                         self.ui.get_keycode('d')):
                     choice_local_vel_mult[0] = 1.
                     # ^ full speed so same as virtual shoulder button
-                if self.player1_controller.get_pressed(
+                if self.player1_controller._get_key_state_at(
                         self.ui.get_keycode("w")):
                     if get_verbose_enable():
                         chatter()
@@ -2425,12 +2425,12 @@ class KivyGlops(PyGlops):
                     #     choice_local_vel_mult[1] = vmy
                     # else:
                     choice_local_vel_mult[2] = tilt
-                elif self.player1_controller.get_pressed(
+                elif self.player1_controller._get_key_state_at(
                         self.ui.get_keycode('b')):
                     if get_verbose_enable():
                         breakpoint()
 
-                elif self.player1_controller.get_pressed(
+                elif self.player1_controller._get_key_state_at(
                         self.ui.get_keycode('s')):
                     # if self.get_fly_by_name(m_glop.name):
                     #     # intentionally use z,y:
@@ -2446,11 +2446,11 @@ class KivyGlops(PyGlops):
 
                 pstep(debug_dict,
                       pre="player controlling " + m_glop.name)
-                if self.player1_controller.get_pressed(
+                if self.player1_controller._get_key_state_at(
                         self.ui.get_keycode("enter")):
                     self.use_selected(m_glop)
 
-                if self.player1_controller.get_pressed(
+                if self.player1_controller._get_key_state_at(
                         self.ui.get_keycode("spacebar")):
                     if mgs['on_ground_enable']:
                         # TODO: make double-jump event handler

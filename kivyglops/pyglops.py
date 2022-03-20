@@ -3267,7 +3267,7 @@ class PyGlops:
         Normally called by update (every frame for every bump)
         in your subclass (in subclass only since locations are
         dependent on graphics implementation).
-  
+
         Sequential arguments:
         bumpable_index -- Provide the glop index of the detectable
                           (bumpable) glop.
@@ -4810,8 +4810,8 @@ class PyGlops:
     #           " framework-specific subclass")
     #     return None
 
-    # def get_pressed(self, key_name):
-    #     return self.player1_controller.get_pressed(
+    # def _get_key_state_at(self, key_name):
+    #     return self.player1_controller._get_key_state_at(
     #         self.ui.get_keycode(key_name)
     #     )
 

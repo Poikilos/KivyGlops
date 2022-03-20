@@ -346,39 +346,39 @@ class MainScene(KivyGlops):
 
     def on_update_glops(self):
         if self.selected_glop is not None:
-            if self.get_pressed("j"):
+            if self._get_key_state_at("j"):
                 self.selected_glop.rotate_y_relative(1)
-            elif self.get_pressed("l"):
+            elif self._get_key_state_at("l"):
                 self.selected_glop.rotate_y_relative(-1)
-            elif self.get_pressed("i"):
+            elif self._get_key_state_at("i"):
                 self.selected_glop.rotate_x_relative(-1)
-            elif self.get_pressed("k"):
+            elif self._get_key_state_at("k"):
                 self.selected_glop.rotate_x_relative(1)
-            elif self.get_pressed("u"):
+            elif self._get_key_state_at("u"):
                 self.selected_glop.rotate_z_relative(1)
-            elif self.get_pressed("o"):
+            elif self._get_key_state_at("o"):
                 self.selected_glop.rotate_z_relative(-1)
 
-            if self.get_pressed('left'):
+            if self._get_key_state_at('left'):
                 self.selected_glop.move_x_relative(-.1)
-            elif self.get_pressed('right'):
+            elif self._get_key_state_at('right'):
                 self.selected_glop.move_x_relative(.1)
-            elif self.get_pressed("up"):
+            elif self._get_key_state_at("up"):
                 self.selected_glop.move_y_relative(.1)
-            elif self.get_pressed("down"):
+            elif self._get_key_state_at("down"):
                 self.selected_glop.move_y_relative(-.1)
-            elif self.get_pressed("-"):
+            elif self._get_key_state_at("-"):
                 self.selected_glop.move_z_relative(-.1)
-            elif self.get_pressed("="):
+            elif self._get_key_state_at("="):
                 self.selected_glop.move_z_relative(.1)
         # else:
         #     print("No glop selected.")
 
         # this_index = find_by_name(self.scene.glops, "Suzanne")
         # if this_index>-1:
-        #     if self.get_pressed("j"):
+        #     if self._get_key_state_at("j"):
         #         self.scene.glops[this_index].rotate_y_relative(-1)
-        #     elif self.get_pressed("l"):
+        #     elif self._get_key_state_at("l"):
         #         self.scene.glops[this_index].rotate_y_relative(1)
         # else:
         #     print("Object not found.")

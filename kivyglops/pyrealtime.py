@@ -43,12 +43,14 @@ class PyRealTimeController:
                 'down': 's',
                 'right': 'd',
                 'up': 'w',
+                'use': 'enter',
             },
             'colemak': {
                 'left': 'a',
                 'down': 'r',
                 'right': 's',
                 'up': 'w',
+                'use': 'enter',
             },
         }
         self.set_keymap("qwerty")
@@ -57,7 +59,7 @@ class PyRealTimeController:
         for k, v in self._sequences.items():
             self._seq_commands[v] = k
         self._sequence_max = 5
-        self._keystates = {}
+        self._key_states = {}
 
     def set_keymap(self, name):
         keymap = self._keymaps.get(name)
@@ -104,28 +106,29 @@ class PyRealTimeController:
                   "".format(colemak_seq, qwerty_seq))
 
         try:
-            if index not in self._keystates:
-                self._keystates[index] = PyRealTimeKeyState()
+            if index not in self._key_states:
+                self._key_states[index] = PyRealTimeKeyState()
             if state is not None:
-                self._keystates[index].state = state
+                self._key_states[index].state = state
             if text is not None:
-                self._keystates[index].text = text
+                self._key_states[index].text = text
         except:  # Exception as e:
             print("Could not finish set_pressed: "+str(traceback.format_exc()))
 
     def dump(self):
-        print(self._keystates)
+        print(self._key_states)
 
-    def get_pressed(self, index):
+    def _get_key_state_at(self, index):
         '''
+        (formerly get_pressed)
         Get True if the button or key number `index`
         is being pressed, otherwise get False.
         '''
         return_pressing = False
         try:
-            if index in self._keystates:
-                if self._keystates[index] is not None:
-                    return_pressing = self._keystates[index].state
+            if index in self._key_states:
+                if self._key_states[index] is not None:
+                    return_pressing = self._key_states[index].state
         except:
-            print("Could not finish get_pressed: "+str(traceback.format_exc()))
+            print("Could not finish _get_key_state_at: "+str(traceback.format_exc()))
         return return_pressing

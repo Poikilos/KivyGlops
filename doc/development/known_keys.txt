@@ -50,6 +50,14 @@ walkmesh_index
 polygon_offset
 
 
+## obj file
+faces  # such as this_object.face_dicts[smoothing_key]["faces"]
+
+## mtl file
+
+### material (an individual material in the file)
+\#  # such as wmaterials[m_name]["#"]
+
 ## other
 last_used_time
 parent_index
