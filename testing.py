@@ -1,4 +1,11 @@
+#!/usr/bin/env python
+"""
+This script tests KivyGlops with models that are at full resolution.
+"""
+import math
+import os
 
+__author__ = 'Jake Gustafson'
 from kivy.app import App
 from kivy.core.window import Window
 from kivy.uix.widget import Widget
@@ -47,7 +54,8 @@ class MainScene(KivyGlops):
         test_infinite_crates = True
         if test_infinite_crates:
             if not test_medieval_enable:
-                print("test_infinite_crates requires test_medieval_enable")
+                print("test_infinite_crates requires"
+                      " test_medieval_enable")
         # NOTE: default gl_widget shader is already loaded by KivyGlops
         # self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','simple1b.glsl'))
         # self.ui.gl_widget.canvas.shader.source = resource_find(os.path.join('shaders','shade-normal-only.glsl'))  # partially working
@@ -101,9 +109,11 @@ class MainScene(KivyGlops):
             if os.path.isfile(seaport_path):
                 self.load_obj(seaport_path, pivot_to_g_enable=True)
             else:
-                #try_path
+                # try_path
                 print("[ testing ] ERROR: can't find '" + seaport_name + "'")
-            # medseaport1b-lowpoly (including dependencies) is available from http://www.expertmultimedia.com/usingpython/resources/Environments,Outdoor-Manmade/seaport.zip
+            # medseaport1b-lowpoly (including dependencies) is available
+            # from <https://expertmultimedia.com/usingpython/
+            # resources/Environments,Outdoor-Manmade/seaport.zip>
 
             # self.load_obj("medseaport1b-minimal.obj")
 
@@ -114,18 +124,20 @@ class MainScene(KivyGlops):
                 print("[ testing ] Using walkmesh: ")
                 is_ok = self.use_walkmesh(name, hide=True)
 
-            item_dict = dict()
-            item_dict['name'] = "barrel"
-            item_dict["bump"] = "hide; obtain"
-            # item_dict["use"] = "throw_arc"
-            item_dict['uses'] = ["throw_arc"]
+            item_dict = {}
+            item_dict['name'] = 'barrel'
+            item_dict['bump'] = "hide; obtain"
+            # item_dict['use'] = 'throw_arc'
+            item_dict['uses'] = ['throw_arc']
             # item_dict['uses'] = []
-            # item_dict['uses'].append("throw_arc")
-            item_dict["cooldown"] = .7
+            # item_dict['uses'].append('throw_arc')
+            item_dict['cooldown'] = .7
 
-            results = self.get_index_lists_by_similar_names(["crate", "barrel"])
-            crate_indices = results["crate"]
-            barrel_indices = results["barrel"]
+            results = self.get_index_lists_by_similar_names(
+                ['crate', 'barrel']
+            )
+            crate_indices = results['crate']
+            barrel_indices = results['barrel']
 
             barrel_names = []  # stored for debug output
             for index in barrel_indices:
@@ -135,13 +147,13 @@ class MainScene(KivyGlops):
 
             # self.play_music("music/edinburgh-loop.ogg")
 
-            item_dict['name'] = "crate"
-            item_dict["use_sound"] = "sounds/woosh-medium.wav"
+            item_dict['name'] = 'crate'
+            item_dict['use_sound'] = "sounds/woosh-medium.wav"
             item_dict['hit_damage'] = .3
             item_dict['projectile_keys'] = ['hit_damage']
             if test_infinite_crates:
-                item_dict["droppable"] = False
-                item_dict["cooldown"] = .1
+                item_dict['droppable'] = False
+                item_dict['cooldown'] = .1
                 item_dict['uses'] = ["throw_linear"]
 
             for index in crate_indices:
@@ -156,7 +168,9 @@ class MainScene(KivyGlops):
                 self.add_bump_sound_at(index, "sounds/crate-drop8.wav")
             print("[ testing ] len(barrel_names): " + str(len(barrel_names)))
             print("[ testing ] len(crate_indices): " + str(len(crate_indices)))
-            self.set_background_cylmap(os.path.join("maps","sky-texture-seamless.jpg"))
+            self.set_background_cylmap(
+                os.path.join("maps", "sky-texture-seamless.jpg")
+            )
         if test_space_enable:
             self.set_background_cylmap("starfield1-coryg89.jpg")
 
@@ -169,29 +183,42 @@ class MainScene(KivyGlops):
             ship_info['hp'] = 1.0
 
             player1_index = self.get_player_glop_index(1)
-            #self.set_as_actor_at(player1_index, ship_info)  # already done by PyGlops or KivyGlops __init__
+            # self.set_as_actor_at(player1_index, ship_info)
+            # ^ already done by PyGlops or KivyGlops __init__
 
             weapon = dict()
-            weapon["droppable"] = "no"
-            weapon["fired_sprite_path"] = "blue_jet_bulb.png"
-            weapon["fired_sprite_size"] = .5,.5  # width and height in meters
-            weapon['uses'] = ["throw_linear"] #weapon["fire_type"] = "throw_arc"
+            weapon['droppable'] = "no"
+            weapon['fired_sprite_path'] = "blue_jet_bulb.png"
+            weapon['fired_sprite_size'] = (.5, .5)
+            # ^ width and height in meters
+            weapon['uses'] = ["throw_linear"]
+            # weapon['fire_type'] = 'throw_arc'
             weapon['hit_damage'] = .3
             weapon['projectile_keys'] = ['hit_damage']
             self.add_actor_weapon(player1_index, weapon)
-            # self.player_glop = self.glops[player1_index]  # already done by PyGlops __init__
-            # test_deepcopy_weapon = self.player_glop.deepcopy_with_my_type(weapon)
-            print("[ testing ] #" + str(player1_index) + " named " + str(self.glops[player1_index].name) + " detected as player")
-            enemy_indices = self.get_indices_by_source_path("spaceship,simple-denapes.obj")
-            for i in range(0,len(enemy_indices)):
+            # self.player_glop = self.glops[player1_index]
+            # ^ already done by PyGlops __init__
+            # test_deepcopy_weapon = \
+            #     self.player_glop.deepcopy_with_my_type(weapon)
+            print("[ testing ] #" + str(player1_index) + " named "
+                  + str(self.glops[player1_index].name)
+                  + " detected as player")
+            enemy_indices = self.get_indices_by_source_path(
+                "spaceship,simple-denapes.obj"
+            )
+            for i in range(0, len(enemy_indices)):
                 index = enemy_indices[i]
                 self.set_as_actor_at(index, ship_info)
                 self.add_actor_weapon(index, weapon)
-                print("[ testing ] #" + str(index) + " named " + str(self.glops[index].name) + " added as enemy")
-            print("[ testing ] " + str(len(enemy_indices)) + " enemies found.")
-        # test_deepcopy_weapon = self.player_glop.deepcopy_with_my_type(weapon)
+                print("[ testing ] #" + str(index) + " named "
+                      + str(self.glops[index].name) + " added as enemy")
+            print("[ testing ] " + str(len(enemy_indices))
+                  + " enemies found.")
+        # test_deepcopy_weapon = \
+        #     self.player_glop.deepcopy_with_my_type(weapon)
 
-    def on_attacked_glop(self, attacked_index, attacker_index, weapon_dict):
+    def on_attacked_glop(self, attacked_index, attacker_index,
+                         weapon_dict):
         self.glops[attacked_index].actor_dict['hp'] -= weapon_dict['hit_damage']
         if self.glops[attacked_index].actor_dict['hp'] <= 0:
             self.explode_glop_at(attacked_index, weapon_dict)
@@ -200,16 +227,21 @@ class MainScene(KivyGlops):
             print("[ testing ] (on_attacked_glop) HP: "+str(self.glops[attacked_index].actor_dict['hp']))
 
     def on_obtain_glop(self, bumpable_index, bumper_index):
-        if self.glops[bumpable_index].item_dict['name'] == "barrel":
+        if self.glops[bumpable_index].item_dict['name'] == 'barrel':
             self.play_sound("sounds/barrel,wooden-pickup.wav")
-        elif self.glops[bumpable_index].item_dict['name'] == "crate":
+        elif self.glops[bumpable_index].item_dict['name'] == 'crate':
             self.play_sound("sounds/crate-pickup.wav")
 
     def _deprecated_on_obtain_glop_by_name(self, dgn, bumper_name):
+        '''
+        Sequential arguments:
+        dgn -- detected glop name
+        bumper_name -- actor glop name
+        '''
         pass
-        # if "barrel" in dgn.lower():
+        # if 'barrel' in dgn.lower():
         #     self.play_sound("sounds/barrel,wooden-pickup.wav")
-        # if "crate" in dgn.lower():
+        # if 'crate' in dgn.lower():
         #     self.play_sound("sounds/crate-pickup.wav")
 
     # def on_explode_glop(self, pos, radius, attacked_index, weapon):
@@ -268,6 +300,7 @@ class MainScene(KivyGlops):
         # else:
         #     print("Not found.")
 
+
 scene = MainScene(KivyGlopsWindow())
 
 
@@ -280,7 +313,9 @@ class KivyGlopsTestingApp(App):
         # boxlayout.add_widget(mainform)
         # boxlayout.cols = 1
         # boxlayout.orientation = "vertical"
-        # boxlayout.useButton = Factory.Button(text="Use", id="useButton", size_hint=(.1,.1))
+        # boxlayout.useButton = Factory.Button(text="Use",
+        #                                      id="useButton",
+        #                                      size_hint=(.1,.1))
         # boxlayout.add_widget(boxlayout.useButton)
         # return boxlayout
 

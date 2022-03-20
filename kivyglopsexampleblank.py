@@ -24,18 +24,21 @@ import math
 from kivyglops import *
 
 
-#class MainForm(KivyGlopsWindow):
+# class MainForm(KivyGlopsWindow):
 class MainScene(KivyGlops):
 
     def load_glops(self):
         pass
 
+
 scene = MainScene(KivyGlopsWindow())
+
 
 class KivyGlopsExampleApp(App):
     def build(self):
-        #mainform = MainForm()
+        # mainform = MainForm()
         return scene.ui
+
 
 if __name__ == "__main__":
     KivyGlopsExampleApp().run()
