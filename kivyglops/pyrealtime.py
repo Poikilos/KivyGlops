@@ -20,8 +20,12 @@ MODE_GAME = "game"
 
 
 class PyRealTimeKeyState:
-    state = None
-    text = None
+    '''
+    Properties:
+    state -- Set to True (pressed) or False.
+    text -- Set to the name of the key (ignores key mapping; allows
+        typing even though mapping is used).
+    '''
 
     def __init__(self):
         self.state = False
@@ -29,10 +33,18 @@ class PyRealTimeKeyState:
 
 
 class PyRealTimeController:
-
+    '''
+    Properties:
+    _requested_keys -- Set this to one of the entries in _keymaps,
+        so _requested_keys['left'] is the left key such as "a", etc.
+    _tried_other_keys -- Store a list of unmapped keys pressed (such
+        as for debugging).
+    '''
     def __init__(self):
         self._sequence = ""
         self._requested_keys = None
+        self._keyNames = None
+        self._tried_other_keys = []
         self._sequences = {
             'asd': "qwerty",
             'ars': "colemak",
@@ -60,6 +72,7 @@ class PyRealTimeController:
             self._seq_commands[v] = k
         self._sequence_max = 5
         self._key_states = {}
+        self._input_states = {}
 
     def set_keymap(self, name):
         keymap = self._keymaps.get(name)
@@ -69,12 +82,16 @@ class PyRealTimeController:
                   "".format(name, list(self._keymaps.keys())))
             return False
         self._requested_keys = keymap
+        self._keyNames = {}
+        for name, key in self._requested_keys.items():
+            self._keyNames[key] = name
         self._keymap = name
 
     def get_keymap_dict(self):
         return self._requested_keys
 
     def set_pressed(self, index, text, state):
+        # A series of keys can have a special meaning:
         if not self._sequence.endswith(text):
             self._sequence += text
         if len(self._sequence) > self._sequence_max:
@@ -106,17 +123,36 @@ class PyRealTimeController:
                   "".format(colemak_seq, qwerty_seq))
 
         try:
-            if index not in self._key_states:
+            if self._key_states.get(index) is None:
                 self._key_states[index] = PyRealTimeKeyState()
             if state is not None:
                 self._key_states[index].state = state
             if text is not None:
                 self._key_states[index].text = text
         except:  # Exception as e:
-            print("Could not finish set_pressed: "+str(traceback.format_exc()))
+            print("Could not finish set_pressed({},...): {}"
+                  "".format(index, traceback.format_exc()))
+        name = self._keyNames.get(text.lower())
+        if name is not None:
+            self._input_states[name] = state
+        else:
+            if text not in self._tried_other_keys:
+                self._tried_other_keys.append(text)
+            # print("{} is not a mapped key.".format(text.lower()))
 
     def dump(self):
         print(self._key_states)
+
+    def get_input(self, name):
+        '''
+        Get True if the button or key number with the given name
+        is being pressed, otherwise get False.
+
+        Sequential arguments:
+        name -- The name must be a named key in the
+            _requested_keys keymap such as 'left'.
+        '''
+        return self._input_states.get(name)
 
     def _get_key_state_at(self, index):
         '''
@@ -130,5 +166,6 @@ class PyRealTimeController:
                 if self._key_states[index] is not None:
                     return_pressing = self._key_states[index].state
         except:
-            print("Could not finish _get_key_state_at: "+str(traceback.format_exc()))
+            print("Could not finish _get_key_state_at: "
+                  + str(traceback.format_exc()))
         return return_pressing

@@ -2253,7 +2253,8 @@ class PyGlop:
                 glop_vertex_offset = len(self.vertices)
                 # NOTE: len(self.vertices) is len(vertices)*vd
                 self.properties['separable_offsets'].append(
-                    glop_vertex_offset)
+                    glop_vertex_offset
+                )
                 print("[ PyGlop ] appending wobject vertices to " +
                       "glop (" + str(self.name) + ")'s existing " +
                       str(glop_vertex_offset) + " vertices")
@@ -2508,7 +2509,7 @@ class PyGlop:
                     if (vf[p_i][VFORMAT_VECTOR_LEN_INDEX] > 3):
                         vertex_components[PO+3] = 1.0
                         # ^ non-position padding value must be 1.0
-                        # for matrix math to work correctly
+                        #   for matrix math to work correctly
                     for element_index in range(0, 3):
                         vertex_components[NO+element_index] = \
                             normal[element_index]
@@ -3299,7 +3300,7 @@ class PyGlops:
         # result =
         # NOTE: on_at_rest should already have been called
         # if result is not None:
-        #     if 'bumpable_name' in result:
+        #     if 'detectable_name' in result:
         #         dgn = result['bumpable_name']  # ['dgn']
         #     if 'bumper_name' in result:
         #         bgn = result['bumper_name']  # ['bgn']
@@ -3437,12 +3438,11 @@ class PyGlops:
                         bumper_name_msg = "'" + str(bgn) + "'"
                         if bgn is None:
                             bumper_name_msg = 'world'
-                        print("[ PyGlops ] " + bumper_name_msg +
-                              " is not bumping into '" +
-                              bumped.name + "' since it was " +
-                              "already obtained by [" +
-                              str(dgItD['owner_key']) + "] " +
-                              str(self.glops[dgItD['owner_key']].name))
+                        print("[ PyGlops ] " + bumper_name_msg
+                              + " is not bumping into '" + bumped.name
+                              + "' since it was already obtained by ["
+                              + str(dgItD['owner_key']) + "] "
+                              + str(self.glops[dgItD['owner_key']].name))
         else:
             if get_verbose_enable():
                 # This is not actually a problem (non-damaging non-item
@@ -3516,7 +3516,7 @@ class PyGlops:
         if template_dict is None:
             template_dict = {}
         a_glop = self.glops[index]
-        copy_dict = a_glop.deepcopy_with_my_type(template_dict)
+        new_a_d = a_glop.deepcopy_with_my_type(template_dict)
         a_glop.actor_dict = {}
         d_properties = a_glop.deepcopy_with_my_type(
             self.settings['templates']['actor_properties'])
@@ -3530,15 +3530,15 @@ class PyGlops:
         for key in d_actor_dict:
             a_glop.actor_dict[key] = d_actor_dict[key]
         for key in template_dict:
-            if key not in copy_dict:
+            if key not in new_a_d:
                 print("[ PyGlops ] ERROR in set_as_actor_at:"
                       "deepcopy_* failed to copy '" + key + "'")
-        for key in copy_dict:
+        for key in new_a_d:
             if key not in \
                     self.settings['templates']['actor_properties']:
-                a_glop.actor_dict[key] = copy_dict[key]
+                a_glop.actor_dict[key] = new_a_d[key]
             else:
-                a_glop.properties[key] = copy_dict[key]
+                a_glop.properties[key] = new_a_d[key]
                 if get_verbose_enable():
                     print("[ PyGlops ] (verbose message in"
                           " set_as_actor_at) "
@@ -3556,8 +3556,8 @@ class PyGlops:
             if a_glop.properties.get('hitbox') is None:
                 print("  hitbox: None")
             else:
-                print("  hitbox: "
-                      + str(a_glop.properties['hitbox']))
+                print("  hitbox: {}"
+                      "".format(a_glop.properties['hitbox']))
         # return result
 
     def new_glop_method(self):
@@ -3894,7 +3894,7 @@ class PyGlops:
                               " using item_glop with glop_index"
                               " where glop is not an item (maybe"
                               " should not be in {}'s"
-                              "slot's item_dict)"
+                              " slot's item_dict)"
                               "".format(VMSG, user_glop.name))
                     # if item_glop.item_dict is not None:
                     #     item_dict = item_glop.item_dict
@@ -4042,7 +4042,8 @@ class PyGlops:
         except Exception as ex:
             print("[ PyGlops ] ERROR: Could not finish use_selected:")
             if user_glop is not None:
-                print("  user_glop.name:" + str(user_glop.name))
+                print("  user_glop.name: " + str(user_glop.name))
+                print("  item_dict: {}".format(item_dict))
                 print(
                     "  len(user_glop.actor_dict['inventory_items']):"
                     + str(len(user_glop.actor_dict['inventory_items']))
@@ -4408,6 +4409,13 @@ class PyGlops:
               "in your subclass")
 
     def use_selected(self, user_glop):
+        '''
+        Returns:
+        See use_item_at's return (except None if user is not actor,
+            has no inventory, has no selected inventory slot, selected
+            inventory slot is bad, or the item at the given slot
+            of the actor dict's inventory_items is None).
+        '''
         f_name = "use_selected"
         ugad = None
         if user_glop is None:
@@ -4453,7 +4461,7 @@ class PyGlops:
                       + ": nothing to do since selected inventory"
                       " slot is None")
             return
-        self.use_item_at(user_glop, ugad['inventory_index'])
+        return self.use_item_at(user_glop, ugad['inventory_index'])
 
     def on_load_glops(self):
         '''
