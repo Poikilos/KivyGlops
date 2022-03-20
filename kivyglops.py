@@ -1665,18 +1665,17 @@ class KivyGlops(PyGlops):
         return results
 
     def get_pressed(self, key_name):
-        # WARNING: this is for backward compatibility only.
-        # Use the controller (which uses input maps first) instead.
+        '''
+        WARNING: this is for backward compatibility only.
+        Use the controller (which uses input maps first) instead.
+        '''
         print("WARNING: (KivyGlops scene).get_pressed(key_name)"
               " is for backward compatibility only.")
         if key_name is not None:
-            try:
-                return self.player1_controller.get_pressed(
-                    self.ui.get_keycode(key_name)
-                )
-            except:
-                # no keyboard attached
-                pass
+            # return self.player1_controller._get_key_state_at(
+            #     self.ui.get_keycode(key_name)
+            # )
+            return self.player1_controller.get_input(key_name)
         # else don't complain: get_keycode returns None if no keyboard
         # and that is the method to find the keycode
         return False
@@ -1733,6 +1732,7 @@ class KivyGlops(PyGlops):
             pass
 
     def update(self):
+        already_done_controlled_unit = False
         VMSG = " (verbose message in update) "
         # KivyGlops.update is called by KivyGlopsWindow.*update*
         # such as update_glsl
@@ -2039,25 +2039,48 @@ class KivyGlops(PyGlops):
                 else:
                     print("[ KivyGlops ] ERROR in update: 'target_pos' was set but the engine forgot to calculate 'acquire_radius'")
             elif index == self.get_player_glop_index(1):
-                # for keycode strings, see  http://kivy.org/docs/_modules/kivy/core/window.html
-                if self.player1_controller.get_pressed(self.ui.get_keycode("a")):
-                    #if self.player1_controller.get_pressed(self.ui.get_keycode("shift")):
+                if already_done_controlled_unit:
+                    raise RuntimeError("The controlled unit was already"
+                                       " controlled, but glop {} was"
+                                       " attempted to be controlled!"
+                                       "".format(index))
+                already_done_controlled_unit = True
+                # for keycode strings, see <http://kivy.org/docs/
+                # _modules/kivy/core/window.html>
+                # if self.player1_controller._get_key_state_at(
+                #     self.ui.get_keycode("a")
+                # ):
+                if self.player1_controller.get_input("left"):
+                    # if self.player1_controller._get_key_state_at(
+                    #     self.ui.get_keycode("shift")
+                    # ):
                     moving_x = 1.0
                     # else:
                     #     rotation_multiplier_y = -1.0
-                if self.player1_controller.get_pressed(self.ui.get_keycode("d")):
-                    #if self.player1_controller.get_pressed(self.ui.get_keycode("shift")):
+                # if self.player1_controller._get_key_state_at(
+                #     self.ui.get_keycode("d")
+                # ):
+                if self.player1_controller.get_input("right"):
+                    # if self.player1_controller._get_key_state_at(
+                    #     self.ui.get_keycode("shift")
+                    # ):
                     moving_x = -1.0
                     # else:
                     #     rotation_multiplier_y = 1.0
-                if self.player1_controller.get_pressed(self.ui.get_keycode("w")):
+                # if self.player1_controller._get_key_state_at(
+                #     self.ui.get_keycode("w")
+                # ):
+                if self.player1_controller.get_input("up"):
                     if self._fly_enables[motivated_glop.name]:
                         # intentionally use z,y:
                         moving_z, moving_y = get_rect_from_polar_rad(1.0, motivated_glop._r_ins_x.angle)
                     else:
                         moving_z = 1.0
 
-                if self.player1_controller.get_pressed(self.ui.get_keycode("s")):
+                # if self.player1_controller._get_key_state_at(
+                #     self.ui.get_keycode("s")
+                # ):
+                if self.player1_controller.get_input("down"):
                     if self._fly_enables[motivated_glop.name]:
                         # intentionally use z,y:
                         moving_z, moving_y = get_rect_from_polar_rad(1.0, motivated_glop._r_ins_x.angle)
@@ -2066,7 +2089,11 @@ class KivyGlops(PyGlops):
                     else:
                         moving_z = -1.0
 
-                if self.player1_controller.get_pressed(self.ui.get_keycode("enter")):
+                # if self.player1_controller._get_key_state_at(
+                #     self.ui.get_keycode("enter")
+                # ):
+                if self.player1_controller.get_input("use"):
+                    # such as "enter" key
                     self.use_selected(motivated_glop)
 
             # ACTUAL MOVEMENT is done only if the object is at rest
@@ -2978,7 +3005,7 @@ class KivyGlopsWindow(ContainerForm):  # formerly a subclass of Widget
         #       " (should match keycode constant: " +
         #       str(Keyboard.keycodes[keycode[1]]) + ")")
 
-        # if len(keycode[1])>0:
+        # if len(keycode[1]) > 0:
         self.scene.player1_controller.set_pressed(keycode[0],
                                                   keycode[1], True)
 

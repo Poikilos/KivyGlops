@@ -3555,6 +3555,7 @@ class PyGlops:
         '''
         f_name = "use_item_at"
         VMSG = " (verbose message in use_item_at)"
+        item_dict = None
         try:
             if user_glop is None:
                 print(
@@ -3564,7 +3565,7 @@ class PyGlops:
 
             if user_glop.name is None:
                 user_glop.name = str(uuid.uuid4())
-                print("[ PyGlops ] ERROR in use_item_at: "
+                print("[ PyGlops ] ERROR in " + f_name  + ": "
                       "user_glop.name was None (set to '"
                       + user_glop.name + "'"
                       " for safety)")
@@ -3574,11 +3575,18 @@ class PyGlops:
             ugad = user_glop.actor_dict
             item_dict = ugad['inventory_items'][inventory_index]
             item_glop = None
-            if 'glop_index' in item_dict['state']:
-                this_glop_index = item_dict['state']['glop_index']
-                if this_glop_index is not None:
-                    item_glop = self.glops[this_glop_index]
-                # else not a glop--continue anyway
+            if item_dict.get('state') is not None:
+                if 'glop_index' in item_dict['state']:
+                    this_glop_index = item_dict['state']['glop_index']
+                    if this_glop_index is not None:
+                        item_glop = self.glops[this_glop_index]
+                    # else not a glop--continue anyway
+            else:
+                if get_verbose_enable():
+                    print("item_dict has no state (maybe the key is"
+                          " still held and the slot already became"
+                          " empty): {}"
+                          "".format(item_dict))
 
             item_glop_name = None
             if item_glop is not None:
@@ -3589,7 +3597,7 @@ class PyGlops:
                               " using item_glop with glop_index"
                               " where glop is not an item (maybe"
                               " should not be in {}'s"
-                              "slot's item_dict)"
+                              " slot's item_dict)"
                               "".format(VMSG, user_glop.name))
                     # if item_glop.item_dict is not None:
                     #     item_dict = item_glop.item_dict
@@ -3606,7 +3614,7 @@ class PyGlops:
                 if item_glop_name is None:
                     item_glop_name = item_dict.get('glop_name')
                 elif item_glop_name != item_dict.get('glop_name'):
-                    print("[ PyGlops ] ERROR in use_item_at: "
+                    print("[ PyGlops ] ERROR in " + f_name + ": "
                           "glop_name '" + \
                           str(item_dict.get('glop_name')) + \
                           "' differs from actual item_glop.name '" + \
@@ -3724,7 +3732,8 @@ class PyGlops:
         except Exception as ex:
             print("[ PyGlops ] ERROR: Could not finish use_selected:")
             if user_glop is not None:
-                print("  user_glop.name:" + str(user_glop.name))
+                print("  user_glop.name: " + str(user_glop.name))
+                print("  item_dict: {}".format(item_dict))
                 print(
                     "  len(user_glop.actor_dict['inventory_items']):"
                     + str(len(user_glop.actor_dict['inventory_items']))
@@ -4065,6 +4074,13 @@ class PyGlops:
             debug_dict['player_glop']['selected_item'] = "<bad inventory_index=\"" + str(pgad['inventory_index']) + ">"
 
     def use_selected(self, user_glop):
+        '''
+        Returns:
+        See use_item_at's return (except None if user is not actor,
+            has no inventory, has no selected inventory slot, selected
+            inventory slot is bad, or the item at the given slot
+            of the actor dict's inventory_items is None).
+        '''
         f_name = "use_selected"
         ugad = None
         if user_glop is None:
@@ -4109,7 +4125,7 @@ class PyGlops:
                       + ": nothing to do since selected inventory"
                       " slot is None")
             return
-        self.use_item_at(user_glop, ugad['inventory_index'])
+        return self.use_item_at(user_glop, ugad['inventory_index'])
 
     def on_load_glops(self):
         '''
@@ -4456,8 +4472,8 @@ class PyGlops:
     #           " framework-specific subclass")
     #     return None
 
-    # def get_pressed(self, key_name):
-    #     return self.player1_controller.get_pressed(
+    # def _get_key_state_at(self, key_name):
+    #     return self.player1_controller._get_key_state_at(
     #         self.ui.get_keycode(key_name)
     #     )
 
