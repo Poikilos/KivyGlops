@@ -2415,8 +2415,8 @@ class KivyGlops(PyGlops):
                     # ^ full speed so same as virtual shoulder button
                 if self.player1_controller._get_key_state_at(
                         self.ui.get_keycode("w")):
-                    if get_verbose_enable():
-                        chatter()
+                    # if get_verbose_enable():
+                    #    chatter()
                     # if self.get_fly_by_name(m_glop.name):
                     #     # intentionally use z,y:
                     #     vmz, vmy = get_rect_from_polar_rad(
@@ -2465,8 +2465,8 @@ class KivyGlops(PyGlops):
                         #           " not on ground.")
                         pass
             # # DO NO MORE HIT DETECTION SINCE 1ST CHANGE IS BELOW
-            pstep(debug_dict, pre=("player controlling"
-                                   + self.glops[motivated_index].name))
+            # pstep(debug_dict, pre=("player controlling"
+            #                       + self.glops[motivated_index].name))
             # ACTUAL MOVEMENT is done only if the object is at rest
             # (see else case below).
             check_pos_enable = False
@@ -2635,7 +2635,7 @@ class KivyGlops(PyGlops):
                     if mgsv[axis_i] != 0.0:
                         # set _t_ins via set_coord:
                         m_glop.set_coord(axis_i, mgsv[axis_i])
-                pstep(debug_dict, pre="m_glop " + m_glop.name)
+                # pstep(debug_dict, pre="m_glop " + m_glop.name)
                 # self.prev_inbounds_camera_translate = \
                 #     self.camera_glop._t_ins.x,
                 #     self.camera_glop._t_ins.y,
@@ -2695,7 +2695,7 @@ class KivyGlops(PyGlops):
                     #           " land_units_this_frame")
 
             # end if on_ground_enable or flying can control own movement
-            pstep(debug_dict, pre="m_glop " + m_glop.name)
+            # pstep(debug_dict, pre="m_glop " + m_glop.name)
             pcgs = None  # player-controlled glop state
             if p1_enable:
                 if sg['camera_perspective_number'] == \
@@ -2733,7 +2733,7 @@ class KivyGlops(PyGlops):
             #     # TODO: get from walkmesh instead and
             #     # eliminate _cached_floor_y
             # (this part is under no outer conditions)
-            pstep(debug_dict, pre="m_glop " + m_glop.name)
+            # pstep(debug_dict, pre="m_glop " + m_glop.name)
             if mgp['physics_enable']:
                 # TODO: Fix issue where can't move if physics_enable is
                 #       false
@@ -2883,11 +2883,13 @@ class KivyGlops(PyGlops):
                     src_pos[1] + mgsv[1] * got_frame_delay,
                     src_pos[2] + mgsv[2] * got_frame_delay
                 )
+                '''
                 if get_verbose_enable():
                     print("CHANGING  {} dst_pos to {} using src_pos {}"
                           " + mgsv {} * {}..."
                           "".format(m_glop.name, dst_pos, src_pos, mgsv,
                                     got_frame_delay))
+                '''
                 if get_verbose_enable():
                     if mgad is not None and mgp['roll_enable']:
                         print("[ KivyGlops ] WARNING in update:"
@@ -2963,7 +2965,7 @@ class KivyGlops(PyGlops):
                                   " be running more often)")
             # end if physics_enable
             # AND FORMERLY end on_ground_enable or choice_moved_enable
-            pstep(debug_dict, pre="m_glop " + m_glop.name)
+            # pstep(debug_dict, pre="m_glop " + m_glop.name)
             # if choice_local_vel_mult[0] != 0.0 or \
             #   # choice_local_vel_mult[1] != 0.0 or \
             #   # choice_local_vel_mult[2] != 0.0:
@@ -2983,7 +2985,7 @@ class KivyGlops(PyGlops):
                                   + " tried to move, but was not "
                                   "at rest (physics in control)")
 
-            pstep(debug_dict, pre="m_glop " + m_glop.name)
+            # pstep(debug_dict, pre="m_glop " + m_glop.name)
             '''
             # Confirmed: choice_world_vel and choice_world_vel_mult
             # only change for the player.
@@ -3021,7 +3023,7 @@ class KivyGlops(PyGlops):
                     print("[ KivyGlops ] ERROR in update: "
                           "unknown link r_type "
                           + str(rel.get('r_type')))
-            pstep(debug_dict, pre="m_glop " + m_glop.name)
+            # pstep(debug_dict, pre="m_glop " + m_glop.name)
             # if mgp['physics_enable']:
             if p1_enable:
                 if 'Player' not in dd:
@@ -3136,7 +3138,7 @@ class KivyGlops(PyGlops):
                     m_glop._t_ins.y = walk_info['pos'][1]
                     m_glop._t_ins.z = walk_info['pos'][2]
         # end for motivated_index in glops
-        pstep(debug_dict, pre="m_glop " + m_glop.name)
+        # pstep(debug_dict, pre="m_glop " + m_glop.name)
         # movitated_glop out of scope
         # for index in self._bumper_indices:
         #     m_glop = self.glops[index]
@@ -3174,7 +3176,7 @@ class KivyGlops(PyGlops):
                   " in scene to one of the self.CAMERA_*()"
                   " methods' returns."
                   "".format(sg['camera_perspective_number']))
-        pstep(debug_dict, pre="m_glop " + m_glop.name)
+        # pstep(debug_dict, pre="m_glop " + m_glop.name)
         asp = float(self.ui.width) / float(self.ui.height)
 
         clip_top = 0.06  # NOTE: 0.03 is ~1.72 degrees, if that matters
@@ -3341,7 +3343,7 @@ class KivyGlops(PyGlops):
                 glwCv['_world_light_dir'][1],
                 glwCv['_world_light_dir'][2]
             )
-        pstep(debug_dict, pre="m_glop " + m_glop.name)
+        # pstep(debug_dict, pre="m_glop " + m_glop.name)
         self._delay_is_available_enable = True
         self.update_view_visual_debug()
     # end update
