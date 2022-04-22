@@ -1,6 +1,14 @@
 #!/usr/bin/env python
 """
 This script tests KivyGlops with models that are at full resolution.
+
+Try running via:
+
+pip install winpdb-reborn
+winpdb testing.py
+
+(or use [Poikilos' pydebug fork](https://github.com/poikilos/pydebug) if
+<https://github.com/poikilos/pydebug/issues/1> is fixed)
 """
 import math
 import os

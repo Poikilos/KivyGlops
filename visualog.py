@@ -53,8 +53,8 @@ to
 
 '''
 
-def error(msg):
-    sys.stderr.write(msg + "\n")
+def error(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
 
 
 def to_fvec(arr):
